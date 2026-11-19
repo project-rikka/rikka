@@ -5,5 +5,6 @@ mod dismissing;
 mod eliding;
 mod focus;
 mod number_field;
+mod scaled;
 mod shortcut_field;
 mod shortcuts;

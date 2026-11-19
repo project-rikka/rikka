@@ -27,7 +27,7 @@ extern "C" {
 #define RK_MAKE_VERSION(major, minor, patch) \
     ((((uint32_t)(major)) << 22U) | (((uint32_t)(minor)) << 12U) | ((uint32_t)(patch)))
 #define RK_VERSION_MAJOR 0
-#define RK_VERSION_MINOR 2
+#define RK_VERSION_MINOR 3
 #define RK_VERSION_PATCH 0
 /**
  * The version this header declares.
@@ -124,6 +124,51 @@ typedef struct rk_color {
     float b;
     float a;
 } rk_color;
+
+/**
+ * A rectangle in logical pixels.
+ */
+typedef struct rk_rect {
+    float x;
+    float y;
+    float width;
+    float height;
+} rk_rect;
+
+/**
+ * A Vulkan image of another program.
+ */
+typedef struct rk_vulkan_image {
+    /**
+     * The VkImage.
+     */
+    uint64_t image;
+    /**
+     * A VkImageView of its single color level and layer.
+     */
+    uint64_t view;
+    /**
+     * Its VkFormat.
+     */
+    uint32_t format;
+    /**
+     * Its width in pixels.
+     */
+    uint32_t width;
+    /**
+     * Its height in pixels.
+     */
+    uint32_t height;
+    /**
+     * The VkImageLayout it is in.
+     */
+    uint32_t layout;
+    /**
+     * Whether its rows run from the bottom up, as in images an OpenGL-style program flips when
+     * it shows them.
+     */
+    bool bottom_up;
+} rk_vulkan_image;
 
 /**
  * The outcome of an operation that can fail at run time.
@@ -524,6 +569,46 @@ typedef enum rk_key_code {
 } rk_key_code;
 
 /**
+ * A pointer button.
+ */
+typedef enum rk_pointer_button {
+    RK_POINTER_BUTTON_LEFT = 0,
+    RK_POINTER_BUTTON_RIGHT = 1,
+    RK_POINTER_BUTTON_MIDDLE = 2,
+    RK_POINTER_BUTTON_BACK = 3,
+    RK_POINTER_BUTTON_FORWARD = 4,
+    RK_POINTER_BUTTON_FORCE32 = 0x7FFFFFFF
+} rk_pointer_button;
+
+/**
+ * A pointer shape.
+ */
+typedef enum rk_cursor_shape {
+    RK_CURSOR_SHAPE_DEFAULT = 0,
+    RK_CURSOR_SHAPE_HIDDEN = 1,
+    /**
+     * A hand over something to press.
+     */
+    RK_CURSOR_SHAPE_POINTER = 2,
+    RK_CURSOR_SHAPE_TEXT = 3,
+    RK_CURSOR_SHAPE_WAIT = 4,
+    RK_CURSOR_SHAPE_PROGRESS = 5,
+    RK_CURSOR_SHAPE_CROSSHAIR = 6,
+    RK_CURSOR_SHAPE_MOVE = 7,
+    RK_CURSOR_SHAPE_GRAB = 8,
+    RK_CURSOR_SHAPE_GRABBING = 9,
+    RK_CURSOR_SHAPE_NOT_ALLOWED = 10,
+    RK_CURSOR_SHAPE_RESIZE_HORIZONTAL = 11,
+    RK_CURSOR_SHAPE_RESIZE_VERTICAL = 12,
+    RK_CURSOR_SHAPE_RESIZE_DIAGONAL_DOWN = 13,
+    RK_CURSOR_SHAPE_RESIZE_DIAGONAL_UP = 14,
+    RK_CURSOR_SHAPE_ZOOM_IN = 15,
+    RK_CURSOR_SHAPE_ZOOM_OUT = 16,
+    RK_CURSOR_SHAPE_HELP = 17,
+    RK_CURSOR_SHAPE_FORCE32 = 0x7FFFFFFF
+} rk_cursor_shape;
+
+/**
  * Keyboard modifiers held with a key.
  */
 typedef uint32_t rk_modifiers;
@@ -604,6 +689,48 @@ typedef struct rk_video rk_video;
  * the thread that made it.
  */
 typedef struct rk_text_document rk_text_document;
+
+/**
+ * The Vulkan device of a program that draws embedded surfaces into its own frames. Rikka draws
+ * with this device and its queue instead of making its own, so the program must have created
+ * them for Vulkan 1.3 with the features listed in rk_vulkan_device_set_features(). Rikka never
+ * submits to the queue itself: it hands each submission to the program in order through the
+ * submit callbacks, and the program submits it on that queue before its own later work. A
+ * render waits for the work handed over three renders before, so the program submits at least
+ * once every two renders.
+ *
+ * Owned by whoever holds it until handed over; rk_vulkan_device_free() destroys one that never
+ * was.
+ */
+typedef struct rk_vulkan_device rk_vulkan_device;
+
+/**
+ * Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
+ * renders on the thread that submits to the device's queue.
+ *
+ * Reference-counted with rk_embedding_ref() and rk_embedding_unref(); usable only on the thread
+ * that made it.
+ */
+typedef struct rk_embedding rk_embedding;
+
+/**
+ * The description of an embedded surface.
+ *
+ * Owned by whoever holds it until handed over; rk_embedded_surface_builder_free() destroys one
+ * that never was.
+ */
+typedef struct rk_embedded_surface_builder rk_embedded_surface_builder;
+
+/**
+ * A view drawn over a program's own frames: a heads-up display or a menu inside a game, for
+ * example. Its glass and frosted panes blur and refract what the program drew beneath them. The
+ * program forwards input in logical pixels from the surface's top-left corner, and each input
+ * function says whether the surface used the input. It closes when its last reference is gone.
+ *
+ * Reference-counted with rk_embedded_surface_ref() and rk_embedded_surface_unref(); usable only
+ * on the thread that made it.
+ */
+typedef struct rk_embedded_surface rk_embedded_surface;
 
 /**
  * The context of a callback reacting to the person or the system.
@@ -734,6 +861,24 @@ typedef void (*rk_unsaved_fn)(rk_context *context, rk_unsaved_answer answer, voi
  * @param userdata The userdata given with the closure.
  */
 typedef void (*rk_work_fn)(void *userdata);
+
+/**
+ * Hands over a semaphore operation of a Vulkan submission.
+ *
+ * @param semaphore The VkSemaphore.
+ * @param value The timeline value, or 0 for a binary semaphore.
+ * @param stages The VkPipelineStageFlags2 it applies to.
+ * @param userdata The userdata given with the closure.
+ */
+typedef void (*rk_vulkan_semaphore_fn)(uint64_t semaphore, uint64_t value, uint64_t stages, void *userdata);
+
+/**
+ * Hands over a command buffer of a Vulkan submission.
+ *
+ * @param command_buffer The VkCommandBuffer.
+ * @param userdata The userdata given with the closure.
+ */
+typedef void (*rk_vulkan_commands_fn)(uint64_t command_buffer, void *userdata);
 
 /**
  * Releases a string the SDK returned. A string whose data is NULL is ignored.
@@ -1465,6 +1610,249 @@ RK_API rk_text_document *rk_text_document_ref(rk_text_document *document);
 RK_API void rk_text_document_unref(rk_text_document *document);
 
 /**
+ * Describes a program's device.
+ *
+ * @param get_instance_proc_addr The address of the vkGetInstanceProcAddr the program loaded.
+ * @param instance The VkInstance.
+ * @param api_version The apiVersion the instance was created with; at least 1.3.
+ * @param physical_device The VkPhysicalDevice the device was made on.
+ * @param device The VkDevice; it must outlive every embedding drawing with it.
+ * @param queue The VkQueue the program submits Rikka's work on; it must support graphics.
+ * @param queue_family The family of that queue.
+ * @param wait Hands over a semaphore operation of a Vulkan submission.
+ * @param execute Hands over a command buffer of a Vulkan submission.
+ * @param signal Hands over a semaphore operation of a Vulkan submission.
+ * @param userdata Passed to `wait` and `execute` and `signal`.
+ * @param destroy Called with `userdata` once the SDK no longer needs it; may be NULL. It may
+ * run on any thread.
+ * @return The caller owns the result; release it with rk_vulkan_device_free().
+ */
+RK_API RK_NODISCARD rk_vulkan_device *rk_vulkan_device_new(uint64_t get_instance_proc_addr, uint64_t instance, uint32_t api_version, uint64_t physical_device, uint64_t device, uint64_t queue, uint32_t queue_family, rk_vulkan_semaphore_fn wait, rk_vulkan_commands_fn execute, rk_vulkan_semaphore_fn signal, void *userdata, rk_destroy_fn destroy);
+
+/**
+ * Names an instance extension the program enabled.
+ */
+RK_API void rk_vulkan_device_add_instance_extension(rk_vulkan_device *device, rk_str name);
+
+/**
+ * Names a device extension the program enabled.
+ */
+RK_API void rk_vulkan_device_add_device_extension(rk_vulkan_device *device, rk_str name);
+
+/**
+ * Describes the features the program enabled, read during the call. Rikka needs
+ * timelineSemaphore, runtimeDescriptorArray, shaderSampledImageArrayNonUniformIndexing,
+ * descriptorBindingSampledImageUpdateAfterBind, descriptorBindingPartiallyBound,
+ * descriptorBindingUpdateUnusedWhilePending, dynamicRendering and synchronization2, from their
+ * Vulkan 1.2 and 1.3 feature structures or the structures of the extensions they come from.
+ *
+ * @param features The address of the VkPhysicalDeviceFeatures2 whose chain the device was
+ * created with.
+ */
+RK_API void rk_vulkan_device_set_features(rk_vulkan_device *device, uint64_t features);
+
+/**
+ * Destroys a vulkan device that was never handed over. Passing NULL does nothing.
+ */
+RK_API void rk_vulkan_device_free(rk_vulkan_device *device);
+
+/**
+ * Prepares to draw with a device. Check rk_embedding_error_message() before opening surfaces.
+ *
+ * @param device Ownership passes to the SDK.
+ * @return The caller owns the result; release it with rk_embedding_unref().
+ */
+RK_API RK_NODISCARD rk_embedding *rk_embedding_new(rk_vulkan_device *device);
+
+/**
+ * Why the embedding cannot draw; empty when it can.
+ *
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_embedding_error_message(rk_embedding *embedding);
+
+/**
+ * Makes a surface that this embedding draws. The embedding must be able to draw.
+ *
+ * @param surface Ownership passes to the SDK.
+ * @return The caller owns the result; release it with rk_embedded_surface_unref().
+ */
+RK_API RK_NODISCARD rk_embedded_surface *rk_embedding_open(rk_embedding *embedding, rk_embedded_surface_builder *surface);
+
+/**
+ * Adds a reference to an embedding. Passing NULL returns NULL.
+ *
+ * @return `embedding` itself.
+ */
+RK_API rk_embedding *rk_embedding_ref(rk_embedding *embedding);
+
+/**
+ * Drops a reference to an embedding; the last one destroys it. Passing NULL does nothing.
+ */
+RK_API void rk_embedding_unref(rk_embedding *embedding);
+
+/**
+ * Describes a surface whose content view declares. It follows the desktop's theme and language.
+ *
+ * @param view Declares the surface's content.
+ * @param userdata Passed to `view`.
+ * @param destroy Called with `userdata` once the SDK no longer needs it; may be NULL.
+ * @return The caller owns the result; release it with rk_embedded_surface_builder_free().
+ */
+RK_API RK_NODISCARD rk_embedded_surface_builder *rk_embedded_surface_builder_new(rk_view_fn view, void *userdata, rk_destroy_fn destroy);
+
+/**
+ * Runs once the surface opens; start timers or background work here.
+ *
+ * @param callback Reacts to an event. The window's view runs again afterwards unless
+ * rk_context_skip_view() is called.
+ * @param userdata Passed to `callback`.
+ * @param destroy Called with `userdata` once the SDK no longer needs it; may be NULL.
+ */
+RK_API void rk_embedded_surface_builder_on_start(rk_embedded_surface_builder *builder, rk_action_fn callback, void *userdata, rk_destroy_fn destroy);
+
+/**
+ * Runs when the surface's content asks to close it, through RK_WINDOW_REQUEST_CLOSE,
+ * RK_WINDOW_REQUEST_ASK_TO_CLOSE or the close command; the program decides whether to drop the
+ * surface.
+ *
+ * @param callback Reacts to an event. The window's view runs again afterwards unless
+ * rk_context_skip_view() is called.
+ * @param userdata Passed to `callback`.
+ * @param destroy Called with `userdata` once the SDK no longer needs it; may be NULL.
+ */
+RK_API void rk_embedded_surface_builder_on_close_request(rk_embedded_surface_builder *builder, rk_action_fn callback, void *userdata, rk_destroy_fn destroy);
+
+/**
+ * Destroys an embedded surface builder that was never handed over. Passing NULL does nothing.
+ */
+RK_API void rk_embedded_surface_builder_free(rk_embedded_surface_builder *builder);
+
+/**
+ * The window that callbacks of this surface receive as rk_context_window(), for posting to it
+ * from other threads.
+ *
+ * @return The caller owns the result; release it with rk_window_unref().
+ */
+RK_API RK_NODISCARD rk_window *rk_embedded_surface_window(rk_embedded_surface *surface);
+
+/**
+ * Sets the surface's size.
+ *
+ * @param width Logical width.
+ * @param height Logical height.
+ * @param scale Physical pixels per logical pixel; above 0.
+ */
+RK_API void rk_embedded_surface_resize(rk_embedded_surface *surface, float width, float height, float scale);
+
+/**
+ * Draws the surface over what an image holds, as recorded work handed to the device's submit
+ * callbacks, which the program then submits before anything that reads the image.
+ *
+ * @param target The image to draw over, as large as the surface in physical pixels. It needs
+ * color attachment and sampled usage, and stays in its layout.
+ * @return RK_STATUS_OK, or the failure; rk_last_error() describes it.
+ */
+RK_API RK_NODISCARD rk_status rk_embedded_surface_render(rk_embedded_surface *surface, rk_vulkan_image target);
+
+/**
+ * Moves the pointer.
+ *
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_pointer_move(rk_embedded_surface *surface, float x, float y);
+
+/**
+ * Presses a pointer button.
+ *
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_pointer_press(rk_embedded_surface *surface, float x, float y, rk_pointer_button button, rk_modifiers modifiers);
+
+/**
+ * Releases a pointer button.
+ *
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_pointer_release(rk_embedded_surface *surface, float x, float y, rk_pointer_button button, rk_modifiers modifiers);
+
+/**
+ * Tells the surface that the pointer left it.
+ */
+RK_API void rk_embedded_surface_pointer_leave(rk_embedded_surface *surface);
+
+/**
+ * Turns the scroll wheel.
+ *
+ * @param steps_x Wheel steps to the right; negative to the left.
+ * @param steps_y Wheel steps away from the person; negative toward them.
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_scroll(rk_embedded_surface *surface, float x, float y, float steps_x, float steps_y, rk_modifiers modifiers);
+
+/**
+ * Presses a key. Keys that type text arrive through rk_embedded_surface_type_text() instead,
+ * unless Control, Alt or Super is held with them.
+ *
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_key_press(rk_embedded_surface *surface, rk_key_code key, rk_modifiers modifiers);
+
+/**
+ * Releases a key.
+ *
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_key_release(rk_embedded_surface *surface, rk_key_code key, rk_modifiers modifiers);
+
+/**
+ * Types text that keys produced.
+ *
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_type_text(rk_embedded_surface *surface, rk_str text);
+
+/**
+ * Shows an input method's text under composition at the caret.
+ *
+ * @param caret_start The UTF-8 byte offset where the composition's caret starts, or RK_NONE.
+ * @param caret_end The byte offset where it ends, not before caret_start.
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_compose_text(rk_embedded_surface *surface, rk_str text, size_t caret_start, size_t caret_end);
+
+/**
+ * Inserts the text an input method composed, replacing any composition.
+ *
+ * @return Whether the surface used it.
+ */
+RK_API bool rk_embedded_surface_commit_text(rk_embedded_surface *surface, rk_str text);
+
+/**
+ * The pointer shape the surface asks for.
+ */
+RK_API rk_cursor_shape rk_embedded_surface_cursor(rk_embedded_surface *surface);
+
+/**
+ * Where the caret of the focused text field or editor is, for placing an input method's
+ * candidates; 0 by 0 at the origin while no text has focus.
+ */
+RK_API rk_rect rk_embedded_surface_caret(rk_embedded_surface *surface);
+
+/**
+ * Adds a reference to an embedded surface. Passing NULL returns NULL.
+ *
+ * @return `surface` itself.
+ */
+RK_API rk_embedded_surface *rk_embedded_surface_ref(rk_embedded_surface *surface);
+
+/**
+ * Drops a reference to an embedded surface; the last one destroys it. Passing NULL does
+ * nothing.
+ */
+RK_API void rk_embedded_surface_unref(rk_embedded_surface *surface);
+
+/**
  * The window the callback belongs to.
  *
  * @return Borrowed; call rk_window_ref() to keep it.
@@ -2069,6 +2457,23 @@ RK_API void rk_margin(rk_view *view, float margin);
 RK_API void rk_margin_edges(rk_view *view, float top, float right, float bottom, float left);
 
 /**
+ * Places the current element at a point of its parent, out of the flow of its siblings, which
+ * lay out as if it were absent.
+ *
+ * @param x Logical pixels from the parent's left edge.
+ * @param y Logical pixels from the parent's top edge.
+ */
+RK_API void rk_position(rk_view *view, float x, float y);
+
+/**
+ * Draws the current element larger or smaller about its top-left corner, without changing the
+ * room it takes; the pointer finds its parts where they are drawn.
+ *
+ * @param factor Above 0; 1 draws it as laid out.
+ */
+RK_API void rk_scale(rk_view *view, float factor);
+
+/**
  * Fades the current element, from 0 to 1.
  */
 RK_API void rk_opacity(rk_view *view, float opacity);
@@ -2137,6 +2542,13 @@ RK_API void rk_wrap_items(rk_view *view);
  * Gives the current box the theme's surface colour and rounded corners.
  */
 RK_API void rk_surface(rk_view *view);
+
+/**
+ * Makes the current box a glass pane with the theme's surface colour and rounded corners. Under
+ * a glass theme what lies beneath it shows through blurred, and refracted under a liquid one;
+ * in an embedded surface that is what the program drew.
+ */
+RK_API void rk_glass(rk_view *view);
 
 /**
  * Rounds the current box or picture.

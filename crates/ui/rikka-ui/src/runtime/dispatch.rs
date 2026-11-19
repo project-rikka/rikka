@@ -43,7 +43,7 @@ impl UiTree {
         event: &Event,
         stylus: Option<&Stylus>,
         root: &mut dyn State,
-    ) {
+    ) -> bool {
         self.unclaimed = None;
         self.hush_tips(event);
         let mut shared = DispatchShared::default();
@@ -132,6 +132,7 @@ impl UiTree {
                 ..
             } if !modifiers.control && !self.focus_takes_tab() => {
                 self.move_focus(!modifiers.shift, shared);
+                shared.handled = true;
             }
             Event::KeyPressed { key, modifiers, .. } => {
                 self.deliver_to_focus(event, shared, Command::for_key(*key, *modifiers));
@@ -184,10 +185,12 @@ impl UiTree {
             }
         }
 
+        let handled = shared.handled;
         self.settle_requests(shared);
         self.refresh_cursor();
         self.collect(shared);
         self.settle_caret();
+        handled
     }
 
     fn settle_requests(&mut self, shared: &mut Shared<'_>) {

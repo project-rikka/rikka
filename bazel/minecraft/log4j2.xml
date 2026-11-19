@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <Filters>
+                <RegexFilter regex="^Failed to verify authentication$" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <RegexFilter regex="^Failed to fetch user properties$" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <RegexFilter regex="^Couldn't connect to realms$" onMatch="DENY" onMismatch="NEUTRAL"/>
+                <RegexFilter regex="^Failed to fetch Realms feature flags$" onMatch="DENY" onMismatch="NEUTRAL"/>
+            </Filters>
+            <PatternLayout
+                pattern="%style{[%d{HH:mm:ss}]}{blue} %highlight{[%t/%level]}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=green, TRACE=blue} %style{(%logger{1})}{cyan} %msg{nolookups}%n"
+                disableAnsi="${sys:fabric.log.disableAnsi:-true}"/>
+        </Console>
+        <RollingRandomAccessFile name="Latest" fileName="logs/latest.log" filePattern="logs/%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level] (%logger{1}) %msg{nolookups}%n"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+        </RollingRandomAccessFile>
+        <RollingRandomAccessFile name="Debug" fileName="logs/debug.log" filePattern="logs/debug-%i.log.gz">
+            <PatternLayout pattern="[%d{HH:mm:ss}] [%t/%level] (%logger) %msg{nolookups}%n"/>
+            <DefaultRolloverStrategy max="5" fileIndex="min"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="200MB"/>
+                <OnStartupTriggeringPolicy/>
+            </Policies>
+        </RollingRandomAccessFile>
+    </Appenders>
+    <Loggers>
+        <Logger name="net.minecraft" level="${sys:fabric.log.level:-info}"/>
+        <Root level="${sys:fabric.log.debug.level:-debug}">
+            <AppenderRef ref="Console" level="${sys:fabric.log.level:-info}"/>
+            <AppenderRef ref="Latest" level="${sys:fabric.log.level:-info}"/>
+            <AppenderRef ref="Debug" level="${sys:fabric.log.debug.level:-debug}"/>
+        </Root>
+    </Loggers>
+</Configuration>

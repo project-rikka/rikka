@@ -1,0 +1,25 @@
+{
+	"required": true,
+	"package": "sh.rikka.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"ConnectionMixin",
+		"FrontendGpuDeviceAccessor",
+		"GameRendererMixin",
+		"HudMixin",
+		"KeyboardHandlerMixin",
+		"LivingEntityMixin",
+		"MinecraftMixin",
+		"MouseHandlerMixin",
+		"PreferredGraphicsApiMixin",
+		"VulkanDeviceAccessor",
+		"VulkanFeatureSetsMixin",
+		"VulkanInstanceMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

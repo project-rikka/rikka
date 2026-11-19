@@ -1,6 +1,6 @@
 use rikka_ui::{
-    Anchor, AnchorEdge, Edge, Family, Inset, Length, Space, TextAlign, TextStyled, Transition,
-    fade, fade_scale, pop, slide,
+    Anchor, AnchorEdge, Edge, Family, Inset, Length, Point, Space, TextAlign, TextStyled,
+    Transition, fade, fade_scale, pop, slide,
 };
 use rikka_widgets::{ControlSize, ImageFit};
 
@@ -71,6 +71,20 @@ pub(crate) fn margin(view: &mut View, value: f32) {
 
 pub(crate) fn margin_edges(view: &mut View, top: f32, right: f32, bottom: f32, left: f32) {
     view.current_element().common.style.margin = Some(edges(top, right, bottom, left, "margin"));
+}
+
+pub(crate) fn position(view: &mut View, x: f32, y: f32) {
+    if !(x.is_finite() && y.is_finite()) {
+        violation(format!("({x}, {y}) is not a finite position"));
+    }
+    view.current_element().common.style.position = Some(Point::new(x, y));
+}
+
+pub(crate) fn scale(view: &mut View, factor: f32) {
+    if !(factor.is_finite() && factor > 0.0) {
+        violation(format!("the scale {factor} is not above 0"));
+    }
+    view.current_element().common.scale = Some(factor);
 }
 
 pub(crate) fn opacity(view: &mut View, value: f32) {
@@ -202,6 +216,14 @@ pub(crate) fn surface(view: &mut View) {
     match &mut node.kind {
         Kind::Box { container, .. } => container.edit(|container| container.surface()),
         _ => node.refuse("surface"),
+    }
+}
+
+pub(crate) fn glass(view: &mut View) {
+    let node = view.current();
+    match &mut node.kind {
+        Kind::Box { container, .. } => container.edit(|container| container.surface().glass()),
+        _ => node.refuse("glass"),
     }
 }
 

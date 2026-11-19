@@ -13,6 +13,7 @@ mod ffmpeg_layout;
 mod gecko;
 mod host;
 mod ltc;
+mod minecraft;
 mod public_suffix;
 mod release;
 mod run;
@@ -77,6 +78,22 @@ enum Task {
     Sdk,
     #[command(about = "refresh the committed public suffix list and its test vectors")]
     PublicSuffix,
+    #[command(
+        about = "pin Minecraft, Fabric Loader and Vineflower for //minecraft, newest stable by \
+                 default"
+    )]
+    Minecraft {
+        #[arg(
+            long,
+            help = "pin this Minecraft version instead of the latest release"
+        )]
+        version: Option<String>,
+        #[arg(
+            long,
+            help = "pin this Fabric Loader version instead of the latest stable one"
+        )]
+        loader: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -300,5 +317,12 @@ fn main() -> Result<()> {
         Task::Ltc => ltc::run(&workspace),
         Task::Sdk => sdk::regenerate(&workspace),
         Task::PublicSuffix => public_suffix::refresh(&workspace),
+        Task::Minecraft { version, loader } => minecraft::pin(
+            &workspace,
+            minecraft::Request {
+                minecraft: version,
+                loader,
+            },
+        ),
     }
 }

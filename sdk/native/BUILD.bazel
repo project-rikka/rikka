@@ -22,6 +22,9 @@ rikka_shared_library(
         "//crates/desktop/rikka-open",
         "//crates/foundation/rikka-i18n",
         "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
         "//crates/media/rikka-audio",
         "//crates/media/rikka-movie",
         "//crates/ui/rikka-app",
@@ -29,6 +32,7 @@ rikka_shared_library(
         "//crates/ui/rikka-ui",
         "//crates/ui/rikka-ui-video",
         "//crates/ui/rikka-widgets",
+        "@crates//:ash",
     ],
 )
 

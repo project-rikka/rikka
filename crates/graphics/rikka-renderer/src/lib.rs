@@ -13,8 +13,8 @@ pub use fx::{
 pub use present::{Acquired, Buffering, Present, Sizing, SurfaceConfig};
 pub use renderer::{
     AlphaMode, ColorId, Colors, CopiedDraw, CopySink, Damage, DamageSource, Destination, Extension,
-    ExtensionSlot, FrameStart, FrameWork, ImageColor, Preparer, Readback, Recorded, RenderOutput,
-    Renderer, RendererParts, TRIM_AFTER, Textures,
+    ExtensionSlot, ExternalDraw, ExternalImage, ExternalTarget, FrameStart, FrameWork, ImageColor,
+    Preparer, Readback, Recorded, RenderOutput, Renderer, RendererParts, TRIM_AFTER, Textures,
 };
 #[cfg(unix)]
 pub use renderer::{DmabufDraw, DmabufFence, DmabufFrame, DmabufOutput};

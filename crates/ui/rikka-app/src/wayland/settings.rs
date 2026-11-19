@@ -6,7 +6,12 @@ use rikka_settings::seam::protocol;
 use rikka_settings::session::{appearance, language};
 use rikka_settings::{Schema, Store};
 
-use crate::tasks::{LoopEvent, LoopProxy};
+use rikka_theme::Theme;
+
+pub(crate) enum SessionChange {
+    Theme(Box<Theme>),
+    Language,
+}
 
 pub(crate) fn apply_session_locale() {
     match Store::open(language::schema()) {
@@ -17,19 +22,23 @@ pub(crate) fn apply_session_locale() {
     }
 }
 
-pub(crate) fn follow(proxy: LoopProxy, appearance: Option<Appearance>, language: bool) {
+pub(crate) fn follow(
+    deliver: impl Fn(SessionChange) -> bool + Send + 'static,
+    appearance: Option<Appearance>,
+    language: bool,
+) {
     if appearance.is_none() && !language {
         return;
     }
     let spawned = std::thread::Builder::new()
         .name("rikka-app-session".to_owned())
-        .spawn(move || watch(&proxy, appearance, language));
+        .spawn(move || watch(&deliver, appearance, language));
     if let Err(error) = spawned {
         tracing::warn!("failed to watch session settings: {error}");
     }
 }
 
-fn watch(proxy: &LoopProxy, appearance: Option<Appearance>, language: bool) {
+fn watch(deliver: &impl Fn(SessionChange) -> bool, appearance: Option<Appearance>, language: bool) {
     let connection = match SocketClient::from_env() {
         Ok(connection) => connection,
         Err(reason) => {
@@ -45,14 +54,14 @@ fn watch(proxy: &LoopProxy, appearance: Option<Appearance>, language: bool) {
         .flatten();
 
     if let Some(theme) = theme_watch.as_mut().and_then(ThemeWatch::current_theme)
-        && proxy.send_event(LoopEvent::Theme(Box::new(theme))).is_err()
+        && !deliver(SessionChange::Theme(Box::new(theme)))
     {
         return;
     }
     if locale_watch
         .as_mut()
         .is_some_and(LocaleWatch::apply_current)
-        && proxy.send_event(LoopEvent::Language).is_err()
+        && !deliver(SessionChange::Language)
     {
         return;
     }
@@ -62,11 +71,11 @@ fn watch(proxy: &LoopProxy, appearance: Option<Appearance>, language: bool) {
             .as_mut()
             .is_some_and(|watch| watch.handle(&notice));
         if let Some(theme) = theme
-            && proxy.send_event(LoopEvent::Theme(Box::new(theme))).is_err()
+            && !deliver(SessionChange::Theme(Box::new(theme)))
         {
             return;
         }
-        if language && proxy.send_event(LoopEvent::Language).is_err() {
+        if language && !deliver(SessionChange::Language) {
             return;
         }
     }

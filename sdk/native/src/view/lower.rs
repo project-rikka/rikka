@@ -3,7 +3,7 @@ use rikka_ui::{
 };
 use rikka_widgets::{
     Sheet, card, column_of, container, context_area, field, list, menu, page, page_stack, popover,
-    row_of, rule, rule_upright, scrim, scrollable, section, sheet, spacer, split,
+    row_of, rule, rule_upright, scaled, scrim, scrollable, section, sheet, spacer, split,
 };
 
 use crate::abi::violation;
@@ -293,6 +293,7 @@ fn decorate(mut element: Element, common: Common) -> Element {
         key,
         tooltip,
         opacity,
+        scale,
         background,
         transition,
         anchor,
@@ -329,6 +330,10 @@ fn decorate(mut element: Element, common: Common) -> Element {
     if !drops.is_empty() {
         wrapping(&mut element);
         element = drops.wrap(element);
+    }
+    if let Some(factor) = scale {
+        wrapping(&mut element);
+        element = scaled(element, factor);
     }
     if style != Style::default() {
         merge(element.style_mut(), &style);

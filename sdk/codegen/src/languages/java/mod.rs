@@ -528,6 +528,32 @@ struct Native<'a> {
     error: Option<ErrorItem>,
 }
 
+fn padded_fields(spelling: &Spelling, fields: &[crate::model::Field]) -> Vec<String> {
+    let mut laid = Vec::new();
+    let mut offset = 0;
+    let mut alignment = 1;
+    let pad = |laid: &mut Vec<String>, offset: &mut u64, to: u64| {
+        let gap = offset.next_multiple_of(to) - *offset;
+        if gap > 0 {
+            laid.push(format!("MemoryLayout.paddingLayout({gap})"));
+            *offset += gap;
+        }
+    };
+    for field in fields {
+        let width = spelling.width(field.ty);
+        pad(&mut laid, &mut offset, width);
+        laid.push(format!(
+            "{}.withName(\"{}\")",
+            spelling.layout(field.ty),
+            field.name
+        ));
+        offset += width;
+        alignment = alignment.max(width);
+    }
+    pad(&mut laid, &mut offset, alignment);
+    laid
+}
+
 impl<'a> Native<'a> {
     fn new(spelling: &Spelling, abi: &Abi, header: &'a Header) -> Self {
         let api = spelling.api;
@@ -541,14 +567,7 @@ impl<'a> Native<'a> {
                 };
                 Layout {
                     name: layout.clone(),
-                    fields: item
-                        .fields
-                        .iter()
-                        .map(|field| {
-                            format!("{}.withName(\"{}\")", spelling.layout(field.ty), field.name)
-                        })
-                        .collect::<Vec<_>>()
-                        .join(", "),
+                    fields: padded_fields(spelling, &item.fields).join(", "),
                     offsets: item
                         .fields
                         .iter()

@@ -33,6 +33,7 @@ rikka_library(
             "//crates/session/rikka-session",
             "//crates/session/rikka-settings",
             "//crates/ui/rikka-seat",
+            "@crates//:rustc-hash",
         ],
         "@platforms//os:windows": [
             "//crates/desktop/rikka-clipboard-core",

@@ -1,0 +1,16 @@
+---
+title: Embedding rikka-ui in another program's Vulkan frames
+description: ExternalDevice/ExternalTarget, rikka-ui-host Composer, rikka_app::embedded and the SDK embedded_surface rules.
+about: crates/ui/rikka-app/src/embedded
+tags: [ui, vulkan]
+---
+
+- Layers: `rikka_gpu::{ExternalDevice, ExternalHandles, HostSubmit}` with `GpuBuilder::external`, then `Renderer::new(&gpu)` and `rikka_renderer::{ExternalTarget, ExternalImage}` → `rikka_ui_host::Composer<K>` (synchronous host: tasks, resources, render, glass panes, draw on the calling thread) → `rikka_app::embedded::{Embedding, Embedded<S>, SurfaceId}` (session theme, locale, data-control clipboard, `Sender<S>` routed by `Route::Embedded`) → SDK `vulkan_device`/`embedding`/`embedded_surface`.
+- `RenderDevice::adopt` (rikka-gpu `core/device/adoption.rs`) borrows the host's instance, device and one queue (`Ownership::Borrowed`: nothing destroyed, `wait_idle` is a queue wait). The host passes its enabled extensions and its `VkPhysicalDeviceFeatures2` chain; `FeatureChain::enabled_in` (`core/enabled_features.rs`) reads core and extension feature structs, and missing ones fail with `Error::Unsupported`. A DRM node, video, background or upload queues, latency-critical queues and ray tracing are refused beside an external device (`Error::Invalid`).
+- The renderer never submits on an external device: `RenderDevice::submit` hands `SubmitInfo2` batches to `HostSubmit`, which the host splices into its own queue order. A render waits on the frame three renders back, so the host submits at least every two renders.
+- `ExternalTarget::onto(ExternalImage)` draws over the image's contents (`Canvas::over_contents` → no clears, whole-scene damage each draw so backdrop caches re-blur the changed underlay); the image stays in its layout (`ALL_COMMANDS` barriers both ways) and `transform` covers bottom-up hosts (`Flipped180`). Images need color-attachment and sampled usage.
+- rikka-ui glass regions (`Ui::glass()`, physical px) become backdrop nodes at z −1 with the theme's blur radius × lens frost × scale and the lens scaled by the UI scale (rikka-ui-host `panes.rs`), as the compositor does for windows; solid themes draw no blur. `Composer` beats image pulses after each draw and shares rikka-ui-host's `tasks.rs` (`Tasks`, aborted on drop) with `Embedder`.
+- `Embedding` takes `&self` everywhere: opens, closes and resizes requested from inside its own callbacks are deferred and applied when the running call returns; re-entering `handle_event`/`draw` panics. Close and ask-to-close requests and the unclaimed close command run the surface's close handler; other window requests are ignored.
+- `Ui::handle_event` returns whether a widget used the event; hosts route unused input themselves.
+- `rikka_widgets::scaled(child, factor)` (SDK `scale` modifier) zooms a subtree's drawing about its top-left via `PaintCtx::set_subtree_scale`; hit routes (including anchored ones) and delivered pointer positions are unzoomed through `runtime/zoom.rs`, so zoomed controls are hit where drawn; the paint walk raises the `ZOOMED` table flag so unzoomed trees skip the lookups.
+- Tests: GPU tests in `rikka-renderer/tests/external.rs` make their own host device (`tests/external/host.rs`).

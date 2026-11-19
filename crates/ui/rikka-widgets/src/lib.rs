@@ -29,6 +29,7 @@ pub use blocks::live::{Live, live, live_observed};
 pub use blocks::page::{Field, card, field, page, section};
 pub use blocks::popover::{Popover, popover};
 pub use blocks::rule::{rule, rule_upright};
+pub use blocks::scaled::{Scaled, scaled};
 pub use blocks::scrim::{Scrim, scrim};
 pub use blocks::scrollable::{Scrollable, scrollable};
 pub use blocks::sheet::{Sheet, Unsaved, alert_prompt, confirm_prompt, sheet, unsaved_prompt};

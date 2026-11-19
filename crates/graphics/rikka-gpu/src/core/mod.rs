@@ -7,6 +7,7 @@ pub mod convert;
 pub mod device;
 #[cfg(unix)]
 pub mod dmabuf_support;
+mod enabled_features;
 mod exit;
 pub(crate) mod fault;
 pub mod frame;

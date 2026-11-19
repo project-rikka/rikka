@@ -49,7 +49,8 @@ impl<'a> ScenePass<'a> {
         let mut scissor = Scissor::new(self.frame_target);
         let mut retained: Vec<Option<Capture>> = Vec::new();
         let all_occluded = !pieces.is_empty() && pieces.iter().all(|piece| piece.floor.is_some());
-        match (damage, all_occluded) {
+        let uncleared = all_occluded || self.frame_target.underlay;
+        match (damage, uncleared) {
             (_, true) => self.begin(ctx, render_area, None),
             ([_], false) => self.begin(ctx, render_area, Some(self.background())),
             (_, false) => {

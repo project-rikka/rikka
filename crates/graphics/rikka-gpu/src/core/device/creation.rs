@@ -1,4 +1,5 @@
 use std::ffi::{CStr, CString, c_char};
+use std::sync::Arc;
 
 #[cfg(unix)]
 use ash::khr;
@@ -8,13 +9,14 @@ use crate::core::caps::{DeviceProperties, FeatureChain, FeatureRequest};
 #[cfg(unix)]
 use crate::core::dmabuf_support::DmabufSupport;
 use crate::core::fault::FaultReport;
-use crate::core::instance::VulkanInstance;
+use crate::core::instance::{Ownership, VulkanInstance};
 use crate::core::memory::{DeviceMemory, MemoryFeatures};
 use crate::core::pipeline_cache::PipelineCache;
 use crate::core::queue_lock::LockedQueue;
 use crate::core::ray_support::{self, RayTracing};
 use crate::core::video_support::{self, VideoSupport};
 use crate::error::Result;
+use crate::external::HostSubmit;
 
 #[cfg(unix)]
 use super::DmabufDevice;
@@ -25,21 +27,23 @@ use super::{Interop, RenderDevice};
 #[cfg(windows)]
 use crate::win32::Win32Device;
 
-struct Finish {
-    instance: VulkanInstance,
-    physical: vk::PhysicalDevice,
-    queue_family: u32,
-    device: ash::Device,
-    graphics: LockedQueue,
-    background: Option<FamilyQueue>,
-    transfer: Option<FamilyQueue>,
-    extensions: Vec<CString>,
-    video: Option<VideoSupport>,
-    interop: Interop,
-    memory: MemoryFeatures,
-    wants: FeatureRequest,
-    ray_tracing: bool,
-    faults: bool,
+pub(super) struct Finish {
+    pub(super) instance: VulkanInstance,
+    pub(super) physical: vk::PhysicalDevice,
+    pub(super) queue_family: u32,
+    pub(super) device: ash::Device,
+    pub(super) graphics: LockedQueue,
+    pub(super) background: Option<FamilyQueue>,
+    pub(super) transfer: Option<FamilyQueue>,
+    pub(super) extensions: Vec<CString>,
+    pub(super) video: Option<VideoSupport>,
+    pub(super) interop: Interop,
+    pub(super) memory: MemoryFeatures,
+    pub(super) wants: FeatureRequest,
+    pub(super) ray_tracing: bool,
+    pub(super) faults: bool,
+    pub(super) ownership: Ownership,
+    pub(super) host: Option<Arc<dyn HostSubmit>>,
 }
 
 impl RenderDevice {
@@ -84,10 +88,12 @@ impl RenderDevice {
             wants,
             ray_tracing: enabled.ray_tracing,
             faults: enabled.faults,
+            ownership: Ownership::Owned,
+            host: None,
         })
     }
 
-    fn finish(parts: Finish) -> Result<Self> {
+    pub(super) fn finish(parts: Finish) -> Result<Self> {
         let Finish {
             instance,
             physical,
@@ -103,6 +109,8 @@ impl RenderDevice {
             wants,
             ray_tracing,
             faults,
+            ownership,
+            host,
         } = parts;
 
         let memory = DeviceMemory::new(
@@ -145,6 +153,8 @@ impl RenderDevice {
             debug,
             ray_tracing,
             fault,
+            ownership,
+            host,
         };
         built.set_object_name(built.graphics.handle(), "rikka.queue.graphics");
         if let Some(background) = &built.background {

@@ -1043,6 +1043,10 @@
 
 - [rikka-app Windows backend (src/win32)](win32-app-backend.md) — How rikka-app runs windows on Win32: loop, window procedure, custom frame, swapchain presenting, input, DnD, appearance.
 
+## crates/ui/rikka-app/src/embedded
+
+- [Embedding rikka-ui in another program's Vulkan frames](rikka-ui-embedding.md) — ExternalDevice/ExternalTarget, rikka-ui-host Composer, rikka_app::embedded and the SDK embedded_surface rules.
+
 ## crates/ui/rikka-nested
 
 - [Nested in-process compositor (rikka-nested)](compositor-nested.md) — Nested/View/nested_view: a private Wayland display on a rikka-nested thread whose toplevels show zero-copy in a widget.
@@ -1134,6 +1138,14 @@
 ## installer
 
 - [Installer architecture](installer-architecture.md) — The isolated ratatui NixOS installer, layered core → sys → tui, built static for musl.
+
+## minecraft
+
+- [Minecraft Fabric mod build (Rikka Client)](minecraft.md) — minecraft/ holds the Rikka Client Fabric mod built by Bazel: lock, @minecraft repos, fabric_mod, run, mcsrc sources.
+
+## minecraft/src/main/java/sh/rikka/client
+
+- [Rikka Client mod framework (events, mods, settings, profiles)](minecraft-client-framework.md) — sh.rikka.client packages: EventBus, ClientHooks, Mod/HudMod/ModManager, rikka-ui layers and screens, settings, profiles.
 
 ## nix/dist
 

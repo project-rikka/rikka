@@ -435,6 +435,7 @@ impl Painter {
                 texture: canvas.texels,
                 turn: plan.transform,
                 scene: damage.viewport,
+                underlay: canvas.underlay,
                 space: plan.space,
             };
             self.draw_scene(&mut ctx, draw, frame_target, damage.pass)?;
@@ -512,6 +513,7 @@ impl Painter {
                 texture: image.extent(),
                 turn: Transform::Normal,
                 scene: damage.viewport,
+                underlay: false,
                 space: plan.space,
             };
             self.draw_scene(ctx, draw, frame_target, damage.pass)?;

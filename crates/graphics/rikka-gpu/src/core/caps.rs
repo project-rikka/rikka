@@ -88,7 +88,7 @@ impl FeatureChain {
         chain
     }
 
-    fn detach(&mut self) {
+    pub(super) fn detach(&mut self) {
         self.features11.p_next = std::ptr::null_mut();
         self.features12.p_next = std::ptr::null_mut();
         self.features13.p_next = std::ptr::null_mut();

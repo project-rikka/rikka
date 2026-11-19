@@ -10,6 +10,9 @@ use rikka_ui::RuntimeMessage;
 use rikka_ui_host::TaskSink;
 use rikka_worker::EventNotifier;
 
+#[cfg(unix)]
+use crate::wayland::settings::SessionChange;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub(crate) struct WindowId(u64);
 
@@ -53,6 +56,16 @@ pub(crate) enum LoopEvent {
     Drag(Box<crate::wayland::data_device::DragEvent>),
     #[cfg(unix)]
     Presented(rikka_wayland::PresentationFeedback),
+}
+
+#[cfg(unix)]
+impl From<SessionChange> for LoopEvent {
+    fn from(change: SessionChange) -> Self {
+        match change {
+            SessionChange::Theme(theme) => LoopEvent::Theme(theme),
+            SessionChange::Language => LoopEvent::Language,
+        }
+    }
 }
 
 pub(crate) struct TaskMessage {

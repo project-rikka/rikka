@@ -1,4 +1,10 @@
-use rikka_ui::{Command, Key, Modifiers};
+use std::ops::Range;
+
+use rikka_types::{CursorShape, ResizeEdge, SCROLL_LINE};
+use rikka_ui::{
+    Command, Event, Key, KeyCode, KeyLocation, Modifiers, Point, PointerButton, ScrollDelta,
+    ScrollSource,
+};
 
 use crate::abi::violation;
 use crate::ffi;
@@ -78,5 +84,109 @@ pub(crate) fn command(command: ffi::Command) -> Command {
         ffi::Command::Fullscreen => Command::Fullscreen,
         ffi::Command::Preferences => Command::Preferences,
         ffi::Command::ContextMenu => Command::ContextMenu,
+    }
+}
+
+pub(crate) fn point(x: f32, y: f32) -> Point {
+    if !(x.is_finite() && y.is_finite()) {
+        violation(format!("({x}, {y}) is not a finite point"));
+    }
+    Point::new(x, y)
+}
+
+pub(crate) fn button(button: ffi::PointerButton) -> PointerButton {
+    match button {
+        ffi::PointerButton::Left => PointerButton::Primary,
+        ffi::PointerButton::Right => PointerButton::Secondary,
+        ffi::PointerButton::Middle => PointerButton::Middle,
+        ffi::PointerButton::Back => PointerButton::Back,
+        ffi::PointerButton::Forward => PointerButton::Forward,
+    }
+}
+
+pub(crate) fn wheel(at: Point, steps_x: f32, steps_y: f32, modifiers: Modifiers) -> Event {
+    if !(steps_x.is_finite() && steps_y.is_finite()) {
+        violation(format!("({steps_x}, {steps_y}) are not finite wheel steps"));
+    }
+    Event::Scroll {
+        position: at,
+        delta: ScrollDelta::from_content(Point::new(-steps_x * SCROLL_LINE, steps_y * SCROLL_LINE)),
+        modifiers,
+        source: ScrollSource::Wheel,
+    }
+}
+
+pub(crate) fn key_press(key: Key, modifiers: Modifiers) -> Event {
+    Event::KeyPressed {
+        key,
+        code: KeyCode::UNKNOWN,
+        location: KeyLocation::Standard,
+        modifiers,
+    }
+}
+
+pub(crate) fn key_release(key: Key, modifiers: Modifiers) -> Event {
+    Event::KeyReleased {
+        key,
+        code: KeyCode::UNKNOWN,
+        location: KeyLocation::Standard,
+        modifiers,
+    }
+}
+
+pub(crate) fn typed(text: &str) -> impl Iterator<Item = Key> + '_ {
+    text.chars()
+        .filter(|character| !character.is_control())
+        .map(|character| match character {
+            ' ' => Key::Space,
+            character => Key::Char(character),
+        })
+}
+
+pub(crate) fn caret(text: &str, start: usize, end: usize) -> Option<Range<usize>> {
+    if start == usize::MAX {
+        return None;
+    }
+    let valid = start <= end && text.is_char_boundary(start) && text.is_char_boundary(end);
+    if !valid {
+        violation(format!(
+            "{start}..{end} is not a caret on character boundaries of the composition"
+        ));
+    }
+    Some(start..end)
+}
+
+pub(crate) fn cursor(shape: CursorShape) -> ffi::CursorShape {
+    match shape {
+        CursorShape::Hidden => ffi::CursorShape::Hidden,
+        CursorShape::Pointer => ffi::CursorShape::Pointer,
+        CursorShape::Text | CursorShape::VerticalText => ffi::CursorShape::Text,
+        CursorShape::Wait => ffi::CursorShape::Wait,
+        CursorShape::Progress => ffi::CursorShape::Progress,
+        CursorShape::Cell | CursorShape::Crosshair => ffi::CursorShape::Crosshair,
+        CursorShape::Move | CursorShape::AllScroll => ffi::CursorShape::Move,
+        CursorShape::Grab => ffi::CursorShape::Grab,
+        CursorShape::Grabbing => ffi::CursorShape::Grabbing,
+        CursorShape::NoDrop | CursorShape::NotAllowed => ffi::CursorShape::NotAllowed,
+        CursorShape::ResizeColumn | CursorShape::ResizeEastWest => {
+            ffi::CursorShape::ResizeHorizontal
+        }
+        CursorShape::ResizeRow | CursorShape::ResizeNorthSouth => ffi::CursorShape::ResizeVertical,
+        CursorShape::ResizeNorthWestSouthEast => ffi::CursorShape::ResizeDiagonalDown,
+        CursorShape::ResizeNorthEastSouthWest => ffi::CursorShape::ResizeDiagonalUp,
+        CursorShape::Resize(edge) => match edge {
+            ResizeEdge::Left | ResizeEdge::Right => ffi::CursorShape::ResizeHorizontal,
+            ResizeEdge::Top | ResizeEdge::Bottom => ffi::CursorShape::ResizeVertical,
+            ResizeEdge::TopLeft | ResizeEdge::BottomRight => ffi::CursorShape::ResizeDiagonalDown,
+            ResizeEdge::TopRight | ResizeEdge::BottomLeft => ffi::CursorShape::ResizeDiagonalUp,
+        },
+        CursorShape::ZoomIn => ffi::CursorShape::ZoomIn,
+        CursorShape::ZoomOut => ffi::CursorShape::ZoomOut,
+        CursorShape::Help => ffi::CursorShape::Help,
+        CursorShape::Default
+        | CursorShape::ContextMenu
+        | CursorShape::Alias
+        | CursorShape::Copy
+        | CursorShape::Image(_) => ffi::CursorShape::Default,
     }
 }

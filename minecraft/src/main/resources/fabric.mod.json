@@ -1,0 +1,21 @@
+{
+	"schemaVersion": 1,
+	"id": "rikka-client",
+	"version": "${version}",
+	"name": "Rikka Client",
+	"description": "A Minecraft PvP client for Rikka.",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"sh.rikka.client.RikkaClient"
+		]
+	},
+	"mixins": [
+		"rikka-client.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=${java_release}"
+	}
+}

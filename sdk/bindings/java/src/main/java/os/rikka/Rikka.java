@@ -19,7 +19,7 @@ public final class Rikka {
      * The version of librikka this binding declares, packed as
      * major &lt;&lt; 22 | minor &lt;&lt; 12 | patch.
      */
-    public static final int BINDING_VERSION = 8192;
+    public static final int BINDING_VERSION = 12288;
 
     /**
      * As an index: nothing is selected.

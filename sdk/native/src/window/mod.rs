@@ -7,11 +7,13 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use rikka_app::{SendError, Sender};
-use rikka_ui::{State, WindowRef};
+use rikka_ui::{Element, State, WindowRef};
 
-use crate::abi::{AnyThread, Closure};
+use crate::abi::{self, AnyThread, Closure};
 use crate::context::Context;
 use crate::ffi;
+use crate::handlers::Callback;
+use crate::view::View;
 
 pub(crate) use builder::WindowBuilder;
 pub(crate) use dialogs::Dialogs;
@@ -69,7 +71,7 @@ pub(crate) struct Model {
 }
 
 impl Model {
-    fn new(sender: Sender<Model>, title: String) -> Self {
+    pub(crate) fn new(sender: Sender<Model>, title: String) -> Self {
         Self {
             window: Arc::new(Window {
                 sender,
@@ -83,7 +85,14 @@ impl Model {
         Context::new(Arc::clone(&self.window), Rc::clone(&self.dialogs))
     }
 
-    pub(crate) fn dialogs(&self) -> &Dialogs {
-        &self.dialogs
+    pub(crate) fn window(&self) -> &Arc<Window> {
+        &self.window
+    }
+
+    pub(crate) fn render(&self, view: &Callback<ffi::ViewFn>) -> Element {
+        let _entry = abi::enter("rk_view_fn");
+        let mut built = View::new();
+        view.call(&mut built);
+        built.finish_window(self.dialogs.elements())
     }
 }

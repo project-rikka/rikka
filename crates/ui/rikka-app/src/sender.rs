@@ -4,6 +4,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use rikka_ui::{RuntimeMessage, State, Update, WindowRef};
 
+#[cfg(unix)]
+use crate::embedded::{Mail, Post, SurfaceId};
 use crate::error::SendError;
 use crate::tasks::{LoopEvent, LoopProxy, TaskMessage, WindowId};
 
@@ -31,23 +33,41 @@ impl Drop for WindowAlive {
 }
 
 #[derive(Clone)]
-pub(crate) struct Route {
-    pub proxy: LoopProxy,
-    pub window: WindowId,
+pub(crate) enum Route {
+    Window {
+        proxy: LoopProxy,
+        window: WindowId,
+    },
+    #[cfg(unix)]
+    Embedded {
+        post: Post,
+        surface: SurfaceId,
+    },
 }
 
 impl Route {
     fn window(&self) -> WindowRef {
-        WindowRef::new(u64::from(self.window))
+        match self {
+            Route::Window { window, .. } => WindowRef::new(u64::from(*window)),
+            #[cfg(unix)]
+            Route::Embedded { surface, .. } => WindowRef::new(surface.get()),
+        }
     }
 
     fn deliver(&self, inbound: RuntimeMessage) -> bool {
-        self.proxy
-            .send_event(LoopEvent::Message(TaskMessage {
-                window: self.window,
+        match self {
+            Route::Window { proxy, window } => proxy
+                .send_event(LoopEvent::Message(TaskMessage {
+                    window: *window,
+                    inbound,
+                }))
+                .is_ok(),
+            #[cfg(unix)]
+            Route::Embedded { post, surface } => post.send(Mail::Message {
+                surface: *surface,
                 inbound,
-            }))
-            .is_ok()
+            }),
+        }
     }
 }
 

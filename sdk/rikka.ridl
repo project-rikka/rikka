@@ -3,7 +3,7 @@
 /// invalid UTF-8, an unknown enum value, an element function outside a view, a handle used on the
 /// wrong thread) prints a diagnostic and aborts the process. Failures the caller cannot rule out
 /// are reported through [status] and [last_error].
-library rikka version "0.2.0" abi_prefix rk;
+library rikka version "0.3.0" abi_prefix rk;
 
 /// As an index: nothing is selected.
 const none: usize = max;
@@ -335,6 +335,65 @@ flags modifiers {
     logo = 0x8,
 }
 
+/// A pointer button.
+enum pointer_button {
+    left,
+    right,
+    middle,
+    back,
+    forward,
+}
+
+/// A pointer shape.
+enum cursor_shape {
+    default,
+    hidden,
+    /// A hand over something to press.
+    pointer,
+    text,
+    wait,
+    progress,
+    crosshair,
+    move,
+    grab,
+    grabbing,
+    not_allowed,
+    resize_horizontal,
+    resize_vertical,
+    resize_diagonal_down,
+    resize_diagonal_up,
+    zoom_in,
+    zoom_out,
+    help,
+}
+
+/// A rectangle in logical pixels.
+struct rect {
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+}
+
+/// A Vulkan image of another program.
+struct vulkan_image {
+    /// The VkImage.
+    image: u64,
+    /// A VkImageView of its single color level and layer.
+    view: u64,
+    /// Its VkFormat.
+    format: u32,
+    /// Its width in pixels.
+    width: u32,
+    /// Its height in pixels.
+    height: u32,
+    /// The VkImageLayout it is in.
+    layout: u32,
+    /// Whether its rows run from the bottom up, as in images an OpenGL-style program flips when it
+    /// shows them.
+    bottom_up: bool,
+}
+
 /// Declares content into a view. It runs whenever the content may have changed and must only
 /// describe it.
 /// @param view The view to declare into.
@@ -389,6 +448,16 @@ callback unsaved_fn(context: context, answer: unsaved_answer);
 
 /// Does blocking work on a background thread.
 callback work_fn();
+
+/// Hands over a semaphore operation of a Vulkan submission.
+/// @param semaphore The VkSemaphore.
+/// @param value The timeline value, or 0 for a binary semaphore.
+/// @param stages The VkPipelineStageFlags2 it applies to.
+callback vulkan_semaphore_fn(semaphore: u64, value: u64, stages: u64);
+
+/// Hands over a command buffer of a Vulkan submission.
+/// @param command_buffer The VkCommandBuffer.
+callback vulkan_commands_fn(command_buffer: u64);
 
 /// The version of the loaded library, packed as major << 22 | minor << 12 | patch.
 @thread_safe
@@ -733,6 +802,160 @@ local class text_document {
     fn redo() -> bool;
 }
 
+/// The Vulkan device of a program that draws embedded surfaces into its own frames. Rikka draws
+/// with this device and its queue instead of making its own, so the program must have created
+/// them for Vulkan 1.3 with the features listed in [vulkan_device.set_features]. Rikka never
+/// submits to the queue itself: it hands each submission to the program in order through the
+/// submit callbacks, and the program submits it on that queue before its own later work. A
+/// render waits for the work handed over three renders before, so the program submits at least
+/// once every two renders.
+@builder
+owned class vulkan_device {
+    /// Describes a program's device.
+    /// @param get_instance_proc_addr The address of the vkGetInstanceProcAddr the program loaded.
+    /// @param instance The VkInstance.
+    /// @param api_version The apiVersion the instance was created with; at least 1.3.
+    /// @param physical_device The VkPhysicalDevice the device was made on.
+    /// @param device The VkDevice; it must outlive every embedding drawing with it.
+    /// @param queue The VkQueue the program submits Rikka's work on; it must support graphics.
+    /// @param queue_family The family of that queue.
+    /// @param submit Receives each submission in order: semaphores to wait on before the command
+    /// buffers that follow, command buffers to execute, and semaphores to signal after them. Values
+    /// of binary semaphores are 0; stages are VkPipelineStageFlags2.
+    constructor(
+        get_instance_proc_addr: u64,
+        instance: u64,
+        api_version: u32,
+        physical_device: u64,
+        device: u64,
+        queue: u64,
+        queue_family: u32,
+        @any_thread submit: (
+            wait: vulkan_semaphore_fn,
+            execute: vulkan_commands_fn,
+            signal: vulkan_semaphore_fn
+        )
+    );
+
+    /// Names an instance extension the program enabled.
+    fn add_instance_extension(name: string);
+
+    /// Names a device extension the program enabled.
+    fn add_device_extension(name: string);
+
+    /// Describes the features the program enabled, read during the call. Rikka needs
+    /// timelineSemaphore, runtimeDescriptorArray, shaderSampledImageArrayNonUniformIndexing,
+    /// descriptorBindingSampledImageUpdateAfterBind, descriptorBindingPartiallyBound,
+    /// descriptorBindingUpdateUnusedWhilePending, dynamicRendering and synchronization2, from their
+    /// Vulkan 1.2 and 1.3 feature structures or the structures of the extensions they come from.
+    /// @param features The address of the VkPhysicalDeviceFeatures2 whose chain the device was
+    /// created with.
+    fn set_features(features: u64);
+}
+
+/// Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
+/// renders on the thread that submits to the device's queue.
+local class embedding {
+    /// Prepares to draw with a device. Check [embedding.error_message] before opening surfaces.
+    constructor(device: owned vulkan_device);
+
+    /// Why the embedding cannot draw; empty when it can.
+    readonly property error_message: string;
+
+    /// Makes a surface that this embedding draws. The embedding must be able to draw.
+    fn open(surface: owned embedded_surface_builder) -> embedded_surface;
+}
+
+/// The description of an embedded surface.
+@builder
+owned class embedded_surface_builder {
+    /// Describes a surface whose content view declares. It follows the desktop's theme and
+    /// language.
+    /// @param view Declares the surface's content.
+    constructor(view: view_fn);
+
+    /// Runs once the surface opens; start timers or background work here.
+    fn on_start(callback: action_fn);
+
+    /// Runs when the surface's content asks to close it, through [window_request.close],
+    /// [window_request.ask_to_close] or the close command; the program decides whether to drop the
+    /// surface.
+    fn on_close_request(callback: action_fn);
+}
+
+/// A view drawn over a program's own frames: a heads-up display or a menu inside a game, for
+/// example. Its glass and frosted panes blur and refract what the program drew beneath them. The
+/// program forwards input in logical pixels from the surface's top-left corner, and each input
+/// function says whether the surface used the input. It closes when its last reference is gone.
+local class embedded_surface {
+    /// The window that callbacks of this surface receive as [context.window], for posting to it
+    /// from other threads.
+    readonly property window: window;
+
+    /// Sets the surface's size.
+    /// @param width Logical width.
+    /// @param height Logical height.
+    /// @param scale Physical pixels per logical pixel; above 0.
+    fn resize(width: f32, height: f32, scale: f32);
+
+    /// Draws the surface over what an image holds, as recorded work handed to the device's submit
+    /// callbacks, which the program then submits before anything that reads the image.
+    /// @param target The image to draw over, as large as the surface in physical pixels. It needs
+    /// color attachment and sampled usage, and stays in its layout.
+    fn render(target: vulkan_image) throws status;
+
+    /// Moves the pointer.
+    /// @returns Whether the surface used it.
+    fn pointer_move(x: f32, y: f32) -> bool;
+
+    /// Presses a pointer button.
+    /// @returns Whether the surface used it.
+    fn pointer_press(x: f32, y: f32, button: pointer_button, modifiers: modifiers) -> bool;
+
+    /// Releases a pointer button.
+    /// @returns Whether the surface used it.
+    fn pointer_release(x: f32, y: f32, button: pointer_button, modifiers: modifiers) -> bool;
+
+    /// Tells the surface that the pointer left it.
+    fn pointer_leave();
+
+    /// Turns the scroll wheel.
+    /// @param steps_x Wheel steps to the right; negative to the left.
+    /// @param steps_y Wheel steps away from the person; negative toward them.
+    /// @returns Whether the surface used it.
+    fn scroll(x: f32, y: f32, steps_x: f32, steps_y: f32, modifiers: modifiers) -> bool;
+
+    /// Presses a key. Keys that type text arrive through [embedded_surface.type_text] instead,
+    /// unless Control, Alt or Super is held with them.
+    /// @returns Whether the surface used it.
+    fn key_press(key: key_code, modifiers: modifiers) -> bool;
+
+    /// Releases a key.
+    /// @returns Whether the surface used it.
+    fn key_release(key: key_code, modifiers: modifiers) -> bool;
+
+    /// Types text that keys produced.
+    /// @returns Whether the surface used it.
+    fn type_text(text: string) -> bool;
+
+    /// Shows an input method's text under composition at the caret.
+    /// @param caret_start The UTF-8 byte offset where the composition's caret starts, or [none].
+    /// @param caret_end The byte offset where it ends, not before caret_start.
+    /// @returns Whether the surface used it.
+    fn compose_text(text: string, caret_start: usize, caret_end: usize) -> bool;
+
+    /// Inserts the text an input method composed, replacing any composition.
+    /// @returns Whether the surface used it.
+    fn commit_text(text: string) -> bool;
+
+    /// The pointer shape the surface asks for.
+    readonly property cursor: cursor_shape;
+
+    /// Where the caret of the focused text field or editor is, for placing an input method's
+    /// candidates; 0 by 0 at the origin while no text has focus.
+    readonly property caret: rect;
+}
+
 /// The context of a callback reacting to the person or the system.
 scoped class context {
     /// The window the callback belongs to.
@@ -1048,6 +1271,17 @@ scoped class view {
     /// Adds space around the current element, edge by edge.
     modifier margin_edges(top: f32, right: f32, bottom: f32, left: f32);
 
+    /// Places the current element at a point of its parent, out of the flow of its siblings, which
+    /// lay out as if it were absent.
+    /// @param x Logical pixels from the parent's left edge.
+    /// @param y Logical pixels from the parent's top edge.
+    modifier position(x: f32, y: f32);
+
+    /// Draws the current element larger or smaller about its top-left corner, without changing the
+    /// room it takes; the pointer finds its parts where they are drawn.
+    /// @param factor Above 0; 1 draws it as laid out.
+    modifier scale(factor: f32);
+
     /// Fades the current element, from 0 to 1.
     modifier opacity(opacity: f32);
 
@@ -1090,6 +1324,11 @@ scoped class view {
 
     /// Gives the current box the theme's surface colour and rounded corners.
     modifier surface();
+
+    /// Makes the current box a glass pane with the theme's surface colour and rounded corners.
+    /// Under a glass theme what lies beneath it shows through blurred, and refracted under a
+    /// liquid one; in an embedded surface that is what the program drew.
+    modifier glass();
 
     /// Rounds the current box or picture.
     modifier corner_radius(radius: f32);

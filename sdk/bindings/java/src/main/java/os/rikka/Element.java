@@ -218,6 +218,39 @@ public final class Element {
     }
 
     /**
+     * Places the current element at a point of its parent, out of the flow of its siblings,
+     * which lay out as if it were absent.
+     *
+     * @param x Logical pixels from the parent's left edge.
+     * @param y Logical pixels from the parent's top edge.
+     * @return this element
+     */
+    public Element position(float x, float y) {
+        try {
+            Native.RK_POSITION.invokeExact(view.current(serial), x, y);
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+        return this;
+    }
+
+    /**
+     * Draws the current element larger or smaller about its top-left corner, without changing
+     * the room it takes; the pointer finds its parts where they are drawn.
+     *
+     * @param factor Above 0; 1 draws it as laid out.
+     * @return this element
+     */
+    public Element scale(float factor) {
+        try {
+            Native.RK_SCALE.invokeExact(view.current(serial), factor);
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+        return this;
+    }
+
+    /**
      * Fades the current element, from 0 to 1.
      *
      * @param opacity the opacity
@@ -419,6 +452,22 @@ public final class Element {
     public Element surface() {
         try {
             Native.RK_SURFACE.invokeExact(view.current(serial));
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+        return this;
+    }
+
+    /**
+     * Makes the current box a glass pane with the theme's surface colour and rounded corners.
+     * Under a glass theme what lies beneath it shows through blurred, and refracted under a
+     * liquid one; in an embedded surface that is what the program drew.
+     *
+     * @return this element
+     */
+    public Element glass() {
+        try {
+            Native.RK_GLASS.invokeExact(view.current(serial));
         } catch (Throwable failure) {
             throw Native.rethrow(failure);
         }

@@ -298,6 +298,7 @@ pub(crate) struct Common {
     pub(crate) key: Option<u64>,
     pub(crate) tooltip: Option<String>,
     pub(crate) opacity: Option<f32>,
+    pub(crate) scale: Option<f32>,
     pub(crate) background: Option<Color>,
     pub(crate) transition: Option<Transition>,
     pub(crate) anchor: Option<Anchor>,

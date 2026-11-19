@@ -15,6 +15,7 @@ pub(crate) mod page;
 pub(crate) mod popover;
 pub(crate) mod resize_edges;
 pub(crate) mod rule;
+pub(crate) mod scaled;
 pub(crate) mod scrim;
 pub(crate) mod scrollable;
 pub(crate) mod sheet;

@@ -40,6 +40,19 @@ final class Native {
     static final long COLOR_G = COLOR.byteOffset(MemoryLayout.PathElement.groupElement("g"));
     static final long COLOR_B = COLOR.byteOffset(MemoryLayout.PathElement.groupElement("b"));
     static final long COLOR_A = COLOR.byteOffset(MemoryLayout.PathElement.groupElement("a"));
+    static final StructLayout RECT = MemoryLayout.structLayout(JAVA_FLOAT.withName("x"), JAVA_FLOAT.withName("y"), JAVA_FLOAT.withName("width"), JAVA_FLOAT.withName("height"));
+    static final long RECT_X = RECT.byteOffset(MemoryLayout.PathElement.groupElement("x"));
+    static final long RECT_Y = RECT.byteOffset(MemoryLayout.PathElement.groupElement("y"));
+    static final long RECT_WIDTH = RECT.byteOffset(MemoryLayout.PathElement.groupElement("width"));
+    static final long RECT_HEIGHT = RECT.byteOffset(MemoryLayout.PathElement.groupElement("height"));
+    static final StructLayout VULKAN_IMAGE = MemoryLayout.structLayout(JAVA_LONG.withName("image"), JAVA_LONG.withName("view"), JAVA_INT.withName("format"), JAVA_INT.withName("width"), JAVA_INT.withName("height"), JAVA_INT.withName("layout"), JAVA_BOOLEAN.withName("bottom_up"), MemoryLayout.paddingLayout(7));
+    static final long VULKAN_IMAGE_IMAGE = VULKAN_IMAGE.byteOffset(MemoryLayout.PathElement.groupElement("image"));
+    static final long VULKAN_IMAGE_VIEW = VULKAN_IMAGE.byteOffset(MemoryLayout.PathElement.groupElement("view"));
+    static final long VULKAN_IMAGE_FORMAT = VULKAN_IMAGE.byteOffset(MemoryLayout.PathElement.groupElement("format"));
+    static final long VULKAN_IMAGE_WIDTH = VULKAN_IMAGE.byteOffset(MemoryLayout.PathElement.groupElement("width"));
+    static final long VULKAN_IMAGE_HEIGHT = VULKAN_IMAGE.byteOffset(MemoryLayout.PathElement.groupElement("height"));
+    static final long VULKAN_IMAGE_LAYOUT = VULKAN_IMAGE.byteOffset(MemoryLayout.PathElement.groupElement("layout"));
+    static final long VULKAN_IMAGE_BOTTOM_UP = VULKAN_IMAGE.byteOffset(MemoryLayout.PathElement.groupElement("bottom_up"));
 
     static final MethodHandle RK_STRING_FREE = downcall("rk_string_free", FunctionDescriptor.ofVoid(STRING));
     static final MethodHandle RK_VERSION = downcall("rk_version", FunctionDescriptor.of(JAVA_INT));
@@ -141,6 +154,37 @@ final class Native {
     static final MethodHandle RK_TEXT_DOCUMENT_REDO = downcall("rk_text_document_redo", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS));
     static final MethodHandle RK_TEXT_DOCUMENT_REF = downcall("rk_text_document_ref", FunctionDescriptor.of(ADDRESS, ADDRESS));
     static final MethodHandle RK_TEXT_DOCUMENT_UNREF = downcall("rk_text_document_unref", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_VULKAN_DEVICE_NEW = downcall("rk_vulkan_device_new", FunctionDescriptor.of(ADDRESS, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle RK_VULKAN_DEVICE_ADD_INSTANCE_EXTENSION = downcall("rk_vulkan_device_add_instance_extension", FunctionDescriptor.ofVoid(ADDRESS, STR));
+    static final MethodHandle RK_VULKAN_DEVICE_ADD_DEVICE_EXTENSION = downcall("rk_vulkan_device_add_device_extension", FunctionDescriptor.ofVoid(ADDRESS, STR));
+    static final MethodHandle RK_VULKAN_DEVICE_SET_FEATURES = downcall("rk_vulkan_device_set_features", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG));
+    static final MethodHandle RK_VULKAN_DEVICE_FREE = downcall("rk_vulkan_device_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_EMBEDDING_NEW = downcall("rk_embedding_new", FunctionDescriptor.of(ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDING_ERROR_MESSAGE = downcall("rk_embedding_error_message", FunctionDescriptor.of(STRING, ADDRESS));
+    static final MethodHandle RK_EMBEDDING_OPEN = downcall("rk_embedding_open", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDING_REF = downcall("rk_embedding_ref", FunctionDescriptor.of(ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDING_UNREF = downcall("rk_embedding_unref", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_BUILDER_NEW = downcall("rk_embedded_surface_builder_new", FunctionDescriptor.of(ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_BUILDER_ON_START = downcall("rk_embedded_surface_builder_on_start", FunctionDescriptor.ofVoid(ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_BUILDER_ON_CLOSE_REQUEST = downcall("rk_embedded_surface_builder_on_close_request", FunctionDescriptor.ofVoid(ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_BUILDER_FREE = downcall("rk_embedded_surface_builder_free", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_WINDOW = downcall("rk_embedded_surface_window", FunctionDescriptor.of(ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_RESIZE = downcall("rk_embedded_surface_resize", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_RENDER = downcall("rk_embedded_surface_render", FunctionDescriptor.of(JAVA_INT, ADDRESS, VULKAN_IMAGE));
+    static final MethodHandle RK_EMBEDDED_SURFACE_POINTER_MOVE = downcall("rk_embedded_surface_pointer_move", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, JAVA_FLOAT, JAVA_FLOAT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_POINTER_PRESS = downcall("rk_embedded_surface_pointer_press", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, JAVA_FLOAT, JAVA_FLOAT, JAVA_INT, JAVA_INT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_POINTER_RELEASE = downcall("rk_embedded_surface_pointer_release", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, JAVA_FLOAT, JAVA_FLOAT, JAVA_INT, JAVA_INT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_POINTER_LEAVE = downcall("rk_embedded_surface_pointer_leave", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_SCROLL = downcall("rk_embedded_surface_scroll", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_INT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_KEY_PRESS = downcall("rk_embedded_surface_key_press", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, JAVA_INT, JAVA_INT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_KEY_RELEASE = downcall("rk_embedded_surface_key_release", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, JAVA_INT, JAVA_INT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_TYPE_TEXT = downcall("rk_embedded_surface_type_text", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, STR));
+    static final MethodHandle RK_EMBEDDED_SURFACE_COMPOSE_TEXT = downcall("rk_embedded_surface_compose_text", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, STR, JAVA_LONG, JAVA_LONG));
+    static final MethodHandle RK_EMBEDDED_SURFACE_COMMIT_TEXT = downcall("rk_embedded_surface_commit_text", FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, STR));
+    static final MethodHandle RK_EMBEDDED_SURFACE_CURSOR = downcall("rk_embedded_surface_cursor", FunctionDescriptor.of(JAVA_INT, ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_CARET = downcall("rk_embedded_surface_caret", FunctionDescriptor.of(RECT, ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_REF = downcall("rk_embedded_surface_ref", FunctionDescriptor.of(ADDRESS, ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_UNREF = downcall("rk_embedded_surface_unref", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_CONTEXT_WINDOW = downcall("rk_context_window", FunctionDescriptor.of(ADDRESS, ADDRESS));
     static final MethodHandle RK_CONTEXT_SKIP_VIEW = downcall("rk_context_skip_view", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_CONTEXT_REQUEST = downcall("rk_context_request", FunctionDescriptor.ofVoid(ADDRESS, JAVA_INT));
@@ -231,6 +275,8 @@ final class Native {
     static final MethodHandle RK_ALIGN_SELF = downcall("rk_align_self", FunctionDescriptor.ofVoid(ADDRESS, JAVA_INT));
     static final MethodHandle RK_MARGIN = downcall("rk_margin", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT));
     static final MethodHandle RK_MARGIN_EDGES = downcall("rk_margin_edges", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT));
+    static final MethodHandle RK_POSITION = downcall("rk_position", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, JAVA_FLOAT));
+    static final MethodHandle RK_SCALE = downcall("rk_scale", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT));
     static final MethodHandle RK_OPACITY = downcall("rk_opacity", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT));
     static final MethodHandle RK_BACKGROUND = downcall("rk_background", FunctionDescriptor.ofVoid(ADDRESS, COLOR));
     static final MethodHandle RK_TOOLTIP = downcall("rk_tooltip", FunctionDescriptor.ofVoid(ADDRESS, STR));
@@ -244,6 +290,7 @@ final class Native {
     static final MethodHandle RK_JUSTIFY = downcall("rk_justify", FunctionDescriptor.ofVoid(ADDRESS, JAVA_INT));
     static final MethodHandle RK_WRAP_ITEMS = downcall("rk_wrap_items", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_SURFACE = downcall("rk_surface", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_GLASS = downcall("rk_glass", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_CORNER_RADIUS = downcall("rk_corner_radius", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT));
     static final MethodHandle RK_BORDER = downcall("rk_border", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, COLOR));
     static final MethodHandle RK_CLIP_CONTENT = downcall("rk_clip_content", FunctionDescriptor.ofVoid(ADDRESS));
@@ -384,6 +431,35 @@ final class Native {
 
     static Color color(MemorySegment segment) {
         return new Color(segment.get(JAVA_FLOAT, COLOR_R), segment.get(JAVA_FLOAT, COLOR_G), segment.get(JAVA_FLOAT, COLOR_B), segment.get(JAVA_FLOAT, COLOR_A));
+    }
+
+    static MemorySegment rect(SegmentAllocator arena, Rect value) {
+        MemorySegment segment = arena.allocate(RECT);
+        segment.set(JAVA_FLOAT, RECT_X, value.x());
+        segment.set(JAVA_FLOAT, RECT_Y, value.y());
+        segment.set(JAVA_FLOAT, RECT_WIDTH, value.width());
+        segment.set(JAVA_FLOAT, RECT_HEIGHT, value.height());
+        return segment;
+    }
+
+    static Rect rect(MemorySegment segment) {
+        return new Rect(segment.get(JAVA_FLOAT, RECT_X), segment.get(JAVA_FLOAT, RECT_Y), segment.get(JAVA_FLOAT, RECT_WIDTH), segment.get(JAVA_FLOAT, RECT_HEIGHT));
+    }
+
+    static MemorySegment vulkanImage(SegmentAllocator arena, VulkanImage value) {
+        MemorySegment segment = arena.allocate(VULKAN_IMAGE);
+        segment.set(JAVA_LONG, VULKAN_IMAGE_IMAGE, value.image());
+        segment.set(JAVA_LONG, VULKAN_IMAGE_VIEW, value.view());
+        segment.set(JAVA_INT, VULKAN_IMAGE_FORMAT, value.format());
+        segment.set(JAVA_INT, VULKAN_IMAGE_WIDTH, value.width());
+        segment.set(JAVA_INT, VULKAN_IMAGE_HEIGHT, value.height());
+        segment.set(JAVA_INT, VULKAN_IMAGE_LAYOUT, value.layout());
+        segment.set(JAVA_BOOLEAN, VULKAN_IMAGE_BOTTOM_UP, value.bottomUp());
+        return segment;
+    }
+
+    static VulkanImage vulkanImage(MemorySegment segment) {
+        return new VulkanImage(segment.get(JAVA_LONG, VULKAN_IMAGE_IMAGE), segment.get(JAVA_LONG, VULKAN_IMAGE_VIEW), segment.get(JAVA_INT, VULKAN_IMAGE_FORMAT), segment.get(JAVA_INT, VULKAN_IMAGE_WIDTH), segment.get(JAVA_INT, VULKAN_IMAGE_HEIGHT), segment.get(JAVA_INT, VULKAN_IMAGE_LAYOUT), segment.get(JAVA_BOOLEAN, VULKAN_IMAGE_BOTTOM_UP));
     }
 
     static int modifiers(Set<Modifier> flags) {

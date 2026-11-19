@@ -135,6 +135,9 @@ impl Renderer {
         scene.settle_order();
         let canvas = onto.canvas();
         let plan = canvas.plan;
+        if canvas.underlay {
+            scene.damage_whole_for(plan.viewer);
+        }
         if !onto.has_copy_work()
             && self.targets.up_to_date(plan.target, plan.buffer)
             && self.scene_is_settled(scene, &plan)

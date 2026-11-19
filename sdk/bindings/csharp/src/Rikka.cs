@@ -17,7 +17,7 @@ public static unsafe class Sdk
     /// <summary>
     /// The version of librikka this binding declares, packed as major &lt;&lt; 22 | minor &lt;&lt; 12 | patch.
     /// </summary>
-    public const uint BindingVersion = 8192;
+    public const uint BindingVersion = 12288;
 
     /// <summary>
     /// As an index: nothing is selected.
@@ -135,6 +135,23 @@ public static unsafe class Sdk
 /// A straight-alpha sRGB colour with components from 0 to 1.
 /// </summary>
 public readonly record struct Color(float R, float G, float B, float A);
+
+/// <summary>
+/// A rectangle in logical pixels.
+/// </summary>
+public readonly record struct Rect(float X, float Y, float Width, float Height);
+
+/// <summary>
+/// A Vulkan image of another program.
+/// </summary>
+/// <param name="Image">The VkImage.</param>
+/// <param name="View">A VkImageView of its single color level and layer.</param>
+/// <param name="Format">Its VkFormat.</param>
+/// <param name="Width">Its width in pixels.</param>
+/// <param name="Height">Its height in pixels.</param>
+/// <param name="Layout">The VkImageLayout it is in.</param>
+/// <param name="BottomUp">Whether its rows run from the bottom up, as in images an OpenGL-style program flips when it shows them.</param>
+public readonly record struct VulkanImage(ulong Image, ulong View, uint Format, uint Width, uint Height, uint Layout, bool BottomUp);
 
 /// <summary>
 /// The outcome of an operation that can fail at run time.
@@ -561,6 +578,48 @@ public enum KeyCode : uint
 }
 
 /// <summary>
+/// A pointer button.
+/// </summary>
+
+public enum PointerButton : uint
+{
+    Left = 0,
+    Right = 1,
+    Middle = 2,
+    Back = 3,
+    Forward = 4,
+}
+
+/// <summary>
+/// A pointer shape.
+/// </summary>
+
+public enum CursorShape : uint
+{
+    Default = 0,
+    Hidden = 1,
+    /// <summary>
+    /// A hand over something to press.
+    /// </summary>
+    Pointer = 2,
+    Text = 3,
+    Wait = 4,
+    Progress = 5,
+    Crosshair = 6,
+    Move = 7,
+    Grab = 8,
+    Grabbing = 9,
+    NotAllowed = 10,
+    ResizeHorizontal = 11,
+    ResizeVertical = 12,
+    ResizeDiagonalDown = 13,
+    ResizeDiagonalUp = 14,
+    ZoomIn = 15,
+    ZoomOut = 16,
+    Help = 17,
+}
+
+/// <summary>
 /// Keyboard modifiers held with a key.
 /// </summary>
 
@@ -702,6 +761,20 @@ public delegate void UnsavedCallback(Context context, UnsavedAnswer answer);
 /// Does blocking work on a background thread.
 /// </summary>
 public delegate void WorkCallback();
+
+/// <summary>
+/// Hands over a semaphore operation of a Vulkan submission.
+/// </summary>
+/// <param name="semaphore">The VkSemaphore.</param>
+/// <param name="value">The timeline value, or 0 for a binary semaphore.</param>
+/// <param name="stages">The VkPipelineStageFlags2 it applies to.</param>
+public delegate void VulkanSemaphoreCallback(ulong semaphore, ulong value, ulong stages);
+
+/// <summary>
+/// Hands over a command buffer of a Vulkan submission.
+/// </summary>
+/// <param name="commandBuffer">The VkCommandBuffer.</param>
+public delegate void VulkanCommandsCallback(ulong commandBuffer);
 
 /// <summary>
 /// <para>
@@ -2169,6 +2242,515 @@ public sealed unsafe class TextDocument : IDisposable, IEquatable<TextDocument>
 
 /// <summary>
 /// <para>
+/// The Vulkan device of a program that draws embedded surfaces into its own frames. Rikka draws with this
+/// device and its queue instead of making its own, so the program must have created them for Vulkan 1.3 with
+/// the features listed in <see cref="VulkanDevice.SetFeatures"/>. Rikka never submits to the queue itself: it
+/// hands each submission to the program in order through the submit callbacks, and the program submits it on
+/// that queue before its own later work. A render waits for the work handed over three renders before, so the
+/// program submits at least once every two renders.
+/// </para>
+/// <para>
+/// It owns its native object until it is handed over or disposed; the finalizer frees an object never handed
+/// over.
+/// </para>
+/// </summary>
+
+public sealed unsafe class VulkanDevice : IDisposable
+{
+    internal readonly NativeHandle handle;
+
+    private VulkanDevice(NativeHandle handle) => this.handle = handle;
+
+    internal static VulkanDevice Adopt(nint raw) => new(Handle(raw));
+
+    private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_vulkan_device_free, false, nameof(VulkanDevice));
+
+    /// <summary>
+    /// Describes a program's device.
+    /// </summary>
+    /// <param name="getInstanceProcAddr">The address of the vkGetInstanceProcAddr the program loaded.</param>
+    /// <param name="instance">The VkInstance.</param>
+    /// <param name="apiVersion">The apiVersion the instance was created with; at least 1.3.</param>
+    /// <param name="physicalDevice">The VkPhysicalDevice the device was made on.</param>
+    /// <param name="device">The VkDevice; it must outlive every embedding drawing with it.</param>
+    /// <param name="queue">The VkQueue the program submits Rikka's work on; it must support graphics.</param>
+    /// <param name="queueFamily">The family of that queue.</param>
+    /// <param name="wait">
+    /// Hands over a semaphore operation of a Vulkan submission. It may run on any thread.
+    /// </param>
+    /// <param name="execute">
+    /// Hands over a command buffer of a Vulkan submission. It may run on any thread.
+    /// </param>
+    /// <param name="signal">
+    /// Hands over a semaphore operation of a Vulkan submission. It may run on any thread.
+    /// </param>
+    public VulkanDevice(
+        ulong getInstanceProcAddr,
+        ulong instance,
+        uint apiVersion,
+        ulong physicalDevice,
+        ulong device,
+        ulong queue,
+        uint queueFamily,
+        VulkanSemaphoreCallback wait,
+        VulkanCommandsCallback execute,
+        VulkanSemaphoreCallback signal)
+    {
+        ArgumentNullException.ThrowIfNull(wait);
+        ArgumentNullException.ThrowIfNull(execute);
+        ArgumentNullException.ThrowIfNull(signal);
+        nint userdata = Closures.Retain(wait, execute, signal);
+        handle = Handle(Native.rk_vulkan_device_new(getInstanceProcAddr, instance, apiVersion, physicalDevice, device, queue, queueFamily, &Trampolines.VulkanSemaphoreFn0, &Trampolines.VulkanCommandsFn1, &Trampolines.VulkanSemaphoreFn2, userdata, &Closures.Destroy));
+    }
+
+    /// <summary>
+    /// Names an instance extension the program enabled.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    public VulkanDevice AddInstanceExtension(string name)
+    {
+        using var self = handle.Lease();
+        Span<byte> nameUtf8 = Interop.Utf8(name, stackalloc byte[Interop.StackLimit], nameof(name));
+        fixed (byte* nameBytes = nameUtf8)
+        {
+            Native.rk_vulkan_device_add_instance_extension(self.Raw, new Str(nameBytes, (nuint)nameUtf8.Length));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Names a device extension the program enabled.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    public VulkanDevice AddDeviceExtension(string name)
+    {
+        using var self = handle.Lease();
+        Span<byte> nameUtf8 = Interop.Utf8(name, stackalloc byte[Interop.StackLimit], nameof(name));
+        fixed (byte* nameBytes = nameUtf8)
+        {
+            Native.rk_vulkan_device_add_device_extension(self.Raw, new Str(nameBytes, (nuint)nameUtf8.Length));
+        }
+        return this;
+    }
+
+    /// <summary>
+    /// Describes the features the program enabled, read during the call. Rikka needs timelineSemaphore,
+    /// runtimeDescriptorArray, shaderSampledImageArrayNonUniformIndexing,
+    /// descriptorBindingSampledImageUpdateAfterBind, descriptorBindingPartiallyBound,
+    /// descriptorBindingUpdateUnusedWhilePending, dynamicRendering and synchronization2, from their Vulkan
+    /// 1.2 and 1.3 feature structures or the structures of the extensions they come from.
+    /// </summary>
+    /// <param name="features">
+    /// The address of the VkPhysicalDeviceFeatures2 whose chain the device was created with.
+    /// </param>
+    public VulkanDevice SetFeatures(ulong features)
+    {
+        using var self = handle.Lease();
+        Native.rk_vulkan_device_set_features(self.Raw, features);
+        return this;
+    }
+
+    /// <summary>
+    /// Releases the native object now; a disposed or handed-over object refuses further use.
+    /// </summary>
+    public void Dispose() => handle.Dispose();
+}
+
+/// <summary>
+/// <para>
+/// Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their renders on the
+/// thread that submits to the device's queue.
+/// </para>
+/// <para>
+/// It holds one reference to a native object usable only on the thread that made it; disposing it drops the
+/// reference, and the finalizer hands it back to that thread.
+/// </para>
+/// </summary>
+
+public sealed unsafe class Embedding : IDisposable, IEquatable<Embedding>
+{
+    internal readonly NativeHandle handle;
+
+    private Embedding(NativeHandle handle) => this.handle = handle;
+
+    internal static Embedding Adopt(nint raw) => new(Handle(raw));
+
+    private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_embedding_unref, true, nameof(Embedding));
+
+    /// <summary>
+    /// Prepares to draw with a device. Check <see cref="Embedding.ErrorMessage"/> before opening surfaces.
+    /// </summary>
+    /// <param name="device">It is consumed.</param>
+    public Embedding(VulkanDevice device)
+    {
+        ArgumentNullException.ThrowIfNull(device);
+        nint deviceRaw = device.handle.Take();
+        handle = Handle(Native.rk_embedding_new(deviceRaw));
+    }
+
+    /// <summary>
+    /// Why the embedding cannot draw; empty when it can.
+    /// </summary>
+    public string ErrorMessage
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Interop.Take(Native.rk_embedding_error_message(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// Makes a surface that this embedding draws. The embedding must be able to draw.
+    /// </summary>
+    /// <param name="surface">It is consumed.</param>
+    public EmbeddedSurface Open(EmbeddedSurfaceBuilder surface)
+    {
+        ArgumentNullException.ThrowIfNull(surface);
+        using var self = handle.Lease();
+        nint surfaceRaw = surface.handle.Take();
+        return EmbeddedSurface.Adopt(Native.rk_embedding_open(self.Raw, surfaceRaw));
+    }
+
+    /// <summary>
+    /// Releases the native object now; a disposed or handed-over object refuses further use.
+    /// </summary>
+    public void Dispose() => handle.Dispose();
+
+    /// <summary>
+    /// Whether both hold the same native object.
+    /// </summary>
+    /// <param name="other">The object to compare with.</param>
+    /// <returns>Whether they are the same object.</returns>
+    public bool Equals(Embedding? other) =>
+        other is not null && other.handle.DangerousGetHandle() == handle.DangerousGetHandle();
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as Embedding);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => handle.DangerousGetHandle().GetHashCode();
+}
+
+/// <summary>
+/// <para>
+/// The description of an embedded surface.
+/// </para>
+/// <para>
+/// It owns its native object until it is handed over or disposed; the finalizer frees an object never handed
+/// over.
+/// </para>
+/// </summary>
+
+public sealed unsafe class EmbeddedSurfaceBuilder : IDisposable
+{
+    internal readonly NativeHandle handle;
+
+    private EmbeddedSurfaceBuilder(NativeHandle handle) => this.handle = handle;
+
+    internal static EmbeddedSurfaceBuilder Adopt(nint raw) => new(Handle(raw));
+
+    private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_embedded_surface_builder_free, false, nameof(EmbeddedSurfaceBuilder));
+
+    /// <summary>
+    /// Describes a surface whose content view declares. It follows the desktop's theme and language.
+    /// </summary>
+    /// <param name="view">Declares the surface's content.</param>
+    public EmbeddedSurfaceBuilder(ViewCallback view)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        nint userdata = Closures.Retain(view);
+        handle = Handle(Native.rk_embedded_surface_builder_new(&Trampolines.ViewFn0, userdata, &Closures.Destroy));
+    }
+
+    /// <summary>
+    /// Runs once the surface opens; start timers or background work here.
+    /// </summary>
+    /// <param name="callback">
+    /// Reacts to an event. The window's view runs again afterwards unless <see cref="Context.SkipView"/> is
+    /// called.
+    /// </param>
+    public EmbeddedSurfaceBuilder OnStart(ActionCallback callback)
+    {
+        ArgumentNullException.ThrowIfNull(callback);
+        using var self = handle.Lease();
+        nint userdata = Closures.Retain(callback);
+        Native.rk_embedded_surface_builder_on_start(self.Raw, &Trampolines.ActionFn0, userdata, &Closures.Destroy);
+        return this;
+    }
+
+    /// <summary>
+    /// Runs when the surface's content asks to close it, through <see cref="WindowRequest.Close"/>, <see
+    /// cref="WindowRequest.AskToClose"/> or the close command; the program decides whether to drop the
+    /// surface.
+    /// </summary>
+    /// <param name="callback">
+    /// Reacts to an event. The window's view runs again afterwards unless <see cref="Context.SkipView"/> is
+    /// called.
+    /// </param>
+    public EmbeddedSurfaceBuilder OnCloseRequest(ActionCallback callback)
+    {
+        ArgumentNullException.ThrowIfNull(callback);
+        using var self = handle.Lease();
+        nint userdata = Closures.Retain(callback);
+        Native.rk_embedded_surface_builder_on_close_request(self.Raw, &Trampolines.ActionFn0, userdata, &Closures.Destroy);
+        return this;
+    }
+
+    /// <summary>
+    /// Releases the native object now; a disposed or handed-over object refuses further use.
+    /// </summary>
+    public void Dispose() => handle.Dispose();
+}
+
+/// <summary>
+/// <para>
+/// A view drawn over a program's own frames: a heads-up display or a menu inside a game, for example. Its
+/// glass and frosted panes blur and refract what the program drew beneath them. The program forwards input in
+/// logical pixels from the surface's top-left corner, and each input function says whether the surface used
+/// the input. It closes when its last reference is gone.
+/// </para>
+/// <para>
+/// It holds one reference to a native object usable only on the thread that made it; disposing it drops the
+/// reference, and the finalizer hands it back to that thread.
+/// </para>
+/// </summary>
+
+public sealed unsafe class EmbeddedSurface : IDisposable, IEquatable<EmbeddedSurface>
+{
+    internal readonly NativeHandle handle;
+
+    private EmbeddedSurface(NativeHandle handle) => this.handle = handle;
+
+    internal static EmbeddedSurface Adopt(nint raw) => new(Handle(raw));
+
+    private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_embedded_surface_unref, true, nameof(EmbeddedSurface));
+
+    /// <summary>
+    /// The window that callbacks of this surface receive as <see cref="Context.Window"/>, for posting to it
+    /// from other threads.
+    /// </summary>
+    public Window Window
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Window.Adopt(Native.rk_embedded_surface_window(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// Sets the surface's size.
+    /// </summary>
+    /// <param name="width">Logical width.</param>
+    /// <param name="height">Logical height.</param>
+    /// <param name="scale">Physical pixels per logical pixel; above 0.</param>
+    public void Resize(float width, float height, float scale)
+    {
+        using var self = handle.Lease();
+        Native.rk_embedded_surface_resize(self.Raw, width, height, scale);
+    }
+
+    /// <summary>
+    /// Draws the surface over what an image holds, as recorded work handed to the device's submit callbacks,
+    /// which the program then submits before anything that reads the image.
+    /// </summary>
+    /// <param name="target">
+    /// The image to draw over, as large as the surface in physical pixels. It needs color attachment and
+    /// sampled usage, and stays in its layout.
+    /// </param>
+    /// <exception cref="RikkaException">It failed; the exception carries the status.</exception>
+    public void Render(VulkanImage target)
+    {
+        using var self = handle.Lease();
+        Native.Check(Native.rk_embedded_surface_render(self.Raw, Native.VulkanImage.From(target)));
+    }
+
+    /// <summary>
+    /// Moves the pointer.
+    /// </summary>
+    /// <param name="x">The x.</param>
+    /// <param name="y">The y.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool PointerMove(float x, float y)
+    {
+        using var self = handle.Lease();
+        return Native.rk_embedded_surface_pointer_move(self.Raw, x, y) != 0;
+    }
+
+    /// <summary>
+    /// Presses a pointer button.
+    /// </summary>
+    /// <param name="x">The x.</param>
+    /// <param name="y">The y.</param>
+    /// <param name="button">The button.</param>
+    /// <param name="modifiers">The modifiers.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool PointerPress(float x, float y, PointerButton button, Modifiers modifiers)
+    {
+        using var self = handle.Lease();
+        return Native.rk_embedded_surface_pointer_press(self.Raw, x, y, (uint)button, (uint)modifiers) != 0;
+    }
+
+    /// <summary>
+    /// Releases a pointer button.
+    /// </summary>
+    /// <param name="x">The x.</param>
+    /// <param name="y">The y.</param>
+    /// <param name="button">The button.</param>
+    /// <param name="modifiers">The modifiers.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool PointerRelease(float x, float y, PointerButton button, Modifiers modifiers)
+    {
+        using var self = handle.Lease();
+        return Native.rk_embedded_surface_pointer_release(self.Raw, x, y, (uint)button, (uint)modifiers) != 0;
+    }
+
+    /// <summary>
+    /// Tells the surface that the pointer left it.
+    /// </summary>
+    public void PointerLeave()
+    {
+        using var self = handle.Lease();
+        Native.rk_embedded_surface_pointer_leave(self.Raw);
+    }
+
+    /// <summary>
+    /// Turns the scroll wheel.
+    /// </summary>
+    /// <param name="x">The x.</param>
+    /// <param name="y">The y.</param>
+    /// <param name="stepsX">Wheel steps to the right; negative to the left.</param>
+    /// <param name="stepsY">Wheel steps away from the person; negative toward them.</param>
+    /// <param name="modifiers">The modifiers.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool Scroll(float x, float y, float stepsX, float stepsY, Modifiers modifiers)
+    {
+        using var self = handle.Lease();
+        return Native.rk_embedded_surface_scroll(self.Raw, x, y, stepsX, stepsY, (uint)modifiers) != 0;
+    }
+
+    /// <summary>
+    /// Presses a key. Keys that type text arrive through <see cref="EmbeddedSurface.TypeText"/> instead,
+    /// unless Control, Alt or Super is held with them.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <param name="modifiers">The modifiers.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool KeyPress(KeyCode key, Modifiers modifiers)
+    {
+        using var self = handle.Lease();
+        return Native.rk_embedded_surface_key_press(self.Raw, (uint)key, (uint)modifiers) != 0;
+    }
+
+    /// <summary>
+    /// Releases a key.
+    /// </summary>
+    /// <param name="key">The key.</param>
+    /// <param name="modifiers">The modifiers.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool KeyRelease(KeyCode key, Modifiers modifiers)
+    {
+        using var self = handle.Lease();
+        return Native.rk_embedded_surface_key_release(self.Raw, (uint)key, (uint)modifiers) != 0;
+    }
+
+    /// <summary>
+    /// Types text that keys produced.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool TypeText(string text)
+    {
+        using var self = handle.Lease();
+        Span<byte> textUtf8 = Interop.Utf8(text, stackalloc byte[Interop.StackLimit], nameof(text));
+        fixed (byte* textBytes = textUtf8)
+        {
+            return Native.rk_embedded_surface_type_text(self.Raw, new Str(textBytes, (nuint)textUtf8.Length)) != 0;
+        }
+    }
+
+    /// <summary>
+    /// Shows an input method's text under composition at the caret.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="caretStart">
+    /// The UTF-8 byte offset where the composition's caret starts, or <see cref="Sdk.None"/>.
+    /// </param>
+    /// <param name="caretEnd">The byte offset where it ends, not before caret_start.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool ComposeText(string text, int caretStart, int caretEnd)
+    {
+        using var self = handle.Lease();
+        Span<byte> textUtf8 = Interop.Utf8(text, stackalloc byte[Interop.StackLimit], nameof(text));
+        fixed (byte* textBytes = textUtf8)
+        {
+            return Native.rk_embedded_surface_compose_text(self.Raw, new Str(textBytes, (nuint)textUtf8.Length), (nint)caretStart, (nint)caretEnd) != 0;
+        }
+    }
+
+    /// <summary>
+    /// Inserts the text an input method composed, replacing any composition.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <returns>Whether the surface used it.</returns>
+    public bool CommitText(string text)
+    {
+        using var self = handle.Lease();
+        Span<byte> textUtf8 = Interop.Utf8(text, stackalloc byte[Interop.StackLimit], nameof(text));
+        fixed (byte* textBytes = textUtf8)
+        {
+            return Native.rk_embedded_surface_commit_text(self.Raw, new Str(textBytes, (nuint)textUtf8.Length)) != 0;
+        }
+    }
+
+    /// <summary>
+    /// The pointer shape the surface asks for.
+    /// </summary>
+    public CursorShape Cursor
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return (CursorShape)Native.rk_embedded_surface_cursor(self.Raw);
+        }
+    }
+
+    /// <summary>
+    /// Where the caret of the focused text field or editor is, for placing an input method's candidates; 0 by
+    /// 0 at the origin while no text has focus.
+    /// </summary>
+    public Rect Caret
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Native.rk_embedded_surface_caret(self.Raw).ToPublic();
+        }
+    }
+
+    /// <summary>
+    /// Releases the native object now; a disposed or handed-over object refuses further use.
+    /// </summary>
+    public void Dispose() => handle.Dispose();
+
+    /// <summary>
+    /// Whether both hold the same native object.
+    /// </summary>
+    /// <param name="other">The object to compare with.</param>
+    /// <returns>Whether they are the same object.</returns>
+    public bool Equals(EmbeddedSurface? other) =>
+        other is not null && other.handle.DangerousGetHandle() == handle.DangerousGetHandle();
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as EmbeddedSurface);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => handle.DangerousGetHandle().GetHashCode();
+}
+
+/// <summary>
+/// <para>
 /// The context of a callback reacting to the person or the system.
 /// </para>
 /// <para>
@@ -3393,6 +3975,29 @@ public readonly unsafe struct Element
     }
 
     /// <summary>
+    /// Places the current element at a point of its parent, out of the flow of its siblings, which lay out as
+    /// if it were absent.
+    /// </summary>
+    /// <param name="x">Logical pixels from the parent's left edge.</param>
+    /// <param name="y">Logical pixels from the parent's top edge.</param>
+    public Element Position(float x, float y)
+    {
+        Native.rk_position(Raw, x, y);
+        return this;
+    }
+
+    /// <summary>
+    /// Draws the current element larger or smaller about its top-left corner, without changing the room it
+    /// takes; the pointer finds its parts where they are drawn.
+    /// </summary>
+    /// <param name="factor">Above 0; 1 draws it as laid out.</param>
+    public Element Scale(float factor)
+    {
+        Native.rk_scale(Raw, factor);
+        return this;
+    }
+
+    /// <summary>
     /// Fades the current element, from 0 to 1.
     /// </summary>
     /// <param name="opacity">The opacity.</param>
@@ -3536,6 +4141,17 @@ public readonly unsafe struct Element
     public Element Surface()
     {
         Native.rk_surface(Raw);
+        return this;
+    }
+
+    /// <summary>
+    /// Makes the current box a glass pane with the theme's surface colour and rounded corners. Under a glass
+    /// theme what lies beneath it shows through blurred, and refracted under a liquid one; in an embedded
+    /// surface that is what the program drew.
+    /// </summary>
+    public Element Glass()
+    {
+        Native.rk_glass(Raw);
         return this;
     }
 

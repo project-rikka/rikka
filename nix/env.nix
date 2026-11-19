@@ -25,6 +25,16 @@
   dotnet-sdk_10,
   nodejs,
   importNpmLock,
+  flite,
+  libdecor,
+  libglvnd,
+  libpulseaudio,
+  libxcursor,
+  libxext,
+  libxfixes,
+  libxi,
+  libxrandr,
+  libxscrnsaver,
 }:
 
 let
@@ -121,4 +131,17 @@ rec {
   };
 
   websiteTools = [ website.node ];
+
+  minecraftLibraries = [
+    flite
+    libdecor
+    libglvnd
+    libpulseaudio
+    libxcursor
+    libxext
+    libxfixes
+    libxi
+    libxrandr
+    libxscrnsaver
+  ];
 }

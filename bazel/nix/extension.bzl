@@ -1,6 +1,7 @@
 """Exposes the development shell's Nix toolchain to Bazel as the `@nix` repository."""
 
 _TOOLCHAIN = "RIKKA_BAZEL_TOOLCHAIN"
+_LOCAL = "RIKKA_BAZEL_LOCAL"
 _IMAGE = "RIKKA_RBE_IMAGE"
 
 _COMPILERS = ["rustc", "rustdoc", "clippy-driver"]
@@ -39,6 +40,7 @@ def _wrap(rctx, template, bash, name, target):
 
 def _nix_repository_impl(rctx):
     nix = json.decode(rctx.read(_require(rctx, _TOOLCHAIN)))
+    local = json.decode(rctx.read(_require(rctx, _LOCAL)))
     image = _require(rctx, _IMAGE)
     bash = nix["bash"]
 
@@ -56,7 +58,7 @@ def _nix_repository_impl(rctx):
     rctx.symlink("{}/lib/rustlib/src/rust".format(nix["rust"]), "rust/src")
     rctx.file("rust/host_tools", "")
 
-    rctx.file("paths.bzl", "NIX = {}\n".format(json.encode_indent(nix | {"image": image}, indent = "    ")))
+    rctx.file("paths.bzl", "NIX = {}\n".format(json.encode_indent(nix | local | {"image": image}, indent = "    ")))
     rctx.template(
         "BUILD.bazel",
         Label("//bazel/nix:BUILD.nix.bazel"),
