@@ -21,6 +21,7 @@ mod look_state;
 mod material;
 mod mesh;
 mod mirror;
+mod offscreen;
 mod overlay;
 mod pbr;
 mod pick;
@@ -88,6 +89,7 @@ pub use crate::material::{
     Value,
 };
 pub use crate::mesh::{Indices, MeshData, MeshId, MeshUpdate, MorphTarget, Submesh};
+pub use crate::offscreen::OffscreenViewport;
 pub use crate::overlay::{
     Dash, OverlayBatch, OverlayBufferId, OverlayData, OverlayDepth, OverlayLines, OverlayPoints,
     OverlayPrimitive, OverlayShading, OverlaySmoothing, OverlaySource, OverlayTriangles,
