@@ -47,6 +47,7 @@ filegroup(
     name = "assets",
     srcs = glob(["assets/**"]),
     visibility = [
+        "//apps/general/modeler/crates/modeler-session:__pkg__",
         "//benchmarks:__subpackages__",
     ],
 )
