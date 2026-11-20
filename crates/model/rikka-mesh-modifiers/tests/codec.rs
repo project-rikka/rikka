@@ -1,10 +1,12 @@
 use glam::{Vec2, Vec3};
 use rikka_file_format::{Codec, DecodeError, Reader, Writer};
 use rikka_mesh_modifiers::{
-    Armature, Array, Bevel, Boolean, CornerData, CornerMapping, DataTransfer, Decimate, Delimit,
-    Displace, DisplaceDirection, EdgeSplit, LayerSelection, LayersDestination, LayersSource,
-    Mirror, MixMode, Modifier, ModifierKind, ObjectRef, Shrinkwrap, SmoothByAngle, Solidify,
-    SolidifyMode, Subdivision, TextureRef, Triangulate, VertexData, Weld, WeldMode, WrapMethod,
+    Armature, Array, Bevel, Boolean, CornerData, CornerMapping, CorrectiveSmooth, DataTransfer,
+    Decimate, Delimit, Displace, DisplaceDirection, EdgeSplit, Lattice, LatticeGrid,
+    LatticeInterpolation, LayerSelection, LayersDestination, LayersSource, Mirror, MixMode,
+    Modifier, ModifierKind, ObjectRef, RestSource, Shrinkwrap, SmoothByAngle, Solidify,
+    SolidifyMode, Subdivision, TextureRef, Triangulate, VertexData, WeightedNormal,
+    WeightedNormalMode, Weld, WeldMode, WrapMethod,
 };
 
 fn encoded<T: Codec>(value: &T) -> Vec<u8> {
@@ -118,6 +120,33 @@ fn stack() -> Vec<Modifier> {
                 ..Decimate::default()
             },
         ),
+        Modifier::new(
+            "WeightedNormal",
+            WeightedNormal {
+                mode: WeightedNormalMode::CornerAngle,
+                weight: 80,
+                keep_sharp: true,
+                ..WeightedNormal::default()
+            },
+        ),
+        Modifier::new(
+            "CorrectiveSmooth",
+            CorrectiveSmooth {
+                rest_source: RestSource::Bind,
+                bind_coords: vec![Vec3::new(1.0, 2.0, 3.0), Vec3::new(-1.0, 0.5, 0.0)],
+                ..CorrectiveSmooth::default()
+            },
+        ),
+        Modifier::new("Lattice", {
+            let mut grid = LatticeGrid::fitted(Vec3::splat(-1.0), Vec3::ONE, [3, 2, 4]);
+            grid.points_mut()[4] += Vec3::new(0.1, 0.2, -0.3);
+            grid.interpolation[1] = LatticeInterpolation::Cardinal;
+            Lattice {
+                lattice: grid,
+                strength: 0.5,
+                ..Lattice::default()
+            }
+        }),
     ]
 }
 
@@ -182,6 +211,30 @@ fn hostile_values_are_refused() {
             Box::new(|modifier| {
                 if let ModifierKind::DataTransfer(transfer) = &mut modifier.kind {
                     transfer.mix_factor = 1.5;
+                }
+            }),
+        ),
+        (
+            Modifier::new("WeightedNormal", WeightedNormal::default()),
+            Box::new(|modifier| {
+                if let ModifierKind::WeightedNormal(normal) = &mut modifier.kind {
+                    normal.weight = 0;
+                }
+            }),
+        ),
+        (
+            Modifier::new("CorrectiveSmooth", CorrectiveSmooth::default()),
+            Box::new(|modifier| {
+                if let ModifierKind::CorrectiveSmooth(smooth) = &mut modifier.kind {
+                    smooth.bind_coords = vec![Vec3::new(f32::NAN, 0.0, 0.0)];
+                }
+            }),
+        ),
+        (
+            Modifier::new("Lattice", Lattice::default()),
+            Box::new(|modifier| {
+                if let ModifierKind::Lattice(lattice) = &mut modifier.kind {
+                    lattice.lattice.points_mut()[0] = Vec3::splat(f32::INFINITY);
                 }
             }),
         ),

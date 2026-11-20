@@ -27,6 +27,10 @@ pub struct Bone {
 pub trait Context {
     fn object_matrix(&self) -> Mat4;
 
+    fn original_positions(&self) -> Option<&[Vec3]> {
+        None
+    }
+
     fn material_count(&self) -> usize;
 
     fn object(&self) -> Option<ObjectRef> {

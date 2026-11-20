@@ -335,6 +335,18 @@ impl Polymesh {
         self.split_normals(&faces, &sharpness, encoded, None)
     }
 
+    #[must_use]
+    pub fn corner_fans(&self) -> Vec<Vec<u32>> {
+        let faces = self.face_normals();
+        let sharpness = Sharpness {
+            edges: self.sharp_edges().unwrap_or_default(),
+            faces: self.sharp_faces().unwrap_or_default(),
+        };
+        let mut fans = Vec::new();
+        self.split_normals(&faces, &sharpness, None, Some(&mut fans));
+        fans.into_iter().map(|fan| fan.corners).collect()
+    }
+
     pub fn encode_custom_normals(&mut self, normals: &[Vec3]) -> Vec<[i16; 2]> {
         let corners = self.corner_count();
         let faces = self.face_normals();

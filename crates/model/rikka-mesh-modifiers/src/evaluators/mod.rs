@@ -2,11 +2,13 @@ mod array;
 mod bevel;
 mod bisect;
 mod boolean;
+mod corrective_smooth;
 mod data_transfer;
 mod decimate;
 mod displace;
 mod edge_split;
 mod editing;
+pub(crate) mod lattice;
 mod mirror;
 mod shrinkwrap;
 mod smooth_by_angle;
@@ -14,6 +16,7 @@ mod solidify;
 mod subdivision;
 mod triangulate;
 mod vertex_group;
+mod weighted_normal;
 mod weld;
 
 use std::sync::Arc;
@@ -33,15 +36,17 @@ pub(crate) use subdivision::limit_positions;
 pub(crate) struct Scope<'a> {
     pub(crate) ctx: &'a dyn Context,
     pub(crate) purpose: Purpose,
+    pub(crate) original: &'a [Vec3],
     material_slots: Option<Vec<Option<MaterialRef>>>,
     notes: Vec<NoteKind>,
 }
 
 impl<'a> Scope<'a> {
-    pub(crate) fn new(ctx: &'a dyn Context, purpose: Purpose) -> Scope<'a> {
+    pub(crate) fn new(ctx: &'a dyn Context, purpose: Purpose, original: &'a [Vec3]) -> Scope<'a> {
         Scope {
             ctx,
             purpose,
+            original,
             material_slots: None,
             notes: Vec::new(),
         }
@@ -161,6 +166,17 @@ pub(crate) fn run(
         ModifierKind::Bevel(settings) => bevel::evaluate(settings, mesh, scope),
         ModifierKind::Boolean(settings) => boolean::evaluate(settings, mesh, scope),
         ModifierKind::Decimate(settings) => decimate::evaluate(settings, mesh, scope),
+        ModifierKind::WeightedNormal(settings) => {
+            weighted_normal::evaluate(settings, mesh);
+            Ok(())
+        }
+        ModifierKind::CorrectiveSmooth(settings) => {
+            let original = scope.original;
+            deform(mesh, |mesh| {
+                corrective_smooth::evaluate(settings, mesh, original)
+            })
+        }
+        ModifierKind::Lattice(settings) => deform(mesh, |mesh| lattice::evaluate(settings, mesh)),
         ModifierKind::Armature(_) => Err(SkipReason::SceneEvaluated),
     }
 }

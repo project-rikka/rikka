@@ -5,16 +5,19 @@ use crate::kinds::armature::Armature;
 use crate::kinds::array::Array;
 use crate::kinds::bevel::Bevel;
 use crate::kinds::boolean::Boolean;
+use crate::kinds::corrective_smooth::CorrectiveSmooth;
 use crate::kinds::data_transfer::DataTransfer;
 use crate::kinds::decimate::Decimate;
 use crate::kinds::displace::Displace;
 use crate::kinds::edge_split::EdgeSplit;
+use crate::kinds::lattice::Lattice;
 use crate::kinds::mirror::Mirror;
 use crate::kinds::shrinkwrap::Shrinkwrap;
 use crate::kinds::smooth_by_angle::SmoothByAngle;
 use crate::kinds::solidify::Solidify;
 use crate::kinds::subdivision::Subdivision;
 use crate::kinds::triangulate::Triangulate;
+use crate::kinds::weighted_normal::WeightedNormal;
 use crate::kinds::weld::Weld;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
@@ -43,6 +46,9 @@ pub enum ModifierKind {
     Bevel(Bevel),
     Boolean(Boolean),
     Decimate(Decimate),
+    WeightedNormal(WeightedNormal),
+    CorrectiveSmooth(CorrectiveSmooth),
+    Lattice(Lattice),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -62,6 +68,9 @@ pub enum ModifierType {
     Bevel,
     Boolean,
     Decimate,
+    WeightedNormal,
+    CorrectiveSmooth,
+    Lattice,
 }
 
 impl ModifierType {
@@ -83,6 +92,9 @@ impl ModifierType {
             ModifierType::Bevel => "Bevel",
             ModifierType::Boolean => "Boolean",
             ModifierType::Decimate => "Decimate",
+            ModifierType::WeightedNormal => "WeightedNormal",
+            ModifierType::CorrectiveSmooth => "CorrectiveSmooth",
+            ModifierType::Lattice => "Lattice",
         }
     }
 
@@ -100,6 +112,8 @@ impl ModifierType {
                 | ModifierType::Armature
                 | ModifierType::Boolean
                 | ModifierType::Decimate
+                | ModifierType::CorrectiveSmooth
+                | ModifierType::Lattice
         )
     }
 
@@ -119,6 +133,9 @@ impl ModifierType {
                 | ModifierType::Shrinkwrap
                 | ModifierType::Armature
                 | ModifierType::SmoothByAngle
+                | ModifierType::WeightedNormal
+                | ModifierType::CorrectiveSmooth
+                | ModifierType::Lattice
         )
     }
 
@@ -126,7 +143,11 @@ impl ModifierType {
     pub fn is_deform_only(self) -> bool {
         matches!(
             self,
-            ModifierType::Displace | ModifierType::Shrinkwrap | ModifierType::Armature
+            ModifierType::Displace
+                | ModifierType::Shrinkwrap
+                | ModifierType::Armature
+                | ModifierType::CorrectiveSmooth
+                | ModifierType::Lattice
         )
     }
 
@@ -155,6 +176,9 @@ impl ModifierKind {
             ModifierKind::Bevel(_) => ModifierType::Bevel,
             ModifierKind::Boolean(_) => ModifierType::Boolean,
             ModifierKind::Decimate(_) => ModifierType::Decimate,
+            ModifierKind::WeightedNormal(_) => ModifierType::WeightedNormal,
+            ModifierKind::CorrectiveSmooth(_) => ModifierType::CorrectiveSmooth,
+            ModifierKind::Lattice(_) => ModifierType::Lattice,
         }
     }
 }
@@ -186,7 +210,10 @@ kind_from!(
     Armature,
     Bevel,
     Boolean,
-    Decimate
+    Decimate,
+    WeightedNormal,
+    CorrectiveSmooth,
+    Lattice
 );
 
 #[derive(Clone, Debug, PartialEq)]
@@ -308,6 +335,18 @@ impl Codec for ModifierKind {
                 out.tag(14);
                 out.put(value);
             }
+            ModifierKind::WeightedNormal(value) => {
+                out.tag(15);
+                out.put(value);
+            }
+            ModifierKind::CorrectiveSmooth(value) => {
+                out.tag(16);
+                out.put(value);
+            }
+            ModifierKind::Lattice(value) => {
+                out.tag(17);
+                out.put(value);
+            }
         }
     }
 
@@ -328,6 +367,9 @@ impl Codec for ModifierKind {
             12 => ModifierKind::Bevel(input.get()?),
             13 => ModifierKind::Boolean(input.get()?),
             14 => ModifierKind::Decimate(input.get()?),
+            15 => ModifierKind::WeightedNormal(input.get()?),
+            16 => ModifierKind::CorrectiveSmooth(input.get()?),
+            17 => ModifierKind::Lattice(input.get()?),
             _ => return Err(DecodeError::Malformed("unknown modifier type")),
         })
     }

@@ -4,6 +4,7 @@ mod codec;
 mod compare;
 mod data_transfer;
 mod decimate;
+mod deform;
 mod displace;
 mod mirror;
 mod oracle;

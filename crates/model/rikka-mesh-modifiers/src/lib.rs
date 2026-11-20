@@ -29,6 +29,7 @@ pub use kinds::bevel::{
 pub use kinds::boolean::{
     Boolean, BooleanMaterialMode, BooleanOperand, BooleanOperation, BooleanSolver,
 };
+pub use kinds::corrective_smooth::{CorrectiveSmooth, RestSource, SmoothType};
 pub use kinds::data_transfer::{
     CornerData, CornerMapping, DataTransfer, EdgeData, EdgeMapping, FaceData, FaceMapping,
     LayerSelection, LayersDestination, LayersSource, MixMode, VertexData, VertexMapping,
@@ -36,6 +37,9 @@ pub use kinds::data_transfer::{
 pub use kinds::decimate::{Decimate, DecimateType, Delimit, SymmetryAxis};
 pub use kinds::displace::{Displace, DisplaceDirection, DisplaceSpace, TextureCoordinates};
 pub use kinds::edge_split::EdgeSplit;
+pub use kinds::lattice::{
+    LATTICE_MAX_POINTS, LATTICE_MAX_RESOLUTION, Lattice, LatticeGrid, LatticeInterpolation,
+};
 pub use kinds::mirror::Mirror;
 pub use kinds::shrinkwrap::{CullFace, Shrinkwrap, WrapMethod, WrapMode};
 pub use kinds::smooth_by_angle::SmoothByAngle;
@@ -44,6 +48,7 @@ pub use kinds::subdivision::{
     AdaptiveSpace, BoundarySmooth, Subdivision, SubdivisionType, UvSmooth,
 };
 pub use kinds::triangulate::Triangulate;
+pub use kinds::weighted_normal::{WeightedNormal, WeightedNormalMode};
 pub use kinds::weld::{Weld, WeldMode};
 pub use modifier::{Modifier, ModifierKind, ModifierType, Purpose};
 pub use note::{Note, NoteKind, SkipReason, TransferFailure};

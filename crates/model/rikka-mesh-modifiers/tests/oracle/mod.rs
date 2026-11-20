@@ -7,6 +7,8 @@ pub(crate) mod boolean;
 #[allow(clippy::approx_constant)]
 pub(crate) mod decimate;
 #[allow(clippy::approx_constant)]
+pub(crate) mod deform;
+#[allow(clippy::approx_constant)]
 pub(crate) mod scene;
 #[allow(clippy::approx_constant)]
 pub(crate) mod solidify;

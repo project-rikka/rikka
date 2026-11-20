@@ -3,16 +3,19 @@ mod array;
 mod bevel;
 mod boolean;
 mod context;
+mod corrective_smooth;
 mod data_transfer;
 mod decimate;
 mod displace;
 mod edge_split;
+mod lattice;
 mod mirror;
 mod shrinkwrap;
 mod smooth;
 mod solidify;
 mod subdivision;
 mod triangulate;
+mod weighted_normal;
 mod weld;
 
 use rikka_mesh_modifiers::{
@@ -37,6 +40,7 @@ pub(crate) const ON_CAGE: i64 = 1 << 3;
 pub(crate) const PANEL_EXPANDED: i64 = 1;
 pub(crate) const MODIFIER_PIN_LAST: i64 = 1 << 4;
 
+const LATTICE: i64 = 2;
 const SUBSURF: i64 = 1;
 const MIRROR: i64 = 5;
 const DECIMATE: i64 = 6;
@@ -53,6 +57,8 @@ const SURFACE: i64 = 30;
 const SHAPE_KEY: i64 = 32;
 const SOLIDIFY: i64 = 33;
 const TRIANGULATE: i64 = 44;
+const CORRECTIVE_SMOOTH: i64 = 51;
+const WEIGHTED_NORMAL: i64 = 54;
 const DATA_TRANSFER: i64 = 49;
 const WELD: i64 = 55;
 const NODES: i64 = 57;
@@ -78,7 +84,11 @@ pub(crate) enum Description {
     Unsupported(String),
 }
 
-pub(crate) fn describe<'a>(modifier: &Record<'a>, refs: &dyn References<'a>) -> Description {
+pub(crate) fn describe<'a>(
+    modifier: &Record<'a>,
+    owner: &Record<'a>,
+    refs: &dyn References<'a>,
+) -> Description {
     let kind = modifier
         .record("modifier")
         .and_then(|base| base.int("type"))
@@ -112,6 +122,17 @@ pub(crate) fn describe<'a>(modifier: &Record<'a>, refs: &dyn References<'a>) -> 
         BEVEL => bevel::read(modifier).into(),
         BOOLEAN => boolean::read(modifier, refs).into(),
         DECIMATE => decimate::read(modifier).into(),
+        WEIGHTED_NORMAL => weighted_normal::read(modifier).into(),
+        CORRECTIVE_SMOOTH => corrective_smooth::read(modifier).into(),
+        LATTICE => {
+            let parsed = lattice::read(modifier, owner);
+            return Description::Kind {
+                kind: parsed.lattice.into(),
+                note: parsed
+                    .note
+                    .map(|note| format!("lattice modifier \"{label}\": {note}")),
+            };
+        }
         NODES => match smooth::read(modifier) {
             Some(smooth) => smooth.into(),
             None => return Description::Unsupported("geometry nodes".to_owned()),
@@ -168,6 +189,9 @@ pub(crate) fn layout(kind: &ModifierKind) -> (&'static str, i64) {
         ModifierKind::Bevel(_) => ("BevelModifierData", BEVEL),
         ModifierKind::Boolean(_) => ("BooleanModifierData", BOOLEAN),
         ModifierKind::Decimate(_) => ("DecimateModifierData", DECIMATE),
+        ModifierKind::WeightedNormal(_) => ("WeightedNormalModifierData", WEIGHTED_NORMAL),
+        ModifierKind::CorrectiveSmooth(_) => ("CorrectiveSmoothModifierData", CORRECTIVE_SMOOTH),
+        ModifierKind::Lattice(_) => ("LatticeModifierData", LATTICE),
     }
 }
 
@@ -187,11 +211,16 @@ pub(crate) fn write(kind: &ModifierKind, record: &mut Struct<'_>, targets: &dyn 
         ModifierKind::Bevel(value) => bevel::write(value, record),
         ModifierKind::Boolean(value) => boolean::write(value, record, targets),
         ModifierKind::Decimate(value) => decimate::write(value, record),
+        ModifierKind::WeightedNormal(value) => weighted_normal::write(value, record),
+        ModifierKind::CorrectiveSmooth(value) => corrective_smooth::write(value, record),
+        ModifierKind::Lattice(value) => lattice::write(value, record),
         ModifierKind::SmoothByAngle(_) => {}
     }
 }
 
 pub(crate) use bevel::write_profile;
+pub(crate) use corrective_smooth::bind_bytes;
+pub(crate) use lattice::interpolation_code;
 
 #[derive(Default)]
 pub(crate) struct Notes {
@@ -260,7 +289,7 @@ pub(crate) fn apply<'a>(
             .kind()
             .trim_end_matches("ModifierData")
             .to_ascii_lowercase();
-        let parsed = match describe(&modifier, &objects) {
+        let parsed = match describe(&modifier, &object, &objects) {
             Description::Kind { kind, note } => {
                 if let Some(note) = note {
                     notes.unsupported(note);

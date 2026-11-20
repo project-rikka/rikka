@@ -94,6 +94,7 @@ fn run_stack(
         _ => stack.len(),
     };
     let mut mesh = cage.clone();
+    let original = ctx.original_positions().unwrap_or(&cage.positions);
     origins::attach(&mut mesh);
     let mut notes = Vec::new();
     let mut slots = None;
@@ -113,7 +114,7 @@ fn run_stack(
             });
             continue;
         }
-        let mut scope = Scope::new(ctx, purpose).with_material_slots(slots.clone());
+        let mut scope = Scope::new(ctx, purpose, original).with_material_slots(slots.clone());
         let slot = cache.as_deref_mut().and_then(|slots| slots.get_mut(index));
         let outcome = evaluators::run(&modifier.kind, &mut mesh, &mut scope, slot);
         for kind in scope.into_notes() {

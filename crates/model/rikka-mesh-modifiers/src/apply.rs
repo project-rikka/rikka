@@ -56,7 +56,11 @@ pub fn apply_as_shape_key(
 }
 
 fn run(mesh: &mut Polymesh, modifier: &Modifier, ctx: &dyn Context) -> Result<Vec<NoteKind>> {
-    let mut scope = Scope::new(ctx, Purpose::Viewport);
+    let original = match ctx.original_positions() {
+        Some(positions) => positions.to_vec(),
+        None => mesh.positions.clone(),
+    };
+    let mut scope = Scope::new(ctx, Purpose::Viewport, &original);
     let outcome = evaluators::run(&modifier.kind, mesh, &mut scope, None);
     origins::strip(mesh);
     match outcome {

@@ -52,6 +52,10 @@ impl<'a> Stage<'a> {
     }
 }
 
+pub(crate) fn world_matrix(object: Record<'_>) -> Mat4 {
+    Placer::default().world(object, 0)
+}
+
 pub(crate) fn skeletal_parent<'a>(object: &Record<'a>) -> Option<Record<'a>> {
     (object.int("partype").unwrap_or(PAROBJECT) & PARTYPE == PARSKEL)
         .then(|| object.id("parent"))

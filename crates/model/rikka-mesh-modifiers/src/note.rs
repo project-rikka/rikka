@@ -25,6 +25,8 @@ pub enum SkipReason {
     IntersectNeedsExact,
     EmptyCollection,
     NonMeshInCollection,
+    BindRequired,
+    VertexCountMismatch,
 }
 
 impl fmt::Display for SkipReason {
@@ -53,6 +55,10 @@ impl fmt::Display for SkipReason {
             }
             SkipReason::NonMeshInCollection => {
                 formatter.write_str("the collection contains non-mesh objects")
+            }
+            SkipReason::BindRequired => formatter.write_str("bind data required"),
+            SkipReason::VertexCountMismatch => {
+                formatter.write_str("original vertex count mismatch")
             }
         }
     }
