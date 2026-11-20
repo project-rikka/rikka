@@ -1,0 +1,37 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-keyring-vault",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "@crates//:argon2",
+        "@crates//:base64",
+        "@crates//:chacha20poly1305",
+        "@crates//:getrandom",
+        "@crates//:hkdf",
+        "@crates//:rustix",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-keyring-vault",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)

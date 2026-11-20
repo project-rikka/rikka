@@ -1,0 +1,36 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-proton-contacts",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-contentline",
+        "//crates/proton/rikka-proton-key-transparency",
+        "//crates/proton/rikka-proton-pgp",
+        "@crates//:jiff",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-proton-contacts",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-key-transparency",
+        "//crates/proton/rikka-proton-pgp",
+        "//crates/proton/rikka-test-proton",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

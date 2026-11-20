@@ -1,0 +1,9 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-installer",
+    deps = [
+        "//installer/crates/installer-sys",
+        "//installer/crates/installer-tui",
+    ],
+)

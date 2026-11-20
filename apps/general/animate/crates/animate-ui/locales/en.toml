@@ -1,0 +1,49 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[animate.tip]
+clear_keys = "Clear Keys"
+add_key = "Set Key"
+
+[animate.part]
+root = "Position"
+torso = "Torso"
+head = "Head"
+left_arm = "Left arm"
+right_arm = "Right arm"
+left_fingers = "Left fingers"
+right_fingers = "Right fingers"
+left_leg = "Left leg"
+right_leg = "Right leg"
+gaze = "Gaze"
+
+[animate.hand]
+left = "Left"
+right = "Right"
+thumb = "Thumb"
+index = "Index"
+middle = "Middle"
+ring = "Ring"
+little = "Little"
+
+[animate.hold]
+left_hand = "Left hand"
+right_hand = "Right hand"
+
+[animate.wind.setting]
+yaw = "Heading (°)"
+pitch = "Rise (°)"
+speed = "Speed (m/s)"
+turbulence = "Turbulence"
+gust = "Gusts (Hz)"
+
+[animate.liquid.setting]
+rate = "Flow (L/s)"
+volume = "Amount (L)"
+launch = "Source"
+target = "Target"
+speed = "Speed (m/s)"
+arc = "Arc height (m)"
+width = "Width (m)"
+spread = "Spread (°)"

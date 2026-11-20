@@ -1,0 +1,23 @@
+mod cancel;
+mod catalog_cache;
+mod error;
+mod lookup;
+mod meta;
+mod nix;
+mod nixpkgs;
+mod options;
+mod pin;
+mod recipe;
+mod release;
+mod requirement;
+mod stage;
+
+pub use cancel::Cancel;
+pub use catalog_cache::CatalogCache;
+pub use error::{Error, Result};
+pub use nixpkgs::Nixpkgs;
+pub use nixpkgs_catalog::{Catalog, Entry, Id, License, Maintainer, Package, Team};
+pub use options::Options;
+pub use pin::Pin;
+pub use requirement::{Requirement, Setting, Suggestion};
+pub use stage::Stage;

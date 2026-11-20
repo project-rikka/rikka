@@ -1,0 +1,19 @@
+---
+title: Windows backends of the foundation, desktop and session crates
+description: What dirs, watch, i18n, log, open, dialog, instance, secrets, mime, xdg, seam and assist do on Windows.
+about: crates/desktop
+tags: [windows, desktop]
+---
+
+- Each crate keeps one public API; the platform code sits in `unix`/`windows` modules chosen in one `mod.rs` (`rikka-dirs` base/passwd/user_dirs, `rikka-watch` watches, `rikka-open` open/program/uri, `rikka-dialog` run, `rikka-instance` service, `rikka-i18n-catalog` system).
+- `rikka-dirs`: `XDG_*_HOME`/`XDG_*_DIRS` overrides still win; otherwise Known Folders: home = Profile, config = RoamingAppData, data/state/cache home = LocalAppData, no runtime dir, data and config dirs = ProgramData (machine policy lives in `%ProgramData%\rikka`). `Paths` cache is `%LOCALAPPDATA%\rikka\cache`. `UserDirs` come from FOLDERID_*; `passwd::current()` uses GetUserNameExW (display name as gecos); `current_uid`/`lookup` are unix-only.
+- `rikka-watch` on Windows: one overlapped ReadDirectoryChangesW per watched path, all sharing one manual-reset event (`AsHandle`); `read()` resets it and polls until no spot completes. Tree is native subtree watching; files are watched through their parent with a name filter; overflow or a vanished folder gives `Lost`/`Removed`; modifications report `Modified` and `Written`; `Reach::Uses` is `Error::Unsupported`. Reads cancelled by the issuing thread's exit are reissued.
+- `Locale::system()` on Windows is GetUserPreferredUILanguages, then GetUserDefaultLocaleName. `rikka-log` writes to `%LOCALAPPDATA%\rikka\logs\<exe>.log` when the process has no stderr (GUI subsystem).
+- `rikka-open`: `open` = ShellExecuteExW (file URIs become paths), `reveal(path)` = SHOpenFolderAndSelectItems (Linux opens the parent folder); both run on a short-lived STA thread. Windows file URIs are `file:///C:/…` and `file://server/share/…`. `spawn_detached` uses DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP; PATHEXT decides `is_executable`.
+- `rikka-dialog`: IFileOpenDialog/IFileSaveDialog on its own STA thread; mime filters become globs through `rikka_mime::Database::globs_for`, the first filter's extension is the save default, the owner is `WindowIdentifier::Win32`.
+- `rikka-mime`: `Database::builtin()` is a curated glob/magic/alias/subclass table (media, figures, Rikka formats); `load()` adds it on Windows. `globs_for(type or kind/*)` follows aliases and subclasses.
+- `rikka-instance`: pipe `\\.\pipe\<bus name>.<user SID>.<session>` created with FILE_FLAG_FIRST_PIPE_INSTANCE, owner and DACL the user only, remote clients rejected. Secondaries check the pipe owner, call AllowSetForegroundWindow for the server pid and send a length-prefixed frame (arguments/cwd as UTF-16, uris, action), then wait for one ack byte. Activation tokens are unix-only.
+- `rikka-secrets` on Windows: Credential Manager generic credentials (CRED_PERSIST_LOCAL_MACHINE), target `rikka:<schema>?<k=v&…>` percent-encoded, label as user name, secrets over 2560 bytes split into `rikka-part:<n>:<target>`; searches enumerate `rikka:<schema>?*` and match attribute subsets. `Keyring` and `changes()` are unix-only.
+- `rikka-xdg::RecentFiles::user()` is `%LOCALAPPDATA%\rikka\recently-used.xbel` on Windows and `add` also calls SHAddToRecentDocs.
+- No session exists on Windows: `rikka_seam::net::{SocketClient, SocketListener}` are uninhabited there and every constructor fails (`from_env` NotFound), so settings stay local and `rikka-assist` reports `Error::Sessionless`. `rikka-xcursor` and `rikka-portal-request` are Linux-only targets.
+- Grammar libraries are `{DLL_PREFIX}tree-sitter-<name>{DLL_SUFFIX}` under `lib/rikka/grammars` (`tree-sitter-<name>.dll` on Windows).

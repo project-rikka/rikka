@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "ade-skill",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/ade:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/ade/crates/ade-scope",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-tool",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":ade-skill",
+        "//apps/system/ade/crates/ade-scope",
+        "@crates//:tempfile",
+    ],
+)

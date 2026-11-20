@@ -1,0 +1,302 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[music]
+title = "Music"
+play = "Play"
+shuffle = "Shuffle"
+
+[music.signing]
+with = "Continue with {name}"
+connecting = "Connecting…"
+browser = "Finish signing in to {name} in your browser."
+again = "Open the page again"
+cancel = "Cancel"
+page = "Sign in to {name}"
+page-closed = "The sign-in page closed unexpectedly."
+
+[music.accounts]
+saved = "Accounts"
+add = "Add an account"
+expired = "Signed out of {name}. Sign in again."
+unknown = "{name} is not supported."
+
+[music.local]
+name = "Local music"
+here = "On this computer"
+scanning = "Scanning… {read} of {total}"
+finding = "Looking for music… {count} found"
+filling = "Building your library"
+empty = "No music in your library yet"
+missing = "Local music is unavailable"
+offline = "On a disconnected drive"
+album-gone = "This album is no longer in your library"
+artist-gone = "This artist is no longer in your library"
+disc = "Disc {number}"
+disc-named = "Disc {number} · {name}"
+folder-empty = "No music in this folder"
+
+[music.settings]
+title = "Settings"
+back = "Back"
+accounts = "Accounts"
+quality = "Quality"
+audio = "Audio quality"
+image = "Artwork quality"
+storage = "Storage"
+cache = "Cache played music"
+cache-used = "Used"
+cache-clear = "Clear"
+sources = "Fallback order"
+library = "Library"
+output = "Output"
+
+[music.quality]
+low = "Low"
+standard = "Standard"
+highest = "Highest"
+
+[music.cache]
+off = "Off"
+
+[music.fidelity]
+high = "Hi-Res"
+lossless = "Lossless"
+format = "{bits}-bit / {rate} kHz"
+dsd = "DSD{multiple} · {rate} MHz"
+bitrate = "{kbps} kbps"
+
+[music.nav]
+home = "Home"
+search = "Search"
+songs = "Liked Songs"
+playlists = "Playlists"
+blends = "Rikka playlists"
+albums = "Albums"
+artists = "Artists"
+songs-all = "Songs"
+genres = "Genres"
+folders = "Folders"
+
+[music.home]
+picks = "Quick picks"
+recent = "Recently played"
+following = "From people you follow"
+mixes = "Mixes for you"
+albums = "Albums you saved"
+playlists = "Your playlists"
+artists = "Artists you like"
+new = "New releases"
+acclaimed = "Acclaimed albums"
+popular = "Most played"
+curated = "Playlists from the editors"
+added = "Recently added"
+favourites = "Favourites"
+empty = "No recommendations yet"
+
+[music.gallery]
+all = "Show all"
+
+[music.search]
+placeholder = "Search songs, artists and albums"
+hint = "Search songs, artists and albums"
+none = "No results"
+songs = "Songs"
+artists = "Artists"
+albums = "Albums"
+playlists = "Playlists"
+
+[music.songs]
+title = "Liked Songs"
+empty = "No liked songs"
+
+[music.artist]
+popular = "Popular"
+albums = "Albums"
+singles = "Singles and EPs"
+appears = "Appears on"
+
+[music.mix]
+title = "{name} Mix"
+seeded = "Based on {name}"
+
+[music.kind]
+album = "Album"
+artist = "Artist"
+playlist = "Playlist"
+collection = "Collection"
+mix = "Mix"
+blend = "Rikka playlist"
+
+[music.release]
+album = "Album"
+single = "Single"
+ep = "EP"
+compilation = "Compilation"
+
+[music.column]
+title = "Title"
+album = "Album"
+artist = "Artist"
+year = "Year"
+format = "Format"
+plays = "Plays"
+added = "Date added"
+length = "Time"
+
+[music.count]
+songs = "{count, plural, one {# song} other {# songs}}"
+albums = "{count, plural, one {# album} other {# albums}}"
+artists = "{count, plural, one {# artist} other {# artists}}"
+genres = "{count, plural, one {# genre} other {# genres}}"
+
+[music.queue]
+empty = "Nothing is playing."
+now = "Now playing"
+next = "Next up"
+end = "End of queue"
+
+[music.player]
+unavailable = "This song cannot be played."
+refused = "{name} does not allow playback on this account."
+nowhere = "No signed-in service can play this song from {name}."
+via = "Playing from {name}"
+
+[music.playlist]
+empty = "This playlist is empty."
+
+[music.blend]
+empty = "This playlist is empty."
+gone = "This playlist was deleted."
+local = "Saved on this computer"
+saved-in = "Saved in {names}"
+syncing = "Syncing…"
+unsynced = "Could not sync with {names}"
+
+[music.menu]
+play-next = "Play next"
+queue = "Add to queue"
+add-to-playlist = "Add to playlist"
+remove-from-playlist = "Remove from this playlist"
+remove-from-queue = "Remove from queue"
+save = "Save to Liked Songs"
+unsave = "Remove from Liked Songs"
+radio = "Go to song radio"
+artist = "Go to artist"
+album = "Go to album"
+copy-song-link = "Copy song link"
+new-playlist = "New playlist…"
+loading = "Loading playlists…"
+rename = "Rename…"
+delete = "Delete…"
+forget = "Remove from library"
+copy-playlist-link = "Copy playlist link"
+new-blend = "New Rikka playlist…"
+sync = "Sync now"
+elsewhere = "From {name}"
+reveal = "Show in Files"
+
+[music.dialog]
+create = "New playlist"
+rename = "Rename playlist"
+delete = "Delete this playlist?"
+delete-message = "“{name}” will be deleted from your library."
+name = "Playlist name"
+suggested = "My Playlist #{count}"
+make = "Create"
+save = "Save"
+erase = "Delete"
+cancel = "Cancel"
+create-blend = "New Rikka playlist"
+suggested-blend = "Rikka Playlist #{count}"
+delete-blend-message = "“{name}” will be deleted here and from every service it is saved in."
+
+[music.edit]
+added = "Added to {name}"
+removed = "Removed from {name}"
+copied = "Link copied"
+failed = "Could not make the change: {reason}"
+
+[music.library]
+choose = "Add music folders"
+add = "Add folder…"
+open = "Library settings"
+folders = "Folders"
+index = "Library"
+status = "Status"
+current = "Up to date"
+rescan = "Rescan"
+contents = "Contents"
+music = "Music folder"
+remote = "Network folder"
+added = "Added folder"
+
+[music.span]
+minutes = "{minutes} min"
+hours = "{hours} hr {minutes} min"
+
+[music.unit]
+khz = "{rate} kHz"
+mhz = "{rate} MHz"
+
+[music.sort]
+artist = "Artist"
+title = "Title"
+year = "Year"
+added = "Recently added"
+
+[music.signal]
+source = "Source"
+dsd-to-pcm = "DSD to PCM"
+resample = "Sample rate conversion"
+downmix = "Downmix"
+upmix = "Channel upmix"
+replay-gain = "ReplayGain"
+decibels = "{db} dB"
+volume = "Volume"
+dither = "Dither"
+bits = "{bits}-bit"
+float = "{bits}-bit float"
+native-dsd = "Native DSD"
+dop = "DSD over PCM (DoP)"
+mono = "Mono"
+stereo = "Stereo"
+channels = "{count} channels"
+exclusive = "Exclusive"
+bluetooth = "Bluetooth {codec}"
+software = "Software volume"
+stream = "PipeWire stream volume"
+device = "Device volume"
+hardware = "Hardware volume"
+fell-back = "{device}: {reason}"
+instead = "Playing through the system output"
+pinned = "PipeWire is running at {rate}."
+allow = "Allow rate switching"
+switching = "Sample rate switching allowed"
+
+[music.refusal]
+missing = "Not connected"
+busy = "In use by another program"
+busy-by = "In use by {holder}"
+unsupported = "Can’t play this format"
+lost = "Disconnected"
+released = "Handed to another program"
+unopenable = "Can’t be opened ({reason})"
+
+[music.output]
+device = "Output device"
+system = "System default"
+shared = "Shared · PipeWire"
+exclusive = "Exclusive"
+playing = "Playing"
+up-to = "Up to {bits}-bit / {rate}"
+native = "Native {dsd}"
+dop = "DoP up to {dsd}"
+levelling = "Volume levelling"
+replay-gain = "ReplayGain"
+preamp = "Preamp"
+clipping = "Prevent clipping"
+off = "Off"
+track = "Track"
+album = "Album"

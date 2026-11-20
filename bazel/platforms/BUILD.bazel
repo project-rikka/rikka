@@ -1,0 +1,79 @@
+load("@nix//:paths.bzl", "NIX")
+
+constraint_setting(
+    name = "libc",
+    default_constraint_value = ":gnu",
+)
+
+constraint_value(
+    name = "gnu",
+    constraint_setting = ":libc",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "musl",
+    constraint_setting = ":libc",
+    visibility = ["//visibility:public"],
+)
+
+constraint_setting(
+    name = "linkage",
+    default_constraint_value = ":session",
+)
+
+constraint_value(
+    name = "session",
+    constraint_setting = ":linkage",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "portable",
+    constraint_setting = ":linkage",
+    visibility = ["//visibility:public"],
+)
+
+platform(
+    name = "linux",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+        ":gnu",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+platform(
+    name = "linux_musl",
+    constraint_values = [":musl"],
+    parents = [":linux"],
+    visibility = ["//visibility:public"],
+)
+
+platform(
+    name = "linux_portable",
+    constraint_values = [":portable"],
+    parents = [":linux"],
+    visibility = ["//visibility:public"],
+)
+
+platform(
+    name = "rbe",
+    exec_properties = {
+        "OSFamily": "Linux",
+        "container-image": "docker://" + NIX["image"],
+        "network": "off",
+    },
+    parents = [":linux"],
+    visibility = ["//visibility:public"],
+)
+
+platform(
+    name = "windows",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+    visibility = ["//visibility:public"],
+)

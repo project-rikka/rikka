@@ -1,0 +1,32 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-compositor-xwm",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/foundation/rikka-types",
+        "@crates//:bitflags",
+        "@crates//:rustc-hash",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:x11rb-protocol",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-compositor-xwm",
+        "//crates/foundation/rikka-types",
+        "@crates//:rustix",
+        "@crates//:x11rb",
+    ],
+)

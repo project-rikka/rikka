@@ -1,0 +1,30 @@
+load("//bazel/python:defs.bzl", "rikka_py_library")
+load("//sdk/codegen:defs.bzl", "rikka_bindings")
+
+OUTS = [
+    "pyproject.toml",
+    "src/rikka/__init__.py",
+    "src/rikka/_native.py",
+    "src/rikka/_runtime.py",
+    "src/rikka/py.typed",
+]
+
+rikka_bindings(
+    name = "generated",
+    language = "python",
+    outs = OUTS,
+    visibility = ["//sdk:__pkg__"],
+)
+
+filegroup(
+    name = "package",
+    srcs = OUTS,
+)
+
+rikka_py_library(
+    name = "python",
+    srcs = glob(["src/rikka/*"]),
+    libraries = ["//sdk/native:versioned"],
+    root = "src",
+    visibility = ["//visibility:public"],
+)

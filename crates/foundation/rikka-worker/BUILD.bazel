@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-worker",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:rustix"],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-worker",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+    ],
+)

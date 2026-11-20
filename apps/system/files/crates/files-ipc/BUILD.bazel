@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-ipc",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-ipc",
+        "//apps/system/files/crates/files-core",
+    ],
+)

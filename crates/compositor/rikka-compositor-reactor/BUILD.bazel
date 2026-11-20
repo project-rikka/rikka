@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-compositor-reactor",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "@crates//:rustix",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-compositor-reactor",
+    ],
+)

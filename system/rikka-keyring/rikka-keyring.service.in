@@ -1,0 +1,18 @@
+[Unit]
+Description=Secret service (Rikka keyring)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.secrets
+ExecStart=@BINDIR@/rikka-keyring
+Restart=on-failure
+RestartSec=1
+NoNewPrivileges=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictRealtime=yes
+SystemCallArchitectures=native
+LimitCORE=0

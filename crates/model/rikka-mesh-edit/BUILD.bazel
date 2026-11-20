@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-mesh-edit",
+    cranelift = False,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-polymesh",
+        "//crates/model/rikka-spatial",
+        "@crates//:bitflags",
+        "@crates//:glam",
+        "@crates//:rustc-hash",
+        "@crates//:smallvec",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    limit = 180,
+    deps = [
+        ":rikka-mesh-edit",
+        "//crates/model/rikka-polymesh",
+        "//crates/model/rikka-test-meshes",
+        "@crates//:glam",
+    ],
+)

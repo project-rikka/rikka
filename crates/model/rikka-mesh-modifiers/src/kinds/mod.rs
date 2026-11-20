@@ -1,0 +1,15 @@
+pub(crate) mod armature;
+pub(crate) mod array;
+pub(crate) mod bevel;
+pub(crate) mod boolean;
+pub(crate) mod data_transfer;
+pub(crate) mod decimate;
+pub(crate) mod displace;
+pub(crate) mod edge_split;
+pub(crate) mod mirror;
+pub(crate) mod shrinkwrap;
+pub(crate) mod smooth_by_angle;
+pub(crate) mod solidify;
+pub(crate) mod subdivision;
+pub(crate) mod triangulate;
+pub(crate) mod weld;

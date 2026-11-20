@@ -1,0 +1,15 @@
+load("//bazel/go:defs.bzl", "rikka_go_binary")
+
+[
+    rikka_go_binary(
+        name = main.removesuffix("/main.go"),
+        srcs = glob([main.removesuffix("main.go") + "*.go"]),
+        library = "//sdk/bindings/go",
+    )
+    for main in glob(["*/main.go"])
+]
+
+exports_files(
+    ["counter/main.go"],
+    visibility = ["//website:__pkg__"],
+)

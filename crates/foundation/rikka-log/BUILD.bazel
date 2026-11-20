@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-log",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:tracing-subscriber",
+    ] + select({
+        "@platforms//os:linux": [],
+        "@platforms//os:windows": ["//crates/foundation/rikka-dirs"],
+    }),
+)

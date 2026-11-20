@@ -1,0 +1,16 @@
+load("@rules_rust//rust:defs.bzl", "rust_lint_config")
+
+rust_lint_config(
+    name = "lints",
+    clippy = {
+        "all": "warn",
+        "missing_safety_doc": "allow",
+    },
+    rustc = {
+        "missing_debug_implementations": "warn",
+        "unreachable_pub": "warn",
+        "unsafe_op_in_unsafe_fn": "deny",
+        "unused_crate_dependencies": "warn",
+    },
+    visibility = ["//visibility:public"],
+)

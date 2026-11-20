@@ -1,0 +1,30 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "nixpkgs-search",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/packages:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/packages/crates/nixpkgs-catalog",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-xml",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/lookup.json",
+    ],
+    deps = [
+        ":nixpkgs-search",
+        "//crates/foundation/rikka-sync",
+    ],
+)

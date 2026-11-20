@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-sysmon",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-mounts",
+        "//crates/foundation/rikka-interfaces",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "//crates/status/rikka-nvml",
+        "@crates//:futures-util",
+        "@crates//:rustix",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-sysmon",
+        "@crates//:futures-util",
+        "@crates//:tokio",
+    ],
+)

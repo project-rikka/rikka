@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-emoji",
+    compile_data = [
+        "data/emoji.txt",
+        "data/en.txt",
+        "data/ja.txt",
+        "data/zh-Hans.txt",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-emoji",
+    ],
+)

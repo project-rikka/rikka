@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-mcp",
+    target_compatible_with = ["@platforms//os:linux"],
+    testonly = True,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "@crates//:serde_json",
+    ],
+)

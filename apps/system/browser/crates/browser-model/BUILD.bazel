@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "browser-model",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/browser/crates/browser-engine-settings",
+        "//apps/system/browser/crates/browser-pages",
+        "//apps/system/browser/crates/browser-store",
+        "//crates/foundation/rikka-types",
+        "//crates/ui/rikka-ui",
+        "//crates/web/rikka-web",
+        "@crates//:tracing",
+        "@crates//:url",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":browser-model",
+        "//apps/system/browser/crates/browser-store",
+        "//crates/web/rikka-web",
+    ],
+)

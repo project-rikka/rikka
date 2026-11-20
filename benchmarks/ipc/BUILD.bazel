@@ -1,0 +1,34 @@
+load("//benchmarks:defs.bzl", "bench_binary", "bench_library", "bench_test")
+
+bench_library(
+    name = "ipc_bench",
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+    deps = [
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-test-seam",
+        "@bench_crates//:zbus",
+        "@crates//:async-io",
+        "@crates//:futures-util",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)
+
+bench_test(
+    name = "main",
+    deps = [
+        ":ipc_bench",
+    ],
+)
+
+bench_binary(
+    name = "round_trips",
+    srcs = glob(["benches/**/*.rs"]),
+    crate_root = "benches/round_trips.rs",
+    deps = [
+        ":ipc_bench",
+        "@bench_crates//:divan",
+    ],
+)

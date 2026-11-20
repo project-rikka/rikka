@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-physics-world",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-file-format",
+        "//crates/physics/rikka-physics-collision",
+        "//crates/physics/rikka-physics-core",
+        "//crates/physics/rikka-physics-geometry",
+        "//crates/physics/rikka-physics-math",
+        "//crates/physics/rikka-physics-rigid",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-physics-world",
+    ],
+)

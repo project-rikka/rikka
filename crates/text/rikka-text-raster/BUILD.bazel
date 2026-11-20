@@ -1,0 +1,37 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-text-raster",
+    cranelift = False,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-deflate",
+        "//crates/foundation/rikka-simd",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image-resample",
+        "//crates/graphics/rikka-png",
+        "//crates/graphics/rikka-vector",
+        "//crates/text/rikka-text-font",
+        "@crates//:rustc-hash",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "testdata/glyph.svg",
+        "testdata/glyph.svg.gz",
+    ],
+    deps = [
+        ":rikka-text-raster",
+        "//crates/foundation/rikka-deflate",
+        "//crates/foundation/rikka-simd",
+        "//crates/text/rikka-test-fonts",
+        "//crates/text/rikka-text-font",
+    ],
+)

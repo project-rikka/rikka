@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-xdg",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-watch",
+        "//crates/foundation/rikka-worker",
+        "//crates/foundation/rikka-xml",
+        "@crates//:jiff",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-xdg",
+        "//crates/desktop/rikka-mime",
+        "@crates//:tempfile",
+    ],
+)

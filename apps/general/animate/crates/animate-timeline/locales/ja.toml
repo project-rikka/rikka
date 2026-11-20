@@ -1,0 +1,33 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[animate.track]
+parts = "すべての部位"
+switches = "表示・IK"
+unlisted = "表示枠にないもの"
+unmatched = "このモデルにないもの"
+camera = "カメラ"
+wind = "風"
+morph_eyebrow = "眉のモーフ"
+morph_eye = "目のモーフ"
+morph_mouth = "口のモーフ"
+morph_other = "その他のモーフ"
+pour = "放出"
+
+[animate.hold]
+pin_lane = "ピン {number}"
+
+[animate.look.track]
+world = "ワールド: {node}"
+composite = "コンポジット: {node}"
+material = "{material}: {node}"
+slot = "{figure}: 材質 {number}"
+
+[animate.liquid]
+seconds = "{seconds} 秒"
+
+[animate.liquid.section]
+emission = "放出"
+path = "軌道"
+shape = "形状"

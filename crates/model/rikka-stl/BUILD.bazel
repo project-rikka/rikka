@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-stl",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/model/rikka-model-core",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "assets/cubes.stl",
+        "assets/teapot.stl",
+    ],
+    deps = [
+        ":rikka-stl",
+        "//crates/model/rikka-model-core",
+    ],
+)

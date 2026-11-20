@@ -1,0 +1,17 @@
+---
+title: Humanoid recognition (rikka-humanoid)
+description: Anatomy::recognize(model) maps any model to HumanBone (declared, Unity-style names, structure), parts, swings.
+about: crates/model/rikka-humanoid
+tags: [model, humanoid]
+---
+
+- `Anatomy::recognize(model)` is the one door: `humanoid()` (partial allowed; `missing()` lists required gaps), `twist(bone)`, `part(node)` (the human bone a node moves with: itself, intermediates between human bones fold to the upper one, Hips ancestors to Hips, followers to their source or parent), `region(node)` (nearest part up the hierarchy), `swings()`/`swing(node)`, `forward()`.
+- Order: a declared humanoid (`RigFacts`, e.g. VRM/VRMA) is used as is; else `naming/` maps by bone names Unity-style (Mixamo, Unity, UE, Biped, VRoid, CC, Genesis, Rigify, KayKit, MMD Japanese) and, when complete and hierarchy-valid, wins, with structure filling only optional limb bones it agrees on; else structure alone. Skeleton-only files (no skin) map only by names.
+- Naming derives Hips as the common ancestor of legs and the arms/head top, the spine chain and neck from the path between, and links (lower arm, hand, lower leg, foot) as the nearest match down the chain; parents are lifted through full followers (PMX D-bones).
+- Format facts arrive as `rikka_model_core::RigFacts` from `Model::rig_facts()`: VRM's declared humanoid, springs and constraints; PMX IK chains, append followers, fixed-axis twists and dynamic rigid bodies. A new format implements `Extension::describe_rig`.
+- `frame.rs` is the effective tree: co-located full followers (D-bones) alias to their source, swinging subtrees and fleshless nodes (IK targets, tips) drop out, and flesh is skin weight credited per node.
+- `recognize/`: legs from IK chains (else lowest side chains), toes = forward flesh child of the foot, facing from toes (else eyes, else +Z); hands = most lateral nodes with ≥ 3 digit chains; hips = common ancestor of legs and hands; chest = common ancestor of the hands; the head branch is the highest one rooted anywhere on the trunk from chest down to hips (necks often branch below the arms' bone), and the neck is the last joint before the head that is not an ancestor of the chest; arms split by the most balanced upper/forearm lengths.
+- Fingers: the thumb is the digit whose wrist-to-end direction is most isolated from the others (nearest root only with ≤ 2 digits), the rest are ordered front to back; joints are assigned from the fingertip back, so metacarpals (人指０ etc.) stay unmapped intermediates.
+- Eyes are rotation pivots, not the fleshiest bones: first a mirrored pair under the head that follows one shared source at equal ratio (PMX 両目 driving 左目/右目), else the fleshiest mirrored pair lifted up its own fleshless chain below the head (helper bones like 左目補助→左目子 or counter-rotating 左目先 carry the eye mesh in many models).
+- `Swing` = a connected run of swinging nodes with its anchor and anchor region; `is_flesh` marks mirrored, compact, forward torso swings (breasts). `swing(node)` is the nearest swing at or above the node, so skinning on anything hung from a swing finds it in O(1); the tailor's `Figure::hung` filters out flesh.
+- Tests check a sample character against its standard bone names, that structure alone finds the same humanoid with every bone renamed, a table of rig naming conventions on skeleton-only models, the knight FBX and the standard MMD skeleton.

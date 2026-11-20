@@ -1,0 +1,323 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[effects]
+grouped = "{group}：{part}"
+
+[effects.unit]
+pixels = "像素"
+frames = "帧"
+
+[effects.family]
+adjust = "调整"
+blur = "模糊"
+sharpen = "锐化"
+noise = "杂色"
+stylize = "风格化"
+photo = "照片"
+key = "抠像与遮罩"
+
+[effects.kind]
+brightness_contrast = "亮度/对比度"
+levels = "色阶"
+curves = "曲线"
+exposure = "曝光度"
+vibrance = "自然饱和度"
+hue_saturation = "色相/饱和度"
+color_balance = "色彩平衡"
+black_white = "黑白"
+photo_filter = "照片滤镜"
+channel_mixer = "通道混合器"
+color_lookup = "颜色查找"
+white_balance = "白平衡"
+posterize = "色调分离"
+threshold = "阈值"
+gradient_map = "渐变映射"
+selective_color = "可选颜色"
+shadows_highlights = "阴影/高光"
+gaussian_blur = "高斯模糊"
+box_blur = "方框模糊"
+motion_blur = "动感模糊"
+radial_blur = "径向模糊"
+lens_blur = "镜头模糊"
+surface_blur = "表面模糊"
+median = "中间值"
+tilt_shift = "移轴模糊"
+unsharp_mask = "USM 锐化"
+smart_sharpen = "智能锐化"
+high_pass = "高反差保留"
+clarity = "清晰度"
+add_noise = "添加杂色"
+reduce_noise = "减少杂色"
+emboss = "浮雕效果"
+mosaic = "马赛克"
+oil_paint = "油画"
+glow = "发光"
+vignette = "晕影"
+dither = "仿色"
+chroma_key = "色度键"
+luma_key = "亮度键"
+clipping = "裁切"
+channel_shift = "通道偏移"
+drop_shadow = "投影"
+outline = "描边"
+
+[effects.adjust]
+amount = "数量"
+angle = "角度"
+auto = "自动"
+black = "黑色"
+blue = "蓝色"
+brightness = "亮度"
+cell_size = "单元格大小"
+channel = "通道"
+contrast = "对比度"
+cyan = "青色"
+distance = "距离"
+exposure = "曝光度"
+gamma = "灰度系数校正"
+green = "绿色"
+highlights = "高光"
+hue = "色相"
+input_levels = "输入色阶"
+legacy = "使用旧版"
+levels = "色阶"
+lightness = "明度"
+magenta = "洋红"
+midtones = "中间调"
+offset = "位移"
+output_levels = "输出色阶"
+preserve_luminosity = "保持明度"
+radius = "半径"
+red = "红色"
+rgb = "RGB"
+saturation = "饱和度"
+shadows = "阴影"
+temperature = "色温"
+threshold = "阈值"
+threshold_levels = "阈值（色阶）"
+vibrance = "自然饱和度"
+white_balance_note = "设置拍摄时光源的色温。数值越低，画面越冷。"
+yellow = "黄色"
+
+[effects.curves]
+preset = "预设"
+custom = "自定"
+linear = "线性"
+increase_contrast = "增加对比度"
+decrease_contrast = "降低对比度"
+lighter = "较亮"
+darker = "较暗"
+negative = "负片"
+input = "输入"
+output = "输出"
+hint = "单击曲线图可添加点。将点拖出曲线图或按 Delete 键可删除。"
+
+[effects.hue_saturation]
+edit = "范围"
+master = "全图"
+reds = "红色"
+yellows = "黄色"
+greens = "绿色"
+cyans = "青色"
+blues = "蓝色"
+magentas = "洋红"
+colorize = "着色"
+
+[effects.color_balance]
+tone = "色调平衡"
+cyan_red = "青色–红色"
+magenta_green = "洋红–绿色"
+yellow_blue = "黄色–蓝色"
+
+[effects.black_white]
+preset = "预设"
+default = "默认值"
+red_filter = "红色滤镜"
+yellow_filter = "黄色滤镜"
+infrared = "红外线"
+neutral = "均等权重"
+tint = "色调"
+tint_color = "色调颜色"
+
+[effects.photo_filter]
+filter = "滤镜"
+color = "颜色"
+density = "密度"
+warming_85 = "加温滤镜 (85)"
+warming_lba = "加温滤镜 (LBA)"
+warming_81 = "加温滤镜 (81)"
+cooling_80 = "冷却滤镜 (80)"
+cooling_lbb = "冷却滤镜 (LBB)"
+cooling_82 = "冷却滤镜 (82)"
+red = "红"
+orange = "橙"
+yellow = "黄"
+green = "绿"
+cyan = "青"
+blue = "蓝"
+violet = "紫"
+magenta = "洋红"
+sepia = "深褐"
+deep_red = "深红"
+deep_blue = "深蓝"
+deep_emerald = "深祖母绿"
+deep_yellow = "深黄"
+underwater = "水下"
+
+[effects.channel_mixer]
+output = "输出通道"
+gray = "灰色"
+total = "总计"
+constant = "常数"
+monochrome = "单色"
+
+[effects.color_lookup]
+table = "3D LUT"
+none = "尚未载入查找表。"
+load = "载入 3D LUT…"
+load_title = "载入颜色查找表"
+load_accept = "载入"
+tables = "3D LUT 文件"
+formats = "可载入 .cube 和 .3dl 查找表。"
+unloaded = "无法载入查找表：{reason}"
+
+[effects.threshold]
+level = "阈值色阶"
+
+[effects.gradient_map]
+preset = "预设"
+black_white = "黑、白"
+sepia = "深褐"
+cyanotype = "蓝晒"
+violet_orange = "紫、橙"
+blue_red_yellow = "蓝、红、黄"
+teal_orange = "青、橙"
+location = "位置"
+midpoint = "中点"
+reverse = "反向"
+hint = "在渐变条下方单击可添加色标。向下拖移色标或按 Delete 键可删除。"
+
+[effects.selective_color]
+colors = "颜色"
+whites = "白色"
+neutrals = "中性色"
+blacks = "黑色"
+method = "方法"
+relative = "相对"
+absolute = "绝对"
+
+[effects.shadows_highlights]
+tone = "色调"
+adjustments = "调整"
+color = "颜色"
+midtone = "中间调"
+
+[effects.radial_blur]
+method = "模糊方法"
+spin = "旋转"
+zoom = "缩放"
+quality = "品质"
+draft = "草图"
+good = "好"
+best = "最好"
+center = "中心模糊"
+center_at = "水平 {x}%，垂直 {y}%"
+center_x = "模糊中心（水平）"
+center_y = "模糊中心（垂直）"
+
+[effects.lens_blur]
+iris = "光圈"
+shape = "形状"
+circle = "圆形"
+triangle = "三角形 (3)"
+square = "方形 (4)"
+pentagon = "五边形 (5)"
+hexagon = "六边形 (6)"
+heptagon = "七边形 (7)"
+octagon = "八边形 (8)"
+curvature = "叶片弯度"
+rotation = "旋转"
+specular = "镜面高光"
+
+[effects.tilt_shift]
+blur = "模糊"
+center = "焦点线位置"
+focus = "焦点区域"
+transition = "过渡"
+note = "位置、焦点区域和过渡均为相对图像高度的百分比。"
+
+[effects.smart_sharpen]
+reduce_noise = "减少杂色"
+remove = "移去"
+
+[effects.add_noise]
+distribution = "分布"
+uniform = "平均分布"
+gaussian = "高斯分布"
+monochromatic = "单色"
+seed = "种子"
+
+[effects.reduce_noise]
+strength = "强度"
+preserve_details = "保留细节"
+color = "减少颜色杂色"
+sharpen_details = "锐化细节"
+
+[effects.emboss]
+height = "高度"
+
+[effects.oil_paint]
+brush = "画笔"
+stylization = "描边样式"
+cleanliness = "描边清洁度"
+scale = "缩放"
+bristle_detail = "硬毛刷细节"
+lighting = "光照"
+shine = "闪亮"
+
+[effects.vignette]
+midpoint = "中点"
+roundness = "圆度"
+feather = "羽化"
+
+[effects.dither]
+levels = "每通道色阶数"
+method = "方法"
+ordered = "有序"
+diffusion = "误差扩散"
+
+[effects.levels]
+black = "输入黑场"
+white = "输入白场"
+out_black = "输出黑场"
+out_white = "输出白场"
+
+[effects.white_balance]
+tint = "色调"
+
+[effects.key]
+color = "键色"
+tolerance = "容差"
+softness = "柔和度"
+spill = "溢色抑制"
+keep = "保留"
+bright = "亮部"
+dark = "暗部"
+
+[effects.clipping]
+left = "左"
+top = "上"
+right = "右"
+bottom = "下"
+feather = "羽化"
+
+[effects.drop_shadow]
+color = "阴影颜色"
+blur = "模糊"
+opacity = "不透明度"
+
+[effects.outline]
+color = "描边颜色"
+width = "宽度"

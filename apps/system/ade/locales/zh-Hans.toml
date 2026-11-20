@@ -1,0 +1,264 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[ade]
+title = "ADE"
+
+[ade.welcome]
+open = "打开"
+hint = "打开项目文件夹"
+recent = "最近的项目"
+chooser = "打开项目"
+accept = "打开"
+signed-out = "尚未登录任何模型。"
+sign-in = "登录"
+
+[ade.machine]
+lost = "与屏幕的连接已断开"
+screen = "计算机"
+waiting = "正在等待第一帧…"
+
+[ade.terminal]
+title = "终端"
+
+[ade.sidebar]
+files = "文件"
+threads = "会话"
+git = "Git"
+new = "新建会话"
+untitled = "新建会话"
+no-threads = "没有会话"
+no-files = "此文件夹为空"
+reading = "正在读取项目…"
+
+[ade.chat]
+placeholder = "询问关于此项目的问题"
+answering = "正在处理…"
+main = "主对话"
+start = "关于 {project}，什么都可以问"
+pick = "选择模型"
+reasoning = "推理"
+unconfigured = "尚未登录任何模型。请在“设置 → AI”中登录。"
+keyless = "{provider} 没有 API 密钥。"
+signed-out = "尚未登录 {provider}。"
+modelless = "尚未为 {provider} 选择模型。"
+homeless = "没有可保存会话的位置"
+unwritable = "会话将不会被保存：{reason}"
+unreadable = "无法读取此会话：{reason}"
+unready = "无法启动助手：{reason}"
+folded = "以上对话已归纳"
+folding = "正在归纳对话…"
+unfoldable = "还没有可归纳的内容。"
+noticed = "来自后台任务的通知"
+rest = "…另外 {count} 行"
+busy = "/{command} 需等当前回答结束后才能运行。"
+unrestored = "有些文件未能恢复：{reason}"
+
+[ade.chat.amend]
+cancel = "取消"
+send = "发送"
+restore = "同时撤销智能体对 {count} 个文件的更改"
+
+[ade.chat.attach]
+chooser = "附加文件"
+accept = "附加"
+pasted = "粘贴的图片"
+dropped = "拖放的图片"
+unreadable = "无法读取拖放的数据。"
+rest = "另有 {count} 项"
+refused = "未能附加：{reason}"
+
+[ade.chat.ask]
+write = "自己写一个答案"
+back = "上一个"
+next = "下一个"
+send = "回答"
+stop = "停止"
+
+[ade.chat.worktree]
+pick = "工作区"
+make = "新建工作区…"
+title = "新建工作区"
+branch = "分支名称"
+base = "从此分支创建"
+taken = "该分支已存在，将在此处检出。"
+create = "创建"
+cancel = "取消"
+gone = "找不到工作区 {worktree}。"
+
+[ade.command.compact]
+hint = "[需要保留的内容]"
+about = "归纳目前的对话以腾出上下文"
+
+[ade.git]
+unversioned = "不是 Git 仓库"
+reading = "正在读取更改…"
+unchanged = "没有更改"
+detached = "无分支"
+changed = "{count} 个文件已更改"
+summary = "摘要"
+description = "详细说明"
+commit-to = "提交到 {branch}"
+commit = "提交"
+binary = "此文件无法显示差异"
+unreadable = "没有可显示的更改"
+
+changes = "更改"
+history = "历史"
+remote = "{branch}（远程）"
+held = "{branch}（正在另一个工作树中使用）"
+recalling = "正在读取历史…"
+uncommitted = "尚无提交"
+unsaid = "（无提交信息）"
+nothing-shown = "没有可显示的内容"
+
+[ade.git.state]
+added = "已添加"
+untracked = "新增"
+modified = "已修改"
+deleted = "已删除"
+renamed = "已重命名"
+copied = "已复制"
+retyped = "类型已更改"
+conflicted = "有冲突"
+
+[ade.git.group]
+new = "新增"
+modified = "修改"
+deleted = "删除"
+moved = "移动"
+other = "其他"
+
+[ade.git.sync]
+fetch = "从 {remote} 获取"
+pull = "从 {remote} 拉取"
+push = "推送到 {remote}"
+publish = "发布分支"
+fetching = "正在从 {remote} 获取…"
+pulling = "正在从 {remote} 拉取…"
+pushing = "正在推送到 {remote}…"
+publishing = "正在发布分支…"
+percent = "{percent}%"
+
+[ade.file]
+reading = "正在读取文件…"
+gone = "此文件已不存在。"
+not-text = "不是文本文件。"
+too-big = "文件过大，无法打开。"
+trouble = "无法读取这个文件：{reason}"
+unwritable = "未保存：磁盘上的文件已更改。"
+meanwhile = "磁盘上的文件已更改。"
+save = "保存"
+reload = "重新载入"
+
+[ade.files]
+dismiss = "关闭"
+open = "打开"
+new-file = "新建文件…"
+new-folder = "新建文件夹…"
+reveal = "在文件管理器中显示"
+cut = "剪切"
+copy = "复制"
+paste = "粘贴"
+duplicate = "创建副本"
+copy-path = "复制路径"
+copy-relative-path = "复制相对路径"
+rename = "重命名…"
+trash = "移到回收站"
+erase-forever = "永久删除"
+collapse = "全部折叠"
+erase-one = "要永久删除“{name}”吗？此操作无法撤销。"
+erase-many = "{count, plural, other {要永久删除 # 个项目吗？此操作无法撤销。}}"
+erase = "删除"
+keep = "取消"
+taken = "此处已存在“{name}”。"
+unopened = "无法打开文件管理器：{reason}"
+empty = "需要输入名称。"
+bad-name = "“{name}”不是有效的名称。"
+exists = "“{name}”已存在。"
+outside = "该位置在项目之外。"
+into-itself = "无法将“{name}”移动到其自身之中。"
+trouble = "文件操作失败：{reason}"
+untrashed = "无法移到回收站：{reason}"
+and-more = "{first}（另有 {count} 项失败）"
+
+[ade.files.job]
+move = "正在移动"
+copy = "正在复制"
+trash = "正在移到回收站"
+delete = "正在删除"
+preparing = "{task}…"
+progress = "{task} {done} / {total}"
+stop = "停止"
+
+[ade.files.conflict]
+exists = "“{name}”已存在"
+replace = "替换"
+keep = "保留两者"
+skip = "跳过"
+skip-all = "全部跳过"
+
+[ade.tabs]
+close = "关闭"
+close-others = "关闭其他"
+close-right = "关闭右侧"
+close-saved = "关闭已保存"
+close-all = "全部关闭"
+reveal = "在资源管理器中显示"
+unsaved = "关闭前是否保存对 {name} 的更改？"
+save = "保存"
+discard = "不保存"
+keep = "取消"
+
+[ade.palette]
+placeholder = "按名称搜索文件"
+nothing = "没有匹配的文件"
+
+[ade.settings]
+title = "设置"
+back = "返回"
+llm = "AI"
+
+[ade.settings.servers]
+title = "MCP"
+personal = "所有项目"
+project = "当前项目"
+
+[ade.settings.scope]
+here = "项目"
+mine = "个人"
+
+[ade.settings.skills]
+title = "技能"
+folders = "来源文件夹"
+projectless = "未选择项目"
+found = "技能列表"
+none = "无技能"
+trouble = "读取诊断"
+
+[ade.settings.commands]
+title = "命令"
+folders = "来源文件夹"
+projectless = "未选择项目"
+found = "命令列表"
+none = "无命令"
+trouble = "读取诊断"
+
+[ade.mcp]
+unreadable = "无法读取 MCP 服务器配置：{reason}"
+unreached = "无法连接 MCP 服务器：{servers}"
+
+[ade.ago]
+now = "刚刚"
+
+[ade.span]
+minutes = "{count} 分钟"
+hours = "{count} 小时"
+days = "{count} 天"
+
+[ui.find]
+pattern = "查找"
+replacement = "替换"
+nothing = "无结果"
+broken = "模式无效"

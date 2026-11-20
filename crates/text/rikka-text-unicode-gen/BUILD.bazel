@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "lib",
+    cranelift = False,
+    crate_name = "rikka_text_unicode_gen",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_binary(
+    name = "rikka-text-unicode-gen",
+    cranelift = False,
+    deps = [
+        ":lib",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = ["//crates/text/rikka-text-unicode:sources"],
+    data = glob(
+        ["tests/**"],
+        allow_empty = True,
+        exclude = ["tests/**/*.rs"],
+    ) + [":rikka-text-unicode-gen"],
+)

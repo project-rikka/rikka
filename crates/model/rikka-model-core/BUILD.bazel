@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-model-core",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:glam",
+        "@crates//:rustc-hash",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:libc"],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-model-core",
+        "//crates/foundation/rikka-types",
+        "@crates//:tempfile",
+    ],
+)

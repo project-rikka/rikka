@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-open",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:percent-encoding",
+        "@crates//:thiserror",
+    ] + select({
+        "@platforms//os:linux": [
+            "@crates//:rustix",
+            "@crates//:tracing",
+        ],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-open",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "cli-completions",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//system/rikka-cli/crates/cli-command",
+        "@crates//:clap",
+    ],
+)
+
+[
+    run_binary(
+        name = shell,
+        outs = [shell + "/" + script],
+        args = [
+            shell,
+            "$(execpath {}/{})".format(shell, script),
+        ],
+        tool = ":cli-completions",
+        visibility = ["//xtask:__pkg__"],
+    )
+    for shell, script in [
+        ("bash", "rikka"),
+        ("fish", "rikka.fish"),
+        ("zsh", "_rikka"),
+    ]
+]

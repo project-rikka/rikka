@@ -1,0 +1,57 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "paint-assistant",
+    compile_data = [
+        "//apps/general/paint:prompts/system.md",
+        "//apps/general/paint:prompts/tools/adjust.md",
+        "//apps/general/paint:prompts/tools/document.md",
+        "//apps/general/paint:prompts/tools/draw.md",
+        "//apps/general/paint:prompts/tools/history.md",
+        "//apps/general/paint:prompts/tools/layers.md",
+        "//apps/general/paint:prompts/tools/measure.md",
+        "//apps/general/paint:prompts/tools/new.md",
+        "//apps/general/paint:prompts/tools/objects.md",
+        "//apps/general/paint:prompts/tools/open.md",
+        "//apps/general/paint:prompts/tools/save.md",
+        "//apps/general/paint:prompts/tools/select.md",
+        "//apps/general/paint:prompts/tools/transform.md",
+        "//apps/general/paint:prompts/tools/view.md",
+    ],
+    visibility = [
+        "//apps/general/paint:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/paint/crates/paint-document",
+        "//crates/ai/rikka-assist",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-tool",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-effects",
+        "//crates/graphics/rikka-figure",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-image-edit",
+        "//crates/graphics/rikka-path-data",
+        "//crates/graphics/rikka-psd",
+        "//crates/graphics/rikka-text",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":paint-assistant",
+        "//apps/general/paint/crates/paint-document",
+        "//crates/ai/rikka-tool",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image-edit",
+        "//crates/graphics/rikka-psd",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

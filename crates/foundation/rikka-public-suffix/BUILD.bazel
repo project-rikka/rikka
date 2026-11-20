@@ -1,0 +1,28 @@
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-public-suffix",
+    srcs = glob(["src/**/*.rs"]) + [":rules"],
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+run_binary(
+    name = "rules",
+    srcs = ["data/public_suffix_list.dat"],
+    outs = ["src/rules.rs"],
+    args = [
+        "$(execpath data/public_suffix_list.dat)",
+        "$(execpath src/rules.rs)",
+    ],
+    tool = "//crates/foundation/rikka-public-suffix-compiler",
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-public-suffix",
+    ],
+)

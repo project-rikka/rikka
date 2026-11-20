@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "music-soundcloud",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-core",
+        "//apps/system/music/crates/music-stream",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-oauth",
+        "//crates/foundation/rikka-sync",
+        "//crates/graphics/rikka-symbols",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)

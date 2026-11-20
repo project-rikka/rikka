@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-dirs",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:thiserror",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:libc"],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-dirs",
+        "@crates//:tempfile",
+    ],
+)

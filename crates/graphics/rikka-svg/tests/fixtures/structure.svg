@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="160" height="120" viewBox="0 0 80 60" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <g id="leaf">
+      <path d="M0 0c6-8 14-8 20 0c-6 8-14 8-20 0z"/>
+    </g>
+    <symbol id="badge" viewBox="0 0 10 10">
+      <circle cx="5" cy="5" r="5" fill="#1a5fb4"/>
+      <path d="M2 5l2 2 4-4" fill="none" stroke="#fff" stroke-width="1.5"/>
+    </symbol>
+  </defs>
+  <use xlink:href="#leaf" x="4" y="10" fill="#26a269"/>
+  <use href="#leaf" transform="translate(30 10) rotate(20)" fill="#e66100"/>
+  <use href="#badge" x="56" y="2" width="20" height="20"/>
+  <svg x="4" y="26" width="30" height="30" viewBox="0 0 10 20" preserveAspectRatio="xMaxYMin slice">
+    <rect width="10" height="20" fill="#f6d32d"/>
+    <circle cx="5" cy="5" r="6" fill="#c01c28"/>
+  </svg>
+  <g transform="matrix(1 0 0.3 1 38 28)">
+    <rect width="16" height="12" fill="#9141ac"/>
+    <g transform="scale(0.5) translate(40 4)" opacity="0.6">
+      <rect width="16" height="12" fill="#000"/>
+      <rect x="8" y="6" width="16" height="12" fill="#3584e4"/>
+    </g>
+  </g>
+  <switch transform="translate(60 44)">
+    <rect width="10" height="10" fill="#e01b24" systemLanguage="xx"/>
+    <rect width="10" height="10" fill="#33d17a"/>
+    <rect width="12" height="12" fill="#000"/>
+  </switch>
+  <g display="none"><rect width="80" height="60"/></g>
+  <rect x="70" y="30" width="6" height="6" visibility="hidden"/>
+</svg>

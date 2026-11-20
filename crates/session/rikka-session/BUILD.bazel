@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-session",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/session/rikka-seam",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-session",
+        "@crates//:serde_json",
+    ],
+)

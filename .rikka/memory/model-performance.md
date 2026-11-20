@@ -1,0 +1,14 @@
+---
+title: Model library performance rules and threading
+description: Threading model, caches, complexity rules and the modeling benchmark/digest for the crates/model mesh libraries.
+about: crates/model
+tags: [model, performance]
+---
+
+- Results never depend on thread count: work is split into contiguous index ranges and every output element is computed by the same sequential arithmetic it had serially; float sums keep their per-element order (stencils keep duplicate entries, no regrouping).
+- Each crate has a private `parallel.rs` (rikka-polymesh, rikka-mesh-modifiers, rikka-mesh-edit; rikka-armature's deform uses `for_chunks`) over scoped threads named `rikka-<crate>`, with a grain (≥ 4–16 k elements per worker) so small inputs stay on the caller's thread. A thread-local flag makes nested calls inside a worker of the same crate run serially (no oversubscription).
+- Polymesh `gather`, normals (`face_normals`, `point_normals`, smooth `shade`) and MikkTSpace welding are parallel; `ensure_edges` resolves missing edges by bucketing keys per low vertex (no hash map) and keeps first-seen edge order; `merge_points` stores welded faces in one flat buffer.
+- Subdivision (`evaluators/subdivision/`): `refine` builds CSR stencils (`Stencil`, chunked by worker) and child topology in parallel; adjacency (`Around`) is an atomic counting sort with per-group sorting (identical to index order). The limit surface refines only the 1-ring of the cage points (`Extent::Around`) and folds the last extra refinement into `limit_after_refine`, so it never builds the full deeper cage. Ordering (`order.rs`) matches edges/faces through per-vertex buckets instead of hash maps.
+- `StackCache` + `evaluate_cached` keep per-modifier state across evaluations. Subdivision caches its `Chain` (level stencils, limit, final point order) and the last output; when the input differs only in positions/shape-key positions (bitwise compare of everything else) it re-applies the chain and clones the cached output. `EvalCache` keeps one `StackCache` per (object, purpose, skip_armature, segment start), so edit-mode cages and posed armatures take the fast path.
+- Inherent costs that remain: `Evaluated`/scene results own their `Polymesh` (one clone per evaluation), per-point `Vec<Influence>` vertex groups allocate on every clone/gather, `MeshAssembler` (rikka-model-core) hashing in `to_mesh`, `kdtree::balance`/`find_duplicates` (Weld) are serial, and `MAX_CORNERS` (2^24) reduces 1M-quad level 2 to level 1.
+- `//benchmarks/modeling` (`bazel run --config=bench //benchmarks/modeling [-- filter…]`) times every hot path on 100k/1M-quad grids (UVs, creases, vertex groups); `-- --digest` prints a Debug hash of every result on irregular meshes, so two builds' digests must be identical after a performance change. Build with `--remote_download_toplevel` and run the binary from `bazel-out/k8-opt` for clean timings.

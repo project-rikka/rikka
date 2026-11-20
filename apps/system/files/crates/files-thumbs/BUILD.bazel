@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-thumbs",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-open",
+        "//crates/desktop/rikka-thumbnails",
+        "//crates/desktop/rikka-xdg",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "@crates//:rustix",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-thumbs",
+        "//apps/system/files/crates/files-core",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-thumbnails",
+        "//crates/graphics/rikka-image",
+    ],
+)

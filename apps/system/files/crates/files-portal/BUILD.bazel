@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-portal-files",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-dialog",
+        "//crates/foundation/rikka-log",
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-portal-backend",
+        "@crates//:serde",
+        "@crates//:tracing",
+        "@crates//:zbus",
+        "@crates//:zvariant",
+    ],
+)

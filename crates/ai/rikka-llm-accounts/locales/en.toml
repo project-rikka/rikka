@@ -1,0 +1,15 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[llm]
+verify = "Verify account"
+
+[llm.effort]
+off = "Off"
+minimal = "Minimal"
+low = "Low"
+medium = "Medium"
+high = "High"
+xhigh = "Extra high"
+max = "Max"

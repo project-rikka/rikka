@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "music-spotify-api",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-spotify-wire",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-types",
+        "@crates//:futures-util",
+        "@crates//:prost",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = glob(["tests/fixtures/*.bin"]),
+    deps = [
+        ":music-spotify-api",
+        "//apps/system/music/crates/music-spotify-wire",
+        "//crates/foundation/rikka-types",
+        "@crates//:prost",
+        "@crates//:rand",
+        "@crates//:sha1",
+    ],
+)

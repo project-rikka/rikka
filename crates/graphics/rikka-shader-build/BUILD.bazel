@@ -1,0 +1,32 @@
+load("@nix//:paths.bzl", "NIX")
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-shader-build",
+    srcs = glob(
+        ["src/**/*.rs"],
+        exclude = ["src/main.rs"],
+    ),
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/graphics/rikka-spirv",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_binary(
+    name = "compile",
+    srcs = ["src/main.rs"],
+    visibility = ["//visibility:public"],
+    deps = [":rikka-shader-build"],
+)
+
+rikka_test(
+    name = "main",
+    rustc_env = {"SLANGC": NIX["slangc"]},
+    deps = [":rikka-shader-build"],
+)

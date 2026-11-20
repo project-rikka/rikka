@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "viewer-hosts",
+    visibility = [
+        "//apps/general/remote:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/remote/rikka-remote-link",
+        "//crates/remote/rikka-remote-wire",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":viewer-hosts",
+        "//crates/remote/rikka-remote-link",
+        "//crates/remote/rikka-remote-wire",
+        "@crates//:tempfile",
+    ],
+)

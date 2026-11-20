@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-certificate-transparency",
+    testonly = True,
+    compile_data = [
+        "data/log_list.json",
+        "data/log_list.sig",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-certificate-transparency",
+        "//crates/foundation/rikka-sync",
+        "@crates//:rcgen",
+        "@crates//:serde_json",
+    ],
+)

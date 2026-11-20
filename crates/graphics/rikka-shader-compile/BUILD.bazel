@@ -1,0 +1,31 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-shader-compile",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-graph",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    limit = 240,
+    deps = [
+        ":rikka-shader-compile",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/graphics/rikka-shader-presets",
+        "//crates/graphics/rikka-slang",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/graphics/rikka-test-renderer-3d",
+    ],
+)

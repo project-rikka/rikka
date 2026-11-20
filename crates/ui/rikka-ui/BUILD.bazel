@@ -1,0 +1,44 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-ui",
+    proc_macro_deps = [
+        "//crates/ui/rikka-ui-macros",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-clipboard-core",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-simd",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-picture",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-symbols",
+        "//crates/graphics/rikka-text",
+        "//crates/graphics/rikka-theme",
+        "//crates/text/rikka-text-document",
+        "//crates/ui/rikka-animation",
+        "@crates//:futures-util",
+        "@crates//:regex",
+        "@crates//:rustc-hash",
+        "@crates//:smallvec",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-ui",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-theme",
+    ],
+)

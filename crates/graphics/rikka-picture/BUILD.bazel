@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-picture",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "@crates//:futures-util",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-picture",
+    ],
+)

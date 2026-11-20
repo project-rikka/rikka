@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-clipboard",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-clipboard",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:tracing",
+    ],
+)

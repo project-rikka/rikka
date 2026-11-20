@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "music-spotify-session",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-spotify-wire",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "@crates//:rand",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)

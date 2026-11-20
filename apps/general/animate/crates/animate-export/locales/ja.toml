@@ -1,0 +1,13 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[animate.export]
+encoder_auto = "自動"
+encoder_software = "ソフトウェア"
+speed_fastest = "最速"
+speed_fast = "高速"
+speed_balanced = "標準"
+speed_slow = "低速"
+rate_quality = "画質固定"
+rate_bitrate = "ビットレート"

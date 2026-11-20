@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-instance",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-open",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:zbus"],
+        "@platforms//os:windows": [
+            "//crates/foundation/rikka-worker",
+            "@crates//:windows",
+        ],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-instance",
+        "//crates/foundation/rikka-test-bus",
+    ],
+)

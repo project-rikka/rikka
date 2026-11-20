@@ -1,0 +1,24 @@
+[Unit]
+Description=The privileged half of the Rikka settings
+
+# `switch-to-configuration` stops and starts the units a rebuild changed, and this is the
+# unit running that rebuild. Restarting it would kill a `nixos-rebuild` somewhere between
+# building the system and activating it, which is the half-switched machine the whole
+# design is arranged to avoid. `switch-to-configuration` reads `X-StopOnRemoval` from
+# [Unit] and `X-RestartIfChanged` and `X-StopIfChanged` from [Service], where NixOS writes
+# them for `systemd.services.<name>.restartIfChanged = false`.
+X-StopOnRemoval=false
+
+[Service]
+Type=dbus
+BusName=os.rikka.Nix1
+ExecStart=@BINDIR@/rikka-nixctl
+X-RestartIfChanged=false
+X-StopIfChanged=false
+
+# `nix` writes its cache and its lock under $HOME, and a service is started with none.
+# Left unset it falls back to the root directory and says so on every line it prints.
+Environment=HOME=/root
+
+LogsDirectory=rikka-nixctl
+LogsDirectoryMode=0700

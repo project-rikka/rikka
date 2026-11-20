@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "installer-core",
+    visibility = [
+        "//installer:__subpackages__",
+    ],
+    deps = [
+        "//crates/nix/rikka-nix-edit",
+        "//crates/nix/rikka-nixos-layout",
+        "@crates//:getrandom",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha-crypt",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":installer-core",
+        "//crates/nix/rikka-nix-edit",
+        "//crates/nix/rikka-test-nixfmt",
+    ],
+)

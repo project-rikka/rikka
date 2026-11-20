@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-dialog",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [
+            "//crates/desktop/rikka-open",
+            "//crates/desktop/rikka-portal-request",
+            "@crates//:zbus",
+        ],
+        "@platforms//os:windows": [
+            "//crates/desktop/rikka-mime",
+            "@crates//:windows",
+        ],
+    }),
+)

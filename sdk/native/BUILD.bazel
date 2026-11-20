@@ -1,0 +1,47 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("@rules_cc//cc:cc_import.bzl", "cc_import")
+load("//bazel/rust:defs.bzl", "rikka_shared_library")
+load("//sdk/codegen:defs.bzl", "rikka_bindings")
+
+SONAME = "librikka.so.0"
+
+rikka_bindings(
+    name = "ffi",
+    outs = ["src/ffi.rs"],
+    committed = False,
+    language = "rust",
+)
+
+rikka_shared_library(
+    name = "rikka",
+    srcs = glob(["src/**/*.rs"]) + ["src/ffi.rs"],
+    soname = SONAME,
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/desktop/rikka-dialog",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-sync",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-movie",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-syntax",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-ui-video",
+        "//crates/ui/rikka-widgets",
+    ],
+)
+
+copy_file(
+    name = "versioned",
+    src = ":rikka",
+    out = SONAME,
+    allow_symlink = True,
+    visibility = ["//sdk/bindings:__subpackages__"],
+)
+
+cc_import(
+    name = "library",
+    shared_library = ":versioned",
+    visibility = ["//sdk/bindings:__subpackages__"],
+)

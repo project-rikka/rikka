@@ -1,0 +1,323 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[effects]
+grouped = "{group}: {part}"
+
+[effects.unit]
+pixels = "px"
+frames = "f"
+
+[effects.family]
+adjust = "Adjustments"
+blur = "Blur"
+sharpen = "Sharpen"
+noise = "Noise"
+stylize = "Stylize"
+photo = "Photo"
+key = "Key & Matte"
+
+[effects.kind]
+brightness_contrast = "Brightness/Contrast"
+levels = "Levels"
+curves = "Curves"
+exposure = "Exposure"
+vibrance = "Vibrance"
+hue_saturation = "Hue/Saturation"
+color_balance = "Color Balance"
+black_white = "Black & White"
+photo_filter = "Photo Filter"
+channel_mixer = "Channel Mixer"
+color_lookup = "Color Lookup"
+white_balance = "White Balance"
+posterize = "Posterize"
+threshold = "Threshold"
+gradient_map = "Gradient Map"
+selective_color = "Selective Color"
+shadows_highlights = "Shadows/Highlights"
+gaussian_blur = "Gaussian Blur"
+box_blur = "Box Blur"
+motion_blur = "Motion Blur"
+radial_blur = "Radial Blur"
+lens_blur = "Lens Blur"
+surface_blur = "Surface Blur"
+median = "Median"
+tilt_shift = "Tilt-Shift"
+unsharp_mask = "Unsharp Mask"
+smart_sharpen = "Smart Sharpen"
+high_pass = "High Pass"
+clarity = "Clarity"
+add_noise = "Add Noise"
+reduce_noise = "Reduce Noise"
+emboss = "Emboss"
+mosaic = "Mosaic"
+oil_paint = "Oil Paint"
+glow = "Glow"
+vignette = "Vignette"
+dither = "Dither"
+chroma_key = "Chroma Key"
+luma_key = "Luma Key"
+clipping = "Clipping"
+channel_shift = "Channel Shift"
+drop_shadow = "Drop Shadow"
+outline = "Outline"
+
+[effects.adjust]
+amount = "Amount"
+angle = "Angle"
+auto = "Auto"
+black = "Black"
+blue = "Blue"
+brightness = "Brightness"
+cell_size = "Cell size"
+channel = "Channel"
+contrast = "Contrast"
+cyan = "Cyan"
+distance = "Distance"
+exposure = "Exposure"
+gamma = "Gamma correction"
+green = "Green"
+highlights = "Highlights"
+hue = "Hue"
+input_levels = "Input Levels"
+legacy = "Use legacy"
+levels = "Levels"
+lightness = "Lightness"
+magenta = "Magenta"
+midtones = "Midtones"
+offset = "Offset"
+output_levels = "Output Levels"
+preserve_luminosity = "Preserve luminosity"
+radius = "Radius"
+red = "Red"
+rgb = "RGB"
+saturation = "Saturation"
+shadows = "Shadows"
+temperature = "Temperature"
+threshold = "Threshold"
+threshold_levels = "Threshold (levels)"
+vibrance = "Vibrance"
+white_balance_note = "Set the temperature of the light the picture was taken in. Lower values cool the picture."
+yellow = "Yellow"
+
+[effects.curves]
+preset = "Preset"
+custom = "Custom"
+linear = "Linear"
+increase_contrast = "Increase Contrast"
+decrease_contrast = "Decrease Contrast"
+lighter = "Lighter"
+darker = "Darker"
+negative = "Negative"
+input = "Input"
+output = "Output"
+hint = "Click the graph to add a point. Drag a point off the graph or press Delete to remove it."
+
+[effects.hue_saturation]
+edit = "Range"
+master = "Master"
+reds = "Reds"
+yellows = "Yellows"
+greens = "Greens"
+cyans = "Cyans"
+blues = "Blues"
+magentas = "Magentas"
+colorize = "Colorize"
+
+[effects.color_balance]
+tone = "Tone balance"
+cyan_red = "Cyan–Red"
+magenta_green = "Magenta–Green"
+yellow_blue = "Yellow–Blue"
+
+[effects.black_white]
+preset = "Preset"
+default = "Default"
+red_filter = "Red Filter"
+yellow_filter = "Yellow Filter"
+infrared = "Infrared"
+neutral = "Even Weights"
+tint = "Tint"
+tint_color = "Tint color"
+
+[effects.photo_filter]
+filter = "Filter"
+color = "Color"
+density = "Density"
+warming_85 = "Warming Filter (85)"
+warming_lba = "Warming Filter (LBA)"
+warming_81 = "Warming Filter (81)"
+cooling_80 = "Cooling Filter (80)"
+cooling_lbb = "Cooling Filter (LBB)"
+cooling_82 = "Cooling Filter (82)"
+red = "Red"
+orange = "Orange"
+yellow = "Yellow"
+green = "Green"
+cyan = "Cyan"
+blue = "Blue"
+violet = "Violet"
+magenta = "Magenta"
+sepia = "Sepia"
+deep_red = "Deep Red"
+deep_blue = "Deep Blue"
+deep_emerald = "Deep Emerald"
+deep_yellow = "Deep Yellow"
+underwater = "Underwater"
+
+[effects.channel_mixer]
+output = "Output channel"
+gray = "Gray"
+total = "Total"
+constant = "Constant"
+monochrome = "Monochrome"
+
+[effects.color_lookup]
+table = "3D LUT"
+none = "No lookup table loaded."
+load = "Load 3D LUT…"
+load_title = "Load a Color Lookup Table"
+load_accept = "Load"
+tables = "3D LUT files"
+formats = "Loads .cube and .3dl lookup tables."
+unloaded = "The lookup table could not be loaded: {reason}"
+
+[effects.threshold]
+level = "Threshold level"
+
+[effects.gradient_map]
+preset = "Preset"
+black_white = "Black, White"
+sepia = "Sepia"
+cyanotype = "Cyanotype"
+violet_orange = "Violet, Orange"
+blue_red_yellow = "Blue, Red, Yellow"
+teal_orange = "Teal, Orange"
+location = "Location"
+midpoint = "Midpoint"
+reverse = "Reverse"
+hint = "Click below the gradient to add a stop. Drag a stop down or press Delete to remove it."
+
+[effects.selective_color]
+colors = "Colors"
+whites = "Whites"
+neutrals = "Neutrals"
+blacks = "Blacks"
+method = "Method"
+relative = "Relative"
+absolute = "Absolute"
+
+[effects.shadows_highlights]
+tone = "Tone"
+adjustments = "Adjustments"
+color = "Color"
+midtone = "Midtone"
+
+[effects.radial_blur]
+method = "Blur method"
+spin = "Spin"
+zoom = "Zoom"
+quality = "Quality"
+draft = "Draft"
+good = "Good"
+best = "Best"
+center = "Blur center"
+center_at = "{x}% across, {y}% down"
+center_x = "Blur center across"
+center_y = "Blur center down"
+
+[effects.lens_blur]
+iris = "Iris"
+shape = "Shape"
+circle = "Circle"
+triangle = "Triangle (3)"
+square = "Square (4)"
+pentagon = "Pentagon (5)"
+hexagon = "Hexagon (6)"
+heptagon = "Heptagon (7)"
+octagon = "Octagon (8)"
+curvature = "Blade curvature"
+rotation = "Rotation"
+specular = "Specular highlights"
+
+[effects.tilt_shift]
+blur = "Blur"
+center = "Focus line position"
+focus = "Focus area"
+transition = "Transition"
+note = "Position, focus area and transition are percentages of the picture height."
+
+[effects.smart_sharpen]
+reduce_noise = "Reduce noise"
+remove = "Remove"
+
+[effects.add_noise]
+distribution = "Distribution"
+uniform = "Uniform"
+gaussian = "Gaussian"
+monochromatic = "Monochromatic"
+seed = "Seed"
+
+[effects.reduce_noise]
+strength = "Strength"
+preserve_details = "Preserve details"
+color = "Reduce color noise"
+sharpen_details = "Sharpen details"
+
+[effects.emboss]
+height = "Height"
+
+[effects.oil_paint]
+brush = "Brush"
+stylization = "Stylization"
+cleanliness = "Cleanliness"
+scale = "Scale"
+bristle_detail = "Bristle detail"
+lighting = "Lighting"
+shine = "Shine"
+
+[effects.vignette]
+midpoint = "Midpoint"
+roundness = "Roundness"
+feather = "Feather"
+
+[effects.dither]
+levels = "Levels per channel"
+method = "Method"
+ordered = "Ordered"
+diffusion = "Error diffusion"
+
+[effects.levels]
+black = "Input black"
+white = "Input white"
+out_black = "Output black"
+out_white = "Output white"
+
+[effects.white_balance]
+tint = "Tint"
+
+[effects.key]
+color = "Key color"
+tolerance = "Tolerance"
+softness = "Softness"
+spill = "Spill suppression"
+keep = "Keep"
+bright = "Bright areas"
+dark = "Dark areas"
+
+[effects.clipping]
+left = "Left"
+top = "Top"
+right = "Right"
+bottom = "Bottom"
+feather = "Feather"
+
+[effects.drop_shadow]
+color = "Shadow color"
+blur = "Blur"
+opacity = "Opacity"
+
+[effects.outline]
+color = "Outline color"
+width = "Width"

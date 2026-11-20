@@ -1,0 +1,36 @@
+load("//bazel/cc:defs.bzl", "rikka_cc_test")
+
+STRICT = [
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-pedantic",
+]
+
+rikka_cc_test(
+    name = "header_c99",
+    srcs = ["header.c"],
+    copts = ["-std=c99"] + STRICT,
+    deps = ["//sdk/bindings/c"],
+)
+
+rikka_cc_test(
+    name = "header_c11",
+    srcs = ["header.c"],
+    copts = ["-std=c11"] + STRICT,
+    deps = ["//sdk/bindings/c"],
+)
+
+rikka_cc_test(
+    name = "header_cxx",
+    srcs = ["header.cpp"],
+    copts = ["-std=c++17"] + STRICT,
+    deps = ["//sdk/bindings/c"],
+)
+
+rikka_cc_test(
+    name = "abi",
+    srcs = ["abi.c"],
+    copts = ["-std=c11"] + STRICT,
+    deps = ["//sdk/bindings/c"],
+)

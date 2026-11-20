@@ -1,0 +1,35 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-text",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-svg",
+        "//crates/text/rikka-text-catalog",
+        "//crates/text/rikka-text-font",
+        "//crates/text/rikka-text-layout",
+        "//crates/text/rikka-text-raster",
+        "@crates//:rustc-hash",
+        "@crates//:smallvec",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": ["//crates/foundation/rikka-shipped"],
+        "@platforms//os:windows": ["//crates/text/rikka-embedded-fonts"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-text",
+        "//crates/foundation/rikka-types",
+        "//crates/text/rikka-test-fonts",
+        "//crates/text/rikka-text-font",
+        "//crates/text/rikka-text-layout",
+        "@crates//:tempfile",
+    ],
+)

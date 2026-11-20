@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-fido",
+    testonly = True,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-fido",
+        "//crates/foundation/rikka-sync",
+        "@crates//:aes",
+        "@crates//:aes-gcm",
+        "@crates//:cbc",
+        "@crates//:flate2",
+        "@crates//:getrandom",
+        "@crates//:hmac",
+        "@crates//:p256",
+        "@crates//:rustix",
+        "@crates//:sha2",
+    ],
+)

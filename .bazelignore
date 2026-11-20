@@ -1,0 +1,9 @@
+.bazel
+reference
+.rikka
+installer/dist
+installer/test/vm
+result
+website/node_modules
+website/.astro
+website/dist

@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "desk-layout",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:toml",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":desk-layout",
+        "//crates/foundation/rikka-types",
+    ],
+)

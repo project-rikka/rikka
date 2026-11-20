@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-xcursor",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-xcursor",
+        "@crates//:tempfile",
+    ],
+)

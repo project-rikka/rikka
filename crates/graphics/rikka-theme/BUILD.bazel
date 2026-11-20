@@ -1,0 +1,54 @@
+load("@bazel_skylib//rules:write_file.bzl", "write_file")
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+_THEMES = glob(["themes/*.toml"])
+
+exports_files(
+    [
+        "themes/rikka.toml",
+        "themes/rikka-light.toml",
+    ],
+    visibility = ["//website:__pkg__"],
+)
+
+rikka_library(
+    name = "rikka-theme",
+    srcs = glob(["src/**/*.rs"]) + [":builtin_sources"],
+    compile_data = _THEMES,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-material-color",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:toml",
+        "@crates//:tracing",
+    ],
+)
+
+write_file(
+    name = "builtin_sources",
+    out = "src/builtin_sources.rs",
+    content = ["static BUILTIN_SOURCES: &[(&str, &str)] = &["] + [
+        '    ("{}", include_str!("../{}")),'.format(
+            theme[len("themes/"):-len(".toml")],
+            theme,
+        )
+        for theme in _THEMES
+    ] + ["];"],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-theme",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-types",
+        "@crates//:serde",
+        "@crates//:tempfile",
+        "@crates//:toml",
+    ],
+)

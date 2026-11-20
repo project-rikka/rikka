@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.freedesktop.impl.portal.desktop.rikkacast
+Exec=@BINDIR@/rikka-portal-cast
+SystemdService=rikka-portal-cast.service

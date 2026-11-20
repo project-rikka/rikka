@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "discord-rtp",
+    target_compatible_with = ["@platforms//os:linux"],
+    cranelift = False,
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/discord/crates/discord-core",
+        "//crates/media/rikka-annexb",
+        "//crates/media/rikka-rate-control",
+        "@crates//:aes-gcm",
+        "@crates//:chacha20poly1305",
+        "@crates//:rand",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":discord-rtp",
+        "//apps/system/discord/crates/discord-core",
+    ],
+)

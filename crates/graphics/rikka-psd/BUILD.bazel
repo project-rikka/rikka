@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-psd",
+    cranelift = False,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-simd",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image-resample",
+        "@crates//:flate2",
+        "@crates//:moxcms",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-psd",
+        "@crates//:moxcms",
+    ],
+)

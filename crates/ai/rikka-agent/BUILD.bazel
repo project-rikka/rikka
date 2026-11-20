@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-agent",
+    compile_data = [
+        "prompts/focus.md",
+        "prompts/folded.md",
+        "prompts/resumed.md",
+        "prompts/unseen.md",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-tool",
+        "//crates/foundation/rikka-sync",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-agent",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-test-llm",
+        "@crates//:tokio",
+    ],
+)

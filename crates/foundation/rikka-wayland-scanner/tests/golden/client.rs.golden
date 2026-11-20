@@ -1,0 +1,237 @@
+#[allow(clippy::too_many_arguments, clippy::large_enum_variant, clippy::enum_variant_names)]
+pub mod ex_manager_v1 {
+    use rikka_wayland_wire as wire;
+    pub use rikka_wayland_protocols::ex_manager_v1::*;
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct ExManagerV1(wire::client::Handle);
+
+    impl ExManagerV1 {
+        pub fn id(&self) -> u32 {
+            self.0.id()
+        }
+
+        pub fn version(&self) -> u32 {
+            self.0.version()
+        }
+
+        pub fn alive(&self) -> bool {
+            self.0.alive()
+        }
+
+        pub fn set_key<K: wire::Key>(&self, key: K) {
+            self.0.set_key(key);
+        }
+
+        pub fn key<K: wire::Key>(&self) -> Option<K> {
+            self.0.key()
+        }
+
+        pub fn take_key<K: wire::Key>(&self) -> Option<K> {
+            self.0.take_key()
+        }
+
+        pub fn with_key<K: wire::Key>(self, key: K) -> Self {
+            self.0.set_key(key);
+            self
+        }
+
+        #[must_use]
+        pub fn via(&self, route: &wire::client::Route) -> Self {
+            Self(self.0.via(route))
+        }
+
+        pub fn destroy(&self) {
+            let mut request = self.0.request(0);
+            request.destroys();
+            request.send();
+        }
+
+        pub fn create_item(&self, parent: Option<&super::ex_item_v1::ExItemV1>, title: &str, rotation: Rotation) -> super::ex_item_v1::ExItemV1 {
+            let mut request = self.0.request(1);
+            request.new_id();
+            request.nullable_object(parent.map(wire::client::Proxy::handle));
+            request.string(title);
+            request.uint(u32::from(rotation));
+            request.send_constructor()
+        }
+
+        pub fn share<'f>(&self, fd: impl Into<wire::Fd<'f>>, data: &[u8], edges: Edges, scale: f64) {
+            let mut request = self.0.request(2);
+            request.fd(fd);
+            request.array(data);
+            request.uint(edges.bits());
+            request.fixed(scale);
+            request.send();
+        }
+
+        pub fn place(&self, item: &super::ex_item_v1::ExItemV1, anchor: Option<&wire::client::Handle>, x: i32, scale: f64, rotation: Rotation) -> super::ex_item_v1::ExItemV1 {
+            let mut request = self.0.request(3);
+            request.object(wire::client::Proxy::handle(item));
+            request.nullable_object(anchor);
+            request.int(x);
+            request.fixed(scale);
+            request.int(u32::from(rotation) as i32);
+            request.new_id();
+            request.send_constructor()
+        }
+
+        pub fn bind<P: wire::client::Proxy>(&self, name: u32, version: u32) -> P {
+            let mut request = self.0.request(4);
+            request.uint(name);
+            request.untyped_new_id(P::INTERFACE, version);
+            request.send_constructor()
+        }
+    }
+
+    #[derive(Debug)]
+    #[non_exhaustive]
+    pub enum Event {
+        Announce {
+            item: super::ex_item_v1::ExItemV1,
+            label: Option<String>,
+            rotation: Result<Rotation, wire::UnknownValue>,
+        },
+        Id {
+            value: u32,
+        },
+        Table {
+            fd: std::os::fd::OwnedFd,
+            size: u32,
+        },
+    }
+
+    impl wire::client::Proxy for ExManagerV1 {
+        type Event = Event;
+
+        const INTERFACE: &'static wire::Interface = &INTERFACE;
+
+        fn from_handle(handle: wire::client::Handle) -> Option<Self> {
+            if handle.interface().is(&INTERFACE) {
+                Some(Self(handle))
+            } else {
+                None
+            }
+        }
+
+        fn handle(&self) -> &wire::client::Handle {
+            &self.0
+        }
+
+        fn decode(
+            parent: &wire::client::Handle,
+            opcode: u16,
+            args: &mut wire::Args<'_>,
+            objects: &mut wire::client::Resolved<'_>,
+        ) -> wire::Result<Event> {
+            match opcode {
+                0 => Ok(Event::Announce {
+                    item: objects.create::<super::ex_item_v1::ExItemV1>(args.new_id()?, parent.version())?,
+                    label: args.nullable_string()?.map(str::to_owned),
+                    rotation: Rotation::try_from(args.int()? as u32),
+                }),
+                1 => {
+                    let words = args.words::<1>()?;
+                    Ok(Event::Id {
+                        value: words[0].uint(),
+                    })
+                }
+                2 => Ok(Event::Table {
+                    fd: args.fd()?,
+                    size: args.uint()?,
+                }),
+                _ => Err(wire::WireError::UnknownOpcode(opcode)),
+            }
+        }
+    }
+
+}
+
+#[allow(clippy::too_many_arguments, clippy::large_enum_variant, clippy::enum_variant_names)]
+pub mod ex_item_v1 {
+    use rikka_wayland_wire as wire;
+    pub use rikka_wayland_protocols::ex_item_v1::*;
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct ExItemV1(wire::client::Handle);
+
+    impl ExItemV1 {
+        pub fn id(&self) -> u32 {
+            self.0.id()
+        }
+
+        pub fn version(&self) -> u32 {
+            self.0.version()
+        }
+
+        pub fn alive(&self) -> bool {
+            self.0.alive()
+        }
+
+        pub fn set_key<K: wire::Key>(&self, key: K) {
+            self.0.set_key(key);
+        }
+
+        pub fn key<K: wire::Key>(&self) -> Option<K> {
+            self.0.key()
+        }
+
+        pub fn take_key<K: wire::Key>(&self) -> Option<K> {
+            self.0.take_key()
+        }
+
+        pub fn with_key<K: wire::Key>(self, key: K) -> Self {
+            self.0.set_key(key);
+            self
+        }
+
+        #[must_use]
+        pub fn via(&self, route: &wire::client::Route) -> Self {
+            Self(self.0.via(route))
+        }
+    }
+
+    #[derive(Debug)]
+    #[non_exhaustive]
+    pub enum Event {
+        Done {
+            serial: u32,
+        },
+    }
+
+    impl wire::client::Proxy for ExItemV1 {
+        type Event = Event;
+
+        const INTERFACE: &'static wire::Interface = &INTERFACE;
+
+        fn from_handle(handle: wire::client::Handle) -> Option<Self> {
+            if handle.interface().is(&INTERFACE) {
+                Some(Self(handle))
+            } else {
+                None
+            }
+        }
+
+        fn handle(&self) -> &wire::client::Handle {
+            &self.0
+        }
+
+        fn decode(
+            _parent: &wire::client::Handle,
+            opcode: u16,
+            args: &mut wire::Args<'_>,
+            _objects: &mut wire::client::Resolved<'_>,
+        ) -> wire::Result<Event> {
+            match opcode {
+                0 => {
+                    let words = args.words::<1>()?;
+                    Ok(Event::Done {
+                        serial: words[0].uint(),
+                    })
+                }
+                _ => Err(wire::WireError::UnknownOpcode(opcode)),
+            }
+        }
+    }
+
+}

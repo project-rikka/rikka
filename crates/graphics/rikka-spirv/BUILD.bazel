@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-spirv",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-spirv",
+    ],
+)

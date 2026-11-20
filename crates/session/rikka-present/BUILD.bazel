@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-present",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-wayland",
+        "//crates/foundation/rikka-wayland-client",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "@crates//:drm",
+        "@crates//:libc",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

@@ -1,0 +1,59 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[viewer]
+title = "Viewer"
+
+[viewer.zoom]
+fit = "Fit"
+
+[viewer.text]
+lines = "{count, plural, one {# line} other {# lines}}"
+truncated = "first 32 MiB only"
+caret = "Ln {line}, Col {column}"
+modified = "unsaved"
+saving = "saving…"
+unsaved = "Could not save: {reason}"
+lossy = "saved as {encoding}; some characters could not be written"
+converted = "saved as {encoding}"
+preview = "Preview"
+source = "Source"
+
+[viewer.audio]
+unplayable = "Cannot play audio: {reason}"
+
+[viewer.video]
+undecodable = "Cannot decode this video."
+
+[viewer.figure]
+detail = "{triangles, plural, one {# triangle} other {# triangles}} · {materials, plural, one {# material} other {# materials}}"
+animation = "Animation"
+motion = "{model} · {keyframes, plural, one {# keyframe} other {# keyframes}} · {length}"
+nameless = "no model"
+choose = "Choose a model…"
+chooser = "Choose a model for this motion"
+accept = "Open"
+unmoved = "This motion does not affect this model."
+unsupported_version = "{format} version {version} is not supported."
+required_extensions = "This file needs extensions the viewer does not support: {extensions}"
+
+[viewer.figure.limit]
+file_bytes = "This file is too large to open ({actual}; at most {allowed})."
+resource_bytes = "A file this model uses is too large to open ({actual}; at most {allowed})."
+total_bytes = "This model and its files are too large to open ({actual}; at most {allowed})."
+vertices = "This model has too many vertices to open ({actual}; at most {allowed})."
+indices = "This model has too many triangle indices to open ({actual}; at most {allowed})."
+keyframes = "This motion has too many keyframes to open ({actual}; at most {allowed})."
+
+[viewer.status]
+unsupported = "Unsupported file type."
+unreadable = "The file could not be read: {reason}"
+too_large = "This picture is too large to show ({width} × {height} px)."
+empty = "No file specified."
+
+[ui.find]
+pattern = "Find"
+replacement = "Replace"
+nothing = "No results"
+broken = "Bad pattern"

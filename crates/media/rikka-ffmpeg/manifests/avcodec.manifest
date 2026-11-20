@@ -1,0 +1,310 @@
+# libavcodec 62 manifest (FFmpeg 8 line)
+# Source headers: C:/Users/eldod/Documents/Enviroment/ffmpeg/include/libavcodec/
+# LIBAVCODEC_VERSION_MAJOR = 62 (version_major.h)
+# FF_API_* gates evaluated (all "(LIBAVCODEC_VERSION_MAJOR < 63)", true at major 62):
+#   FF_API_INIT_PACKET=true    -> AVPacketList / av_init_packet not transcribed (not in requested surface)
+#   FF_API_CODEC_PROPS=true    -> AVCodecContext.properties field INCLUDED
+#   FF_API_V408_CODECID, FF_API_EXR_GAMMA, FF_API_NVDEC_OLD_PIX_FMTS,
+#   FF_API_PARSER_PRIVATE, FF_API_PARSER_CODECID: true but not applicable to any
+#   transcribed struct/field in this subset.
+# No bitfields encountered in any transcribed struct.
+# AVCodec is transcribed PREFIX-only (name, long_name, type, id, capabilities);
+#   remaining fields (max_lowres, deprecated supported_* arrays, priv_class,
+#   profiles, wrapper_name, deprecated ch_layouts) intentionally omitted per task scope.
+# AVProfile: not embedded by value in any transcribed struct/field (AVCodec.profiles
+#   lies past the transcribed prefix), and not referenced elsewhere -> not declared at all.
+# AVHWAccel, AVCodecDescriptor, AVCodecInternal: referenced only by pointer in
+#   AVCodecContext; declared opaque rather than fully transcribed (out of requested scope).
+# AVFrameSideData, AVAlphaMode, AV_NUM_DATA_POINTERS, AVMediaType, AVClass, AVFrame,
+#   AVBufferRef, AVDictionary, AVChannelLayout, AVRational, AVPixelFormat,
+#   AVColorSpace/Range/Primaries/TransferCharacteristic, AVChromaLocation,
+#   AVHWDeviceType: assumed already defined in avutil.rs, imported via `use super::avutil::*;`.
+# AVFieldOrder, AVAudioServiceType, AVSampleFormat: aliased locally in avcodec.rs per
+#   task instruction (libavcodec/defs.h and libavutil/samplefmt.h respectively).
+# AVCodecID = c_int (codec_id.h); AV_CODEC_ID_H264 value counted by hand from the
+#   installed codec_id.h enum listing (28th entry, 0-indexed = 27): NONE=0,
+#   MPEG1VIDEO..CYUV=1..26, H264=27.
+# AVPacketSideDataType (packet.h enum) aliased locally as c_int; of its enumerators only
+#   AV_PKT_DATA_DISPLAYMATRIX is transcribed, for reading a stream's display rotation.
+
+PREFIX avcodec AVCodec
+OFFSET avcodec AVCodec name
+OFFSET avcodec AVCodec long_name
+OFFSET avcodec AVCodec type
+OFFSET avcodec AVCodec id
+OFFSET avcodec AVCodec capabilities
+
+SIZEOF avcodec AVCodecHWConfig
+OFFSET avcodec AVCodecHWConfig pix_fmt
+OFFSET avcodec AVCodecHWConfig methods
+OFFSET avcodec AVCodecHWConfig device_type
+
+SIZEOF avcodec RcOverride
+OFFSET avcodec RcOverride start_frame
+OFFSET avcodec RcOverride end_frame
+OFFSET avcodec RcOverride qscale
+OFFSET avcodec RcOverride quality_factor
+
+SIZEOF avcodec AVCodecContext
+OFFSET avcodec AVCodecContext av_class
+OFFSET avcodec AVCodecContext log_level_offset
+OFFSET avcodec AVCodecContext codec_type
+OFFSET avcodec AVCodecContext codec
+OFFSET avcodec AVCodecContext codec_id
+OFFSET avcodec AVCodecContext codec_tag
+OFFSET avcodec AVCodecContext priv_data
+OFFSET avcodec AVCodecContext internal
+OFFSET avcodec AVCodecContext opaque
+OFFSET avcodec AVCodecContext bit_rate
+OFFSET avcodec AVCodecContext flags
+OFFSET avcodec AVCodecContext flags2
+OFFSET avcodec AVCodecContext extradata
+OFFSET avcodec AVCodecContext extradata_size
+OFFSET avcodec AVCodecContext time_base
+OFFSET avcodec AVCodecContext pkt_timebase
+OFFSET avcodec AVCodecContext framerate
+OFFSET avcodec AVCodecContext delay
+OFFSET avcodec AVCodecContext width
+OFFSET avcodec AVCodecContext height
+OFFSET avcodec AVCodecContext coded_width
+OFFSET avcodec AVCodecContext coded_height
+OFFSET avcodec AVCodecContext sample_aspect_ratio
+OFFSET avcodec AVCodecContext pix_fmt
+OFFSET avcodec AVCodecContext sw_pix_fmt
+OFFSET avcodec AVCodecContext color_primaries
+OFFSET avcodec AVCodecContext color_trc
+OFFSET avcodec AVCodecContext colorspace
+OFFSET avcodec AVCodecContext color_range
+OFFSET avcodec AVCodecContext chroma_sample_location
+OFFSET avcodec AVCodecContext field_order
+OFFSET avcodec AVCodecContext refs
+OFFSET avcodec AVCodecContext has_b_frames
+OFFSET avcodec AVCodecContext slice_flags
+OFFSET avcodec AVCodecContext draw_horiz_band
+OFFSET avcodec AVCodecContext get_format
+OFFSET avcodec AVCodecContext max_b_frames
+OFFSET avcodec AVCodecContext b_quant_factor
+OFFSET avcodec AVCodecContext b_quant_offset
+OFFSET avcodec AVCodecContext i_quant_factor
+OFFSET avcodec AVCodecContext i_quant_offset
+OFFSET avcodec AVCodecContext lumi_masking
+OFFSET avcodec AVCodecContext temporal_cplx_masking
+OFFSET avcodec AVCodecContext spatial_cplx_masking
+OFFSET avcodec AVCodecContext p_masking
+OFFSET avcodec AVCodecContext dark_masking
+OFFSET avcodec AVCodecContext nsse_weight
+OFFSET avcodec AVCodecContext me_cmp
+OFFSET avcodec AVCodecContext me_sub_cmp
+OFFSET avcodec AVCodecContext mb_cmp
+OFFSET avcodec AVCodecContext ildct_cmp
+OFFSET avcodec AVCodecContext dia_size
+OFFSET avcodec AVCodecContext last_predictor_count
+OFFSET avcodec AVCodecContext me_pre_cmp
+OFFSET avcodec AVCodecContext pre_dia_size
+OFFSET avcodec AVCodecContext me_subpel_quality
+OFFSET avcodec AVCodecContext me_range
+OFFSET avcodec AVCodecContext mb_decision
+OFFSET avcodec AVCodecContext intra_matrix
+OFFSET avcodec AVCodecContext inter_matrix
+OFFSET avcodec AVCodecContext chroma_intra_matrix
+OFFSET avcodec AVCodecContext intra_dc_precision
+OFFSET avcodec AVCodecContext mb_lmin
+OFFSET avcodec AVCodecContext mb_lmax
+OFFSET avcodec AVCodecContext bidir_refine
+OFFSET avcodec AVCodecContext keyint_min
+OFFSET avcodec AVCodecContext gop_size
+OFFSET avcodec AVCodecContext mv0_threshold
+OFFSET avcodec AVCodecContext slices
+OFFSET avcodec AVCodecContext sample_rate
+OFFSET avcodec AVCodecContext sample_fmt
+OFFSET avcodec AVCodecContext ch_layout
+OFFSET avcodec AVCodecContext frame_size
+OFFSET avcodec AVCodecContext block_align
+OFFSET avcodec AVCodecContext cutoff
+OFFSET avcodec AVCodecContext audio_service_type
+OFFSET avcodec AVCodecContext request_sample_fmt
+OFFSET avcodec AVCodecContext initial_padding
+OFFSET avcodec AVCodecContext trailing_padding
+OFFSET avcodec AVCodecContext seek_preroll
+OFFSET avcodec AVCodecContext get_buffer2
+OFFSET avcodec AVCodecContext bit_rate_tolerance
+OFFSET avcodec AVCodecContext global_quality
+OFFSET avcodec AVCodecContext compression_level
+OFFSET avcodec AVCodecContext qcompress
+OFFSET avcodec AVCodecContext qblur
+OFFSET avcodec AVCodecContext qmin
+OFFSET avcodec AVCodecContext qmax
+OFFSET avcodec AVCodecContext max_qdiff
+OFFSET avcodec AVCodecContext rc_buffer_size
+OFFSET avcodec AVCodecContext rc_override_count
+OFFSET avcodec AVCodecContext rc_override
+OFFSET avcodec AVCodecContext rc_max_rate
+OFFSET avcodec AVCodecContext rc_min_rate
+OFFSET avcodec AVCodecContext rc_max_available_vbv_use
+OFFSET avcodec AVCodecContext rc_min_vbv_overflow_use
+OFFSET avcodec AVCodecContext rc_initial_buffer_occupancy
+OFFSET avcodec AVCodecContext trellis
+OFFSET avcodec AVCodecContext stats_out
+OFFSET avcodec AVCodecContext stats_in
+OFFSET avcodec AVCodecContext workaround_bugs
+OFFSET avcodec AVCodecContext strict_std_compliance
+OFFSET avcodec AVCodecContext error_concealment
+OFFSET avcodec AVCodecContext debug
+OFFSET avcodec AVCodecContext err_recognition
+OFFSET avcodec AVCodecContext hwaccel
+OFFSET avcodec AVCodecContext hwaccel_context
+OFFSET avcodec AVCodecContext hw_frames_ctx
+OFFSET avcodec AVCodecContext hw_device_ctx
+OFFSET avcodec AVCodecContext hwaccel_flags
+OFFSET avcodec AVCodecContext extra_hw_frames
+OFFSET avcodec AVCodecContext error
+OFFSET avcodec AVCodecContext dct_algo
+OFFSET avcodec AVCodecContext idct_algo
+OFFSET avcodec AVCodecContext bits_per_coded_sample
+OFFSET avcodec AVCodecContext bits_per_raw_sample
+OFFSET avcodec AVCodecContext thread_count
+OFFSET avcodec AVCodecContext thread_type
+OFFSET avcodec AVCodecContext active_thread_type
+OFFSET avcodec AVCodecContext execute
+OFFSET avcodec AVCodecContext execute2
+OFFSET avcodec AVCodecContext profile
+OFFSET avcodec AVCodecContext level
+OFFSET avcodec AVCodecContext skip_loop_filter
+OFFSET avcodec AVCodecContext skip_idct
+OFFSET avcodec AVCodecContext skip_frame
+OFFSET avcodec AVCodecContext skip_alpha
+OFFSET avcodec AVCodecContext skip_top
+OFFSET avcodec AVCodecContext skip_bottom
+OFFSET avcodec AVCodecContext lowres
+OFFSET avcodec AVCodecContext codec_descriptor
+OFFSET avcodec AVCodecContext sub_charenc
+OFFSET avcodec AVCodecContext sub_charenc_mode
+OFFSET avcodec AVCodecContext subtitle_header_size
+OFFSET avcodec AVCodecContext subtitle_header
+OFFSET avcodec AVCodecContext dump_separator
+OFFSET avcodec AVCodecContext codec_whitelist
+OFFSET avcodec AVCodecContext coded_side_data
+OFFSET avcodec AVCodecContext nb_coded_side_data
+OFFSET avcodec AVCodecContext export_side_data
+OFFSET avcodec AVCodecContext max_pixels
+OFFSET avcodec AVCodecContext apply_cropping
+OFFSET avcodec AVCodecContext discard_damaged_percentage
+OFFSET avcodec AVCodecContext max_samples
+OFFSET avcodec AVCodecContext get_encode_buffer
+OFFSET avcodec AVCodecContext frame_num
+OFFSET avcodec AVCodecContext side_data_prefer_packet
+OFFSET avcodec AVCodecContext nb_side_data_prefer_packet
+OFFSET avcodec AVCodecContext decoded_side_data
+OFFSET avcodec AVCodecContext nb_decoded_side_data
+OFFSET avcodec AVCodecContext alpha_mode
+
+SIZEOF avcodec AVCodecParameters
+OFFSET avcodec AVCodecParameters codec_type
+OFFSET avcodec AVCodecParameters codec_id
+OFFSET avcodec AVCodecParameters codec_tag
+OFFSET avcodec AVCodecParameters extradata
+OFFSET avcodec AVCodecParameters extradata_size
+OFFSET avcodec AVCodecParameters coded_side_data
+OFFSET avcodec AVCodecParameters nb_coded_side_data
+OFFSET avcodec AVCodecParameters format
+OFFSET avcodec AVCodecParameters bit_rate
+OFFSET avcodec AVCodecParameters bits_per_coded_sample
+OFFSET avcodec AVCodecParameters bits_per_raw_sample
+OFFSET avcodec AVCodecParameters profile
+OFFSET avcodec AVCodecParameters level
+OFFSET avcodec AVCodecParameters width
+OFFSET avcodec AVCodecParameters height
+OFFSET avcodec AVCodecParameters sample_aspect_ratio
+OFFSET avcodec AVCodecParameters framerate
+OFFSET avcodec AVCodecParameters field_order
+OFFSET avcodec AVCodecParameters color_range
+OFFSET avcodec AVCodecParameters color_primaries
+OFFSET avcodec AVCodecParameters color_trc
+OFFSET avcodec AVCodecParameters color_space
+OFFSET avcodec AVCodecParameters chroma_location
+OFFSET avcodec AVCodecParameters video_delay
+OFFSET avcodec AVCodecParameters ch_layout
+OFFSET avcodec AVCodecParameters sample_rate
+OFFSET avcodec AVCodecParameters block_align
+OFFSET avcodec AVCodecParameters frame_size
+OFFSET avcodec AVCodecParameters initial_padding
+OFFSET avcodec AVCodecParameters trailing_padding
+OFFSET avcodec AVCodecParameters seek_preroll
+OFFSET avcodec AVCodecParameters alpha_mode
+
+SIZEOF avcodec AVPacketSideData
+OFFSET avcodec AVPacketSideData data
+OFFSET avcodec AVPacketSideData size
+OFFSET avcodec AVPacketSideData type
+
+SIZEOF avcodec AVPacket
+OFFSET avcodec AVPacket buf
+OFFSET avcodec AVPacket pts
+OFFSET avcodec AVPacket dts
+OFFSET avcodec AVPacket data
+OFFSET avcodec AVPacket size
+OFFSET avcodec AVPacket stream_index
+OFFSET avcodec AVPacket flags
+OFFSET avcodec AVPacket side_data
+OFFSET avcodec AVPacket side_data_elems
+OFFSET avcodec AVPacket duration
+OFFSET avcodec AVPacket pos
+OFFSET avcodec AVPacket opaque
+OFFSET avcodec AVPacket opaque_ref
+OFFSET avcodec AVPacket time_base
+
+CONST avcodec AV_CODEC_ID_NONE i32
+CONST avcodec AV_CODEC_ID_H264 i32
+CONST avcodec AV_CODEC_ID_VP8 i32
+CONST avcodec AV_CODEC_ID_VP9 i32
+CONST avcodec AV_CODEC_ID_HEVC i32
+CONST avcodec AV_CODEC_ID_AV1 i32
+CONST avcodec AV_CODEC_ID_JPEG2000 i32
+CONST avcodec AV_CODEC_ID_TIFF i32
+CONST avcodec AV_CODEC_ID_EXR i32
+CONST avcodec AV_SAMPLE_FMT_NONE i32
+CONST avcodec AV_SAMPLE_FMT_U8 i32
+CONST avcodec AV_SAMPLE_FMT_S16 i32
+CONST avcodec AV_SAMPLE_FMT_S32 i32
+CONST avcodec AV_SAMPLE_FMT_FLT i32
+CONST avcodec AV_SAMPLE_FMT_DBL i32
+CONST avcodec AV_SAMPLE_FMT_U8P i32
+CONST avcodec AV_SAMPLE_FMT_S16P i32
+CONST avcodec AV_SAMPLE_FMT_S32P i32
+CONST avcodec AV_SAMPLE_FMT_FLTP i32
+CONST avcodec AV_SAMPLE_FMT_DBLP i32
+CONST avcodec AV_SAMPLE_FMT_S64 i32
+CONST avcodec AV_SAMPLE_FMT_S64P i32
+CONST avcodec AV_PROFILE_AAC_HE i32
+CONST avcodec AV_PROFILE_AAC_HE_V2 i32
+CONST avcodec AV_CODEC_PROP_INTRA_ONLY i32
+CONST avcodec AV_CODEC_PROP_LOSSY i32
+CONST avcodec AV_CODEC_PROP_LOSSLESS i32
+CONST avcodec AVDISCARD_DEFAULT i32
+CONST avcodec AVDISCARD_ALL i32
+CONST avcodec AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX i32
+CONST avcodec AV_CODEC_HW_CONFIG_METHOD_HW_FRAMES_CTX i32
+CONST avcodec AV_CODEC_HW_CONFIG_METHOD_INTERNAL i32
+CONST avcodec AV_CODEC_HW_CONFIG_METHOD_AD_HOC i32
+CONST avcodec AV_CODEC_FLAG_OUTPUT_CORRUPT i32
+CONST avcodec AV_CODEC_FLAG_LOW_DELAY i32
+CONST avcodec AV_CODEC_FLAG_GLOBAL_HEADER i32
+CONST avcodec AV_EF_CRCCHECK i32
+CONST avcodec AV_EF_BITSTREAM i32
+CONST avcodec AV_EF_BUFFER i32
+CONST avcodec AV_EF_EXPLODE i32
+CONST avcodec AV_CODEC_CAP_HARDWARE i32
+CONST avcodec AV_CODEC_CAP_ENCODER_FLUSH i32
+CONST avcodec AV_PKT_FLAG_KEY i32
+CONST avcodec AV_INPUT_BUFFER_PADDING_SIZE i32
+CONST avcodec FF_THREAD_FRAME i32
+CONST avcodec FF_THREAD_SLICE i32
+CONST avcodec AV_PKT_DATA_DISPLAYMATRIX i32
+CONST avcodec AV_PKT_DATA_SKIP_SAMPLES i32
+
+PREFIX avcodec AVCodecDescriptor
+OFFSET avcodec AVCodecDescriptor id
+OFFSET avcodec AVCodecDescriptor type
+OFFSET avcodec AVCodecDescriptor name
+OFFSET avcodec AVCodecDescriptor long_name
+OFFSET avcodec AVCodecDescriptor props

@@ -1,0 +1,30 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-secrets-protocol",
+    cranelift = False,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "@crates//:aes",
+        "@crates//:cbc",
+        "@crates//:crypto-bigint",
+        "@crates//:getrandom",
+        "@crates//:hkdf",
+        "@crates//:serde",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+        "@crates//:zvariant",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-secrets-protocol",
+    ],
+)

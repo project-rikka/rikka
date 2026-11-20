@@ -1,0 +1,39 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-llm-accounts",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-providers",
+        "//crates/desktop/rikka-open",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-sync",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-settings",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-llm-accounts",
+        "//crates/ai/rikka-llm",
+        "//crates/desktop/rikka-test-keyring",
+        "//crates/foundation/rikka-sync",
+        "//crates/session/rikka-settings",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)

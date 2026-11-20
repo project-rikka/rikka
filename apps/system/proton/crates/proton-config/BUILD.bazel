@@ -1,0 +1,12 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "proton-config",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/proton:__subpackages__",
+    ],
+    deps = [
+        "//crates/session/rikka-settings",
+    ],
+)

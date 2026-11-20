@@ -1,0 +1,35 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_test")
+
+rikka_binary(
+    name = "rikka-cli",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/foundation/rikka-log",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//system/rikka-cli/crates/cli-command",
+        "@crates//:clap",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    data = glob(
+        ["tests/**"],
+        allow_empty = True,
+        exclude = ["tests/**/*.rs"],
+    ) + [":rikka-cli"],
+    deps = [
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//crates/session/rikka-test-seam",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)

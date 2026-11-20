@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "discord-markdown",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/discord/crates/discord-core",
+        "//crates/text/rikka-text-unicode",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":discord-markdown",
+        "//apps/system/discord/crates/discord-core",
+    ],
+)

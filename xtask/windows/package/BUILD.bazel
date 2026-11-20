@@ -1,0 +1,12 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "windows-package",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//bazel/windows:__pkg__"],
+    deps = [
+        "@crates//:anyhow",
+        "@crates//:clap",
+        "@crates//:zip",
+    ],
+)

@@ -1,0 +1,8 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[figure.align]
+left = "左揃え"
+center = "中央揃え"
+right = "右揃え"

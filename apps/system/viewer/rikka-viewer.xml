@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The 3D formats Rikka reads that the shared database does not name. The types the
+  database already knows, model/gltf+json and model/gltf-binary, are left to it.
+-->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="model/vrm">
+    <comment>VRM avatar</comment>
+    <comment xml:lang="ja">VRM アバター</comment>
+    <comment xml:lang="zh_CN">VRM 虚拟形象</comment>
+    <sub-class-of type="model/gltf-binary"/>
+    <glob pattern="*.vrm" weight="60"/>
+  </mime-type>
+
+  <mime-type type="model/x.fbx">
+    <comment>FBX model</comment>
+    <comment xml:lang="ja">FBX モデル</comment>
+    <comment xml:lang="zh_CN">FBX 模型</comment>
+    <glob pattern="*.fbx"/>
+    <magic priority="60">
+      <match type="string" value="Kaydara FBX Binary" offset="0"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="model/x.pmx">
+    <comment>MikuMikuDance model</comment>
+    <comment xml:lang="ja">MikuMikuDance モデル</comment>
+    <comment xml:lang="zh_CN">MikuMikuDance 模型</comment>
+    <glob pattern="*.pmx"/>
+    <magic priority="60">
+      <match type="string" value="PMX " offset="0"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="model/x.vmd">
+    <comment>MikuMikuDance motion</comment>
+    <comment xml:lang="ja">MikuMikuDance モーション</comment>
+    <comment xml:lang="zh_CN">MikuMikuDance 动作</comment>
+    <glob pattern="*.vmd"/>
+    <magic priority="60">
+      <match type="string" value="Vocaloid Motion Data" offset="0"/>
+    </magic>
+  </mime-type>
+</mime-info>

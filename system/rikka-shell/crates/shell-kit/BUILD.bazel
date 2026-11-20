@@ -1,0 +1,42 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "shell-kit",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-ime",
+        "//crates/desktop/rikka-clipboard",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//crates/session/rikka-virtual-input",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:bitflags",
+        "@crates//:jiff",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":shell-kit",
+        "//crates/graphics/rikka-image",
+    ],
+)

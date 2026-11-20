@@ -1,0 +1,17 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Proton
+GenericName=Proton account
+GenericName[ja]=Proton アカウント
+GenericName[zh_CN]=Proton 账户
+Comment=Mail, Drive, Pass and Authenticator of a Proton account
+Comment[ja]=Proton アカウントのメール、Drive、Pass、Authenticator
+Comment[zh_CN]=Proton 账户的邮件、云盘、密码与验证器
+Exec=rikka-proton
+Icon=proton
+Terminal=false
+Categories=Network;Email;Security;
+Keywords=proton;mail;drive;pass;password;authenticator;totp;
+Keywords[ja]=proton;メール;ドライブ;パスワード;認証;ワンタイム;
+StartupNotify=true

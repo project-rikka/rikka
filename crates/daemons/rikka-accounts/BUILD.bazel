@@ -1,0 +1,16 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-accounts",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/foundation/rikka-dirs",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+        "@crates//:zbus",
+    ],
+)

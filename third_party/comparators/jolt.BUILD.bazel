@@ -1,0 +1,22 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+cc_library(
+    name = "jolt",
+    srcs = glob(
+        ["Jolt/**/*.cpp"],
+        exclude = [
+            "Jolt/Shaders/**",
+            "Jolt/Compute/*/**",
+        ],
+    ),
+    hdrs = glob(["Jolt/**/*.h"]),
+    copts = [
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-w",
+    ],
+    defines = ["JPH_OBJECT_LAYER_BITS=32"],
+    includes = ["."],
+    textual_hdrs = glob(["Jolt/**/*.inl"]),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-replay",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-heap",
+        "//crates/foundation/rikka-log",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-video",
+        "//crates/session/rikka-capture",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//system/rikka-replay/crates/replay-ring",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)

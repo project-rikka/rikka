@@ -1,0 +1,31 @@
+---
+title: Terminal engine and grid widget
+description: rikka-terminal owns PTY, alacritty emulation, OSC 52 clipboard, key/mouse encoding, search and the drawn grid.
+about: crates/ui/rikka-terminal
+tags: [terminal, widget]
+---
+
+- Public surface: `ClipboardAccess, Config, Error, Result, Font, Options, Question, Report, Screen, ScreenState, Session, screen`. Alacritty types never leak. Apps depend on it directly.
+- `Session::open(&Options, report)` starts at 80×24 and answers `rikka_terminal::Result` (`Error::ShellNotFound`, `Error::Pty`). The grid resizes it right after layout (`Widget::arranged`, and in `build` when the font changes), never in paint; focus reports and the preedit reset come from `FocusGained`/`FocusLost`.
+- `pty.rs` owns the PTY I/O: alacritty's `tty::new` only spawns the child; one `rikka-terminal-pty` thread polls the master, an eventfd (input, resize, shutdown from `PtyWriter`) and the child's pidfd, filters OSC 52 through `Scanner`, and feeds `vte::ansi::Processor` under the term lock. Dropping a `Session` only signals that thread, which then hangs up and reaps the child, so drop never blocks the UI.
+- The session owns its colours, rebuilt when the theme changes, so `Session::answer` answers OSC colour and size queries.
+- `Config::load` reads `rikka.terminal`: family, size, scrollback, and `clipboard-read`/`clipboard-write`/`clipboard-max-size` (writes allowed, reads off by default, 16 MiB).
+- Clipboard keys: `Ctrl+Shift+C`/`Ctrl+Insert` copy. `Ctrl+Shift+V` pastes, and `Shift+Insert` or middle click pastes the primary selection. Pastes read through `rikka_ui::clipboard::read_text_of` (a blocking job), so `tests/support` lands blocking jobs itself after each event.
+- Pointer selection: one press selects cells, two select a word, three whole lines (alacritty `Lines`). Words are `src/words.rs`: over the logical line (rows joined across `WRAPLINE`), a whitespace-delimited token holding `scheme://` or `/` (a URL from its scheme, a path with leading brackets/quotes and trailing punctuation or unbalanced closers trimmed) is selected whole, else `rikka_text::word_range_at(.., WordRule::Code)`. Dragging or Shift-clicking after a double click extends by whole words: the `Session` keeps only which end of the alacritty `Simple` selection holds the anchor word, so scrolled selections stay right.
+- A right click (Shift+right click while a program tracks the mouse), the Menu key or Shift+F10 opens Copy/Paste/Select All; Shift+F10 is never sent to the program.
+- OSC 52 is handled here, not by alacritty: the PTY thread's `Scanner` strips it from the output before parsing.
+- Pasted and committed text reaches an unbracketed program with `\r\n` and `\n` as one `\r`; bracketed pastes drop `ESC` and `ETX`.
+- OSC 52 targets `c`, `p/s` and `q,0–7` (process-local cut buffers). `?` is answered off-thread.
+- Gap: text only. No kitty OSC 5522. Non-UTF-8 data reaches only local buffers.
+- Keys use xterm-256color terminfo encoding: F13–F24 as shifted F1–F12, DECCKM/DECKPAM, modifier params, alt-prefix.
+- Kitty keyboard protocol is off because the input layer lacks release and produced-text data.
+- Mouse supports every tracking mode and encoding, both wheels, back and forward buttons. Shift returns the pointer to the reader.
+- `on_key` sees window chords before the grid. `.active(false)` plus `on_activate` picks the live grid in multi-grid windows.
+- Cells with the default background stay unpainted, so glass shows through. An OSC 11 background fills at the window's alpha.
+- The grid's children are a `Lines` strip (`screen/lines.rs`) holding one `Layer` per screen line, a `Layer` over the whole grid for search marks and the preedit, and the cursor (`screen/cursor.rs`). A `Layer` keeps a line-relative draw list (`Stroke` fills and text runs), clips to its own line and repaints only when the list changes; the grid itself paints just the OSC 11 ground and the context menu (`topmost`).
+- Line layers sit at `slot × cell height` in strip space and the strip's `children_offset` is `-top × cell height`, so a scroll moves the strip by an offset: the lines that stayed are neither repainted nor moved, the ones that left are recycled for the lines that entered. Slots rebase to 0 after 4096 lines so positions stay exact in `f32`.
+- The grid's paint reads alacritty's `Term::damage` (then `reset_damage`) and adds the lines the selection left or entered (`screen/grid.rs`). On full damage (scrolls, display offset) it matches each shown row to the previous one by the address of its cells (alacritty's ring moves rows without reallocating), verifies the content, takes the most common shift as the strip's scroll and re-sketches only unmatched rows. A palette, font or OSC colour change redraws every line. One `Screen` consumes a session's damage.
+- The cursor blinks with the shared `rikka_ui::text::Blink`, so blink frames repaint only the cursor.
+- One prepared monospace `TextRun` per run keeps glyphs on their cells.
+- `screen(..).search(&Search)` scans scrollback with alacritty DFAs in ≤2 ms rounds (`Session::generation` skips work already searched). Visible marks are a separate search.
+- Tests: `tests/support` drives the `screen` widget in a headless `Ui` over real `/bin/sh` sessions with one retained `Scene`; keys, mouse and focus reports and OSC 52 are checked end to end through `cat -v`, PTY sizes through `stty size` and a `WINCH` trap, and scrolled output by comparing its pixels with a fresh `Ui` over the same session.

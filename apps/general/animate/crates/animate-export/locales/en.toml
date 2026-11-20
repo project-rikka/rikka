@@ -1,0 +1,13 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[animate.export]
+encoder_auto = "Automatic"
+encoder_software = "Software"
+speed_fastest = "Fastest"
+speed_fast = "Fast"
+speed_balanced = "Balanced"
+speed_slow = "Slow"
+rate_quality = "Constant quality"
+rate_bitrate = "Bitrate"

@@ -1,0 +1,628 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[shell.centre]
+sound = "Sound"
+microphone = "Microphone"
+muted = "Muted"
+airplane = "Aeroplane mode"
+quiet = "Do not disturb"
+notifications = "Notifications"
+no-notifications = "Nothing new"
+clear-notifications = "Clear all"
+said-on = "{day}/{month} {time}"
+on = "On"
+unavailable = "Unavailable"
+output = "Output"
+playing = "Playing"
+input = "Input"
+recording = "Recording"
+wifi = "Wi-Fi"
+off = "Off"
+not-joined = "Not connected"
+joined = "Connected"
+leave = "Disconnect"
+looking = "Looking for networks…"
+passphrase = "Password"
+join = "Connect"
+sound-settings = "Sound settings…"
+network-settings = "Network settings…"
+bluetooth = "Bluetooth"
+not-connected = "Not connected"
+nothing-paired = "Nothing paired yet"
+bluetooth-settings = "Bluetooth settings…"
+charged = "Charged"
+charging = "Charging"
+until-full = "{time} until full"
+left = "{time} left"
+
+[shell.tray]
+empty = "Nothing is in the tray"
+
+[shell.tasks]
+new-window = "New window"
+maximize = "Maximize"
+restore = "Restore"
+minimize = "Minimize"
+move = "Move to workspace"
+move-all = "Move all to workspace"
+workspace = "Workspace {number}"
+close = "Close window"
+close-all = "Close all windows"
+untitled = "Untitled window"
+
+[shell.capture.target]
+region = "Rectangle"
+window = "Window"
+screen = "Full screen"
+
+[shell.capture.picture]
+name = "Screenshot"
+saved = "Screenshot saved"
+copied = "Screenshot copied"
+failed = "The screenshot was not taken"
+
+[shell.capture.video]
+name = "Screen recording"
+started = "Recording the screen"
+saved = "Recording saved"
+failed = "The recording was not made"
+
+[shell.capture.scan]
+name = "Code scanner"
+looking = "Looking for codes…"
+found = "{count, plural, one {# code found} other {# codes found}}"
+none = "No codes found — drag over one"
+missed = "No code was read here. Drag a little wider around it."
+barcode = "Barcode"
+open = "Open"
+copy = "Copy"
+copy-password = "Copy password"
+copy-name = "Copy name"
+join = "Connect"
+settings = "Wi-Fi settings"
+password = "Password"
+hidden = "Hidden network"
+copied = "Copied to the clipboard"
+not-copied = "The code was not copied"
+joined = "Connected to {network}"
+not-joined = "Could not connect to {network}"
+
+[shell.capture.scan.kind]
+link = "Link"
+network = "Wi-Fi network"
+text = "Text"
+
+[shell.capture.scan.security]
+open = "Open"
+wep = "WEP"
+personal = "WPA/WPA2"
+wpa3 = "WPA3"
+enterprise = "Enterprise"
+
+[shell.capture.scan.caution]
+unencrypted = "Not encrypted: others on the network can see what is sent."
+foreign-letters = "The address uses letters from other alphabets, shown as the browser will read them."
+credentials = "Text before “@” hides where this leads; it really opens the site above."
+numeric-host = "The address is a bare number, not a named site."
+
+[shell.capture.scan.unjoinable]
+no-radio = "This computer has no Wi-Fi."
+radio-off = "Wi-Fi is turned off."
+needs-account = "This network asks for an account. Join it from Wi-Fi settings."
+out-of-range = "This network is not in range."
+
+[shell.capture.scan.failure]
+secrets = "The password was not accepted."
+handshake = "The network did not finish signing in."
+address = "The network gave no address."
+dropped = "The connection dropped."
+missing = "The Wi-Fi device went away."
+silent = "The network did not answer in time."
+
+[shell.color-picker]
+name = "Color picker"
+pick = "Pick"
+empty = "Pick a color from the screen to start a collection."
+remove = "Remove"
+cancel = "Cancel"
+select = "Select"
+
+[shell.color-picker.export]
+name = "Export"
+by-color = "Grouped by color"
+by-format = "Grouped by format"
+title = "Export colors"
+stem = "colors"
+text = "Text files"
+json = "JSON files"
+failed = "The colors were not exported"
+
+[shell.markup]
+title = "Edit screenshot"
+save = "Save"
+
+[shell.markup.tool]
+pen = "Pen"
+highlighter = "Highlighter"
+line = "Line"
+arrow = "Arrow"
+rectangle = "Rectangle"
+ellipse = "Ellipse"
+eraser = "Eraser"
+
+[shell.markup.width]
+thin = "Thin"
+medium = "Medium"
+thick = "Thick"
+
+[shell.trim]
+title = "Trim recording"
+replay = "Cut replay"
+save = "Save"
+
+[shell.replay]
+name = "Instant replay"
+title = "Instant replay"
+saved = "Replay saved"
+failed = "The replay was not saved"
+off = "The instant replay is off. It can be turned on in Settings."
+empty = "Nothing has been kept yet"
+display = "Display {name}"
+ended = "{kind} · closed"
+[shell.clipboard]
+title = "Clipboard history"
+search = "Search the history"
+empty = "Nothing has been copied yet"
+no-match = "Nothing found"
+clear = "Clear all"
+clear-unpinned = "Clear unpinned"
+files = "Files"
+full = "Pinned clippings fill the history, so new copies are not being kept"
+
+[shell.emoji]
+title = "Emoji"
+search = "Search emoji"
+recent = "Recently used"
+clear-recent = "Clear"
+no-recent = "The emoji you use will gather here"
+no-match = "No emoji found"
+
+[shell.emoji.group]
+smileys = "Smileys"
+people = "People"
+nature = "Animals and nature"
+food = "Food and drink"
+travel = "Travel and places"
+activities = "Activities"
+objects = "Objects"
+symbols = "Symbols"
+flags = "Flags"
+
+[shell.emoji.tone]
+plain = "Default"
+light = "Light"
+medium-light = "Medium light"
+medium = "Medium"
+medium-dark = "Medium dark"
+dark = "Dark"
+[shell.launcher]
+search = "Search"
+empty = "Nothing found"
+
+[shell.launcher.provider]
+calculator = "Calculator"
+commands = "Commands"
+programs = "Programs"
+web = "Web"
+
+[shell.launcher.command]
+theme = "Theme"
+wallpaper = "Wallpaper"
+
+[shell.launcher.wallpaper]
+summary = "Change the picture behind the desktop"
+
+[shell.launcher.theme]
+summary = "Change what the desktop is drawn in"
+in-use = "In use"
+dark = "Dark"
+light = "Light"
+
+[shell.launcher.run]
+command = "Run this command"
+
+[shell.launcher.web]
+search = "Search the web"
+open = "Open this address"
+
+[shell.overview]
+untitled = "Untitled window"
+
+[shell.notifications]
+waiting = "{count} more"
+open = "Open"
+
+[shell.system-update]
+app-name = "System Updates"
+show-log = "Show log"
+applying = "Applying system changes"
+updating = "Updating the system"
+rolling-back = "Rolling back to generation {generation}"
+applied = "System changes applied"
+updated = "System updated"
+rolled-back = "Rolled back to generation {generation}"
+not-applied = "Couldn't apply system changes"
+not-updated = "Couldn't update the system"
+not-rolled-back = "Couldn't roll back to generation {generation}"
+preparing = "Preparing…"
+locking = "Updating flake inputs…"
+evaluating = "Evaluating the configuration…"
+building = "Building…"
+built = "Built {done} of {expected}"
+fetched = "Downloaded {done} of {expected}"
+activating = "Switching to the new configuration…"
+staging = "Setting up the next boot…"
+checking = "Checking what would change…"
+generation = "Generation {generation}"
+next-boot = "Takes effect after a restart"
+untouched = "Nothing on the system was changed."
+modified = "The system may have been partly changed."
+interrupted = "rikka-nixctl stopped before the change finished."
+
+[shell.polkit]
+title = "Authentication required"
+needed = "An action needs an administrator."
+checking = "Checking…"
+failed = "That did not work. Try again."
+details = "Details"
+action = "Action"
+user = "{name} ({account})"
+cancel = "Cancel"
+authenticate = "Authenticate"
+
+[shell.keyring]
+title = "Unlock your keyring"
+create-title = "Protect your saved sign-ins"
+locked = "An app needs your saved passwords and sign-ins. Enter your login password to open them."
+create = "Choose the password that protects saved passwords and sign-ins. Use your login password so the keyring opens when you log in."
+changed = "Your login password changed. Enter the previous one to keep your saved passwords and sign-ins."
+login-password = "Login password"
+previous-password = "Previous login password"
+checking = "Opening…"
+refused = "That password does not open the keyring."
+broken = "The keyring cannot be reached right now."
+forgot = "I don't remember it"
+reset-warning = "Starting over deletes every saved password and sign-in. Apps will ask you to sign in again."
+back = "Back"
+start-over = "Start over"
+cancel = "Cancel"
+unlock = "Unlock"
+
+[shell.lock]
+password = "Password"
+refused = "Incorrect password. Try again."
+broken = "The password cannot be checked right now."
+caps-lock = "Caps Lock is on"
+power-off = "Shut down"
+reboot = "Restart"
+suspend = "Sleep"
+
+[shell.translate]
+auto = "Detect language"
+other = "Other language…"
+placeholder = "Enter text"
+awaiting = "Translation"
+unconfigured = "No account is signed in yet. Sign one in under Settings, in AI."
+blind = "{model} cannot read pictures. Choose another model."
+too-much = "That is {written} characters; at most {most} are translated at once."
+model = "Model"
+run = "Translate"
+stop = "Stop"
+
+[shell.translate.effort]
+name = "Thinking"
+
+[shell.translate.profile]
+natural = "Natural"
+casual = "Casual"
+polite = "Polite"
+business = "Business"
+
+[shell.assistant]
+title = "Assistant"
+threads = "Conversations"
+new = "New conversation"
+close = "Close"
+back = "Back to the conversation"
+servers = "MCP servers"
+place = "Assistant"
+untitled = "New conversation"
+no-threads = "Nothing has been asked yet"
+placeholder = "Ask about this desktop"
+opening = "Opening the assistant…"
+unready = "The assistant could not be set up"
+start = "Ask about your files, your desktop, or anything on screen"
+working = "Working…"
+noticed = "A background job reported back"
+model = "Model"
+reasoning = "Reasoning"
+folded = "Earlier messages summarised"
+folding = "Summarising the conversation…"
+unfoldable = "Nothing to summarise yet."
+busy = "Stop the work still running before switching conversations."
+main = "Main"
+rest = "…and {count, plural, one {# more line} other {# more lines}}"
+
+[shell.assistant.ask]
+written = "Or say it in your own words"
+back = "Back"
+next = "Next"
+answer = "Answer"
+stop = "Stop"
+
+[shell.assistant.attach]
+chooser = "Attach files"
+accept = "Attach"
+pasted = "Pasted image"
+dropped = "Dropped image"
+unreadable = "The dropped data could not be read."
+rest = "and {count, plural, one {# more} other {# more}}"
+refused = "Not attached: {reason}"
+
+[shell.assistant.command.compact]
+hint = "[what to keep]"
+about = "Summarise the conversation so far to free up context"
+
+[shell.assistant.span]
+now = "now"
+minutes = "{count}m"
+hours = "{count}h"
+days = "{count}d"
+
+[shell.indicators.input-method]
+methods = "Input methods"
+modes = "Modes and tools"
+settings = "Input source settings…"
+
+[shell.indicators.ai-usage]
+title = "AI usage"
+asking = "Reading usage…"
+unmetered = "No usage limit"
+settings = "AI settings…"
+
+[shell.island]
+date = "{weekday} {day} {month, plural, =1 {Jan} =2 {Feb} =3 {Mar} =4 {Apr} =5 {May} =6 {Jun} =7 {Jul} =8 {Aug} =9 {Sep} =10 {Oct} =11 {Nov} =12 {Dec} other {}}"
+long-date = "{weekday}, {day} {month, plural, =1 {January} =2 {February} =3 {March} =4 {April} =5 {May} =6 {June} =7 {July} =8 {August} =9 {September} =10 {October} =11 {November} =12 {December} other {}}"
+brightness = "Brightness"
+playing-through = "Now playing through"
+microphone-muted = "Microphone muted"
+microphone-live = "Microphone on"
+plugged = "Charger connected"
+unplugged = "Charger disconnected"
+battery-low = "Battery low"
+running-low = "Battery low · {charge}"
+charged = "Fully charged"
+connected = "Connected"
+disconnected = "Disconnected"
+power-mode = "Power mode"
+online = "Online"
+offline = "Offline"
+vpn-on = "VPN connected"
+vpn-off = "VPN disconnected"
+microphone = "Microphone"
+camera = "Camera"
+screen = "Screen sharing"
+in-use = "In use"
+recording = "Recording"
+stop = "Stop"
+charging = "Charging"
+until-full = "{charge} · {time} until full"
+high-low = "H {high} · L {low}"
+
+[shell.island.profile]
+power-saver = "Power saver"
+balanced = "Balanced"
+performance = "Performance"
+
+[shell.island.weekday.short]
+mon = "Mon"
+tue = "Tue"
+wed = "Wed"
+thu = "Thu"
+fri = "Fri"
+sat = "Sat"
+sun = "Sun"
+
+[shell.island.weekday.long]
+mon = "Monday"
+tue = "Tuesday"
+wed = "Wednesday"
+thu = "Thursday"
+fri = "Friday"
+sat = "Saturday"
+sun = "Sunday"
+
+[shell.island.weather]
+clear = "Clear"
+mainly-clear = "Mostly clear"
+partly-cloudy = "Partly cloudy"
+overcast = "Overcast"
+fog = "Fog"
+drizzle = "Drizzle"
+freezing-rain = "Freezing rain"
+rain = "Rain"
+snow = "Snow"
+showers = "Showers"
+snow-showers = "Snow showers"
+thunderstorm = "Thunderstorm"
+hail = "Thunderstorm with hail"
+unknown = "Unknown"
+
+[shell.desk.editor]
+title = "Widgets"
+done = "Done"
+search = "Search widgets"
+no-match = "No widget matches"
+size-label = "Size"
+duplicate = "Duplicate"
+remove = "Remove"
+clear = "Clear all"
+clear-yes = "Clear"
+cancel = "Cancel"
+
+[shell.desk.editor.size]
+small = "S"
+medium = "M"
+large = "L"
+extra-large = "XL"
+
+[shell.desk.editor.size-name]
+small = "Small"
+medium = "Medium"
+large = "Large"
+extra-large = "Extra large"
+
+[shell.desk.menu]
+edit = "Edit widgets"
+remove = "Remove widget"
+wallpaper = "Change wallpaper…"
+settings = "Display & appearance settings"
+[shell.desk.widget.clock]
+name = "Clock"
+local = "Local time"
+same-time = "Same time as here"
+today = "Today"
+tomorrow = "Tomorrow"
+yesterday = "Yesterday"
+relative = "{day}, {shift}"
+hours = "{sign}{hours} h"
+hours-minutes = "{sign}{hours} h {minutes} min"
+unknown-zone = "Unknown time zone"
+week = "W{week}"
+week-day = "W{week} · Day {day}"
+
+[shell.desk.widget.calendar]
+name = "Calendar"
+
+[shell.desk.widget.date]
+long = "{weekday} {day} {month, plural, =1 {January} =2 {February} =3 {March} =4 {April} =5 {May} =6 {June} =7 {July} =8 {August} =9 {September} =10 {October} =11 {November} =12 {December} other {}}"
+day-month = "{day} {month, plural, =1 {January} =2 {February} =3 {March} =4 {April} =5 {May} =6 {June} =7 {July} =8 {August} =9 {September} =10 {October} =11 {November} =12 {December} other {}}"
+month = "{month, plural, =1 {January} =2 {February} =3 {March} =4 {April} =5 {May} =6 {June} =7 {July} =8 {August} =9 {September} =10 {October} =11 {November} =12 {December} other {}}"
+month-year = "{month, plural, =1 {January} =2 {February} =3 {March} =4 {April} =5 {May} =6 {June} =7 {July} =8 {August} =9 {September} =10 {October} =11 {November} =12 {December} other {}} {year}"
+
+[shell.desk.widget.date.initial]
+mon = "M"
+tue = "T"
+wed = "W"
+thu = "T"
+fri = "F"
+sat = "S"
+sun = "S"
+
+[shell.desk.widget.weather]
+name = "Weather"
+loading = "Finding the weather…"
+unlocated = "Location unavailable"
+unavailable = "Weather unavailable"
+high-low = "H {high} · L {low}"
+now = "Now"
+hour = "{hour}"
+today = "Today"
+air-index = "AQI {index} · {quality}"
+
+[shell.desk.widget.weather.quality]
+good = "Good"
+moderate = "Moderate"
+sensitive = "Poor for some"
+unhealthy = "Unhealthy"
+very-unhealthy = "Very unhealthy"
+hazardous = "Hazardous"
+
+[shell.desk.widget.media]
+name = "Now Playing"
+idle = "Nothing playing"
+
+[shell.desk.widget.monitor]
+name = "System Monitor"
+title = "System"
+measuring = "Measuring…"
+cpu = "CPU"
+memory = "Memory"
+gpu = "GPU"
+network = "Network"
+disk = "Disk"
+of = "{used} of {total}"
+free = "{free} free · R {read} · W {write}"
+summary = "up {up} · load {load}"
+up-days = "{days}d {hours}h"
+up-hours = "{hours}h {minutes}m"
+
+[shell.desk.widget.monitor.short]
+cpu = "CPU"
+memory = "MEM"
+gpu = "GPU"
+network = "NET"
+disk = "DISK"
+
+[shell.desk.widget.power]
+name = "Batteries"
+this-computer = "This computer"
+device = "Device"
+charging = "Charging"
+until-full = "Full in {time}"
+full = "Fully charged"
+left = "{time} left"
+on-battery = "On battery"
+connected = "Plugged in"
+plugged = "On mains power"
+drawing = "Drawing {watts} W"
+minutes = "{minutes} min"
+hours = "{hours} h {minutes} min"
+
+[shell.desk.widget.note]
+name = "Note"
+placeholder = "Write something…"
+
+[shell.desk.widget.photos]
+name = "Photos"
+looking = "Looking for photos…"
+missing = "Folder not found"
+empty = "No photos here"
+unreadable = "This photo cannot be shown"
+pictures = "Pictures"
+
+[shell.desk.widget.options]
+face = "Face"
+digital = "Digital"
+analog = "Analogue"
+seconds = "Show seconds"
+zone = "Time zone"
+zone-search = "Search cities"
+first-day = "Week starts on"
+first-day-region = "Region default"
+sunday = "Sunday"
+monday = "Monday"
+saturday = "Saturday"
+air = "Show air quality"
+place = "Place"
+place-here = "{place} (current location)"
+place-set = "Change the place"
+open-settings = "Open Settings"
+waveform = "Show waveform"
+devices = "Show devices"
+note = "Note"
+clear = "Clear"
+folder = "Folder"
+choose = "Choose…"
+choose-folder = "Choose a folder of photos"
+folder-reset = "Use the Pictures folder"
+interval = "Show each for"
+every-30 = "30 seconds"
+every-60 = "1 minute"
+every-300 = "5 minutes"
+every-1800 = "30 minutes"
+every-3600 = "1 hour"
+shuffle = "Shuffle"
+fill = "Fill the frame"

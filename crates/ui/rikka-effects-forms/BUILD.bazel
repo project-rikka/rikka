@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-effects-forms",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-dialog",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-effects",
+        "//crates/graphics/rikka-image-edit",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":rikka-effects-forms",
+        "//crates/graphics/rikka-effects",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-ui",
+    ],
+)

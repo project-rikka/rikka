@@ -1,0 +1,37 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-remote-link",
+    cranelift = False,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-simd",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/media/rikka-rate-control",
+        "//crates/remote/rikka-remote-wire",
+        "@crates//:quinn",
+        "@crates//:rcgen",
+        "@crates//:rustls",
+        "@crates//:rustls-pki-types",
+        "@crates//:rustls_webpki",
+        "@crates//:sha2",
+        "@crates//:socket2",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-remote-link",
+        "//crates/media/rikka-rate-control",
+        "//crates/remote/rikka-remote-wire",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

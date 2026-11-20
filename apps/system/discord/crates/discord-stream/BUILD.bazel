@@ -1,0 +1,31 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "discord-stream",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/discord/crates/discord-client",
+        "//apps/system/discord/crates/discord-core",
+        "//apps/system/discord/crates/discord-voice",
+        "//crates/desktop/rikka-screencast",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-image",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-video",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":discord-stream",
+    ],
+)

@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-undo",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-vfs",
+        "//crates/desktop/rikka-file-operations",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-undo",
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-vfs",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+    ],
+)

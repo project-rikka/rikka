@@ -1,0 +1,45 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-proton-drive",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-names",
+        "//crates/proton/rikka-proton-pgp",
+        "@crates//:bytes",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:mime_guess",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-proton-drive",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-pgp",
+        "//crates/proton/rikka-test-proton",
+        "//crates/proton/rikka-test-proton-drive",
+        "@crates//:jiff",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

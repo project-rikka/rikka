@@ -1,0 +1,61 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "browser-translate",
+    target_compatible_with = ["@platforms//os:linux"],
+    compile_data = [
+        "scripts/probe.js",
+        "scripts/translator.js",
+    ],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-languages",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/web/rikka-html",
+        "@crates//:futures-util",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:whatlang",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/fixtures/blob.html",
+        "tests/fixtures/docs.html",
+        "tests/fixtures/readme.html",
+    ],
+    deps = [
+        ":browser-translate",
+        "//crates/foundation/rikka-languages",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    compile_data = [
+        "tests/fixtures/blob.html",
+        "tests/fixtures/docs.html",
+        "tests/fixtures/readme.html",
+    ],
+    machine = True,
+    deps = [
+        ":browser-translate",
+        "//crates/foundation/rikka-languages",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-picture",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/web/rikka-web",
+        "@crates//:futures-util",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

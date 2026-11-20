@@ -1,0 +1,42 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-model-gpu",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-presets",
+        "//crates/graphics/rikka-shader-presets-gpu",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-model-core",
+        "@crates//:rustc-hash",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-vrm:assets/avatar.vrm",
+    ],
+    gpu = True,
+    deps = [
+        ":rikka-model-gpu",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-presets-gpu",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/model/rikka-model",
+        "//crates/model/rikka-model-core",
+    ],
+)

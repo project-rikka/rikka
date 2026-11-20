@@ -1,0 +1,15 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[remote.connected]
+summary = "远程桌面已连接"
+body = "{who} 正在查看并控制此桌面"
+
+[remote.refused]
+summary = "已拒绝远程登录"
+body = "有人在 {from} 输入了错误的远程桌面密码"
+
+[remote.received]
+summary = "已收到文件"
+body = "{name} 已保存到 {folder}"

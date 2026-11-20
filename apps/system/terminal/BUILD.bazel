@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-terminal",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-terminal",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)

@@ -1,0 +1,67 @@
+load("//bazel/astro:defs.bzl", "rikka_astro_run", "rikka_astro_site", "rikka_astro_test")
+
+SOURCES = glob([
+    "plugins/**",
+    "public/**",
+    "src/**",
+]) + [
+    ".prettierignore",
+    ".prettierrc.json",
+    "astro.config.ts",
+    "package.json",
+    "tsconfig.json",
+]
+
+DATA = [
+    "//crates/graphics/rikka-theme:themes/rikka.toml",
+    "//crates/graphics/rikka-theme:themes/rikka-light.toml",
+    "//sdk/examples/c:counter.c",
+    "//sdk/examples/cpp:counter.cpp",
+    "//sdk/examples/csharp:Counter.cs",
+    "//sdk/examples/go:counter/main.go",
+    "//sdk/examples/java:Counter.java",
+    "//sdk/examples/python:counter.py",
+]
+
+rikka_astro_site(
+    name = "website",
+    srcs = SOURCES,
+    data = DATA,
+)
+
+rikka_astro_test(
+    name = "types",
+    srcs = SOURCES,
+    arguments = [
+        "check",
+        "--minimumFailingSeverity",
+        "warning",
+    ],
+    data = DATA,
+    tool = "astro",
+)
+
+rikka_astro_test(
+    name = "format",
+    srcs = SOURCES,
+    arguments = [
+        "--check",
+        ".",
+    ],
+    tool = "prettier",
+)
+
+rikka_astro_run(
+    name = "dev",
+    arguments = ["dev"],
+    tool = "astro",
+)
+
+rikka_astro_run(
+    name = "prettier",
+    arguments = [
+        "--write",
+        ".",
+    ],
+    tool = "prettier",
+)

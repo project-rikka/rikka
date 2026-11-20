@@ -1,0 +1,37 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-tools",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-tool-docs",
+        "//crates/foundation/rikka-file-edit",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:jiff",
+        "@crates//:rustix",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-tools",
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-llm",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

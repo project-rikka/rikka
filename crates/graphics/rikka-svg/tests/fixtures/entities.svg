@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd" [
+  <!ENTITY ns_svg "http://www.w3.org/2000/svg">
+  <!ENTITY accent "#1c71d8">
+  <!ENTITY st0 "fill:&accent;;stroke:none;">
+  <!ENTITY st1 "fill:none;stroke:#e01b24;stroke-width:3;">
+  <!ENTITY corner "<rect x='44' y='4' width='16' height='16' style='&st0;'/>">
+]>
+<svg xmlns="&ns_svg;" width="64" height="64" viewBox="0 0 64 64">
+  <!-- &st0; stays untouched in a comment -->
+  <rect x="4" y="4" width="32" height="24" style="&st0;"/>
+  <circle cx="32" cy="42" r="14" style="&st1;"/>
+  &corner;
+</svg>

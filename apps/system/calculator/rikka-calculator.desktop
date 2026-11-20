@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Calculator
+Name[ja]=電卓
+Name[zh_CN]=计算器
+GenericName=Calculator
+GenericName[ja]=電卓
+Comment=Work out a number
+Comment[ja]=計算します
+Comment[zh_CN]=进行计算
+Exec=rikka-calculator
+Icon=accessories-calculator
+Terminal=false
+Categories=Utility;Calculator;
+Keywords=calculator;arithmetic;maths;
+Keywords[ja]=電卓;計算;算数;
+StartupNotify=true

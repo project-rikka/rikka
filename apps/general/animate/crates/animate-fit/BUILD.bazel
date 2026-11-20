@@ -1,0 +1,30 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-fit",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-solve",
+        "//crates/model/rikka-model-core",
+        "//crates/physics/rikka-physics-tailor",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+    ],
+    deps = [
+        ":animate-fit",
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-solve",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/physics/rikka-physics-tailor",
+    ],
+)

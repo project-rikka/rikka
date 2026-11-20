@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="96" height="64" viewBox="0 0 96 64">
+  <defs>
+    <linearGradient id="stops" x1="0" y1="0" x2="0" y2="20" gradientUnits="userSpaceOnUse" gradientTransform="matrix(1 0 0 -1 400 300)">
+      <stop offset="0" stop-color="#f6d32d"/>
+      <stop offset="1" stop-color="#c01c28"/>
+    </linearGradient>
+    <linearGradient id="chained" xlink:href="#stops" x1="4" y1="4" x2="4" y2="28" gradientUnits="userSpaceOnUse"/>
+    <clipPath id="twice"><rect x="52" y="34" width="20" height="26"/></clipPath>
+  </defs>
+  <rect x="4" y="4" width="40" height="24" fill="url(#chained)"/>
+  <path id="shared" d="M52 4h40v24h-40z" fill="url(#shared)"/>
+  <rect x="4" y="34" width="88" height="26" fill="#613583" clip-path="url(#twice)"/>
+  <rect x="4" y="34" width="40" height="26" fill="url(#missing) #26a269"/>
+  <rect x="76" y="34" width="16" height="26" fill="url(#missing)" stroke="#000"/>
+  <linearGradient id="shared">
+    <stop offset="0" stop-color="#3584e4"/>
+    <stop offset="1" stop-color="#33d17a"/>
+  </linearGradient>
+</svg>

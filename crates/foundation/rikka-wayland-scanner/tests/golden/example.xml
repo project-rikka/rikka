@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="example">
+  <interface name="ex_manager_v1" version="3">
+    <description summary="a global">A global that creates items.</description>
+
+    <enum name="error">
+      <entry name="bad_item" value="0" summary="the item is not usable"/>
+      <entry name="no_summary" value="1"/>
+    </enum>
+
+    <enum name="edges" bitfield="true">
+      <entry name="none" value="0"/>
+      <entry name="top" value="1"/>
+      <entry name="bottom" value="2"/>
+    </enum>
+
+    <enum name="rotation">
+      <entry name="normal" value="0"/>
+      <entry name="90" value="1"/>
+    </enum>
+
+    <request name="destroy" type="destructor"/>
+
+    <request name="create_item">
+      <arg name="id" type="new_id" interface="ex_item_v1"/>
+      <arg name="parent" type="object" interface="ex_item_v1" allow-null="true"/>
+      <arg name="title" type="string"/>
+      <arg name="rotation" type="uint" enum="rotation"/>
+    </request>
+
+    <request name="share" since="2">
+      <arg name="fd" type="fd"/>
+      <arg name="data" type="array"/>
+      <arg name="edges" type="uint" enum="edges"/>
+      <arg name="scale" type="fixed"/>
+    </request>
+    <request name="place" since="3">
+      <arg name="item" type="object" interface="ex_item_v1"/>
+      <arg name="anchor" type="object" allow-null="true"/>
+      <arg name="x" type="int"/>
+      <arg name="scale" type="fixed"/>
+      <arg name="rotation" type="int" enum="rotation"/>
+      <arg name="copy" type="new_id" interface="ex_item_v1"/>
+    </request>
+
+
+    <request name="bind" since="3">
+      <arg name="name" type="uint"/>
+      <arg name="id" type="new_id"/>
+    </request>
+
+    <event name="announce">
+      <arg name="item" type="new_id" interface="ex_item_v1"/>
+      <arg name="label" type="string" allow-null="true"/>
+      <arg name="rotation" type="int" enum="rotation"/>
+    </event>
+
+    <event name="id" since="3">
+      <arg name="value" type="uint"/>
+    </event>
+
+    <event name="table" since="3">
+      <arg name="fd" type="fd"/>
+      <arg name="size" type="uint"/>
+    </event>
+  </interface>
+
+  <interface name="ex_item_v1" version="3">
+    <event name="done" type="destructor">
+      <arg name="serial" type="uint"/>
+    </event>
+  </interface>
+</protocol>

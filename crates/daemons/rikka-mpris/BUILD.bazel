@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-mpris",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/foundation/rikka-sync",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:url",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-mpris",
+        "//crates/foundation/rikka-test-bus",
+        "@crates//:futures-util",
+        "@crates//:tokio",
+    ],
+)

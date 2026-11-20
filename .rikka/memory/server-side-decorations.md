@@ -1,0 +1,17 @@
+---
+title: Server-side decorations (compositor-drawn captions)
+description: Which windows get a compositor caption, how frames change geometry, and where caption drawing and input live.
+about: system/rikka-compositor/src/windows/decoration.rs
+tags: [compositor, decorations]
+---
+
+- Policy (KWin-style, `windows/decoration.rs` `Decoration`): xdg windows whose decoration object prefers `server_side` or never set a mode get a caption; `client_side` or no decoration object (GTK, Rikka apps) stay client-drawn. X11 windows get one unless override-redirect, Motif hints refuse decorations, or the type is not Normal/Dialog/Utility/Toolbar.
+- The caption shows floating, tiled and maximized; fullscreen drops it. `Decoration::frame(placement, resizable)` gives the desktop `Frame { title, reach }`: title = `Caption::BAR` (39), reach = `Caption::REACH` (8 px invisible resize band outside) only while floating and resizable.
+- Desktop geometry is the outer frame: layouts, snap, tiling, shapes, edges and focus rings all work on it unchanged. `Window::content()` is the client part, `surface_location` adds the frame offset, popups open from the content, and `set_frame` keeps the content size.
+- Conversions happen only at protocol edges: `client_configure` (xdg size/bounds minus frame, decoration mode), committed sizes plus frame, `WindowsCtx::configure_x11` (outer → X content rect), X11 stands/requests (content → outer), `size_limits` (outer). `refresh_frame` runs in `stand` and arrival; `reframe` also reconfigures on decoration, Motif, type or size-hint changes. X11 frame extents are published before map and answered for `_NET_REQUEST_FRAME_EXTENTS`.
+- Window captures show content only (`window_view` uses `content()`); output captures and window views (overview, switcher) show the caption.
+- Metrics come from `rikka_theme::caption`, shared with rikka-widgets' title bar; colours from `policy::CaptionLook` (theme fill doubled like the CSD title bar, hover/press layers, danger close). The pure layout and hit parts are `rikka-compositor-caption` (`Caption::part_at` → Title, Button, Edge).
+- Drawing: `windows/caption_paint.rs` builds `render::CaptionPaint` into `Staging::captions` (and `Portrayed::caption`); `render/caption.rs` `CaptionNodes` lives in each `SurfaceTree` below the client surfaces, frosts a glass pane when the fill is translucent, and reports itself as a `glass::Painted::Caption` occupant. Frozen exit snapshots keep the caption. Hover/focus fades are `Animations::caption_buttons`/`caption_focus`.
+- Input: `Desktop::hit_under` returns `Hit::Frame` where a frame (not a surface) is hit; `element_under` treats it as blocking. `input/caption.rs` handles hover (resize cursors through `Cursor::decorate`), pointer press grabs (title drag after 4 px slop → `start_move`, double press → maximize, button press acts on release inside), `input/caption_touch.rs` the touch equivalents, tablet tips relay to the pointer path, and the agent seat relays caption hits to the person seat like X11.
+- Hover and press state is `Windows::captions`; change it only through `WindowsCtx::update_caption`, which redraws the outputs of windows whose lit or pressed button changed. `input/grabs` exposes device-agnostic `Drag` (move) and `Reshape` (window resize or snap divider) that both pointer grabs and caption touch drive.
+- No window menu exists yet; right-clicking a caption does nothing.

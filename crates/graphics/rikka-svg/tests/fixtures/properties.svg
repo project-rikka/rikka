@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="120" viewBox="0 0 160 120">
+  <style>
+    rect[data-kind="flag"] { fill: #e01b24 }
+    [stroke-dasharray] { stroke: #1c71d8 }
+    g > circle:first-child { fill: #26a269 }
+    circle + circle { fill: #f6d32d }
+    path[class~="wide"] { stroke-width: 6 }
+  </style>
+  <rect x="20" y="10" width="40" height="20" fill="#000" transform="rotate(30)" transform-origin="40 20"/>
+  <rect x="80" y="10" width="40" height="30" fill="#613583" transform="scale(0.5)" transform-origin="center"/>
+  <polygon points="10,60 50,48 40,90" fill="#3584e4" shape-rendering="crispEdges"/>
+  <circle cx="80" cy="70" r="14" fill="#ff7800" shape-rendering="optimizeSpeed"/>
+  <rect x="110" y="56" width="40" height="20" data-kind="flag"/>
+  <line x1="110" y1="90" x2="150" y2="90" stroke="#000" stroke-width="3" stroke-dasharray="4 2"/>
+  <g>
+    <circle cx="20" cy="105" r="8" fill="#000"/>
+    <circle cx="45" cy="105" r="8" fill="#000"/>
+  </g>
+  <path class="thin wide" d="M70 105H140" stroke="#c061cb" stroke-width="1"/>
+</svg>

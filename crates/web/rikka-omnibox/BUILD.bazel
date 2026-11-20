@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-omnibox",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-public-suffix",
+        "//crates/text/rikka-text-unicode",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:url",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-omnibox",
+        "@crates//:tokio",
+        "@crates//:url",
+    ],
+)

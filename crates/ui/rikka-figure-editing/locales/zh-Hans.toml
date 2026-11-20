@@ -1,0 +1,8 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[figure.align]
+left = "左对齐"
+center = "居中"
+right = "右对齐"

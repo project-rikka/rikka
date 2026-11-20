@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=os.rikka.Boost1
+Exec=@BINDIR@/rikka-boost
+User=root
+SystemdService=rikka-boost.service

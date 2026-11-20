@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "task-board",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/session/rikka-session",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":task-board",
+        "//crates/session/rikka-session",
+    ],
+)

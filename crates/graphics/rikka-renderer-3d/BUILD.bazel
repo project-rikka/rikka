@@ -1,0 +1,58 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-renderer-3d",
+    cranelift = False,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-gpu/shaders:shaders-gpu",
+        "//crates/graphics/rikka-ies",
+        "//crates/graphics/rikka-ltc",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d/shaders:shaders-3d",
+        "//crates/graphics/rikka-shader-programs",
+        "//crates/graphics/rikka-slang",
+        "//crates/graphics/rikka-spirv",
+        "@crates//:ash",
+        "@crates//:bytemuck",
+        "@crates//:glam",
+        "@crates//:half",
+        "@crates//:rustc-hash",
+        "@crates//:serde",
+        "@crates//:smallvec",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":rikka-renderer-3d",
+        "//crates/foundation/rikka-color-lookup",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-slang",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/graphics/rikka-test-renderer-3d",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-renderer-3d",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/graphics/rikka-test-renderer-3d",
+    ],
+)

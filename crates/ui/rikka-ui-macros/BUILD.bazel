@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_proc_macro")
+
+rikka_proc_macro(
+    name = "rikka-ui-macros",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "@crates//:proc-macro2",
+        "@crates//:quote",
+        "@crates//:syn",
+    ],
+)

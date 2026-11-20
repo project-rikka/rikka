@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-nix-protocol",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/nix/rikka-nix-log",
+        "//crates/nix/rikka-nixos-layout",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:zvariant",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-nix-protocol",
+        "//crates/nix/rikka-nix-log",
+        "//crates/nix/rikka-nixos-layout",
+    ],
+)

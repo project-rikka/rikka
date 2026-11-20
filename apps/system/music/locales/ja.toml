@@ -1,0 +1,302 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[music]
+title = "ミュージック"
+play = "再生"
+shuffle = "シャッフル"
+
+[music.signing]
+with = "{name} で続ける"
+connecting = "接続しています…"
+browser = "ブラウザーで {name} へのサインインを完了してください。"
+again = "ページをもう一度開く"
+cancel = "キャンセル"
+page = "{name} にサインイン"
+page-closed = "サインインページが予期せず閉じました。"
+
+[music.accounts]
+saved = "アカウント"
+add = "アカウントを追加"
+expired = "{name} からサインアウトされました。もう一度サインインしてください。"
+unknown = "{name} には対応していません。"
+
+[music.local]
+name = "このコンピューター"
+here = "音楽フォルダー"
+scanning = "スキャン中… {read} / {total}"
+finding = "音楽を探しています… {count} 件"
+filling = "ライブラリを作成しています"
+empty = "ライブラリにはまだ音楽がありません"
+missing = "このコンピューターの音楽を利用できません"
+offline = "接続されていないドライブ上にあります"
+album-gone = "このアルバムはライブラリにありません"
+artist-gone = "このアーティストはライブラリにいません"
+disc = "ディスク {number}"
+disc-named = "ディスク {number} · {name}"
+folder-empty = "このフォルダーには音楽がありません"
+
+[music.settings]
+title = "設定"
+back = "戻る"
+accounts = "アカウント"
+quality = "品質"
+audio = "音質"
+image = "画質"
+storage = "ストレージ"
+cache = "再生した曲をキャッシュ"
+cache-used = "使用量"
+cache-clear = "消去"
+sources = "代替再生の順番"
+library = "ライブラリ"
+output = "出力"
+
+[music.quality]
+low = "低"
+standard = "標準"
+highest = "最高"
+
+[music.cache]
+off = "オフ"
+
+[music.fidelity]
+high = "ハイレゾ"
+lossless = "ロスレス"
+format = "{bits}bit / {rate}kHz"
+dsd = "DSD{multiple} · {rate}MHz"
+bitrate = "{kbps}kbps"
+
+[music.nav]
+home = "ホーム"
+search = "検索"
+songs = "お気に入りの曲"
+playlists = "プレイリスト"
+blends = "Rikka プレイリスト"
+albums = "アルバム"
+artists = "アーティスト"
+songs-all = "曲"
+genres = "ジャンル"
+folders = "フォルダー"
+
+[music.home]
+picks = "クイックピック"
+recent = "最近再生した曲"
+following = "フォロー中のユーザーから"
+mixes = "おすすめミックス"
+albums = "保存したアルバム"
+playlists = "マイプレイリスト"
+artists = "好きなアーティスト"
+new = "新着リリース"
+acclaimed = "高評価のアルバム"
+popular = "よく聴かれている"
+curated = "編集部のプレイリスト"
+added = "最近追加した項目"
+favourites = "お気に入り"
+empty = "おすすめはまだありません"
+
+[music.gallery]
+all = "すべて表示"
+
+[music.search]
+placeholder = "曲、アーティスト、アルバムを検索"
+hint = "曲、アーティスト、アルバムを検索"
+none = "見つかりませんでした"
+songs = "曲"
+artists = "アーティスト"
+albums = "アルバム"
+playlists = "プレイリスト"
+
+[music.songs]
+title = "お気に入りの曲"
+empty = "お気に入りの曲はありません"
+
+[music.artist]
+popular = "人気曲"
+albums = "アルバム"
+singles = "シングルと EP"
+appears = "参加作品"
+
+[music.mix]
+title = "{name} ミックス"
+seeded = "{name} をもとに"
+
+[music.kind]
+album = "アルバム"
+artist = "アーティスト"
+playlist = "プレイリスト"
+collection = "コレクション"
+mix = "ミックス"
+blend = "Rikka プレイリスト"
+
+[music.release]
+album = "アルバム"
+single = "シングル"
+ep = "EP"
+compilation = "コンピレーション"
+
+[music.column]
+title = "タイトル"
+album = "アルバム"
+artist = "アーティスト"
+year = "年"
+format = "フォーマット"
+plays = "再生回数"
+added = "追加日"
+length = "時間"
+
+[music.count]
+songs = "{count, plural, other {#曲}}"
+albums = "{count, plural, other {#枚のアルバム}}"
+artists = "{count, plural, other {#人のアーティスト}}"
+genres = "{count, plural, other {#ジャンル}}"
+
+[music.queue]
+empty = "再生中の曲はありません。"
+now = "再生中"
+next = "次に再生"
+end = "キューの最後です"
+
+[music.player]
+unavailable = "この曲は再生できません。"
+refused = "{name} がこのアカウントでの再生を許可していません。"
+nowhere = "サインイン中のサービスでは {name} のこの曲を再生できません。"
+via = "{name} で再生中"
+
+[music.playlist]
+empty = "このプレイリストは空です。"
+
+[music.blend]
+empty = "このプレイリストは空です。"
+gone = "このプレイリストは削除されました。"
+local = "このコンピューターに保存"
+saved-in = "{names} に保存"
+syncing = "同期中…"
+unsynced = "{names} と同期できませんでした"
+
+[music.menu]
+play-next = "次に再生"
+queue = "キューに追加"
+add-to-playlist = "プレイリストに追加"
+remove-from-playlist = "このプレイリストから削除"
+remove-from-queue = "キューから削除"
+save = "お気に入りに追加"
+unsave = "お気に入りから削除"
+radio = "この曲のラジオへ"
+artist = "アーティストへ移動"
+album = "アルバムへ移動"
+copy-song-link = "曲のリンクをコピー"
+new-playlist = "新しいプレイリスト…"
+loading = "プレイリストを読み込み中…"
+rename = "名前を変更…"
+delete = "削除…"
+forget = "ライブラリから削除"
+copy-playlist-link = "プレイリストのリンクをコピー"
+new-blend = "新しい Rikka プレイリスト…"
+sync = "今すぐ同期"
+elsewhere = "{name} の曲"
+reveal = "ファイルで表示"
+
+[music.dialog]
+create = "新しいプレイリスト"
+rename = "プレイリスト名を変更"
+delete = "このプレイリストを削除しますか？"
+delete-message = "「{name}」がライブラリから削除されます。"
+name = "プレイリスト名"
+suggested = "マイプレイリスト #{count}"
+make = "作成"
+save = "保存"
+erase = "削除"
+cancel = "キャンセル"
+create-blend = "新しい Rikka プレイリスト"
+suggested-blend = "Rikka プレイリスト #{count}"
+delete-blend-message = "「{name}」がこのコンピューターと保存先のすべてのサービスから削除されます。"
+
+[music.edit]
+added = "{name} に追加しました"
+removed = "{name} から削除しました"
+copied = "リンクをコピーしました"
+failed = "変更できませんでした: {reason}"
+
+[music.library]
+choose = "音楽フォルダーを追加"
+add = "フォルダーを追加…"
+open = "ライブラリの設定"
+folders = "フォルダー"
+index = "ライブラリ"
+status = "状態"
+current = "最新です"
+rescan = "再スキャン"
+contents = "内容"
+music = "ミュージックフォルダー"
+remote = "ネットワーク上のフォルダー"
+added = "追加したフォルダー"
+
+[music.span]
+minutes = "{minutes}分"
+hours = "{hours}時間{minutes}分"
+
+[music.unit]
+khz = "{rate}kHz"
+mhz = "{rate}MHz"
+
+[music.sort]
+artist = "アーティスト"
+title = "タイトル"
+year = "年"
+added = "最近追加した項目"
+
+[music.signal]
+source = "ソース"
+dsd-to-pcm = "DSD から PCM へ変換"
+resample = "サンプルレート変換"
+downmix = "ダウンミックス"
+upmix = "チャンネルのアップミックス"
+replay-gain = "ReplayGain"
+decibels = "{db} dB"
+volume = "音量"
+dither = "ディザ"
+bits = "{bits}bit"
+float = "{bits}bit 浮動小数点"
+native-dsd = "ネイティブ DSD"
+dop = "DSD over PCM (DoP)"
+mono = "モノラル"
+stereo = "ステレオ"
+channels = "{count}チャンネル"
+exclusive = "排他モード"
+bluetooth = "Bluetooth {codec}"
+software = "ソフトウェア音量"
+stream = "PipeWire ストリーム音量"
+device = "デバイス音量"
+hardware = "ハードウェア音量"
+fell-back = "{device}: {reason}"
+instead = "システムの出力で再生しています"
+pinned = "PipeWire は {rate} で動作しています。"
+allow = "サンプルレートの切り替えを許可"
+switching = "サンプルレートの切り替えを許可しました"
+
+[music.refusal]
+missing = "接続されていません"
+busy = "ほかのプログラムが使用中です"
+busy-by = "{holder} が使用中です"
+unsupported = "この形式は再生できません"
+lost = "切断されました"
+released = "ほかのプログラムに渡されました"
+unopenable = "開けません ({reason})"
+
+[music.output]
+device = "出力デバイス"
+system = "システムのデフォルト"
+shared = "共有 · PipeWire"
+exclusive = "排他"
+playing = "再生中"
+up-to = "最大 {bits}bit / {rate}"
+native = "ネイティブ {dsd}"
+dop = "DoP 最大 {dsd}"
+levelling = "音量の均一化"
+replay-gain = "ReplayGain"
+preamp = "プリアンプ"
+clipping = "クリッピングを防ぐ"
+off = "オフ"
+track = "トラック"
+album = "アルバム"

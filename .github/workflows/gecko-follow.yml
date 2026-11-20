@@ -1,0 +1,85 @@
+name: gecko-follow
+
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gecko-follow
+  cancel-in-progress: false
+
+jobs:
+  follow:
+    name: Carry the patches onto the newest Firefox release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/share/swift /usr/local/lib/android /usr/local/.ghcup /opt/ghc /opt/hostedtoolcache/CodeQL
+
+      - uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Carry the patches
+        id: follow
+        run: |
+          nix develop --command bazel run //xtask -- gecko follow --work "$RUNNER_TEMP/gecko" > "$RUNNER_TEMP/unresolved"
+          if git diff --quiet -- engine/gecko/upstream.toml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          version=$(sed -nE 's/^version = "(.+)"$/\1/p' engine/gecko/upstream.toml)
+          {
+            echo "changed=true"
+            echo "version=$version"
+            echo "branch=gecko/firefox-$version"
+            echo "unresolved=$(wc -l < "$RUNNER_TEMP/unresolved")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Propose the update
+        if: steps.follow.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.follow.outputs.version }}
+          BRANCH: ${{ steps.follow.outputs.branch }}
+          UNRESOLVED: ${{ steps.follow.outputs.unresolved }}
+        run: |
+          if git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null; then
+            echo "$BRANCH already proposes Firefox $VERSION"
+            exit 0
+          fi
+
+          git switch -c "$BRANCH"
+          git add -A engine/gecko
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "Follow Firefox $VERSION"
+          git push -q origin "$BRANCH"
+
+          body="$RUNNER_TEMP/body.md"
+          echo "Moves the Gecko engine onto Firefox $VERSION, carrying \`engine/gecko/patches\` over with a three-way merge; only patches whose change no longer applies as written are rewritten." > "$body"
+          if (( UNRESOLVED )); then
+            {
+              echo
+              echo "These patches conflict with the new release and still target the previous one:"
+              echo
+              while read -r patch; do echo "- \`engine/gecko/patches/$patch\`"; done < "$RUNNER_TEMP/unresolved"
+              echo
+              echo "On this branch run \`git checkout origin/main -- engine/gecko && bazel run //xtask -- gecko follow\`, resolve the conflict markers in the listed files under \`.bazel/gecko/firefox\`, run \`bazel run //xtask -- gecko export-patches\` and push."
+            } >> "$body"
+            gh pr create --draft --head "$BRANCH" --title "Follow Firefox $VERSION" --body-file "$body"
+          else
+            gh pr create --head "$BRANCH" --title "Follow Firefox $VERSION" --body-file "$body"
+            gh workflow run gecko.yml --ref "$BRANCH"
+          fi

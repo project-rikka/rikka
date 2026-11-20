@@ -1,0 +1,45 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+bool_flag(
+    name = "validation",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "validation_enabled",
+    flag_values = {":validation": "True"},
+)
+
+rikka_library(
+    name = "rikka-gpu",
+    cranelift = False,
+    crate_features = select({
+        ":validation_enabled": ["validation"],
+        "//conditions:default": [],
+    }),
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-color-lookup",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu/shaders:shaders-gpu",
+        "//crates/graphics/rikka-spirv",
+        "@crates//:ash",
+        "@crates//:bytemuck",
+        "@crates//:gpu-allocator",
+        "@crates//:half",
+        "@crates//:libc",
+        "@crates//:rustc-hash",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)

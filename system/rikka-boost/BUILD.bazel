@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_test")
+
+rikka_binary(
+    name = "rikka-boost",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/daemons/rikka-boost",
+        "//crates/foundation/rikka-log",
+        "//crates/status/rikka-nvml",
+        "@crates//:async-io",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:libc",
+        "@crates//:thiserror",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "os.rikka.Boost1.conf",
+    ],
+    deps = [
+        "//crates/daemons/rikka-boost",
+        "//crates/foundation/rikka-xml",
+    ],
+)

@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-polymesh",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-file-format",
+        "//crates/model/rikka-model-core",
+        "@crates//:glam",
+        "@crates//:rustc-hash",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-polymesh",
+        "//crates/foundation/rikka-file-format",
+        "//crates/model/rikka-model-core",
+        "@crates//:glam",
+    ],
+)

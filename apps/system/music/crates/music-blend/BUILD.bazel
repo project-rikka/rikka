@@ -1,0 +1,36 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "music-blend",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-core",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-watch",
+        "//crates/foundation/rikka-worker",
+        "@crates//:futures-util",
+        "@crates//:rand",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":music-blend",
+        "//apps/system/music/crates/music-core",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "@crates//:futures-util",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+    ],
+)

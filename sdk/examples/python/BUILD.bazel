@@ -1,0 +1,24 @@
+load("//bazel/python:defs.bzl", "rikka_py_binary", "rikka_py_test")
+
+EXAMPLES = glob(["*.py"])
+
+[
+    rikka_py_binary(
+        name = source.removesuffix(".py"),
+        main = source,
+        deps = ["//sdk/bindings/python"],
+    )
+    for source in EXAMPLES
+]
+
+rikka_py_test(
+    name = "types",
+    srcs = EXAMPLES,
+    typecheck = True,
+    deps = ["//sdk/bindings/python"],
+)
+
+exports_files(
+    ["counter.py"],
+    visibility = ["//website:__pkg__"],
+)

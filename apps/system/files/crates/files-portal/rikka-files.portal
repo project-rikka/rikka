@@ -1,0 +1,6 @@
+[portal]
+DBusName=org.freedesktop.impl.portal.desktop.rikkafiles
+Interfaces=org.freedesktop.impl.portal.FileChooser;
+# Deprecated in favour of `rikka-portals.conf`, and kept because a machine
+# whose xdg-desktop-portal predates that file still reads this line.
+UseIn=rikka;

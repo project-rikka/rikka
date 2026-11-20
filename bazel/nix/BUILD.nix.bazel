@@ -1,0 +1,8 @@
+load("{toolchains}", "nix_toolchains")
+load(":paths.bzl", "NIX")
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["rust/host_tools"])
+
+nix_toolchains(NIX)

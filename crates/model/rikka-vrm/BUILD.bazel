@@ -1,0 +1,42 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+exports_files(
+    [
+        "assets/avatar.vrm",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+rikka_library(
+    name = "rikka-vrm",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/model/rikka-gltf",
+        "//crates/model/rikka-model-core",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "assets/avatar.vrm",
+    ],
+    deps = [
+        ":rikka-vrm",
+        "//crates/model/rikka-gltf",
+        "//crates/model/rikka-model-core",
+        "@crates//:serde_json",
+    ],
+)
+
+filegroup(
+    name = "assets",
+    srcs = glob(["assets/**"]),
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+)

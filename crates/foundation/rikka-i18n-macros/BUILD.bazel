@@ -1,0 +1,11 @@
+load("//bazel/rust:defs.bzl", "rikka_proc_macro")
+
+rikka_proc_macro(
+    name = "rikka-i18n-macros",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = ["//crates/foundation/rikka-i18n-catalog"],
+)

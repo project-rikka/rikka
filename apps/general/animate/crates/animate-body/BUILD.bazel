@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-body",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-vrm",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-mmd:assets/mmd/motion.vmd",
+    ],
+    deps = [
+        ":animate-body",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+    ],
+)

@@ -1,0 +1,151 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[units]
+per-second = "{value}/秒"
+megabits = "{value} Mbps"
+ghz = "{value} GHz"
+milliseconds = "{value} 毫秒"
+celsius = "{value} °C"
+
+[tasks]
+title = "任务管理器"
+search = "按名称、PID 或命令搜索"
+end-task = "结束任务"
+kill-task = "强制结束"
+kernel-thread = "内核线程"
+enabled = "已启用"
+disabled = "已禁用"
+yes = "是"
+no = "否"
+
+[tasks.end-error]
+no-such-process = "该进程已经结束。"
+permission-denied = "没有权限结束该进程。"
+failed = "无法结束该进程。"
+
+[tasks.tab]
+processes = "进程"
+performance = "性能"
+details = "详细信息"
+
+[tasks.column]
+name = "名称"
+pid = "PID"
+status = "状态"
+user = "用户名"
+cpu = "CPU"
+memory = "内存"
+disk = "磁盘"
+gpu = "GPU"
+threads = "线程"
+command = "命令行"
+
+[tasks.section]
+apps = "应用 ({count})"
+background = "后台进程 ({count})"
+system = "系统进程 ({count})"
+
+[tasks.state]
+running = "正在运行"
+sleeping = "睡眠"
+waiting = "等待 I/O"
+stopped = "已暂停"
+zombie = "已结束"
+idle = "空闲"
+
+[tasks.resource]
+cpu = "CPU"
+memory = "内存"
+disk = "磁盘 {index} ({name})"
+gpu = "GPU {index}"
+
+[tasks.graph]
+span = "60 秒"
+zero = "0"
+full = "100%"
+
+[tasks.card]
+cpu = "{usage}  {speed}"
+memory = "{used}/{total} ({usage})"
+network = "发送 {send}  接收 {receive}"
+
+[tasks.cpu]
+graph = "60 秒内的利用率 (%)"
+cores-graph = "每个逻辑处理器的利用率 (%)"
+overall = "总体"
+logical = "逻辑处理器"
+usage = "利用率"
+speed = "速度"
+processes = "进程数"
+threads = "线程数"
+handles = "句柄数"
+uptime = "正常运行时间"
+base-speed = "基准速度："
+sockets = "插槽："
+physical = "内核："
+logical-count = "逻辑处理器数："
+virtualization = "虚拟化："
+l1 = "L1 缓存："
+l2 = "L2 缓存："
+l3 = "L3 缓存："
+
+[tasks.memory]
+graph = "内存使用量"
+composition = "内存组成"
+in-use = "使用中"
+available = "可用"
+committed = "已提交"
+committed-value = "{used}/{limit}"
+cached = "已缓存"
+paged = "分页缓冲池"
+nonpaged = "非分页缓冲池"
+total = "已安装内存："
+swap = "交换空间："
+
+[tasks.disk]
+graph = "活动时间 (%)"
+transfer = "磁盘传输速率"
+active = "活动时间"
+response = "平均响应时间"
+read = "读取速度"
+write = "写入速度"
+capacity = "容量："
+kind = "类型："
+system = "系统磁盘："
+queue = "队列长度："
+nvme = "SSD (NVMe)"
+ssd = "SSD"
+hdd = "硬盘"
+
+[tasks.network]
+graph = "吞吐量"
+send = "发送"
+receive = "接收"
+adapter = "适配器名称："
+kind = "连接类型："
+state = "状态："
+connected = "已连接"
+disconnected = "未连接"
+speed = "链接速度："
+signal = "信号强度："
+ipv4 = "IPv4 地址："
+ipv6 = "IPv6 地址："
+mac = "MAC 地址："
+ethernet = "以太网"
+wifi = "Wi-Fi"
+loopback = "环回"
+virtual = "虚拟适配器"
+
+[tasks.gpu]
+graph = "GPU 利用率 (%)"
+dedicated-graph = "专用 GPU 内存"
+usage = "利用率"
+dedicated = "专用 GPU 内存"
+shared = "共享 GPU 内存"
+temperature = "GPU 温度"
+driver = "驱动程序："
+slot = "总线："
+encode = "编码："
+decode = "解码："

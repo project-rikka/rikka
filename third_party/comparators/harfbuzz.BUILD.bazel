@@ -1,0 +1,21 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+cc_library(
+    name = "harfbuzz",
+    srcs = ["src/harfbuzz.cc"],
+    hdrs = glob(["src/*.h"]),
+    copts = [
+        "-std=c++11",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-fno-threadsafe-statics",
+        "-w",
+    ],
+    includes = ["src"],
+    local_defines = ["HAVE_PTHREAD"],
+    textual_hdrs = glob(
+        ["src/**/*.cc"],
+        exclude = ["src/harfbuzz.cc"],
+    ) + glob(["src/**/*.hh"]),
+    visibility = ["//visibility:public"],
+)

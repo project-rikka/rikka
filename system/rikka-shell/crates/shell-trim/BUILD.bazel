@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-trim",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-theme",
+        "//crates/media/rikka-movie",
+        "//crates/media/rikka-video",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/shell-kit",
+        "//system/rikka-shell/crates/shell-notifications",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

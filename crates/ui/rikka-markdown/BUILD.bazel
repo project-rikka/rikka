@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-markdown",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-symbols",
+        "//crates/graphics/rikka-text",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-syntax",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:pulldown-cmark",
+        "@crates//:rustc-hash",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":rikka-markdown",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)

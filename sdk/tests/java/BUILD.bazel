@@ -1,0 +1,8 @@
+load("//bazel/java:defs.bzl", "rikka_java_test")
+
+rikka_java_test(
+    name = "api",
+    srcs = ["ApiTest.java"],
+    main_class = "ApiTest",
+    deps = ["//sdk/bindings/java"],
+)

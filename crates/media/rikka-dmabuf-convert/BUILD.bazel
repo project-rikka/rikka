@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-dmabuf-convert",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/graphics/rikka-gpu",
+        "//crates/media/rikka-video/shaders:video_kernels",
+        "@crates//:thiserror",
+    ],
+)

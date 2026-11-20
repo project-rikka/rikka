@@ -1,0 +1,21 @@
+---
+title: Proton account and keys
+description: rikka-proton-account owns SRP sign-in, second factors, keys and SKLs, devices, orgs, addresses, settings and forks.
+about: crates/proton/rikka-proton-account
+tags: [proton, keys]
+---
+
+- `Account::new(api)` / `with_pgp(api, pgp)` is a cheap clone; `with_cache` gives products a cache through `for_account`. Product crates never speak SRP.
+- Proton answers 401 without a session, so `ensure_session()` first posts `auth/v4/sessions`. Login, anonymous and `credentialless()` sessions send the anti-abuse `Payload` (`Challenge`/`DeviceProfile`, protoncore frame 2.0.7, frame names from the app version); `Login::payload()` overrides it.
+- `account.login()…execute()` → `LoginOutcome::{Unlocked, TwoFactorRequired, MailboxPasswordRequired, Sso}`; `ServerProof` is always verified. `TwoFactor::totp`, or `security_key_request()` → rikka-fido ceremony → `security_key(&assertion)` (origin `https://account.<rpId>`). `mdm_login(token, group)` is VPN business sign-in.
+- `unlock(password)` derives the mailbox passphrase (bcrypt, offloaded) and decrypts keys via `parallel_map_each`. `Profile` (locked key material, serde) unlocks offline with `unlock_profile`; `refresh(&keys)` → `ProfileRefresh::{Unchanged, Updated, Rekeyed}`.
+- Address keys use a 64-hex token encrypted and text-signed by the primary user key; pre-token keys use the passphrase; `Activation` tokens are opened on unlock. User key user ID is `not_for_email_use@domain.tld`; reactivation rewrites legacy `"UserID"` user IDs.
+- Key writes: `setup_keys()` (`core/v4/keys/setup`, optional org unprivatization), `create_user_key`/`create_address_key(..).kind(..)` (v6 post-quantum needs token address keys; a new user key re-seals tokens via `core/v4/keys/tokens` and org tokens), `change_password` (`PUT core/v4/keys/private`, both modes), `change_login_password` (`PUT core/v4/settings/password`), `reactivate_key`, primary/flags/delete, `address_encryption`.
+- Signed key lists: account owns `SignedKeyList`, `KeyList`, `SignedKeyListItem` (compact JSON `Primary, Flags, Fingerprint, SHA256Fingerprints`, v4 primary first, signed as text with context `key-transparency.key-list`, by both v4 and v6 primaries). Every key change publishes one. KT reuses these types.
+- Others' keys: the one door is `public_keys(email).internal_only().send()` → `PublishedAddress::{Keys(PublishedKeys), Unpublished(Box<ApiError>)}` (codes 33101–33104), reading `Primary`/`Source`/flags/`IsProton` and refusing forged SKLs; pass, contacts, mail, drive and KT use it.
+- Shared key helpers: `KeyToken::new(token, signature).context(..).open(pgp, ring)` opens every signed 64-hex key token; `AccountKeys::signing_key(&AddressId)` (primary, else first) and `verification_keys(&AddressId)` (unlocked, not compromised). Core events: `EventId`, `latest_event()`, `core_events::<T>()`, the envelope `CoreEvent` (`id`, `refresh`, `has_more`, `touches_account`, `project::<T>()`) and its `Refresh` flags (`includes_mail/contacts/everything`), which mail, contacts and calendar events share; their clients only project a `CoreEvent` through `Feed::apply_core`, so callers fetch core events from the `Account`.
+- Writes needing a password scope share one path, the private `ReauthenticatedRequest`: old-password SRP proof in the same body (checks `ServerProof`) or an already held scope with `PersistPasswordScope`. Settings writes, recovery, TOTP, recovery codes return `SettingsChange`.
+- `security_keys()`: register (`core/v4/settings/2fa/register`, attestation `none` by default), list, rename, remove; names ≤ 128; `set_fido2_credential_pin` writes `Fido2CredentialsPinOptIn`.
+- SSO devices (`auth/v4/devices`): `DeviceSecret` (32 random bytes, base64) seals the passphrase with AES-GCM AAD `account.device-secret`; confirmation code = first 4 chars of `rikka_proton_api::base32::encode_with(.., Alphabet::Crockford)` of SHA-256 of that text. Admins approve via `organization_key` → `member_keys`, unprivatizing manual-approve members first.
+- Addresses: create, update, reorder, enable/disable, delete, convert to internal. Forks: `fork()`, `fork_invitation()`, `forked_session` (pending is HTTP 422), `sign_in_code` = `0:<code>:<b64 key>:<client>`.
+- `revoke_session()` always forgets the local session, even when the revoke request fails (it still reports that failure).

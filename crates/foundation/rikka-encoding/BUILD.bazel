@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-encoding",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:chardetng",
+        "@crates//:encoding_rs",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-encoding",
+    ],
+)

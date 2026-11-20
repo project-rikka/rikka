@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "discord-translate",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/discord/crates/discord-core",
+        "//apps/system/discord/crates/discord-markdown",
+        "//apps/system/discord/crates/discord-wire",
+        "@crates//:jiff",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":discord-translate",
+        "//apps/system/discord/crates/discord-core",
+        "//apps/system/discord/crates/discord-markdown",
+        "//apps/system/discord/crates/discord-wire",
+        "@crates//:serde_json",
+    ],
+)

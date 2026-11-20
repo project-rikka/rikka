@@ -1,0 +1,49 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-net",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:base64",
+        "@crates//:bytes",
+        "@crates//:futures-util",
+        "@crates//:http",
+        "@crates//:jiff",
+        "@crates//:mime_guess",
+        "@crates//:rand",
+        "@crates//:reqwest",
+        "@crates//:rustls",
+        "@crates//:rustls-native-certs",
+        "@crates//:rustls-pemfile",
+        "@crates//:rustls_webpki",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:serde_urlencoded",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tokio-tungstenite",
+        "@crates//:tracing",
+        "@crates//:url",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-net",
+        "//crates/foundation/rikka-sync",
+        "@crates//:futures-util",
+        "@crates//:rcgen",
+        "@crates//:rustls",
+        "@crates//:serde",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+        "@crates//:tokio-tungstenite",
+    ],
+)

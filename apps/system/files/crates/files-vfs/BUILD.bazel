@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-vfs",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-trash",
+        "//crates/foundation/rikka-watch",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-vfs",
+        "//apps/system/files/crates/files-core",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+    ],
+)

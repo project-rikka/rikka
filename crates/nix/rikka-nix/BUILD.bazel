@@ -1,0 +1,30 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-nix",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-sync",
+        "//crates/nix/rikka-nix-edit",
+        "//crates/nix/rikka-nix-log",
+        "//crates/nix/rikka-nix-protocol",
+        "//crates/nix/rikka-nixos-layout",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-nix",
+        "//crates/foundation/rikka-test-bus",
+    ],
+)

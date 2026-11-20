@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-effects",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image-edit",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-effects",
+        "//crates/graphics/rikka-image-edit",
+        "@crates//:serde_json",
+    ],
+)

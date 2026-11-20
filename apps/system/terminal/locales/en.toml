@@ -1,0 +1,15 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[terminal]
+title = "Terminal"
+
+[terminal.tab]
+untitled = "Terminal"
+
+[ui.find]
+pattern = "Find"
+replacement = "Replace"
+nothing = "No results"
+broken = "Bad pattern"

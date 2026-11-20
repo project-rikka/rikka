@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-mime",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-xml",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-mime",
+        "@crates//:tempfile",
+    ],
+)

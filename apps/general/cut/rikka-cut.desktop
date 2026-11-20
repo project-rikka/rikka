@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Cut
+Name[ja]=カット
+Name[zh_CN]=剪辑
+GenericName=Video Editor
+GenericName[ja]=動画エディター
+GenericName[zh_CN]=视频编辑器
+Comment=Edit videos on a timeline
+Comment[ja]=タイムラインで動画を編集します
+Comment[zh_CN]=在时间线上剪辑视频
+Exec=rikka-cut %F
+Icon=applications-multimedia
+Terminal=false
+Categories=AudioVideo;Video;AudioVideoEditing;
+Keywords=video;editor;timeline;cut;movie;film;clip;
+Keywords[ja]=動画;ビデオ;編集;タイムライン;カット;映像;
+Keywords[zh_CN]=视频;编辑;时间线;剪辑;影片;
+StartupNotify=true

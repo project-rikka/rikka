@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "discord-rtc",
+    target_compatible_with = ["@platforms//os:linux"],
+    cranelift = False,
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/discord/crates/discord-core",
+        "//apps/system/discord/crates/discord-rtp",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "//crates/media/rikka-rate-control",
+        "@crates//:davey",
+        "@crates//:futures-channel",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":discord-rtc",
+        "//apps/system/discord/crates/discord-core",
+        "@crates//:tokio",
+    ],
+)

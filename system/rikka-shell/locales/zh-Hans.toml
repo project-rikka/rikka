@@ -1,0 +1,628 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[shell.centre]
+sound = "声音"
+microphone = "麦克风"
+muted = "已静音"
+airplane = "飞行模式"
+quiet = "勿扰"
+notifications = "通知"
+no-notifications = "没有新通知"
+clear-notifications = "全部清除"
+said-on = "{month}月{day}日 {time}"
+on = "已开启"
+unavailable = "不可用"
+output = "输出"
+playing = "正在播放"
+input = "输入"
+recording = "正在录音"
+wifi = "Wi-Fi"
+off = "已关闭"
+not-joined = "未连接"
+joined = "已连接"
+leave = "断开连接"
+looking = "正在搜索网络…"
+passphrase = "密码"
+join = "连接"
+sound-settings = "声音设置…"
+network-settings = "网络设置…"
+bluetooth = "蓝牙"
+not-connected = "未连接"
+nothing-paired = "尚未配对任何设备"
+bluetooth-settings = "蓝牙设置…"
+charged = "已充满"
+charging = "正在充电"
+until-full = "距充满 {time}"
+left = "剩余 {time}"
+
+[shell.tray]
+empty = "托盘中没有任何内容"
+
+[shell.tasks]
+new-window = "新建窗口"
+maximize = "最大化"
+restore = "还原"
+minimize = "最小化"
+move = "移动到工作区"
+move-all = "全部移动到工作区"
+workspace = "工作区 {number}"
+close = "关闭窗口"
+close-all = "关闭全部窗口"
+untitled = "未命名窗口"
+
+[shell.capture.target]
+region = "矩形"
+window = "窗口"
+screen = "全屏"
+
+[shell.capture.picture]
+name = "屏幕截图"
+saved = "已保存屏幕截图"
+copied = "已复制屏幕截图"
+failed = "未能截屏"
+
+[shell.capture.video]
+name = "屏幕录制"
+started = "正在录制屏幕"
+saved = "已保存录制"
+failed = "未能录制"
+
+[shell.capture.scan]
+name = "扫码"
+looking = "正在查找码…"
+found = "找到 {count} 个码"
+none = "未找到码 — 请拖动框选"
+missed = "此处未读到码。请框选得稍大一些。"
+barcode = "条码"
+open = "打开"
+copy = "复制"
+copy-password = "复制密码"
+copy-name = "复制名称"
+join = "连接"
+settings = "Wi-Fi 设置"
+password = "密码"
+hidden = "隐藏网络"
+copied = "已复制到剪贴板"
+not-copied = "未能复制码的内容"
+joined = "已连接到 {network}"
+not-joined = "无法连接到 {network}"
+
+[shell.capture.scan.kind]
+link = "链接"
+network = "Wi-Fi 网络"
+text = "文本"
+
+[shell.capture.scan.security]
+open = "开放"
+wep = "WEP"
+personal = "WPA/WPA2"
+wpa3 = "WPA3"
+enterprise = "企业"
+
+[shell.capture.scan.caution]
+unencrypted = "未加密：同一网络中的其他人能看到发送的内容。"
+foreign-letters = "地址中含有其他文字系统的字母，此处按浏览器的读法显示。"
+credentials = "“@”之前的文字掩盖了去向，实际打开的是上方的网站。"
+numeric-host = "地址只是一个数字，而不是有名称的网站。"
+
+[shell.capture.scan.unjoinable]
+no-radio = "这台电脑没有 Wi-Fi。"
+radio-off = "Wi-Fi 已关闭。"
+needs-account = "此网络需要账户。请在 Wi-Fi 设置中连接。"
+out-of-range = "此网络不在范围内。"
+
+[shell.capture.scan.failure]
+secrets = "密码未被接受。"
+handshake = "网络未完成登录。"
+address = "网络未分配地址。"
+dropped = "连接已断开。"
+missing = "Wi-Fi 设备已消失。"
+silent = "网络未在时限内应答。"
+
+[shell.color-picker]
+name = "颜色选择器"
+pick = "取色"
+empty = "从屏幕上取一种颜色，就会出现在这里。"
+remove = "删除"
+cancel = "取消"
+select = "选择"
+
+[shell.color-picker.export]
+name = "导出"
+by-color = "按颜色分组"
+by-format = "按格式分组"
+title = "导出颜色"
+stem = "colors"
+text = "文本文件"
+json = "JSON 文件"
+failed = "未能导出颜色"
+
+[shell.markup]
+title = "编辑截图"
+save = "保存"
+
+[shell.markup.tool]
+pen = "画笔"
+highlighter = "荧光笔"
+line = "直线"
+arrow = "箭头"
+rectangle = "矩形"
+ellipse = "椭圆"
+eraser = "橡皮"
+
+[shell.markup.width]
+thin = "细"
+medium = "中"
+thick = "粗"
+
+[shell.trim]
+title = "裁剪录制"
+replay = "裁剪回放"
+save = "保存"
+
+[shell.replay]
+name = "即时回放"
+title = "即时回放"
+saved = "已保存回放"
+failed = "未能保存回放"
+off = "即时回放已关闭，可在设置中开启。"
+empty = "尚未保留任何内容"
+display = "显示器 {name}"
+ended = "{kind} · 已关闭"
+[shell.clipboard]
+title = "剪贴板历史"
+search = "搜索历史"
+empty = "尚未复制任何内容"
+no-match = "未找到任何内容"
+clear = "全部清除"
+clear-unpinned = "清除未固定项"
+files = "文件"
+full = "固定项已占满历史，新复制的内容不再保存"
+
+[shell.emoji]
+title = "表情符号"
+search = "搜索表情符号"
+recent = "最近使用"
+clear-recent = "清除"
+no-recent = "你用过的表情符号会出现在这里"
+no-match = "未找到表情符号"
+
+[shell.emoji.group]
+smileys = "笑脸"
+people = "人与身体"
+nature = "动物与自然"
+food = "食物与饮品"
+travel = "旅行与地点"
+activities = "活动"
+objects = "物品"
+symbols = "符号"
+flags = "旗帜"
+
+[shell.emoji.tone]
+plain = "默认"
+light = "较浅肤色"
+medium-light = "中等—较浅肤色"
+medium = "中等肤色"
+medium-dark = "中等—较深肤色"
+dark = "较深肤色"
+[shell.launcher]
+search = "搜索"
+empty = "未找到任何内容"
+
+[shell.launcher.provider]
+calculator = "计算器"
+commands = "命令"
+programs = "程序"
+web = "网页"
+
+[shell.launcher.command]
+theme = "主题"
+wallpaper = "壁纸"
+
+[shell.launcher.wallpaper]
+summary = "更改桌面背后的图片"
+
+[shell.launcher.theme]
+summary = "更改桌面的外观配色"
+in-use = "使用中"
+dark = "深色"
+light = "浅色"
+
+[shell.launcher.run]
+command = "运行此命令"
+
+[shell.launcher.web]
+search = "在网页上搜索"
+open = "打开此地址"
+
+[shell.overview]
+untitled = "未命名窗口"
+
+[shell.notifications]
+waiting = "还有 {count} 条"
+open = "打开"
+
+[shell.system-update]
+app-name = "系统更新"
+show-log = "查看日志"
+applying = "正在应用系统更改"
+updating = "正在更新系统"
+rolling-back = "正在回滚到第 {generation} 代"
+applied = "已应用系统更改"
+updated = "系统已更新"
+rolled-back = "已回滚到第 {generation} 代"
+not-applied = "无法应用系统更改"
+not-updated = "无法更新系统"
+not-rolled-back = "无法回滚到第 {generation} 代"
+preparing = "正在准备…"
+locking = "正在更新 flake 输入…"
+evaluating = "正在求值配置…"
+building = "正在构建…"
+built = "已构建 {done}/{expected}"
+fetched = "已下载 {done}/{expected}"
+activating = "正在切换到新配置…"
+staging = "正在准备下次启动…"
+checking = "正在检查将要发生的更改…"
+generation = "第 {generation} 代"
+next-boot = "重启后生效"
+untouched = "系统未被更改。"
+modified = "系统可能已被部分更改。"
+interrupted = "rikka-nixctl 在更改完成前退出了。"
+
+[shell.polkit]
+title = "需要身份验证"
+needed = "此操作需要管理员权限。"
+checking = "正在验证…"
+failed = "验证失败，请重试。"
+details = "详细信息"
+action = "操作"
+user = "{name}（{account}）"
+cancel = "取消"
+authenticate = "验证"
+
+[shell.keyring]
+title = "解锁密钥环"
+create-title = "保护已保存的登录信息"
+locked = "有应用需要已保存的密码和登录信息。请输入登录密码以打开它们。"
+create = "请设置用于保护已保存密码和登录信息的密码。使用登录密码后，密钥环会在登录时自动打开。"
+changed = "你的登录密码已更改。请输入以前的密码以保留已保存的密码和登录信息。"
+login-password = "登录密码"
+previous-password = "以前的登录密码"
+checking = "正在打开…"
+refused = "此密码无法打开密钥环。"
+broken = "目前无法连接密钥环。"
+forgot = "我想不起来了"
+reset-warning = "重新开始会删除所有已保存的密码和登录信息。各应用需要重新登录。"
+back = "返回"
+start-over = "重新开始"
+cancel = "取消"
+unlock = "解锁"
+
+[shell.lock]
+password = "密码"
+refused = "密码不正确，请重试。"
+broken = "暂时无法验证密码。"
+caps-lock = "大写锁定已打开"
+power-off = "关机"
+reboot = "重新启动"
+suspend = "睡眠"
+
+[shell.translate]
+auto = "检测语言"
+other = "其他语言…"
+placeholder = "输入文本"
+awaiting = "译文"
+unconfigured = "尚未登录任何账户。请在设置的 AI 中登录。"
+blind = "{model} 无法读取图片，请选择其他模型。"
+too-much = "共 {written} 个字符，一次最多翻译 {most} 个字符。"
+model = "模型"
+run = "翻译"
+stop = "停止"
+
+[shell.translate.effort]
+name = "思考"
+
+[shell.translate.profile]
+natural = "自然"
+casual = "随意"
+polite = "礼貌"
+business = "商务"
+
+[shell.assistant]
+title = "助手"
+threads = "会话"
+new = "新建会话"
+close = "关闭"
+back = "返回对话"
+servers = "MCP 服务器"
+place = "助手"
+untitled = "新建会话"
+no-threads = "尚未提出任何问题"
+placeholder = "询问关于此桌面的事"
+opening = "正在准备助手…"
+unready = "助手未能就绪"
+start = "可以询问文件、桌面或屏幕上的任何内容"
+working = "处理中…"
+noticed = "后台任务已回报结果"
+model = "模型"
+reasoning = "思考"
+folded = "以上对话已归纳"
+folding = "正在归纳对话…"
+unfoldable = "还没有可归纳的内容。"
+busy = "切换对话前，请先停止仍在运行的工作。"
+main = "主对话"
+rest = "…另外 {count} 行"
+
+[shell.assistant.ask]
+written = "也可以用自己的话回答"
+back = "上一步"
+next = "下一步"
+answer = "回答"
+stop = "停止"
+
+[shell.assistant.attach]
+chooser = "附加文件"
+accept = "附加"
+pasted = "粘贴的图片"
+dropped = "拖放的图片"
+unreadable = "无法读取拖放的数据。"
+rest = "另有 {count} 项"
+refused = "未能附加：{reason}"
+
+[shell.assistant.command.compact]
+hint = "[需要保留的内容]"
+about = "归纳目前的对话以腾出上下文"
+
+[shell.assistant.span]
+now = "刚刚"
+minutes = "{count}分钟"
+hours = "{count}小时"
+days = "{count}天"
+
+[shell.indicators.input-method]
+methods = "输入法"
+modes = "模式和工具"
+settings = "输入源设置…"
+
+[shell.indicators.ai-usage]
+title = "AI 用量"
+asking = "正在读取用量…"
+unmetered = "无用量限制"
+settings = "AI 设置…"
+
+[shell.island]
+date = "{month}月{day}日 {weekday}"
+long-date = "{month}月{day}日 {weekday}"
+brightness = "亮度"
+playing-through = "正在通过此设备播放"
+microphone-muted = "麦克风已静音"
+microphone-live = "麦克风已开启"
+plugged = "已连接充电器"
+unplugged = "已断开充电器"
+battery-low = "电量不足"
+running-low = "电量不足 · {charge}"
+charged = "已充满"
+connected = "已连接"
+disconnected = "已断开"
+power-mode = "电源模式"
+online = "已联网"
+offline = "已断网"
+vpn-on = "VPN 已连接"
+vpn-off = "VPN 已断开"
+microphone = "麦克风"
+camera = "摄像头"
+screen = "屏幕共享"
+in-use = "使用中"
+recording = "正在录制"
+stop = "停止"
+charging = "正在充电"
+until-full = "{charge} · {time} 后充满"
+high-low = "最高 {high} · 最低 {low}"
+
+[shell.island.profile]
+power-saver = "节能"
+balanced = "平衡"
+performance = "性能"
+
+[shell.island.weekday.short]
+mon = "周一"
+tue = "周二"
+wed = "周三"
+thu = "周四"
+fri = "周五"
+sat = "周六"
+sun = "周日"
+
+[shell.island.weekday.long]
+mon = "星期一"
+tue = "星期二"
+wed = "星期三"
+thu = "星期四"
+fri = "星期五"
+sat = "星期六"
+sun = "星期日"
+
+[shell.island.weather]
+clear = "晴"
+mainly-clear = "大部晴朗"
+partly-cloudy = "多云"
+overcast = "阴"
+fog = "雾"
+drizzle = "毛毛雨"
+freezing-rain = "冻雨"
+rain = "雨"
+snow = "雪"
+showers = "阵雨"
+snow-showers = "阵雪"
+thunderstorm = "雷暴"
+hail = "雷暴伴有冰雹"
+unknown = "未知"
+
+[shell.desk.editor]
+title = "小组件"
+done = "完成"
+search = "搜索小组件"
+no-match = "没有匹配的小组件"
+size-label = "大小"
+duplicate = "复制"
+remove = "移除"
+clear = "全部清除"
+clear-yes = "清除"
+cancel = "取消"
+
+[shell.desk.editor.size]
+small = "S"
+medium = "M"
+large = "L"
+extra-large = "XL"
+
+[shell.desk.editor.size-name]
+small = "小"
+medium = "中"
+large = "大"
+extra-large = "特大"
+
+[shell.desk.menu]
+edit = "编辑小组件"
+remove = "移除小组件"
+wallpaper = "更换壁纸…"
+settings = "显示与外观设置"
+[shell.desk.widget.clock]
+name = "时钟"
+local = "本地时间"
+same-time = "与此处时间相同"
+today = "今天"
+tomorrow = "明天"
+yesterday = "昨天"
+relative = "{day} {shift}"
+hours = "{sign}{hours}小时"
+hours-minutes = "{sign}{hours}小时{minutes}分"
+unknown-zone = "未知时区"
+week = "第{week}周"
+week-day = "第{week}周 · 第{day}天"
+
+[shell.desk.widget.calendar]
+name = "日历"
+
+[shell.desk.widget.date]
+long = "{month}月{day}日 {weekday}"
+day-month = "{month}月{day}日"
+month = "{month}月"
+month-year = "{year}年{month}月"
+
+[shell.desk.widget.date.initial]
+mon = "一"
+tue = "二"
+wed = "三"
+thu = "四"
+fri = "五"
+sat = "六"
+sun = "日"
+
+[shell.desk.widget.weather]
+name = "天气"
+loading = "正在获取天气…"
+unlocated = "无法确定位置"
+unavailable = "无法获取天气"
+high-low = "最高 {high} · 最低 {low}"
+now = "现在"
+hour = "{hour}时"
+today = "今天"
+air-index = "AQI {index} · {quality}"
+
+[shell.desk.widget.weather.quality]
+good = "优"
+moderate = "良"
+sensitive = "敏感人群不宜"
+unhealthy = "不健康"
+very-unhealthy = "非常不健康"
+hazardous = "危险"
+
+[shell.desk.widget.media]
+name = "正在播放"
+idle = "没有正在播放的内容"
+
+[shell.desk.widget.monitor]
+name = "系统监视器"
+title = "系统"
+measuring = "正在测量…"
+cpu = "CPU"
+memory = "内存"
+gpu = "GPU"
+network = "网络"
+disk = "磁盘"
+of = "{used} / {total}"
+free = "可用 {free} · 读 {read} · 写 {write}"
+summary = "运行 {up} · 负载 {load}"
+up-days = "{days}天{hours}小时"
+up-hours = "{hours}小时{minutes}分"
+
+[shell.desk.widget.monitor.short]
+cpu = "CPU"
+memory = "内存"
+gpu = "GPU"
+network = "网络"
+disk = "磁盘"
+
+[shell.desk.widget.power]
+name = "电池"
+this-computer = "这台电脑"
+device = "设备"
+charging = "正在充电"
+until-full = "{time} 后充满"
+full = "已充满"
+left = "剩余 {time}"
+on-battery = "正在使用电池"
+connected = "已接通电源"
+plugged = "正在使用外接电源"
+drawing = "功耗 {watts} W"
+minutes = "{minutes}分钟"
+hours = "{hours}小时{minutes}分钟"
+
+[shell.desk.widget.note]
+name = "便笺"
+placeholder = "写点什么…"
+
+[shell.desk.widget.photos]
+name = "照片"
+looking = "正在查找照片…"
+missing = "找不到文件夹"
+empty = "这里没有照片"
+unreadable = "无法显示这张照片"
+pictures = "图片"
+
+[shell.desk.widget.options]
+face = "表盘"
+digital = "数字"
+analog = "指针"
+seconds = "显示秒"
+zone = "时区"
+zone-search = "搜索城市"
+first-day = "每周开始于"
+first-day-region = "按地区"
+sunday = "星期日"
+monday = "星期一"
+saturday = "星期六"
+air = "显示空气质量"
+place = "地点"
+place-here = "{place}(当前位置)"
+place-set = "更改地点"
+open-settings = "打开设置"
+waveform = "显示波形"
+devices = "显示设备"
+note = "便笺"
+clear = "清除"
+folder = "文件夹"
+choose = "选择…"
+choose-folder = "选择照片文件夹"
+folder-reset = "改用“图片”文件夹"
+interval = "切换间隔"
+every-30 = "30秒"
+every-60 = "1分钟"
+every-300 = "5分钟"
+every-1800 = "30分钟"
+every-3600 = "1小时"
+shuffle = "随机播放"
+fill = "填满画框"

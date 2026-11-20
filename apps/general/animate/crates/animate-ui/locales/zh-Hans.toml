@@ -1,0 +1,49 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[animate.tip]
+clear_keys = "清除关键帧"
+add_key = "设置关键帧"
+
+[animate.part]
+root = "位置"
+torso = "躯干"
+head = "头部"
+left_arm = "左臂"
+right_arm = "右臂"
+left_fingers = "左手指"
+right_fingers = "右手指"
+left_leg = "左腿"
+right_leg = "右腿"
+gaze = "视线"
+
+[animate.hand]
+left = "左"
+right = "右"
+thumb = "拇指"
+index = "食指"
+middle = "中指"
+ring = "无名指"
+little = "小指"
+
+[animate.hold]
+left_hand = "左手"
+right_hand = "右手"
+
+[animate.wind.setting]
+yaw = "风向 (°)"
+pitch = "仰角 (°)"
+speed = "风速 (m/s)"
+turbulence = "湍流"
+gust = "阵风 (Hz)"
+
+[animate.liquid.setting]
+rate = "流量 (L/s)"
+volume = "量 (L)"
+launch = "出口"
+target = "落点"
+speed = "速度 (m/s)"
+arc = "弧高 (m)"
+width = "粗细 (m)"
+spread = "扩散 (°)"

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24">
+  <defs>
+    <style type="text/css" id="current-color-scheme">
+      .ColorScheme-Text { color: #232629; }
+      .ColorScheme-Highlight { color:#3daee9 }
+      /* comment */
+      rect.wide, .tall { stroke: #da4453; stroke-width: 1 }
+      g > .child { fill: #27ae60 }
+      #exact { fill: #f67400 !important; }
+      * { stroke-linejoin: round }
+    </style>
+  </defs>
+  <path class="ColorScheme-Text" style="fill:currentColor" d="M2 2h8v8h-8z"/>
+  <path class="ColorScheme-Highlight" fill="currentColor" d="M14 2h8v8h-8z"/>
+  <rect class="wide" x="2" y="13" width="9" height="4" fill="#fcfcfc"/>
+  <g fill="#000" stroke="none">
+    <rect class="child tall" x="14" y="13" width="3" height="9"/>
+    <rect id="exact" class="child" x="19" y="13" width="3" height="9"/>
+  </g>
+  <g style="fill: #8e44ad">
+    <circle cx="4" cy="20.5" r="2"/>
+    <circle cx="9" cy="20.5" r="2" style="fill: #1d99f3; fill-opacity: 0.5"/>
+  </g>
+</svg>

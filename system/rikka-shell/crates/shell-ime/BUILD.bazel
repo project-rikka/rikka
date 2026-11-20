@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-ime",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-ime",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/shell-apps",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:futures-util",
+        "@crates//:tracing",
+    ],
+)

@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-nix-journal",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/nix/rikka-nix-protocol",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-nix-journal",
+        "//crates/nix/rikka-nix-protocol",
+        "@crates//:tempfile",
+    ],
+)

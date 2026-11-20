@@ -1,0 +1,80 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[packages]
+title = "Packages"
+search = "Search nixpkgs by name or description"
+found = "{count} packages"
+channel = "nixpkgs {name}"
+
+[packages.index]
+locating = "Finding the package index for this system…"
+downloading = "Downloading the package index… {received} of {total}"
+receiving = "Downloading the package index… {received}"
+indexing = "Preparing the package list…"
+
+[packages.section]
+search = "Search"
+installed = "Installed"
+generations = "Generations"
+apps = "Rikka apps"
+
+[packages.empty]
+catalog = "The package index lists no packages."
+search = "No packages match “{query}”."
+installed = "No packages installed."
+generations = "No system generations."
+apps = "This system does not list Rikka’s apps; they appear once Rikka is installed from its distribution."
+
+[packages.state]
+installed = "Installed"
+adding = "To install"
+removing = "To remove"
+
+[packages.action]
+install = "Install"
+remove = "Remove"
+revert = "Undo"
+apply = "Apply"
+discard = "Discard"
+update = "Update the system"
+roll-back = "Roll back"
+retry = "Try again"
+close = "Close"
+
+[packages.plan]
+title = "Pending changes"
+adding = "To install"
+removing = "To remove"
+and-more = "{listed}  and {count} more"
+settings = "Required settings"
+
+[packages.needs]
+group = "Join the {name} group"
+unfree = "Allow unfree packages"
+
+[packages.work]
+authorising = "Waiting for authorization…"
+running = "Applying…"
+not-started = "Couldn't start: {reason}"
+
+[packages.generation]
+current = "Running now"
+
+[packages.detail]
+unknown = "Not in nixpkgs. The next build will fail."
+attribute = "Attribute"
+set = "Package set"
+licences = "Licences"
+main-program = "Command"
+outputs = "Outputs"
+platforms = "Platforms"
+definition = "Defined in"
+about = "About"
+maintainers = "Maintainers"
+team = "Team"
+unfree = "Unfree"
+
+[packages.apps]
+required = "Always installed"

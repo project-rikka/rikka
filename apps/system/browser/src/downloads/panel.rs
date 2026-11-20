@@ -1,0 +1,150 @@
+use rikka_app::prelude::*;
+use rikka_format::format_bytes;
+use rikka_widgets::{column, row};
+
+use crate::command::Command;
+use crate::shell::Shell;
+use crate::widgets::glyph_button;
+use browser_model::{DownloadItem, DownloadPhase};
+
+const WIDTH: f32 = 360.0;
+const SHOWN: usize = 6;
+const GLYPH: f32 = 16.0;
+
+pub(crate) fn panel(shell: &Shell) -> Element {
+    let profile = shell.model().profile_here(shell.id());
+    let page_services = shell.browser().page_services();
+    let downloads = page_services.downloads();
+    let rows: Vec<Element> = downloads
+        .items(profile)
+        .take(SHOWN)
+        .map(|item| row(item).build().keyed(item.key))
+        .collect();
+    let body = match rows.is_empty() {
+        true => text(tr!("browser.downloads.empty")).muted().any(),
+        false => column_of(rows).gap(Space::HAIR).fill_width().any(),
+    };
+    column! {
+        row! {
+            text(tr!("browser.downloads.title")).label().semibold().grow(1.0);
+            button(text(tr!("browser.downloads.show-all")))
+                .ghost()
+                .small()
+                .focusless()
+                .on_press(|shell: &mut Shell| {
+                    shell.overlays.close_popup();
+                    shell.command(Command::Downloads);
+                });
+        }
+        .align_items(Align::Center)
+        .fill_width();
+        body;
+    }
+    .gap(Space::SNUG)
+    .width(WIDTH)
+    .any()
+}
+
+fn moved(item: &DownloadItem) -> String {
+    match item.total {
+        Some(total) => tr!(
+            "browser.downloads.progress",
+            received = &format_bytes(item.received),
+            total = &format_bytes(total)
+        )
+        .to_string(),
+        None => format_bytes(item.received),
+    }
+}
+
+pub(crate) fn status(item: &DownloadItem) -> String {
+    match item.state {
+        DownloadPhase::Choosing => tr!("browser.downloads.starting").to_string(),
+        DownloadPhase::Running => moved(item),
+        DownloadPhase::Paused => {
+            tr!("browser.downloads.paused", progress = &moved(item)).to_string()
+        }
+        DownloadPhase::Finished => format_bytes(item.total.unwrap_or(item.received)),
+        DownloadPhase::Failed => tr!("browser.downloads.failed").to_string(),
+        DownloadPhase::Cancelled => tr!("browser.downloads.cancelled").to_string(),
+    }
+}
+
+pub(crate) fn row(item: &DownloadItem) -> impl View {
+    let key = item.key;
+    let symbol = match item.state {
+        DownloadPhase::Failed | DownloadPhase::Cancelled => MaterialSymbol::ERROR,
+        _ => MaterialSymbol::DESCRIPTION,
+    };
+    let running = !item.state.ended();
+    let fraction = item.fraction();
+    let retriable = item.web.is_some();
+    let close = glyph_button(MaterialSymbol::CLOSE, GLYPH)
+        .on_press(move |shell: &mut Shell| shell.forget_download(key))
+        .any();
+    let actions: Vec<Element> = match item.state {
+        DownloadPhase::Choosing => vec![
+            glyph_button(MaterialSymbol::CLOSE, GLYPH)
+                .on_press(move |shell: &mut Shell| shell.cancel_download(key))
+                .any(),
+        ],
+        DownloadPhase::Running => vec![
+            glyph_button(MaterialSymbol::PAUSE, GLYPH)
+                .on_press(move |shell: &mut Shell| shell.pause_download(key))
+                .any(),
+            glyph_button(MaterialSymbol::CLOSE, GLYPH)
+                .on_press(move |shell: &mut Shell| shell.cancel_download(key))
+                .any(),
+        ],
+        DownloadPhase::Paused => vec![
+            glyph_button(MaterialSymbol::PLAY_ARROW, GLYPH)
+                .on_press(move |shell: &mut Shell| shell.resume_download(key))
+                .any(),
+            glyph_button(MaterialSymbol::CLOSE, GLYPH)
+                .on_press(move |shell: &mut Shell| shell.cancel_download(key))
+                .any(),
+        ],
+        DownloadPhase::Finished => vec![
+            glyph_button(MaterialSymbol::FOLDER_OPEN, GLYPH)
+                .on_press(move |shell: &mut Shell| shell.show_download_folder(key))
+                .any(),
+            close,
+        ],
+        DownloadPhase::Failed | DownloadPhase::Cancelled if retriable => vec![
+            glyph_button(MaterialSymbol::REFRESH, GLYPH)
+                .on_press(move |shell: &mut Shell| shell.resume_download(key))
+                .any(),
+            close,
+        ],
+        DownloadPhase::Failed | DownloadPhase::Cancelled => vec![close],
+    };
+    let progress = running.then(|| match fraction {
+        Some(fraction) => progress(fraction).fill_width().any(),
+        None => progress_indeterminate().fill_width().any(),
+    });
+    let finished = item.state == DownloadPhase::Finished;
+    let mut body = container(
+        row! {
+            icon(symbol).extent(Length::px(20.0)).color(palette().text_muted);
+            column! {
+                text(item.name.clone()).label().no_wrap().min_width(0.0);
+                progress;
+                text(status(item)).caption().muted().no_wrap().min_width(0.0);
+            }
+            .gap(Space::HAIR)
+            .grow(1.0)
+            .min_width(0.0);
+            row_of(actions).gap(Space::HAIR);
+        }
+        .gap(Space::SNUG)
+        .align_items(Align::Center)
+        .fill_width(),
+    )
+    .padding(Inset::xy(Space::SNUG, Space::TIGHT))
+    .radius(Corner::Item)
+    .fill_width();
+    if finished {
+        body = body.on_press(move |shell: &mut Shell| shell.open_download(key));
+    }
+    body
+}

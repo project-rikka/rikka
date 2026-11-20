@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "browser-pages",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/browser/crates/browser-store",
+        "//crates/foundation/rikka-public-suffix",
+        "//crates/web/rikka-web",
+        "@crates//:base64",
+        "@crates//:percent-encoding",
+        "@crates//:url",
+        "@crates//:x509-cert",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":browser-pages",
+        "//apps/system/browser/crates/browser-store",
+        "//crates/web/rikka-web",
+    ],
+)

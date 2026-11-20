@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-activity",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-battery",
+        "//crates/daemons/rikka-bluetooth",
+        "//crates/daemons/rikka-mpris",
+        "//crates/daemons/rikka-network",
+        "//crates/daemons/rikka-power",
+        "//crates/daemons/rikka-power-profiles",
+        "//crates/daemons/rikka-privacy",
+        "//crates/daemons/rikka-sound",
+        "//crates/foundation/rikka-worker",
+        "@crates//:futures-util",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)

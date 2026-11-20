@@ -1,0 +1,31 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-sheet",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-fluid",
+        "//apps/general/animate/crates/animate-hold",
+        "//apps/general/animate/crates/animate-look",
+        "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-track",
+        "//apps/general/animate/crates/animate-wind",
+        "//crates/model/rikka-mmd",
+        "@crates//:rustc-hash",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-sheet",
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-hold",
+        "//apps/general/animate/crates/animate-motion",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+    ],
+)

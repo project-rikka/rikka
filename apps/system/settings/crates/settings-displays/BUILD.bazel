@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "settings-displays",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/settings:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-settings",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":settings-displays",
+    ],
+)

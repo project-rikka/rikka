@@ -1,0 +1,19 @@
+---
+title: Foundation runtime crates (worker, sync, heap, log, format)
+description: rikka-worker threads, channels, eventfds, Observable; rikka-sync, rikka-heap, rikka-log, rikka-format, interfaces.
+about: crates/foundation/rikka-worker
+tags: [foundation, threads]
+---
+
+- `rikka-worker` owns every long-lived thread: `Worker::spawn(name, handle, body)` runs `body` on the thread, waits for its `Ok(run)`/`Err`, then stops and joins on drop. Clipboard, drag, virtual input, bus services, PipeWire and the polkit agent all use it.
+- `rikka_worker::command_channel(stop)` gives the `CommandSender`/`CommandReceiver` of poll-loop workers; `CommandReceiver::is_stopped()` turns true when the worker's stop was asked, before its stop command arrives; `CommandSender::request(|reply| Command::X { .., reply }, timeout)` is the request-reply call (`SendError::Timeout` / `Disconnected`), and `read_stream(stream, StreamLimit { time, bytes })` reads a transfer pipe within one deadline and size.
+- `block_on`/`block_on_timeout` run a future on the calling thread by parking (safe inside Tokio), and `wait_readable(fd, deadline)` polls one fd. `event_fd()` gives an `EventNotifier`/`EventFd` wake-only pair (`notify`; `drain`, `wait`, `wait_timeout`, `wait_readable(fd, timeout)`, `poll_readable([fds], timeout)`).
+- `WallAlarm` is a realtime timerfd (`arm(at: SystemTime)`, `disarm`, `read() -> Option<Expiry::{Elapsed, ClockChanged}>`) for wall-clock deadlines that must follow clock changes (shell wall timers, weather).
+- `rikka_worker::Broadcast<T>` is the every-event fan-out (`subscribe() -> Subscription<T>` stream, `send(&value)`; closed subscribers drop out). `subscription()` gives a `Subscriber`/`Subscription` pair so an owner can greet a newcomer with current state before `add(subscriber)` (rikka-hifi's engine, Discord's Krisp). rikka-notify, rikka-hifi, the music crates, Krisp and the browser's default-browser watch use it.
+- `rikka_worker::Observable<T>` (`Default` when `T` is) is the shared watch cell (`get/with/modify/update/set/receiver_count/changes`) behind `rikka_bus::Monitor`, `Machine`, `Weather`, `VideoController` and every shell change signal (`Observable<()>` with `set(())` for a bare signal).
+- `rikka-sync` (public, no dependencies) is the workspace's lock crate: poison-free `Mutex`, `RwLock` and `Condvar` over `std::sync`, re-exporting std's guard types and `WaitTimeoutResult` (see the workspace conventions note).
+- `rikka-heap` owns heap policy. `rikka_heap::mimalloc!()` (re-exported as `rikka_app::mimalloc!()`) makes mimalloc the Rust allocator of the binary that invokes it: every app, the shell, the cast portal and `librikka` do; the compositor, rikka-remote and rikka-replay do not.
+- `return_large_glibc_blocks()` fixes glibc's mmap threshold at 128 KiB; in a mimalloc binary it reaches only C libraries (Vulkan drivers, FFmpeg). `App::run`, the shell, the compositor, rikka-remote and rikka-replay call it first. `return_free_glibc_memory()` hands freed glibc heap back to the OS after a large transient job.
+- `rikka-log::install(default_filter)` is every binary's logging set-up (RUST_LOG or the default, stderr, colour only on a terminal; a log file when a Windows GUI process has no stderr; a subscriber already installed stays).
+- `rikka-format`: human formatting (`time_ago`/`relative_time` → `RelativeTime`, `truncate`, `format_bytes`, `format_count`/`group_digits`, `format_duration`, `format_timestamp(seconds)` = system-zone `%Y/%m/%d %H:%M` via jiff, `natural_cmp`) and file-name numbering (`numbered_name`, `unique_name`, `name_stem`, `with_stem`, `safe_file_name`, aware of `.tar.gz`-style extensions), shared by Files, trash and ADE.
+- `rikka-interfaces::interface_addresses()` lists every interface address (getifaddrs); sysmon and rikka-remote use it.

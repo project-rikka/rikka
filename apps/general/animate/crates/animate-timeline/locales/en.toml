@@ -1,0 +1,33 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[animate.track]
+parts = "All parts"
+switches = "Display · IK"
+unlisted = "Not on a display frame"
+unmatched = "Not in this model"
+camera = "Camera"
+wind = "Wind"
+morph_eyebrow = "Brow morphs"
+morph_eye = "Eye morphs"
+morph_mouth = "Mouth morphs"
+morph_other = "Other morphs"
+pour = "Emitting"
+
+[animate.hold]
+pin_lane = "Pin {number}"
+
+[animate.look.track]
+world = "World: {node}"
+composite = "Composite: {node}"
+material = "{material}: {node}"
+slot = "{figure}: material {number}"
+
+[animate.liquid]
+seconds = "{seconds} s"
+
+[animate.liquid.section]
+emission = "Emission"
+path = "Path"
+shape = "Shape"

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>&lt;/title&gt;&lt;script&gt;alert("title")&lt;/script&gt; Hostile page</title>
+<script>
+  Array.prototype.push = function () { throw new Error("tampered"); };
+  JSON.stringify = function () { return "{\"readable\":true}"; };
+  Object.assign = function () { throw new Error("tampered"); };
+  window.Set = function () { throw new Error("tampered"); };
+</script>
+</head>
+<body>
+<article>
+  <h1>&lt;img src=x onerror=alert(1)&gt; Hostile page</h1>
+  <p>This paragraph is long enough to make the page readable, and it carries <a href="javascript:alert('link')">a script link</a> that the reader must never keep, together with <a href="  JaVaScRiPt:alert(2)">a disguised one</a>.</p>
+  <p>The second paragraph adds more words so that the article clears the minimum length, and it mentions &lt;script&gt;alert("text")&lt;/script&gt; as plain text that must be escaped.</p>
+  <p>A third paragraph adds an image whose source is a script URL, which the reader drops, and a picture that tries to break out of its attribute with quotes.</p>
+  <img src="javascript:alert('image')" alt="evil" width="400" height="300">
+  <img src="https://hostile.example/a.png?&quot;&gt;&lt;script&gt;alert(3)&lt;/script&gt;" alt="&quot; onerror=&quot;alert(4)" width="400" height="300">
+  <p>The final paragraph closes the article with a sentence or two more, because the reader wants a reasonable amount of text before it offers itself to the person.</p>
+</article>
+</body>
+</html>

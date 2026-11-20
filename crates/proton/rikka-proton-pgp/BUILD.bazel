@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-proton-pgp",
+    cranelift = False,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "@crates//:aes-gcm",
+        "@crates//:base64",
+        "@crates//:hmac",
+        "@crates//:proton-rpgp",
+        "@crates//:proton-srp",
+        "@crates//:rand",
+        "@crates//:serde",
+        "@crates//:sha1",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-proton-pgp",
+        "//crates/proton/rikka-test-proton",
+        "@crates//:base64",
+        "@crates//:proton-rpgp",
+    ],
+)

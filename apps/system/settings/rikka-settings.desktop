@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Settings
+Name[ja]=設定
+Name[zh_CN]=设置
+GenericName=Session Settings
+GenericName[ja]=セッション設定
+Comment=Change how this desktop looks and behaves
+Comment[ja]=デスクトップの外観と動作を変更します
+Comment[zh_CN]=更改桌面的外观与行为
+Exec=rikka-settings
+Icon=preferences-system
+Terminal=false
+Categories=Settings;DesktopSettings;
+Keywords=settings;preferences;appearance;theme;language;display;
+Keywords[ja]=設定;環境設定;外観;テーマ;言語;画面;
+StartupNotify=true

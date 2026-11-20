@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-compositor-types",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-wayland-wire",
+        "@crates//:bitflags",
+        "@crates//:getrandom",
+        "@crates//:slotmap",
+    ],
+)

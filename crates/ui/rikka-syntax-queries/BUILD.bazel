@@ -1,0 +1,8 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-syntax-queries",
+    visibility = [
+        "//crates/ui/rikka-syntax:__pkg__",
+    ],
+)

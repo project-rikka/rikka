@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "ade-prompt",
+    target_compatible_with = ["@platforms//os:linux"],
+    compile_data = [
+        "//apps/system/ade:prompts/compact.md",
+        "//apps/system/ade:prompts/environment.md",
+        "//apps/system/ade:prompts/guides.md",
+        "//apps/system/ade:prompts/interjected.md",
+        "//apps/system/ade:prompts/memory.md",
+        "//apps/system/ade:prompts/skills.md",
+        "//apps/system/ade:prompts/subagent.md",
+        "//apps/system/ade:prompts/system.md",
+        "//apps/system/ade:prompts/tools/agent.md",
+        "//apps/system/ade:prompts/tools/skill.md",
+    ],
+    visibility = [
+        "//apps/system/ade:__subpackages__",
+    ],
+    deps = [
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-tools",
+        "@crates//:thiserror",
+    ],
+)

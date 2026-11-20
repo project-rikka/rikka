@@ -1,0 +1,257 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[files]
+title = "Files"
+
+[files.toolbar]
+path = "Path or URI"
+search = "Search"
+sort = "Sort"
+tools = "More"
+view = "View"
+
+[files.places]
+pinned = "Pinned"
+system = "System"
+volume = "{size} volume"
+devices = "Devices"
+trash = "Trash"
+home = "Home"
+
+[files.menu]
+open = "Open"
+open-with = "Open with another application"
+open-tab = "Open in new tab"
+terminal = "Open in Terminal"
+wallpaper = "Set as wallpaper"
+new-tab = "New tab"
+restore = "Restore"
+copy = "Copy"
+cut = "Cut"
+rename = "Rename"
+trash = "Move to trash"
+delete = "Delete permanently"
+properties = "Properties"
+extract = "Extract here"
+compress = "Compress…"
+convert = "Convert"
+new-folder = "New folder"
+new-file = "New file"
+paste = "Paste"
+empty-trash = "Empty trash"
+select-all = "Select all"
+refresh = "Refresh"
+hidden = "Show hidden files"
+search-contents = "Search file contents too"
+pin = "Pin to sidebar"
+unpin = "Remove from sidebar"
+mount = "Mount"
+unmount = "Unmount"
+eject = "Eject"
+lock = "Lock"
+unlock = "Unlock"
+desktop-default = "Default application"
+
+[files.undo]
+copy = "Undo copy"
+move = "Undo move"
+rename = "Undo rename"
+trash = "Undo move to trash"
+restore = "Undo restore"
+new-folder = "Undo new folder"
+new-file = "Undo new file"
+
+[files.redo]
+copy = "Redo copy"
+move = "Redo move"
+rename = "Redo rename"
+trash = "Redo move to trash"
+restore = "Redo restore"
+new-folder = "Redo new folder"
+new-file = "Redo new file"
+
+[files.column]
+name = "Name"
+modified = "Date modified"
+kind = "Kind"
+size = "Size"
+
+[files.view]
+icons = "Large icons"
+details = "Details"
+
+[files.dialog]
+confirm-delete = "Delete permanently?"
+confirm-delete-detail = "{count, plural, one {# item} other {# items}} will be deleted. This cannot be undone."
+cancel = "Cancel"
+close = "Close"
+delete = "Delete"
+confirm-run = "Run this program?"
+confirm-run-detail = "“{name}” is a program. Run it only if you trust where it came from."
+run = "Run"
+
+[files.new]
+folder = "New folder"
+file = "New file.txt"
+
+[files.chooser]
+title-open = "Open"
+title-save = "Save as"
+title-save-into = "Save into folder"
+title-folder = "Choose a folder"
+open = "Open"
+save = "Save"
+name = "Name"
+filter = "All files"
+saving-here = "{count, plural, one {# file} other {# files}} will be saved in this folder."
+replace = "Replace “{name}”?"
+replace-detail = "A file with this name already exists. Replacing it will overwrite its contents."
+replace-yes = "Replace"
+
+[files.properties]
+items = "{count, plural, one {# item} other {# items}}"
+folders = "Folders"
+files = "Files"
+total-size = "Total size"
+kind = "Kind"
+kind-detail = "{description} ({mime})"
+location = "Location"
+size = "Size"
+modified = "Date modified"
+created = "Date created"
+permissions = "Permissions"
+target = "Links to"
+
+[files.status]
+loading = "Reading…"
+searching = "Searching… {count} found"
+items = "{count, plural, one {# item} other {# items}}"
+selected = "{count} of {total} selected"
+selected-size = "{count} of {total} selected ({size})"
+empty = "This folder is empty"
+
+[files.job]
+copy = "Copying"
+move = "Moving"
+trash = "Moving to trash"
+delete = "Deleting"
+restore = "Restoring"
+compress = "Compressing"
+extract = "Extracting"
+convert = "Converting"
+preparing = "{task}: preparing"
+progress = "{task}: {done} / {total}"
+cancel = "Stop"
+dismiss = "Dismiss"
+
+[files.conflict]
+exists = "“{name}” already exists"
+source = "Incoming"
+existing = "Existing"
+detail = "{size} · {modified}"
+skip-all = "Skip all"
+skip = "Skip"
+keep = "Keep both"
+replace = "Replace"
+
+[files.error]
+not-found = "“{name}” was not found"
+denied = "Permission denied: “{name}”"
+exists = "“{name}” already exists"
+not-empty = "“{name}” is not empty"
+no-space = "Not enough space for “{name}”"
+into-itself = "“{name}” cannot be moved inside itself"
+bad-name = "“{name}” cannot be used as a name"
+empty-name = "Enter a name"
+no-backend = "{scheme}: cannot be opened"
+locked = "“{name}” needs a password"
+wrong-password = "Wrong password for “{name}”"
+cancelled = "Stopped"
+other = "“{name}”: {message}"
+unknown = "Could not process “{name}”"
+and-more = "{first} ({count} more failed)"
+too-many = "Too many results. Search stopped."
+launch = "The application could not be started: {reason}"
+bookmarks = "The bookmarks could not be saved: {reason}"
+wallpaper = "The wallpaper could not be set: {reason}"
+
+[files.error.wrong-kind]
+folder = "“{name}” is not a folder"
+file = "“{name}” is not a file"
+
+[files.error.unsupported]
+anything = "“{name}” cannot be changed"
+create = "Cannot create items in “{name}”"
+rename = "“{name}” cannot be renamed"
+trash = "“{name}” cannot be moved to the trash"
+write = "“{name}” cannot be written to"
+move = "“{name}” cannot be moved"
+restore = "“{name}” cannot be restored"
+
+[files.kind]
+extension = "{extension} file"
+generic = "File"
+
+[files.size]
+bytes = "{count, plural, one {{grouped} byte} other {{grouped} bytes}}"
+detailed = "{rounded} ({exact})"
+
+[files.unlock]
+heading = "Unlock {name}"
+detail = "This volume is encrypted. Enter the passphrase."
+passphrase = "Passphrase"
+wrong = "Wrong passphrase."
+open = "Unlock"
+
+[files.compress]
+heading = "Compress {count} item(s)"
+name = "Archive name"
+level = "Compression"
+level-default = "Standard"
+level-fastest = "Fastest"
+level-best = "Smallest"
+password = "Password (optional)"
+go = "Compress"
+
+[files.convert]
+shrink = "Resize"
+extract = "Extract audio"
+strip = "Remove metadata (Exif, location)"
+more = "More options…"
+animation = "GIF animation"
+sound-only = "{format} (audio only)"
+heading = "Convert {count} item(s)"
+format = "Format"
+quality = "Quality"
+quality-standard = "Standard"
+quality-high = "High"
+quality-best = "Best"
+size = "Size"
+size-original = "Original size"
+size-half = "Half (50%)"
+size-side = "Long side {size} px"
+size-lines = "{size}p"
+suffix-half = " (50%)"
+suffix-side = " ({size}px)"
+suffix-clean = " (no metadata)"
+suffix-converted = " (converted)"
+go = "Convert"
+
+[files.locked]
+heading = "“{name}” is protected"
+detail = "This archive is encrypted. Enter the password."
+password = "Password"
+wrong = "Wrong password."
+open = "Open"
+
+[files.device]
+unavailable = "Cannot mount disks: udisks2 is not running."
+not-authorized = "Permission denied."
+busy = "The disk is in use. Close any open files on it and try again."
+not-supported = "Not supported by this disk."
+already-mounted = "The disk is already mounted."
+not-mounted = "The disk is not mounted."
+wrong-passphrase = "Wrong passphrase."
+refused = "Disk operation failed: {message}"

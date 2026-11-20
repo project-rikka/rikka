@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-apm",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-simd",
+        "//crates/foundation/rikka-sync",
+        "//crates/media/rikka-apm-aec3",
+        "//crates/media/rikka-apm-agc2",
+        "//crates/media/rikka-apm-audio",
+        "//crates/media/rikka-apm-ns",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-apm",
+    ],
+)

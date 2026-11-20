@@ -1,0 +1,8 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-coded",
+    visibility = [
+        "//visibility:public",
+    ],
+)

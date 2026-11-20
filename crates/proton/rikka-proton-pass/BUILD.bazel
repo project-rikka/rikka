@@ -1,0 +1,40 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-proton-pass",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-pgp",
+        "@crates//:base64",
+        "@crates//:bytes",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:mime_guess",
+        "@crates//:prost",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-proton-pass",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-pgp",
+        "//crates/proton/rikka-test-proton",
+        "@crates//:base64",
+        "@crates//:jiff",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

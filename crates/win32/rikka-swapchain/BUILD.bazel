@@ -1,0 +1,16 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-swapchain",
+    target_compatible_with = ["@platforms//os:windows"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "@crates//:ash",
+        "@crates//:tracing",
+        "@crates//:windows",
+    ],
+)

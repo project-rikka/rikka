@@ -1,0 +1,15 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[remote.connected]
+summary = "Remote desktop connected"
+body = "{who} is now viewing and controlling this desktop"
+
+[remote.refused]
+summary = "Remote sign-in refused"
+body = "Someone at {from} entered a wrong password for the remote desktop"
+
+[remote.received]
+summary = "File received"
+body = "{name} was saved in {folder}"

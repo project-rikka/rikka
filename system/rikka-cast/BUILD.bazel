@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-portal-cast",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/daemons/rikka-privacy",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-log",
+        "//crates/foundation/rikka-pipewire",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-capture",
+        "//crates/session/rikka-portal",
+        "//crates/session/rikka-portal-backend",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:futures-channel",
+        "@crates//:libspa",
+        "@crates//:pipewire",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:zbus",
+        "@crates//:zvariant",
+    ],
+)

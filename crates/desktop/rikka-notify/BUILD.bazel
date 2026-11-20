@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-notify",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:zbus",
+        "@crates//:zvariant",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-notify",
+        "//crates/daemons/rikka-notifications",
+        "//crates/foundation/rikka-test-bus",
+        "@crates//:futures-util",
+        "@crates//:tokio",
+    ],
+)

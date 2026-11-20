@@ -1,0 +1,51 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-mcp",
+    compile_data = [
+        "prompts/mcp_resources.md",
+        "prompts/mcp_servers.md",
+        "prompts/servers.md",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-tools",
+        "//crates/desktop/rikka-open",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-oauth",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-watch",
+        "@crates//:base64",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-mcp",
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-test-mcp",
+        "//crates/desktop/rikka-test-keyring",
+        "//crates/foundation/rikka-net",
+        "@crates//:futures-util",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

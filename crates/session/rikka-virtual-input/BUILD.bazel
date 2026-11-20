@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-virtual-input",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-wayland",
+        "//crates/foundation/rikka-wayland-client",
+        "//crates/foundation/rikka-worker",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

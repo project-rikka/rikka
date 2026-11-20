@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "ade-guide",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/ade:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/ade/crates/ade-scope",
+        "//crates/ai/rikka-tools",
+        "//crates/foundation/rikka-sync",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":ade-guide",
+        "//apps/system/ade/crates/ade-scope",
+        "//crates/ai/rikka-tools",
+        "@crates//:tempfile",
+    ],
+)

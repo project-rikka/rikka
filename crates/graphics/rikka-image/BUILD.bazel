@@ -1,0 +1,52 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-image",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image-ffmpeg",
+        "//crates/graphics/rikka-image-resample",
+        "//crates/graphics/rikka-png",
+        "//crates/graphics/rikka-svg",
+        "@crates//:bytemuck",
+        "@crates//:image",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:webp",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/fixtures/animated.avif",
+        "tests/fixtures/animated.jxl",
+        "tests/fixtures/deep.j2k",
+        "tests/fixtures/deep.jxl",
+        "tests/fixtures/float.jxl",
+        "tests/fixtures/gamma.icc",
+        "tests/fixtures/grid.avif",
+        "tests/fixtures/half.exr",
+        "tests/fixtures/lossless.jxl",
+        "tests/fixtures/lossy.jxl",
+        "tests/fixtures/oriented.avif",
+        "tests/fixtures/oriented.jxl",
+        "tests/fixtures/oriented.tif",
+        "tests/fixtures/photo.heic",
+        "tests/fixtures/picture.jp2",
+        "tests/fixtures/profile.icc",
+        "tests/fixtures/tiles.heic",
+    ],
+    deps = [
+        ":rikka-image",
+        "//crates/foundation/rikka-deflate",
+        "//crates/foundation/rikka-types",
+        "@crates//:gif",
+        "@crates//:png",
+        "@crates//:tempfile",
+    ],
+)

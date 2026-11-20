@@ -1,0 +1,264 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[ade]
+title = "ADE"
+
+[ade.welcome]
+open = "Open"
+hint = "Open a project folder"
+recent = "Recent"
+chooser = "Open a project"
+accept = "Open"
+signed-out = "No model is signed in."
+sign-in = "Sign in"
+
+[ade.machine]
+lost = "Lost connection to the screen"
+screen = "Computer"
+waiting = "Waiting for the first frame…"
+
+[ade.terminal]
+title = "Terminal"
+
+[ade.sidebar]
+files = "Files"
+threads = "Threads"
+git = "Git"
+new = "New thread"
+untitled = "New thread"
+no-threads = "No threads"
+no-files = "This folder is empty"
+reading = "Loading project…"
+
+[ade.chat]
+placeholder = "Ask about this project"
+answering = "Working…"
+main = "Main"
+start = "Ask anything about {project}"
+pick = "Choose a model"
+reasoning = "Reasoning"
+unconfigured = "No model is signed in. Sign in under Settings → AI."
+keyless = "{provider} has no API key."
+signed-out = "{provider} is not signed in."
+modelless = "No model has been chosen for {provider}."
+homeless = "No place to save threads"
+unwritable = "Threads will not be saved: {reason}"
+unreadable = "This conversation could not be read: {reason}"
+unready = "Could not start the assistant: {reason}"
+folded = "Earlier messages summarised"
+folding = "Summarising the conversation…"
+unfoldable = "Nothing to summarise yet."
+noticed = "Message from a background job"
+rest = "…and {count, plural, one {# more line} other {# more lines}}"
+busy = "/{command} can run once the current answer ends."
+unrestored = "Some files could not be put back: {reason}"
+
+[ade.chat.amend]
+cancel = "Cancel"
+send = "Send"
+restore = "Also undo the agent's changes to {count, plural, one {# file} other {# files}}"
+
+[ade.chat.attach]
+chooser = "Attach files"
+accept = "Attach"
+pasted = "Pasted image"
+dropped = "Dropped image"
+unreadable = "The dropped data could not be read."
+rest = "and {count, plural, one {# more} other {# more}}"
+refused = "Not attached: {reason}"
+
+[ade.chat.ask]
+write = "Write an answer of your own"
+back = "Back"
+next = "Next"
+send = "Answer"
+stop = "Stop"
+
+[ade.chat.worktree]
+pick = "Worktree"
+make = "New worktree…"
+title = "New worktree"
+branch = "Branch name"
+base = "Branch from"
+taken = "Branch exists and will be checked out here."
+create = "Create"
+cancel = "Cancel"
+gone = "Worktree {worktree} not found."
+
+[ade.command.compact]
+hint = "[what to keep]"
+about = "Summarise the conversation so far to free up context"
+
+[ade.git]
+unversioned = "Not a Git repository"
+reading = "Loading changes…"
+unchanged = "No changes"
+detached = "No branch"
+changed = "{count, plural, one {# changed file} other {# changed files}}"
+summary = "Summary"
+description = "Description"
+commit-to = "Commit to {branch}"
+commit = "Commit"
+binary = "Cannot show changes for this file"
+unreadable = "No changes to show"
+
+changes = "Changes"
+history = "History"
+remote = "{branch} (remote)"
+held = "{branch} (in another worktree)"
+recalling = "Loading history…"
+uncommitted = "No commits yet"
+unsaid = "(no message)"
+nothing-shown = "Nothing to show"
+
+[ade.git.state]
+added = "Added"
+untracked = "New"
+modified = "Modified"
+deleted = "Deleted"
+renamed = "Renamed"
+copied = "Copied"
+retyped = "Type changed"
+conflicted = "Conflicted"
+
+[ade.git.group]
+new = "New"
+modified = "Modified"
+deleted = "Deleted"
+moved = "Moved"
+other = "Other"
+
+[ade.git.sync]
+fetch = "Fetch {remote}"
+pull = "Pull {remote}"
+push = "Push {remote}"
+publish = "Publish branch"
+fetching = "Fetching {remote}…"
+pulling = "Pulling {remote}…"
+pushing = "Pushing {remote}…"
+publishing = "Publishing branch…"
+percent = "{percent}%"
+
+[ade.file]
+reading = "Loading file…"
+gone = "This file no longer exists."
+not-text = "Not a text file."
+too-big = "File too large to open."
+trouble = "Could not read this file: {reason}"
+unwritable = "Not saved: the file changed on disk."
+meanwhile = "The file changed on disk."
+save = "Save"
+reload = "Reload"
+
+[ade.files]
+dismiss = "Dismiss"
+open = "Open"
+new-file = "New File…"
+new-folder = "New Folder…"
+reveal = "Reveal in File Manager"
+cut = "Cut"
+copy = "Copy"
+paste = "Paste"
+duplicate = "Duplicate"
+copy-path = "Copy Path"
+copy-relative-path = "Copy Relative Path"
+rename = "Rename…"
+trash = "Move to Trash"
+erase-forever = "Delete Permanently"
+collapse = "Collapse All"
+erase-one = "Delete “{name}” permanently? This cannot be undone."
+erase-many = "{count, plural, one {Delete # item permanently? This cannot be undone.} other {Delete # items permanently? This cannot be undone.}}"
+erase = "Delete"
+keep = "Cancel"
+taken = "“{name}” already exists here."
+unopened = "Could not open the file manager: {reason}"
+empty = "A name is required."
+bad-name = "“{name}” is not a valid name."
+exists = "“{name}” already exists."
+outside = "That is outside the project."
+into-itself = "“{name}” cannot be moved into itself."
+trouble = "The file operation failed: {reason}"
+untrashed = "Could not move to the trash: {reason}"
+and-more = "{first} ({count} more failed)"
+
+[ade.files.job]
+move = "Moving"
+copy = "Copying"
+trash = "Moving to trash"
+delete = "Deleting"
+preparing = "{task}…"
+progress = "{task} {done} of {total}"
+stop = "Stop"
+
+[ade.files.conflict]
+exists = "“{name}” already exists"
+replace = "Replace"
+keep = "Keep both"
+skip = "Skip"
+skip-all = "Skip all"
+
+[ade.tabs]
+close = "Close"
+close-others = "Close Others"
+close-right = "Close to the Right"
+close-saved = "Close Saved"
+close-all = "Close All"
+reveal = "Reveal in Explorer"
+unsaved = "Save changes to {name} before closing?"
+save = "Save"
+discard = "Don’t Save"
+keep = "Cancel"
+
+[ade.palette]
+placeholder = "Search files by name"
+nothing = "No matching files"
+
+[ade.settings]
+title = "Settings"
+back = "Back"
+llm = "AI"
+
+[ade.settings.servers]
+title = "MCP"
+personal = "All projects"
+project = "This project"
+
+[ade.settings.scope]
+here = "Project"
+mine = "Personal"
+
+[ade.settings.skills]
+title = "Skills"
+folders = "Source folders"
+projectless = "No project selected"
+found = "Skills"
+none = "No skills"
+trouble = "Diagnostics"
+
+[ade.settings.commands]
+title = "Commands"
+folders = "Source folders"
+projectless = "No project selected"
+found = "Commands"
+none = "No commands"
+trouble = "Diagnostics"
+
+[ade.mcp]
+unreadable = "Could not read MCP servers: {reason}"
+unreached = "Could not connect to MCP servers: {servers}"
+
+[ade.ago]
+now = "now"
+
+[ade.span]
+minutes = "{count}m"
+hours = "{count}h"
+days = "{count}d"
+
+[ui.find]
+pattern = "Find"
+replacement = "Replace"
+nothing = "No results"
+broken = "Bad pattern"

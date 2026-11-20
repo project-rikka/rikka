@@ -1,0 +1,59 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[viewer]
+title = "ビューアー"
+
+[viewer.zoom]
+fit = "全体表示"
+
+[viewer.text]
+lines = "{count} 行"
+truncated = "先頭 32 MiB のみ"
+caret = "{line} 行 {column} 列"
+modified = "未保存"
+saving = "保存中…"
+unsaved = "保存できませんでした: {reason}"
+lossy = "{encoding} で保存しました。一部の文字は書き出せませんでした"
+converted = "{encoding} に変換して保存しました"
+preview = "プレビュー"
+source = "ソース"
+
+[viewer.audio]
+unplayable = "音声を再生できません: {reason}"
+
+[viewer.video]
+undecodable = "この動画は再生できません。"
+
+[viewer.figure]
+detail = "{triangles} 三角形 · {materials} マテリアル"
+animation = "アニメーション"
+motion = "{model} · {keyframes} キーフレーム · {length}"
+nameless = "モデル名なし"
+choose = "モデルを選択…"
+chooser = "このモーションを適用するモデルを選択"
+accept = "開く"
+unmoved = "このモーションはこのモデルに影響しません。"
+unsupported_version = "{format} のバージョン {version} には対応していません。"
+required_extensions = "このファイルにはビューアーが対応していない拡張機能が必要です: {extensions}"
+
+[viewer.figure.limit]
+file_bytes = "ファイルが大きすぎて開けません（{actual}、上限 {allowed}）。"
+resource_bytes = "このモデルが使うファイルが大きすぎて開けません（{actual}、上限 {allowed}）。"
+total_bytes = "モデルと関連ファイルの合計が大きすぎて開けません（{actual}、上限 {allowed}）。"
+vertices = "頂点が多すぎてこのモデルを開けません（{actual}、上限 {allowed}）。"
+indices = "三角形のインデックスが多すぎてこのモデルを開けません（{actual}、上限 {allowed}）。"
+keyframes = "キーフレームが多すぎてこのモーションを開けません（{actual}、上限 {allowed}）。"
+
+[viewer.status]
+unsupported = "対応していないファイル形式です。"
+unreadable = "ファイルを読み込めませんでした: {reason}"
+too_large = "この画像は大きすぎて表示できません（{width} × {height} px）。"
+empty = "ファイルが指定されていません。"
+
+[ui.find]
+pattern = "検索"
+replacement = "置換"
+nothing = "一致なし"
+broken = "パターンが不正です"

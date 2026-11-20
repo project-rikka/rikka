@@ -1,0 +1,56 @@
+load("//benchmarks:defs.bzl", "bench_binary", "bench_library")
+
+bench_library(
+    name = "render_bench",
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-color-lookup",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-presets-gpu",
+        "//crates/graphics/rikka-text",
+        "//crates/model/rikka-model",
+        "//crates/model/rikka-model-gpu",
+        "@crates//:tracing",
+        "@crates//:tracing-subscriber",
+    ],
+)
+
+bench_binary(
+    name = "gpu",
+    srcs = ["benches/gpu.rs"],
+    crate_root = "benches/gpu.rs",
+    data = [
+        "//crates/model/rikka-fbx:assets",
+        "//crates/model/rikka-gltf:assets",
+        "//crates/model/rikka-mmd:assets",
+        "//crates/model/rikka-vrm:assets",
+    ],
+    deps = [
+        ":render_bench",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+    ],
+)
+
+bench_binary(
+    name = "materials",
+    srcs = ["benches/materials.rs"],
+    crate_root = "benches/materials.rs",
+    deps = [
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-renderer-3d/shaders:shaders-3d",
+        "//crates/graphics/rikka-shader-compile",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/graphics/rikka-shader-programs",
+        "//crates/graphics/rikka-slang",
+        "//crates/graphics/rikka-test-renderer-3d",
+    ],
+)

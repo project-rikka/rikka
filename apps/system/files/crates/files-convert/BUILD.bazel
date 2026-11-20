@@ -1,0 +1,42 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-convert",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-vfs",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-video",
+        "//crates/model/rikka-model",
+        "@crates//:crc32fast",
+        "@crates//:lofty",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-convert",
+        "//apps/system/files/crates/files-vfs",
+        "//crates/desktop/rikka-mime",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "//crates/media/rikka-audio-decode",
+        "//crates/model/rikka-model",
+        "@crates//:crc32fast",
+        "@crates//:lofty",
+        "@crates//:tempfile",
+    ],
+)

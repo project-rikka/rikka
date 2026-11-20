@@ -1,0 +1,15 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[llm]
+verify = "验证账户"
+
+[llm.effort]
+off = "关闭"
+minimal = "最小"
+low = "低"
+medium = "中"
+high = "高"
+xhigh = "超高"
+max = "最大"

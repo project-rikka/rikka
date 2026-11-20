@@ -1,0 +1,30 @@
+@nix {"action":"start","id":1082550801924096,"level":6,"parent":0,"text":"querying info about missing paths","type":0}
+@nix {"action":"start","fields":["/nix/store/asa85wz88i2fk6jvzlcrvw1nfri84xmi-rikka-probe-fixture-7181","https://cache.nixos.org"],"id":1082550801924097,"level":4,"parent":0,"text":"querying info about '/nix/store/asa85wz88i2fk6jvzlcrvw1nfri84xmi-rikka-probe-fixture-7181' on 'https://cache.nixos.org'","type":109}
+@nix {"action":"start","fields":["https://cache.nixos.org/asa85wz88i2fk6jvzlcrvw1nfri84xmi.narinfo"],"id":1082550801924098,"level":4,"parent":1082550801924097,"text":"downloading 'https://cache.nixos.org/asa85wz88i2fk6jvzlcrvw1nfri84xmi.narinfo'","type":101}
+@nix {"action":"result","fields":[0,0,0,0],"id":1082550801924098,"type":105}
+@nix {"action":"result","fields":[3,3,0,0],"id":1082550801924098,"type":105}
+@nix {"action":"stop","id":1082550801924097}
+@nix {"action":"stop","id":1082550801924098}
+@nix {"action":"stop","id":1082550801924096}
+@nix {"action":"msg","level":3,"msg":"this derivation will be built:"}
+@nix {"action":"msg","level":3,"msg":"  /nix/store/jyd2wmqr563640s1kgffsn4vl2znmcpa-rikka-probe-fixture-7181.drv"}
+@nix {"action":"start","id":1082550801924099,"level":0,"parent":0,"text":"","type":102}
+@nix {"action":"start","id":1082550801924100,"level":0,"parent":0,"text":"","type":104}
+@nix {"action":"start","id":1082550801924101,"level":0,"parent":0,"text":"","type":103}
+@nix {"action":"result","fields":[0,0,0,0],"id":1082550801924100,"type":105}
+@nix {"action":"result","fields":[0,0,0,0],"id":1082550801924101,"type":105}
+@nix {"action":"result","fields":[101,0],"id":1082550801924099,"type":106}
+@nix {"action":"result","fields":[100,0],"id":1082550801924099,"type":106}
+@nix {"action":"start","id":1082550801924102,"level":6,"parent":0,"text":"querying info about missing paths","type":0}
+@nix {"action":"stop","id":1082550801924102}
+@nix {"action":"result","fields":[0,1,0,0],"id":1082550801924100,"type":105}
+@nix {"action":"result","fields":[0,0,0,0],"id":1082550801924101,"type":105}
+@nix {"action":"start","fields":["/nix/store/jyd2wmqr563640s1kgffsn4vl2znmcpa-rikka-probe-fixture-7181.drv","",1,1],"id":1082550801924103,"level":3,"parent":0,"text":"building '/nix/store/jyd2wmqr563640s1kgffsn4vl2znmcpa-rikka-probe-fixture-7181.drv'","type":105}
+@nix {"action":"result","fields":[0,1,1,0],"id":1082550801924100,"type":105}
+@nix {"action":"result","fields":["hello"],"id":1082550801924103,"type":101}
+@nix {"action":"result","fields":["world"],"id":1082550801924103,"type":101}
+@nix {"action":"result","fields":[1,2,0,0],"id":1082550801924100,"type":105}
+@nix {"action":"stop","id":1082550801924103}
+@nix {"action":"stop","id":1082550801924101}
+@nix {"action":"stop","id":1082550801924100}
+@nix {"action":"stop","id":1082550801924099}

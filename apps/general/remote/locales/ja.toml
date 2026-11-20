@@ -1,0 +1,55 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[remote]
+title = "リモートデスクトップ"
+cancel = "キャンセル"
+reconnect = "再接続"
+back = "デスクトップ一覧"
+connecting = "{host} に接続しています…"
+saved = "{name} をデスクトップに保存しました"
+upload-failed = "ファイルを送れません: {reason}"
+stats = "{codec} {width}×{height} · {megabits} Mbps · {rtt} ms · 損失 {loss}%"
+chords = "Ctrl+Alt+Shift と M でマウスを捕捉、F で全画面、S で統計、Q で切断"
+stats-toggle = "統計"
+
+[remote.hosts]
+heading = "デスクトップ"
+address = "アドレス"
+placeholder = "ホスト名 または ホスト名:ポート"
+connect = "接続"
+empty = "リモート接続を許可した Rikka デスクトップのアドレスを追加してください。"
+forget = "削除"
+fingerprint = "指紋 {fingerprint}"
+new = "未接続"
+
+[remote.sign-in]
+heading = "{host} にサインイン"
+password = "{user} のパスワード"
+remember = "この端末でサインインしたままにする"
+submit = "サインイン"
+wrong = "パスワードが違います。"
+throttled = "試行回数が多すぎます。{seconds} 秒後にもう一度試してください。"
+unavailable = "デスクトップでパスワードを確認できません: {detail}"
+
+[remote.changed]
+heading = "このデスクトップの識別情報が変わりました"
+body = "{host} のデスクトップが以前と違う証明書を提示しています。再インストールしていないなら、通信が傍受されているおそれがあります。"
+seen = "新しい指紋 {fingerprint}"
+trust = "新しい識別情報を信頼する"
+
+[remote.ended]
+replaced = "別のビューアーがこのデスクトップに接続しました。"
+stopped = "デスクトップが共有を停止しました。"
+signed-out = "サインアウトしました。"
+disconnected = "デスクトップがセッションを終了しました。"
+unsupported = "このデスクトップは別のプロトコルバージョンを使っています。"
+failed = "接続に失敗しました: {reason}"
+
+[remote.toolbar]
+disconnect = "切断"
+fullscreen = "全画面"
+mouse = "マウスを捕捉"
+keyframe = "画面を更新"
+sign-out = "サインアウト"

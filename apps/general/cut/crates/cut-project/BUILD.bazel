@@ -1,0 +1,31 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "cut-project",
+    visibility = [
+        "//apps/general/cut:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-keyframe",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-effects",
+        "//crates/graphics/rikka-figure",
+        "//crates/graphics/rikka-image-edit",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":cut-project",
+        "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-keyframe",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-effects",
+        "//crates/graphics/rikka-figure",
+        "@crates//:tempfile",
+    ],
+)

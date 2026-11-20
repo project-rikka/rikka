@@ -1,0 +1,36 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_test")
+
+rikka_binary(
+    name = "rikka-nixctl",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/foundation/rikka-log",
+        "//crates/foundation/rikka-sync",
+        "//crates/nix/rikka-nix",
+        "//crates/nix/rikka-nix-journal",
+        "//crates/nix/rikka-nix-log",
+        "//crates/nix/rikka-nix-protocol",
+        "//system/rikka-nixctl/crates/nixctl-task",
+        "@crates//:async-io",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:libc",
+        "@crates//:thiserror",
+        "@crates//:zbus",
+        "@crates//:zvariant",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "os.rikka.Nix1.conf",
+        "os.rikka.nix.policy",
+        "rikka-nixctl.service.in",
+    ],
+    deps = [
+        "//crates/foundation/rikka-xml",
+        "//crates/nix/rikka-nix-protocol",
+    ],
+)

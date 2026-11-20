@@ -1,0 +1,24 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Files
+Name[ja]=ファイル
+GenericName=File Manager
+GenericName[ja]=ファイルマネージャー
+Comment=Browse the files on this computer
+Comment[ja]=このコンピューターのファイルを閲覧します
+Exec=rikka-files %U
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;Utility;
+Keywords=folder;manager;explore;disk;filesystem;
+Keywords[ja]=フォルダー;ファイル;管理;エクスプローラー;
+MimeType=inode/directory;
+StartupNotify=true
+# The process does serve org.freedesktop.Application, and a second start of it
+# hands over to the first through that interface. Saying so here would mean
+# naming this file after the bus name -- org.rikka.Files.desktop -- and the
+# session matches a window to what launched it by the identifier this file
+# already has. So the desktop starts it by Exec, which is one process either
+# way, and the handing over happens between the two of them.
+DBusActivatable=false

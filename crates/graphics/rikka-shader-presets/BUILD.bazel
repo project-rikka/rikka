@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-shader-presets",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/graphics/rikka-slang",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-shader-presets",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/graphics/rikka-slang",
+    ],
+)

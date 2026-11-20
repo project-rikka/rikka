@@ -1,0 +1,22 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[usage]
+used = "{percent}% 使用"
+extra = "追加使用量"
+resets = "リセットまで {left}"
+resets-now = "まもなくリセット"
+
+[usage.window]
+session = "セッション（5時間）"
+daily = "1日"
+weekly = "1週間"
+monthly = "1か月"
+annual = "1年"
+unnamed = "使用量"
+
+[usage.left]
+minutes = "{count}分"
+hours = "{count}時間"
+days = "{count}日"

@@ -1,0 +1,14 @@
+# The file chooser backend, as a unit rather than as something the bus starts and
+# forgets. The same sentence as `system/rikka-cast/rikka-portal-cast.service.in`: a
+# backend the session cannot stop is one the next session inherits, drawing its dialog
+# on a screen that is no longer there.
+
+[Unit]
+Description=Portal service (Rikka file chooser)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.impl.portal.desktop.rikkafiles
+ExecStart=@BINDIR@/rikka-portal-files

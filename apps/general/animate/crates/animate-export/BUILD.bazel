@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-export",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-cast",
+        "//apps/general/animate/crates/animate-stage",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-video",
+        "//crates/model/rikka-model",
+        "//crates/ui/rikka-ui",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-export",
+    ],
+)

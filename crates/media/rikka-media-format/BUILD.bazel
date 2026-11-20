@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-media-format",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/graphics/rikka-image",
+        "//crates/media/rikka-audio-decode",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-media-format",
+        "//crates/graphics/rikka-image",
+    ],
+)

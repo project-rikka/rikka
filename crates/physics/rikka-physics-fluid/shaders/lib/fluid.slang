@@ -1,0 +1,9 @@
+__exported import fluid.settings;
+__exported import fluid.grid;
+__exported import fluid.listed;
+__exported import fluid.random;
+__exported import fluid.walls;
+__exported import fluid.shape;
+__exported import fluid.slab;
+__exported import fluid.foam;
+__exported import fluid.viscous;

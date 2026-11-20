@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-i18n-catalog",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "@crates//:rustc-hash",
+        "@crates//:thiserror",
+        "@crates//:toml",
+    ] + select({
+        "@platforms//os:linux": ["//crates/foundation/rikka-types"],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-i18n-catalog",
+    ],
+)

@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-look",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-track",
+        "//crates/foundation/rikka-keyframe",
+        "//crates/foundation/rikka-sync",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-compile",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/model/rikka-mmd",
+        "@crates//:rustc-hash",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-look",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-compile",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/model/rikka-mmd",
+        "@crates//:serde_json",
+    ],
+)

@@ -1,0 +1,25 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[cast]
+title = "Share your screen"
+subtitle = "“{app}” wants to see what is on your screen"
+subtitle-unknown = "An application wants to see what is on your screen"
+hint-multiple = "You can select more than one"
+looking = "Finding screens and windows…"
+failure = "The screen cannot be read: {reason}"
+monitor-unnamed = "Unnamed display"
+window-unnamed = "Untitled window"
+remember = "Do not ask again"
+remember-session = "Do not ask again while this application is running"
+share = "Share"
+cancel = "Cancel"
+
+[cast.tab]
+monitors = "Screens"
+windows = "Windows"
+
+[cast.empty]
+monitors = "No screens to share"
+windows = "No windows to share"

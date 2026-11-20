@@ -1,0 +1,17 @@
+load("//bazel/java:defs.bzl", "rikka_java_binary")
+load("//sdk/examples:defs.bzl", "example_name")
+
+[
+    rikka_java_binary(
+        name = example_name(source.removesuffix(".java")),
+        srcs = [source],
+        main_class = source.removesuffix(".java"),
+        deps = ["//sdk/bindings/java"],
+    )
+    for source in glob(["*.java"])
+]
+
+exports_files(
+    ["Counter.java"],
+    visibility = ["//website:__pkg__"],
+)

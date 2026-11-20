@@ -1,0 +1,16 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-viewport",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/ui/rikka-ui",
+        "@crates//:tracing",
+    ],
+)

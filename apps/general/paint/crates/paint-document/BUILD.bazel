@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "paint-document",
+    visibility = [
+        "//apps/general/paint:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-figure",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-image-edit",
+        "//crates/graphics/rikka-psd",
+        "//crates/graphics/rikka-psd-render",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":paint-document",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-figure",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-image-edit",
+        "//crates/graphics/rikka-psd",
+        "//crates/graphics/rikka-psd-render",
+    ],
+)

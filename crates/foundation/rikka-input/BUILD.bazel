@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-input",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:thiserror",
+        "@crates//:xkeysym",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:xkbcommon"],
+        "@platforms//os:windows": [],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-input",
+        "//crates/foundation/rikka-types",
+        "@crates//:tempfile",
+        "@crates//:xkeysym",
+    ],
+)

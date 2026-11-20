@@ -1,0 +1,36 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-archive",
+    cranelift = False,
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-encoding",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "@crates//:bzip2",
+        "@crates//:crc32fast",
+        "@crates//:flate2",
+        "@crates//:lzma-rust2",
+        "@crates//:sevenz-rust2",
+        "@crates//:tar",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zip",
+        "@crates//:zstd",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-archive",
+        "@crates//:encoding_rs",
+        "@crates//:flate2",
+        "@crates//:tempfile",
+        "@crates//:zip",
+    ],
+)

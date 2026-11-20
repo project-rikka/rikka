@@ -1,0 +1,30 @@
+load("@nix//:paths.bzl", "NIX")
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "discord-krisp",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "@crates//:brotli-decompressor",
+        "@crates//:libc",
+        "@crates//:libloading",
+        "@crates//:serde",
+        "@crates//:tar",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    rustc_env = {"RIKKA_DISCORD_KRISP": NIX["discord_krisp"]},
+    deps = [
+        ":discord-krisp",
+        "@crates//:tempfile",
+    ],
+)

@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "nixctl-task",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-nixctl:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/nix/rikka-nix",
+        "//crates/nix/rikka-nix-protocol",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":nixctl-task",
+        "//crates/nix/rikka-nix",
+        "//crates/nix/rikka-nix-protocol",
+        "@crates//:tempfile",
+    ],
+)

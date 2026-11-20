@@ -1,0 +1,323 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[effects]
+grouped = "{group}：{part}"
+
+[effects.unit]
+pixels = "px"
+frames = "f"
+
+[effects.family]
+adjust = "色調補正"
+blur = "ぼかし"
+sharpen = "シャープ"
+noise = "ノイズ"
+stylize = "表現手法"
+photo = "写真"
+key = "キー・マット"
+
+[effects.kind]
+brightness_contrast = "明るさ・コントラスト"
+levels = "レベル補正"
+curves = "トーンカーブ"
+exposure = "露光量"
+vibrance = "自然な彩度"
+hue_saturation = "色相・彩度"
+color_balance = "カラーバランス"
+black_white = "白黒"
+photo_filter = "レンズフィルター"
+channel_mixer = "チャンネルミキサー"
+color_lookup = "カラールックアップ"
+white_balance = "ホワイトバランス"
+posterize = "ポスタリゼーション"
+threshold = "2階調化"
+gradient_map = "グラデーションマップ"
+selective_color = "特定色域の選択"
+shadows_highlights = "シャドウ・ハイライト"
+gaussian_blur = "ぼかし（ガウス）"
+box_blur = "ぼかし（ボックス）"
+motion_blur = "ぼかし（移動）"
+radial_blur = "ぼかし（放射状）"
+lens_blur = "ぼかし（レンズ）"
+surface_blur = "ぼかし（表面）"
+median = "中間値"
+tilt_shift = "チルトシフト"
+unsharp_mask = "アンシャープマスク"
+smart_sharpen = "スマートシャープ"
+high_pass = "ハイパス"
+clarity = "明瞭度"
+add_noise = "ノイズを加える"
+reduce_noise = "ノイズを軽減"
+emboss = "エンボス"
+mosaic = "モザイク"
+oil_paint = "油彩"
+glow = "光彩"
+vignette = "周辺光量補正"
+dither = "ディザ"
+chroma_key = "クロマキー"
+luma_key = "ルミナンスキー"
+clipping = "クリッピング"
+channel_shift = "色ずれ"
+drop_shadow = "ドロップシャドウ"
+outline = "縁取り"
+
+[effects.adjust]
+amount = "量"
+angle = "角度"
+auto = "自動補正"
+black = "ブラック"
+blue = "ブルー"
+brightness = "明るさ"
+cell_size = "セルの大きさ"
+channel = "チャンネル"
+contrast = "コントラスト"
+cyan = "シアン"
+distance = "距離"
+exposure = "露光量"
+gamma = "ガンマ補正"
+green = "グリーン"
+highlights = "ハイライト"
+hue = "色相"
+input_levels = "入力レベル"
+legacy = "従来方式を使用"
+levels = "階調数"
+lightness = "明度"
+magenta = "マゼンタ"
+midtones = "中間調"
+offset = "オフセット"
+output_levels = "出力レベル"
+preserve_luminosity = "輝度を保持"
+radius = "半径"
+red = "レッド"
+rgb = "RGB"
+saturation = "彩度"
+shadows = "シャドウ"
+temperature = "色温度"
+threshold = "しきい値"
+threshold_levels = "しきい値（レベル）"
+vibrance = "自然な彩度"
+white_balance_note = "撮影時の光の色温度を指定します。値を下げると青みが増します。"
+yellow = "イエロー"
+
+[effects.curves]
+preset = "プリセット"
+custom = "カスタム"
+linear = "直線"
+increase_contrast = "コントラストを強く"
+decrease_contrast = "コントラストを弱く"
+lighter = "明るく"
+darker = "暗く"
+negative = "ネガ"
+input = "入力"
+output = "出力"
+hint = "グラフをクリックするとポイントを追加します。ポイントをグラフの外へドラッグするか Delete キーで削除します。"
+
+[effects.hue_saturation]
+edit = "範囲"
+master = "マスター"
+reds = "レッド系"
+yellows = "イエロー系"
+greens = "グリーン系"
+cyans = "シアン系"
+blues = "ブルー系"
+magentas = "マゼンタ系"
+colorize = "色彩の統一"
+
+[effects.color_balance]
+tone = "階調のバランス"
+cyan_red = "シアン–レッド"
+magenta_green = "マゼンタ–グリーン"
+yellow_blue = "イエロー–ブルー"
+
+[effects.black_white]
+preset = "プリセット"
+default = "初期設定"
+red_filter = "レッドフィルター"
+yellow_filter = "イエローフィルター"
+infrared = "赤外線"
+neutral = "均等"
+tint = "着色"
+tint_color = "着色のカラー"
+
+[effects.photo_filter]
+filter = "フィルター"
+color = "カラー"
+density = "適用量"
+warming_85 = "暖色系フィルター (85)"
+warming_lba = "暖色系フィルター (LBA)"
+warming_81 = "暖色系フィルター (81)"
+cooling_80 = "寒色系フィルター (80)"
+cooling_lbb = "寒色系フィルター (LBB)"
+cooling_82 = "寒色系フィルター (82)"
+red = "レッド"
+orange = "オレンジ"
+yellow = "イエロー"
+green = "グリーン"
+cyan = "シアン"
+blue = "ブルー"
+violet = "バイオレット"
+magenta = "マゼンタ"
+sepia = "セピア"
+deep_red = "ディープレッド"
+deep_blue = "ディープブルー"
+deep_emerald = "ディープエメラルド"
+deep_yellow = "ディープイエロー"
+underwater = "水中"
+
+[effects.channel_mixer]
+output = "出力先チャンネル"
+gray = "グレー"
+total = "合計"
+constant = "定数"
+monochrome = "モノクロ"
+
+[effects.color_lookup]
+table = "3D LUT"
+none = "ルックアップテーブルが読み込まれていません。"
+load = "3D LUT を読み込み…"
+load_title = "カラールックアップテーブルを読み込み"
+load_accept = "読み込み"
+tables = "3D LUT ファイル"
+formats = ".cube と .3dl のルックアップテーブルを読み込めます。"
+unloaded = "ルックアップテーブルを読み込めませんでした: {reason}"
+
+[effects.threshold]
+level = "しきい値"
+
+[effects.gradient_map]
+preset = "プリセット"
+black_white = "ブラック、ホワイト"
+sepia = "セピア"
+cyanotype = "サイアノタイプ"
+violet_orange = "バイオレット、オレンジ"
+blue_red_yellow = "ブルー、レッド、イエロー"
+teal_orange = "ティール、オレンジ"
+location = "位置"
+midpoint = "中間点"
+reverse = "逆方向"
+hint = "グラデーションの下をクリックすると分岐点を追加します。分岐点を下へドラッグするか Delete キーで削除します。"
+
+[effects.selective_color]
+colors = "カラー"
+whites = "ホワイト系"
+neutrals = "中間色系"
+blacks = "ブラック系"
+method = "方法"
+relative = "相対値"
+absolute = "絶対値"
+
+[effects.shadows_highlights]
+tone = "階調"
+adjustments = "調整"
+color = "カラー"
+midtone = "中間調"
+
+[effects.radial_blur]
+method = "方法"
+spin = "回転"
+zoom = "ズーム"
+quality = "画質"
+draft = "ドラフト"
+good = "標準"
+best = "高い"
+center = "中心点"
+center_at = "左から {x}%、上から {y}%"
+center_x = "ぼかしの中心（横）"
+center_y = "ぼかしの中心（縦）"
+
+[effects.lens_blur]
+iris = "虹彩絞り"
+shape = "形状"
+circle = "円形"
+triangle = "三角形 (3)"
+square = "四角形 (4)"
+pentagon = "五角形 (5)"
+hexagon = "六角形 (6)"
+heptagon = "七角形 (7)"
+octagon = "八角形 (8)"
+curvature = "羽根の湾曲"
+rotation = "回転"
+specular = "スペキュラハイライト"
+
+[effects.tilt_shift]
+blur = "ぼかし"
+center = "ピント位置"
+focus = "ピントの範囲"
+transition = "境界のぼかし"
+note = "位置、ピントの範囲、境界のぼかしは画像の高さに対する割合です。"
+
+[effects.smart_sharpen]
+reduce_noise = "ノイズを軽減"
+remove = "除去"
+
+[effects.add_noise]
+distribution = "分布方法"
+uniform = "均等に分布"
+gaussian = "ガウス分布"
+monochromatic = "グレースケールノイズ"
+seed = "シード"
+
+[effects.reduce_noise]
+strength = "強さ"
+preserve_details = "ディテールを保持"
+color = "カラーノイズを軽減"
+sharpen_details = "ディテールをシャープ"
+
+[effects.emboss]
+height = "高さ"
+
+[effects.oil_paint]
+brush = "ブラシ"
+stylization = "形態"
+cleanliness = "クリーン度"
+scale = "拡大・縮小"
+bristle_detail = "剛毛の詳細"
+lighting = "照明"
+shine = "光彩"
+
+[effects.vignette]
+midpoint = "中心点"
+roundness = "丸み"
+feather = "ぼかし"
+
+[effects.dither]
+levels = "チャンネルあたりの階調数"
+method = "方法"
+ordered = "規則的"
+diffusion = "誤差拡散"
+
+[effects.levels]
+black = "入力の黒点"
+white = "入力の白点"
+out_black = "出力の黒点"
+out_white = "出力の白点"
+
+[effects.white_balance]
+tint = "色かぶり補正"
+
+[effects.key]
+color = "キーカラー"
+tolerance = "許容値"
+softness = "柔らかさ"
+spill = "スピル除去"
+keep = "残す部分"
+bright = "明るい部分"
+dark = "暗い部分"
+
+[effects.clipping]
+left = "左"
+top = "上"
+right = "右"
+bottom = "下"
+feather = "ぼかし"
+
+[effects.drop_shadow]
+color = "影の色"
+blur = "ぼかし"
+opacity = "不透明度"
+
+[effects.outline]
+color = "縁の色"
+width = "幅"

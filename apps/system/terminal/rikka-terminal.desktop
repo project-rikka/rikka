@@ -1,0 +1,21 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Terminal
+Name[ja]=端末
+Name[zh_CN]=终端
+GenericName=Terminal
+GenericName[ja]=端末
+GenericName[zh_CN]=终端
+Comment=Run a shell
+Comment[ja]=シェルを使います
+Comment[zh_CN]=运行 shell
+Exec=rikka-terminal
+Icon=utilities-terminal
+Terminal=false
+Categories=System;TerminalEmulator;
+X-TerminalArgExec=-e
+X-TerminalArgDir=--dir=
+Keywords=shell;prompt;command;console;
+Keywords[ja]=端末;シェル;コマンド;コンソール;
+StartupNotify=true

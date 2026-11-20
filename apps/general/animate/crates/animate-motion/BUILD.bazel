@@ -1,0 +1,46 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-motion",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-fit",
+        "//apps/general/animate/crates/animate-hold",
+        "//apps/general/animate/crates/animate-solve",
+        "//apps/general/animate/crates/animate-track",
+        "//crates/foundation/rikka-keyframe",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-vrm",
+        "@crates//:rustc-hash",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-fbx:assets/knight.fbx",
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-mmd:assets/mmd/motion.vmd",
+        "//crates/model/rikka-vrm:assets/avatar.vrm",
+    ],
+    deps = [
+        ":animate-motion",
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-fit",
+        "//apps/general/animate/crates/animate-hold",
+        "//apps/general/animate/crates/animate-solve",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model",
+        "//crates/model/rikka-model-core",
+        "//crates/physics/rikka-physics-tailor",
+        "@crates//:serde_json",
+    ],
+)

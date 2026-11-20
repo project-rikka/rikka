@@ -1,0 +1,91 @@
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+_QUERIES = {
+    "BASH_HIGHLIGHTS": ("bash", "queries/highlights.scm"),
+    "C_HIGHLIGHTS": ("c", "queries/highlights.scm"),
+    "CPP_HIGHLIGHTS": ("cpp", "queries/highlights.scm"),
+    "C_SHARP_HIGHLIGHTS": ("c-sharp", "queries/highlights.scm"),
+    "CSS_HIGHLIGHTS": ("css", "queries/highlights.scm"),
+    "DIFF_HIGHLIGHTS": ("diff", "queries/highlights.scm"),
+    "GO_HIGHLIGHTS": ("go", "queries/highlights.scm"),
+    "HTML_HIGHLIGHTS": ("html", "queries/highlights.scm"),
+    "HTML_INJECTIONS": ("html", "queries/injections.scm"),
+    "JAVA_HIGHLIGHTS": ("java", "queries/highlights.scm"),
+    "JAVASCRIPT_HIGHLIGHTS": ("javascript", "queries/highlights.scm"),
+    "JAVASCRIPT_JSX_HIGHLIGHTS": ("javascript", "queries/highlights-jsx.scm"),
+    "JAVASCRIPT_INJECTIONS": ("javascript", "queries/injections.scm"),
+    "JSON_HIGHLIGHTS": ("json", "queries/highlights.scm"),
+    "LUA_HIGHLIGHTS": ("lua", "queries/highlights.scm"),
+    "LUA_INJECTIONS": ("lua", "queries/injections.scm"),
+    "MARKDOWN_HIGHLIGHTS": ("md", "tree-sitter-markdown/queries/highlights.scm"),
+    "MARKDOWN_INJECTIONS": ("md", "tree-sitter-markdown/queries/injections.scm"),
+    "MARKDOWN_INLINE_HIGHLIGHTS": ("md", "tree-sitter-markdown-inline/queries/highlights.scm"),
+    "MARKDOWN_INLINE_INJECTIONS": ("md", "tree-sitter-markdown-inline/queries/injections.scm"),
+    "NIX_HIGHLIGHTS": ("nix", "queries/highlights.scm"),
+    "NIX_INJECTIONS": ("nix", "queries/injections.scm"),
+    "PHP_HIGHLIGHTS": ("php", "queries/highlights.scm"),
+    "PHP_INJECTIONS": ("php", "queries/injections.scm"),
+    "PYTHON_HIGHLIGHTS": ("python", "queries/highlights.scm"),
+    "RUBY_HIGHLIGHTS": ("ruby", "queries/highlights.scm"),
+    "RUST_HIGHLIGHTS": ("rust", "queries/highlights.scm"),
+    "RUST_INJECTIONS": ("rust", "queries/injections.scm"),
+    "SQL_HIGHLIGHTS": ("sequel", "queries/highlights.scm"),
+    "STARLARK_HIGHLIGHTS": ("starlark", "queries/highlights.scm"),
+    "STARLARK_INJECTIONS": ("starlark", "queries/injections.scm"),
+    "TOML_HIGHLIGHTS": ("toml-ng", "queries/highlights.scm"),
+    "TYPESCRIPT_HIGHLIGHTS": ("typescript", "queries/highlights.scm"),
+    "YAML_HIGHLIGHTS": ("yaml", "queries/highlights.scm"),
+}
+
+_GRAMMAR_CRATES = sorted({crate: None for crate, _ in _QUERIES.values()}.keys())
+
+run_binary(
+    name = "queries",
+    srcs = ["@crates//:tree-sitter-{}-queries".format(crate) for crate in _GRAMMAR_CRATES],
+    outs = ["src/generated/queries.rs"],
+    args = ["$(execpath src/generated/queries.rs)"] + [
+        argument
+        for name, (crate, path) in _QUERIES.items()
+        for argument in [
+            name,
+            path,
+            "$(execpaths @crates//:tree-sitter-{}-queries)".format(crate),
+        ]
+    ],
+    tool = "//crates/ui/rikka-syntax-queries",
+)
+
+rikka_library(
+    name = "rikka-syntax",
+    srcs = glob(["src/**/*.rs"]) + [":queries"],
+    compile_data = [
+        "src/slang.scm",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fuzzy",
+        "//crates/foundation/rikka-grammars",
+        "//crates/graphics/rikka-text",
+        "//crates/graphics/rikka-theme",
+        "//crates/text/rikka-text-document",
+        "@crates//:rustc-hash",
+        "@crates//:tracing",
+        "@crates//:tree-sitter",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-syntax",
+        "//crates/foundation/rikka-grammars",
+        "//crates/graphics/rikka-text",
+        "//crates/graphics/rikka-theme",
+        "//crates/text/rikka-text-document",
+        "@crates//:tree-sitter",
+        "@crates//:tree-sitter-slang",
+    ],
+)

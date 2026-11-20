@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "music-tags",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-core",
+        "//crates/foundation/rikka-encoding",
+        "//crates/media/rikka-audio-decode",
+        "@crates//:lofty",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":music-tags",
+        "//apps/system/music/crates/music-core",
+        "//crates/media/rikka-audio-decode",
+        "@crates//:encoding_rs",
+        "@crates//:lofty",
+        "@crates//:tempfile",
+    ],
+)

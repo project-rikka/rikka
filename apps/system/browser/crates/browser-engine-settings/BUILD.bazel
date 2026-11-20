@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "browser-engine-settings",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+    ],
+    deps = [
+        "//crates/web/rikka-web",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:url",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":browser-engine-settings",
+        "//crates/web/rikka-web",
+        "@crates//:serde_json",
+    ],
+)

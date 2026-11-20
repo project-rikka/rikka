@@ -1,0 +1,28 @@
+mod cache;
+mod catalog;
+mod cjk;
+mod config;
+mod coverage;
+mod discovery;
+mod face;
+mod fallback;
+mod family;
+mod index;
+mod locale;
+mod matching;
+mod parallel;
+mod query;
+mod report;
+mod style;
+mod system;
+
+pub use catalog::{Catalog, CatalogConfig, catalog};
+pub use discovery::mapped_font;
+pub use face::{Axis, ColorFormats, Face, FaceId};
+pub use fallback::FallbackRequest;
+pub use family::Family;
+pub use locale::Locale;
+pub use matching::FaceMatch;
+pub use query::Query;
+pub use report::{LoadProblem, LoadReport};
+pub use style::{FontStyle, Weight, Width};

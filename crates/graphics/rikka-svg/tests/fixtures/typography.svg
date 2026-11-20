@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="200" viewBox="0 0 240 200">
+  <g font-family="JetBrains Mono" font-size="16">
+    <text x="10" y="24" text-decoration="underline">underline</text>
+    <text x="130" y="24" text-decoration="overline" fill="#1c71d8">overline</text>
+    <text x="10" y="50" text-decoration="line-through" fill="#e01b24">struck out</text>
+    <text x="10" y="76" fill="#26a269" text-decoration="underline line-through">a<tspan fill="#c061cb">b</tspan>c</text>
+    <text x="70" y="76" text-decoration="underline" fill="#241f31"><tspan fill="#e66100" text-decoration="underline">own</tspan> ink</text>
+    <text x="10" y="102" textLength="150">fitted</text>
+    <text x="10" y="128" textLength="150" lengthAdjust="spacingAndGlyphs">stretched</text>
+    <text x="180" y="128" textLength="40" lengthAdjust="spacingAndGlyphs">wide</text>
+  </g>
+  <text x="10" y="156" font-family="Noto Sans" font-size="18" font-variant="small-caps">Small Caps</text>
+  <text x="130" y="156" font-family="Noto Sans" font-size="18">Small Caps</text>
+</svg>

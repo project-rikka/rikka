@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "browser-store",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "@crates//:rusqlite",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":browser-store",
+        "@crates//:rusqlite",
+        "@crates//:serde",
+        "@crates//:tempfile",
+    ],
+)

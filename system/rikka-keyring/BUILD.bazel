@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-keyring",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/daemons/rikka-keyring",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-log",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zbus",
+    ],
+)

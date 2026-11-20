@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-power-saving",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-battery",
+        "//crates/daemons/rikka-power",
+        "//crates/daemons/rikka-power-profiles",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:futures-util",
+        "@crates//:tracing",
+    ],
+)

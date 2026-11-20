@@ -1,0 +1,21 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Paint
+Name[ja]=ペイント
+Name[zh_CN]=画图
+GenericName=Image Editor
+GenericName[ja]=画像エディター
+GenericName[zh_CN]=图像编辑器
+Comment=Open, look at and edit pictures
+Comment[ja]=画像を開いて表示・編集します
+Comment[zh_CN]=打开、查看和编辑图片
+Exec=rikka-paint %U
+Icon=applications-graphics
+Terminal=false
+Categories=Graphics;2DGraphics;RasterGraphics;
+Keywords=paint;draw;image;picture;photo;editor;psd;photoshop;layers;
+Keywords[ja]=ペイント;お絵描き;画像;写真;編集;フォトショップ;レイヤー;
+Keywords[zh_CN]=画图;绘画;图像;图片;照片;编辑;图层;
+StartupNotify=true
+MimeType=image/png;image/jpeg;image/gif;image/webp;image/bmp;image/x-bmp;image/vnd.microsoft.icon;image/x-icon;image/tiff;image/x-tga;image/x-targa;image/qoi;image/x-portable-bitmap;image/x-portable-graymap;image/x-portable-pixmap;image/x-portable-anymap;image/vnd.radiance;image/x-exr;image/avif;image/heif;image/heic;image/jp2;image/x-jp2-codestream;image/jxl;image/x-dds;image/vnd.adobe.photoshop;

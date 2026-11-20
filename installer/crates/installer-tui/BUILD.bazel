@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "installer-tui",
+    visibility = [
+        "//installer:__subpackages__",
+    ],
+    deps = [
+        "//installer/crates/installer-core",
+        "//installer/crates/installer-sys",
+        "@crates//:crossterm",
+        "@crates//:ratatui",
+        "@crates//:unicode-width",
+    ],
+)

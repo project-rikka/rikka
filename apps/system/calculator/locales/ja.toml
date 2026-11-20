@@ -1,0 +1,12 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[calculator]
+title = "電卓"
+
+[calculator.error]
+division-by-zero = "0 で割ることはできません"
+undefined = "結果が定義されていません"
+invalid-input = "無効な入力です"
+overflow = "オーバーフロー"

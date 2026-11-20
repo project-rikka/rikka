@@ -1,0 +1,43 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-text-unicode",
+    compile_data = [
+        "src/tables/burmese.dict",
+        "src/tables/cj.dict",
+        "src/tables/khmer.dict",
+        "src/tables/lao.dict",
+        "src/tables/thai.dict",
+    ],
+    cranelift = False,
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/icu/rbbitst.txt",
+        "ucd/BidiCharacterTest.txt",
+        "ucd/BidiTest.txt",
+        "ucd/NormalizationTest.txt",
+        "ucd/auxiliary/GraphemeBreakTest.txt",
+        "ucd/auxiliary/LineBreakTest.txt",
+        "ucd/auxiliary/WordBreakTest.txt",
+        "ucd/emoji/emoji-test.txt",
+    ],
+    deps = [
+        ":rikka-text-unicode",
+    ],
+)
+
+filegroup(
+    name = "sources",
+    srcs = glob([
+        "dictionaries/**",
+        "src/tables/**",
+        "ucd/**",
+    ]),
+    visibility = ["//crates/text/rikka-text-unicode-gen:__pkg__"],
+)

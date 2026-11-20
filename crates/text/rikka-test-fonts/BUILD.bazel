@@ -1,0 +1,13 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-fonts",
+    testonly = True,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-sync",
+    ],
+)

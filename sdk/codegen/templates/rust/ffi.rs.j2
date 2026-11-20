@@ -1,0 +1,131 @@
+use std::ffi::{c_char, c_void};
+
+pub(crate) const VERSION: u32 = {{ version }};
+{%- for constant in constants %}
+pub(crate) const {{ constant.name }}: {{ constant.ty }} = {{ constant.value }};
+{%- endfor %}
+
+pub(crate) const STRLEN: usize = usize::MAX;
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Str {
+    pub(crate) data: *const c_char,
+    pub(crate) length: usize,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct String {
+    pub(crate) data: *mut c_char,
+    pub(crate) length: usize,
+}
+{%- for item in structs %}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct {{ item.name }} {
+{%- for field in item.fields %}
+    pub(crate) {{ field.name }}: {{ field.ty }},
+{%- endfor %}
+}
+{%- endfor %}
+{%- for item in enums %}
+{%- if item.open %}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) struct {{ item.name }}(pub(crate) u32);
+
+impl {{ item.name }} {
+{%- for variant in item.variants %}
+    pub(crate) const {{ variant.name }}: Self = Self({{ variant.value }});
+{%- endfor %}
+}
+{%- else %}
+
+#[repr(u32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) enum {{ item.name }} {
+{%- for variant in item.variants %}
+    {{ variant.name }} = {{ variant.value }},
+{%- endfor %}
+}
+
+impl {{ item.name }} {
+    pub(crate) const C_NAME: &str = "{{ item.c_name }}";
+
+    pub(crate) fn from_raw(raw: u32) -> ::core::option::Option<Self> {
+        match raw {
+{%- for variant in item.variants %}
+            {{ variant.value }} => Some(Self::{{ variant.name }}),
+{%- endfor %}
+            _ => None,
+        }
+    }
+
+    pub(crate) fn into_raw(self) -> u32 {
+        self as u32
+    }
+}
+{%- endif %}
+{%- endfor %}
+{%- for item in flags %}
+
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub(crate) struct {{ item.name }}(u32);
+
+impl {{ item.name }} {
+    pub(crate) const C_NAME: &str = "{{ item.c_name }}";
+    const ALL: u32 = {{ item.all }};
+{%- for flag in item.flags %}
+    pub(crate) const {{ flag.name }}: Self = Self({{ flag.value }});
+{%- endfor %}
+
+    pub(crate) fn from_raw(raw: u32) -> ::core::option::Option<Self> {
+        (raw & !Self::ALL == 0).then_some(Self(raw))
+    }
+
+    pub(crate) fn contains(self, other: Self) -> bool {
+        self.0 & other.0 == other.0
+    }
+}
+{%- endfor %}
+
+pub(crate) type DestroyFn = unsafe extern "C" fn(*mut c_void);
+{%- for callback in callbacks %}
+pub(crate) type {{ callback.name }} = unsafe extern "C" fn({{ callback.ty }});
+{%- endfor %}
+{%- for shape in shapes %}
+
+impl<S> crate::abi::Closure<{{ shape.ty }}, S> {
+{%- for method in shape.methods %}
+{%- if !loop.first %}
+{% endif %}
+    pub(crate) fn {{ method.name }}({{ method.params }}) {
+{%- for line in method.prelude %}
+        {{ line }}
+{%- endfor %}
+        let function = {{ method.access }};
+        unsafe { function({{ method.arguments }}) }
+    }
+{%- endfor %}
+}
+{%- endfor %}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "C" fn {{ prefix }}_string_free(string: String) {
+    let _entry = crate::abi::enter("{{ prefix }}_string_free");
+    unsafe { crate::abi::free_string(string) }
+}
+{%- for export in exports %}
+
+#[unsafe(no_mangle)]
+pub(crate) unsafe extern "C" fn {{ export.name }}({{ export.params }}){{ export.returns }} {
+    let _entry = crate::abi::enter("{{ export.name }}");
+{%- for line in export.body %}
+    {{ line }}
+{%- endfor %}
+}
+{%- endfor %}

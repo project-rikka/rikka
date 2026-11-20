@@ -1,0 +1,49 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[updates]
+title = "System Updates"
+empty = "No system changes yet"
+unavailable = "Can't reach rikka-nixctl: {reason}"
+disconnected = "the system bus connection closed"
+unreadable = "Couldn't read this log: {reason}"
+find = "Find in log"
+copy = "Copy log"
+save = "Save log…"
+save-title = "Save log"
+unsaved = "Couldn't save the log: {reason}"
+dismiss = "Dismiss"
+retry = "Try again"
+
+[updates.operation]
+apply = "System changes"
+update = "System update"
+rollback = "Rollback to generation {generation}"
+
+[updates.state]
+running = "In progress"
+done = "Finished"
+failed = "Failed"
+interrupted = "Interrupted"
+
+[updates.phase]
+preparing = "Preparing"
+locking = "Updating flake inputs"
+evaluating = "Evaluating the configuration"
+building = "Building"
+activating = "Switching to the new configuration"
+staging = "Setting up the next boot"
+checking = "Checking what would change"
+
+[updates.detail]
+started = "Started {time}"
+generation = "Generation {generation}"
+took = "Took {duration}"
+next-boot = "Takes effect after a restart"
+built = "Built {done} of {expected}"
+fetched = "Downloaded {done} of {expected} paths"
+downloaded = "{size} transferred"
+untouched = "Nothing on the system was changed."
+modified = "The system may have been partly changed."
+interrupted = "rikka-nixctl stopped before the change finished."

@@ -1,0 +1,11 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-nvml",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:nvml-wrapper",
+    ],
+)

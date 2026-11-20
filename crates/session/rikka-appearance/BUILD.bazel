@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-appearance",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-theme",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [
+            "//crates/session/rikka-seam",
+            "//crates/session/rikka-settings",
+        ],
+        "@platforms//os:windows": [
+            "@crates//:windows",
+        ],
+    }),
+)

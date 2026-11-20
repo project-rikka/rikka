@@ -1,0 +1,28 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[animate.handles]
+global = "グローバル"
+local = "ローカル"
+turn = "{axis}軸回転"
+slide = "{axis}軸移動"
+space = "グローバル/ローカル軸"
+
+[animate.hold]
+grasp = "{hand}でつかむ"
+
+[animate.marker]
+eyes = "目"
+mouth = "口"
+centre = "センター"
+lower_body = "下半身"
+upper_body = "上半身"
+head = "頭"
+shoulder = "肩"
+upper_arm = "腕"
+elbow = "ひじ"
+hand = "手"
+foot = "足"
+toes = "つま先"
+sided = "{side}{part}"

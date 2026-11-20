@@ -1,0 +1,159 @@
+---
+interface Props {
+  command: string;
+}
+
+const { command } = Astro.props;
+---
+
+<div class="install" data-install>
+  <code class="command">
+    <span class="prompt" aria-hidden="true">
+      $
+    </span>
+    <span data-command>{command}</span>
+  </code>
+  <button type="button" class="copy" aria-label="Copy install command">
+    <svg
+      class="glyph-copy"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="8.5" y="8.5" width="12" height="12" rx="2.5"></rect>
+      <path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6v7A2.5 2.5 0 0 0 6 15.5h2.5"></path>
+    </svg>
+    <svg
+      class="glyph-done"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12.5l4.5 4.5L19 7.5"></path>
+    </svg>
+  </button>
+  <span class="visually-hidden" role="status" data-status></span>
+</div>
+
+<script>
+  const FEEDBACK_MS = 1800;
+
+  for (const install of document.querySelectorAll<HTMLElement>(
+    "[data-install]",
+  )) {
+    const button = install.querySelector<HTMLButtonElement>(".copy")!;
+    const text = install.querySelector<HTMLElement>("[data-command]")!;
+    const status = install.querySelector<HTMLElement>("[data-status]")!;
+    let reset: ReturnType<typeof setTimeout> | undefined;
+
+    const announce = (message: string, copied: boolean) => {
+      status.textContent = message;
+      install.toggleAttribute("data-copied", copied);
+      clearTimeout(reset);
+      reset = setTimeout(() => {
+        install.removeAttribute("data-copied");
+        status.textContent = "";
+      }, FEEDBACK_MS);
+    };
+
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(text.textContent!);
+        announce("Copied", true);
+      } catch (error) {
+        console.warn(`install: clipboard unavailable: ${String(error)}`);
+        getSelection()?.selectAllChildren(text);
+        announce("Selected; press Ctrl+C to copy", false);
+      }
+    });
+  }
+</script>
+
+<style>
+  .install {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+    padding: 6px 6px 6px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-control);
+    background: color-mix(in oklab, var(--mantle) 72%, transparent);
+    backdrop-filter: blur(16px) saturate(1.3);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  }
+
+  .command {
+    display: flex;
+    gap: 12px;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+    font-size: 14px;
+    line-height: 36px;
+    color: var(--text);
+  }
+
+  .prompt {
+    color: var(--muted);
+    user-select: none;
+  }
+
+  .copy {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    margin-left: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--corner-item);
+    background: transparent;
+    color: var(--subtext);
+    cursor: pointer;
+    transition:
+      background-color var(--quick) var(--ease),
+      color var(--quick) var(--ease);
+  }
+
+  .copy:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+
+  .copy:active {
+    background: var(--press);
+  }
+
+  .glyph-done {
+    display: none;
+  }
+
+  .install[data-copied] .glyph-copy {
+    display: none;
+  }
+
+  .install[data-copied] .glyph-done {
+    display: block;
+    color: var(--success);
+  }
+
+  @media (max-width: 420px) {
+    .command {
+      font-size: 13px;
+    }
+  }
+</style>

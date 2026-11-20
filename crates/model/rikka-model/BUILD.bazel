@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-model",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "//crates/model/rikka-blend",
+        "//crates/model/rikka-fbx",
+        "//crates/model/rikka-gltf",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-model-scene",
+        "//crates/model/rikka-stl",
+        "//crates/model/rikka-vrm",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-blend:assets/studio.blend",
+        "//crates/model/rikka-gltf:assets/fox.glb",
+    ],
+    deps = [
+        ":rikka-model",
+        "//crates/model/rikka-model-scene",
+    ],
+)

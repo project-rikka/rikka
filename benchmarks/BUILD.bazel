@@ -1,0 +1,33 @@
+test_suite(
+    name = "parity",
+    tags = ["manual"],
+    tests = [
+        "//benchmarks/ipc:main",
+        "//benchmarks/layout:main",
+        "//benchmarks/physics:main",
+        "//benchmarks/text:main",
+        "//benchmarks/ui:main",
+    ],
+)
+
+filegroup(
+    name = "programs",
+    testonly = True,
+    srcs = [
+        "//benchmarks/ipc:round_trips",
+        "//benchmarks/layout",
+        "//benchmarks/modeling",
+        "//benchmarks/physics:internals",
+        "//benchmarks/physics:rigid",
+        "//benchmarks/render:gpu",
+        "//benchmarks/render:materials",
+        "//benchmarks/text:fonts",
+        "//benchmarks/text:paragraphs",
+        "//benchmarks/text:raster",
+        "//benchmarks/text:shaping",
+        "//benchmarks/text:unicode",
+        "//benchmarks/ui:compare",
+        "//benchmarks/ui:frames",
+    ],
+    tags = ["manual"],
+)

@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "remote-access",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-remote:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "@crates//:getrandom",
+        "@crates//:sha2",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":remote-access",
+        "@crates//:tempfile",
+    ],
+)

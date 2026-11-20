@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-location",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "@crates//:futures-util",
+        "@crates//:tracing",
+        "@crates//:zbus",
+    ],
+)

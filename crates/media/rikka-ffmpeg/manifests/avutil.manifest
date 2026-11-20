@@ -1,0 +1,196 @@
+# avutil manifest - libavutil 60.25.100 (FFmpeg 8)
+# No bitfields encountered in any transcribed struct. No blockers.
+# AVChannelCustom, AVBuffer, AVBufferPool, AVClass, AVDictionary
+# left opaque per instructions (only ever referenced through pointers).
+
+SIZEOF avutil AVRational
+OFFSET avutil AVRational num
+OFFSET avutil AVRational den
+
+SIZEOF avutil AVBufferRef
+OFFSET avutil AVBufferRef buffer
+OFFSET avutil AVBufferRef data
+OFFSET avutil AVBufferRef size
+
+SIZEOF avutil AVDictionaryEntry
+OFFSET avutil AVDictionaryEntry key
+OFFSET avutil AVDictionaryEntry value
+
+SIZEOF avutil AVChannelLayout
+OFFSET avutil AVChannelLayout order
+OFFSET avutil AVChannelLayout nb_channels
+OFFSET avutil AVChannelLayout u
+OFFSET avutil AVChannelLayout opaque
+
+SIZEOF avutil AVFrameSideData
+OFFSET avutil AVFrameSideData type
+OFFSET avutil AVFrameSideData data
+OFFSET avutil AVFrameSideData size
+OFFSET avutil AVFrameSideData metadata
+OFFSET avutil AVFrameSideData buf
+
+SIZEOF avutil AVFrame
+OFFSET avutil AVFrame data
+OFFSET avutil AVFrame linesize
+OFFSET avutil AVFrame extended_data
+OFFSET avutil AVFrame width
+OFFSET avutil AVFrame height
+OFFSET avutil AVFrame nb_samples
+OFFSET avutil AVFrame format
+OFFSET avutil AVFrame pict_type
+OFFSET avutil AVFrame sample_aspect_ratio
+OFFSET avutil AVFrame pts
+OFFSET avutil AVFrame pkt_dts
+OFFSET avutil AVFrame time_base
+OFFSET avutil AVFrame quality
+OFFSET avutil AVFrame opaque
+OFFSET avutil AVFrame repeat_pict
+OFFSET avutil AVFrame sample_rate
+OFFSET avutil AVFrame buf
+OFFSET avutil AVFrame extended_buf
+OFFSET avutil AVFrame nb_extended_buf
+OFFSET avutil AVFrame side_data
+OFFSET avutil AVFrame nb_side_data
+OFFSET avutil AVFrame flags
+OFFSET avutil AVFrame color_range
+OFFSET avutil AVFrame color_primaries
+OFFSET avutil AVFrame color_trc
+OFFSET avutil AVFrame colorspace
+OFFSET avutil AVFrame chroma_location
+OFFSET avutil AVFrame best_effort_timestamp
+OFFSET avutil AVFrame metadata
+OFFSET avutil AVFrame decode_error_flags
+OFFSET avutil AVFrame hw_frames_ctx
+OFFSET avutil AVFrame opaque_ref
+OFFSET avutil AVFrame crop_top
+OFFSET avutil AVFrame crop_bottom
+OFFSET avutil AVFrame crop_left
+OFFSET avutil AVFrame crop_right
+OFFSET avutil AVFrame private_ref
+OFFSET avutil AVFrame ch_layout
+OFFSET avutil AVFrame duration
+OFFSET avutil AVFrame alpha_mode
+
+SIZEOF avutil AVHWDeviceContext
+OFFSET avutil AVHWDeviceContext av_class
+OFFSET avutil AVHWDeviceContext type
+OFFSET avutil AVHWDeviceContext hwctx
+OFFSET avutil AVHWDeviceContext free
+OFFSET avutil AVHWDeviceContext user_opaque
+
+SIZEOF avutil AVHWFramesContext
+OFFSET avutil AVHWFramesContext av_class
+OFFSET avutil AVHWFramesContext device_ref
+OFFSET avutil AVHWFramesContext device_ctx
+OFFSET avutil AVHWFramesContext hwctx
+OFFSET avutil AVHWFramesContext free
+OFFSET avutil AVHWFramesContext user_opaque
+OFFSET avutil AVHWFramesContext pool
+OFFSET avutil AVHWFramesContext initial_pool_size
+OFFSET avutil AVHWFramesContext format
+OFFSET avutil AVHWFramesContext sw_format
+OFFSET avutil AVHWFramesContext width
+OFFSET avutil AVHWFramesContext height
+
+CONST avutil AV_NUM_DATA_POINTERS i32
+CONST avutil AVMEDIA_TYPE_UNKNOWN i32
+CONST avutil AVMEDIA_TYPE_VIDEO i32
+CONST avutil AVMEDIA_TYPE_AUDIO i32
+CONST avutil AVMEDIA_TYPE_DATA i32
+CONST avutil AVMEDIA_TYPE_SUBTITLE i32
+CONST avutil AVMEDIA_TYPE_ATTACHMENT i32
+CONST avutil AV_PICTURE_TYPE_NONE i32
+CONST avutil AV_PICTURE_TYPE_I i32
+CONST avutil AV_PIX_FMT_NONE i32
+CONST avutil AV_PIX_FMT_YUV420P i32
+CONST avutil AV_PIX_FMT_RGB24 i32
+CONST avutil AV_PIX_FMT_YUV422P i32
+CONST avutil AV_PIX_FMT_YUV444P i32
+CONST avutil AV_PIX_FMT_GRAY8 i32
+CONST avutil AV_PIX_FMT_YUVJ420P i32
+CONST avutil AV_PIX_FMT_YUVJ422P i32
+CONST avutil AV_PIX_FMT_YUVJ444P i32
+CONST avutil AV_PIX_FMT_NV12 i32
+CONST avutil AV_PIX_FMT_RGBA i32
+CONST avutil AV_PIX_FMT_BGRA i32
+CONST avutil AV_PIX_FMT_YUV420P10LE i32
+CONST avutil AV_PIX_FMT_P010LE i32
+CONST avutil AV_PIX_FMT_P016LE i32
+CONST avutil AV_PIX_FMT_VULKAN i32
+CONST avutil AV_PIX_FMT_GRAY16LE i32
+CONST avutil AV_PIX_FMT_RGB48LE i32
+CONST avutil AV_PIX_FMT_YA8 i32
+CONST avutil AV_PIX_FMT_YUV444P10LE i32
+CONST avutil AV_PIX_FMT_RGBA64LE i32
+CONST avutil AV_PIX_FMT_YA16LE i32
+CONST avutil AV_PIX_FMT_GRAY10LE i32
+CONST avutil AV_PIX_FMT_GBRPF32BE i32
+CONST avutil AV_PIX_FMT_GBRPF32LE i32
+CONST avutil AV_PIX_FMT_GBRAPF32BE i32
+CONST avutil AV_PIX_FMT_GBRAPF32LE i32
+CONST avutil AV_PIX_FMT_GRAYF32LE i32
+CONST avutil AV_PIX_FMT_RGBF32BE i32
+CONST avutil AV_PIX_FMT_RGBF32LE i32
+CONST avutil AV_PIX_FMT_RGBAF32BE i32
+CONST avutil AV_PIX_FMT_RGBAF32LE i32
+CONST avutil AV_PIX_FMT_GBRPF16LE i32
+CONST avutil AV_PIX_FMT_GBRAPF16LE i32
+CONST avutil AV_PIX_FMT_GRAYF16LE i32
+CONST avutil AV_PIX_FMT_YAF32LE i32
+CONST avutil AV_PIX_FMT_YAF16LE i32
+CONST avutil AVCOL_SPC_RGB i32
+CONST avutil AVCOL_SPC_BT709 i32
+CONST avutil AVCOL_SPC_UNSPECIFIED i32
+CONST avutil AVCOL_SPC_BT470BG i32
+CONST avutil AVCOL_SPC_SMPTE170M i32
+CONST avutil AVCOL_SPC_SMPTE240M i32
+CONST avutil AVCOL_SPC_BT2020_NCL i32
+CONST avutil AVCOL_SPC_BT2020_CL i32
+CONST avutil AVCOL_RANGE_UNSPECIFIED i32
+CONST avutil AVCOL_RANGE_MPEG i32
+CONST avutil AVCOL_RANGE_JPEG i32
+CONST avutil AVCOL_PRI_BT709 i32
+CONST avutil AVCOL_PRI_UNSPECIFIED i32
+CONST avutil AVCOL_TRC_BT709 i32
+CONST avutil AVCOL_TRC_UNSPECIFIED i32
+CONST avutil AVCOL_TRC_LINEAR i32
+CONST avutil AVCOL_TRC_IEC61966_2_1 i32
+CONST avutil AV_FRAME_DATA_ICC_PROFILE i32
+CONST avutil AV_PIX_FMT_VAAPI i32
+CONST avutil AV_HWDEVICE_TYPE_VAAPI i32
+CONST avutil AV_LOG_VERBOSE i32
+CONST avutil AV_LOG_DEBUG i32
+CONST avutil AVCHROMA_LOC_UNSPECIFIED i32
+CONST avutil AVCHROMA_LOC_LEFT i32
+CONST avutil AVCHROMA_LOC_CENTER i32
+CONST avutil AVCHROMA_LOC_TOPLEFT i32
+CONST avutil AV_HWDEVICE_TYPE_NONE i32
+CONST avutil AV_HWDEVICE_TYPE_VULKAN i32
+CONST avutil AV_HWFRAME_TRANSFER_DIRECTION_FROM i32
+CONST avutil AV_HWFRAME_TRANSFER_DIRECTION_TO i32
+CONST avutil AVERROR_EOF i32
+CONST avutil AVERROR_DECODER_NOT_FOUND i32
+CONST avutil AVERROR_ENCODER_NOT_FOUND i32
+CONST avutil AVERROR_INVALIDDATA i32
+CONST avutil AVERROR_UNKNOWN i32
+CONST avutil AVERROR_EAGAIN i32
+CONST avutil AVERROR_ENOMEM i32
+CONST avutil AVERROR_EINVAL i32
+CONST avutil AVERROR_EIO i32
+CONST avutil AV_ERROR_MAX_STRING_SIZE i32
+CONST avutil AV_NOPTS_VALUE i64
+CONST avutil AV_TIME_BASE i32
+CONST avutil AV_LOG_QUIET i32
+CONST avutil AV_LOG_ERROR i32
+CONST avutil AV_LOG_WARNING i32
+CONST avutil AV_LOG_INFO i32
+CONST avutil AV_OPT_SEARCH_CHILDREN i32
+CONST avutil AV_FRAME_FLAG_CORRUPT i32
+CONST avutil AV_FRAME_FLAG_KEY i32
+CONST avutil AV_FRAME_FLAG_INTERLACED i32
+CONST avutil AV_ROUND_ZERO i32
+CONST avutil AV_ROUND_INF i32
+CONST avutil AV_ROUND_DOWN i32
+CONST avutil AV_ROUND_UP i32
+CONST avutil AV_ROUND_NEAR_INF i32
+CONST avutil AV_ROUND_PASS_MINMAX i32

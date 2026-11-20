@@ -1,0 +1,16 @@
+---
+title: Paint's tools for the desktop assistant
+description: paint-assistant declares Paint's 13 model tools from code tables; paint/serving runs each change as one undo step.
+about: apps/general/paint
+tags: [application, agent]
+---
+
+- `apps/general/paint/crates/paint-assistant` (GPU-free) owns everything model-facing: prompts in `apps/general/paint/prompts/` (`system.md`, `tools/*.md`), `offering`/`functions`, schemas (`tools.rs`), parsing into typed `Order`s (`parse/`), the adjust ops (`ops.rs`), the SVG `d` reader (`svg.rs` over `rikka_path_data::segments`: absolute segments, arcs as cubics, errors rephrased with character positions, into an imaging `Path`), view framing, the measure statistics and the overlay sheet. `order(stem, json)` parses one call without a model.
+- Tools, seen as `Paint_<Tool>`: Document, View, Measure (reads); Adjust, Draw, Select, Layers, Transform, Objects (changes: each takes a `name` in the person's language and is one `Action::Batch` history entry); History, Save, Open, New. Every tool takes an optional `document` (tab handle, default the active tab).
+- Units: document pixels (x right, y down from 0, 0), degrees (positive clockwise), colours `#rrggbb[aa]`, opacity/hardness/flow/tolerance in percent. Layers are named by index or exact name, resolved against the layers as each step finds them; omitted means the active layer, which follows `Change.layer`.
+- Vocabularies are code tables in `vocabulary.rs` (`ITEMS`, `SELECTIONS`, `LAYERINGS`, `OBJECTINGS` with their fields, `BLENDS`, `GRADIENTS`, anchors, joins, …) They drive parsing and the schemas; enum values live only in the schemas, never repeated in prose. Adjust ops are `rikka_effects::Effect` kinds (a step's fields deserialize into the effect; unknown fields and out-of-range knobs are refused; `color_lookup` takes a `table` path) plus a few parameterless imaging ops in `ops.rs`; the `{{operations}}` table is generated from each kind's default and knob scales, alike groups merged; Draw/Select/Layers/Objects kinds are hand-written dense lines that must name every field each kind takes.
+- `paint_assistant::order(stem, input)` parses one tool call into an `Order` without a studio; the crate's `tests/` drive parsing through it and `functions`.
+- Prompt style: one sentence on what a tool does and answers, then one bullet per kind; defaults in parentheses; units stated once in `system.md`.
+- Images are never larger than a provider would shrink (⌈w/28⌉·⌈h/28⌉ ≤ 1568, sides ≤ 1568); View states the document → image mapping and draws grid labels and the selection outline on the CPU.
+- App side: `src/assistant/` (Seat, `WindowToolHost: paint_assistant::ToolHost` → `Paint::serve`, 180 s patience); `src/paint/serving/` checks readiness (no open dialog, unsaved-changes sheet or pending reshape for changes), then `compose/` builds and applies edits on the worker with the window's colours and options as defaults; refusals come back as "step N (kind): …" text listing valid choices.
+- Extending: a new Paint feature adds its order variant (`order.rs`), a table row and parser (`vocabulary.rs`, `parse/`), the composer arm (`paint/serving/compose/`) and a line in the tool's prompt; a new effect in rikka-effects appears in Adjust by itself.

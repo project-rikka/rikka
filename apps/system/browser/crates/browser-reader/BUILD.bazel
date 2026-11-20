@@ -1,0 +1,51 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "browser-reader",
+    target_compatible_with = ["@platforms//os:linux"],
+    compile_data = [
+        "scripts/extract.js",
+        "scripts/probe.js",
+    ],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/web/rikka-html",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/fixtures/hostile.html",
+        "tests/fixtures/index.html",
+        "tests/fixtures/news.html",
+    ],
+    deps = [
+        ":browser-reader",
+        "@crates//:serde_json",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    compile_data = [
+        "tests/fixtures/hostile.html",
+        "tests/fixtures/index.html",
+        "tests/fixtures/news.html",
+    ],
+    machine = True,
+    deps = [
+        ":browser-reader",
+        "//crates/graphics/rikka-picture",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/web/rikka-web",
+        "@crates//:futures-util",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

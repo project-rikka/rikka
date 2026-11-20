@@ -1,0 +1,22 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[usage]
+used = "{percent}% used"
+extra = "Extra usage"
+resets = "Resets in {left}"
+resets-now = "Resets soon"
+
+[usage.window]
+session = "Session (5 hours)"
+daily = "Daily"
+weekly = "Weekly"
+monthly = "Monthly"
+annual = "Annual"
+unnamed = "Usage"
+
+[usage.left]
+minutes = "{count, plural, one {# minute} other {# minutes}}"
+hours = "{count, plural, one {# hour} other {# hours}}"
+days = "{count, plural, one {# day} other {# days}}"

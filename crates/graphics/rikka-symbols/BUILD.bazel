@@ -1,0 +1,36 @@
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+load("@nix//:paths.bzl", "NIX")
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+_TABLES = {
+    "brands": ("icons.json", "FontAwesomeBrands.otf"),
+    "material": ("MaterialSymbolsRounded.codepoints", "MaterialSymbolsRounded.ttf"),
+}
+
+rikka_library(
+    name = "rikka-symbols",
+    srcs = glob(["src/**/*.rs"]) + [":" + kind for kind in _TABLES],
+    visibility = ["//visibility:public"],
+    deps = ["//crates/graphics/rikka-text"],
+)
+
+[
+    run_binary(
+        name = kind,
+        outs = ["src/names/{}.rs".format(kind)],
+        args = [
+            kind,
+            "{}/{}".format(
+                NIX["icon_listings"],
+                listing,
+            ),
+            "{}/{}".format(
+                NIX["icon_fonts"],
+                font,
+            ),
+            "$(execpath src/names/{}.rs)".format(kind),
+        ],
+        tool = "//crates/graphics/rikka-symbols-scanner",
+    )
+    for kind, (listing, font) in _TABLES.items()
+]

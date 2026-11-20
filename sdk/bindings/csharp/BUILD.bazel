@@ -1,0 +1,29 @@
+load("//bazel/csharp:defs.bzl", "rikka_csharp_library")
+load("//sdk/codegen:defs.bzl", "rikka_bindings")
+
+OUTS = [
+    "Rikka.csproj",
+    "src/Native.cs",
+    "src/Rikka.cs",
+    "src/Runtime.cs",
+]
+
+rikka_bindings(
+    name = "generated",
+    language = "csharp",
+    outs = OUTS,
+    visibility = ["//sdk:__pkg__"],
+)
+
+filegroup(
+    name = "package",
+    srcs = OUTS,
+)
+
+rikka_csharp_library(
+    name = "csharp",
+    srcs = glob(["src/*.cs"]),
+    assembly = "Rikka",
+    libraries = ["//sdk/native:versioned"],
+    visibility = ["//visibility:public"],
+)

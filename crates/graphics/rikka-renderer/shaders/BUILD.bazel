@@ -1,0 +1,12 @@
+load("//bazel/slang:defs.bzl", "rikka_shaders")
+
+rikka_shaders(
+    name = "shaders",
+    crate_root = "src/lib.rs",
+    precise_floating_point = True,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+)

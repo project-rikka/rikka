@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "viewer-text",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/viewer:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-encoding",
+        "//crates/foundation/rikka-fs",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":viewer-text",
+        "@crates//:encoding_rs",
+    ],
+)

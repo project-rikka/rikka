@@ -1,0 +1,54 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_library")
+load(":defs.bzl", "rikka_wayland_protocols")
+
+exports_files(
+    ["xml/rikka/rikka-window-view-v1.xml"],
+    visibility = ["//crates/session/rikka-window-view:__pkg__"],
+)
+
+exports_files(
+    [
+        "xml/protocols/stable/xdg-shell/xdg-shell.xml",
+        "xml/protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml",
+    ],
+    visibility = ["@bui//:__pkg__"],
+)
+
+filegroup(
+    name = "xml",
+    srcs = glob(["xml/**/*.xml"]),
+    visibility = [
+        "//crates/compositor/rikka-compositor-protocols:__pkg__",
+        "//crates/foundation/rikka-wayland-client:__pkg__",
+    ],
+)
+
+rikka_library(
+    name = "rikka-wayland-protocols",
+    srcs = glob(["src/**/*.rs"]) + [":shared"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-wayland-wire",
+        "@crates//:bitflags",
+    ],
+)
+
+rikka_wayland_protocols(
+    name = "shared",
+    out = "src/shared.rs",
+    side = "shared",
+)
+
+rikka_binary(
+    name = "generate",
+    srcs = ["tools/generate.rs"],
+    crate_root = "tools/generate.rs",
+    visibility = [
+        "//crates/compositor/rikka-compositor-protocols:__pkg__",
+        "//crates/foundation/rikka-wayland-client:__pkg__",
+    ],
+    deps = ["//crates/foundation/rikka-wayland-scanner"],
+)

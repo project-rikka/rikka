@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-timeline",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-keyframe",
+        "//crates/foundation/rikka-types",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-timeline",
+        "//crates/foundation/rikka-types",
+    ],
+)

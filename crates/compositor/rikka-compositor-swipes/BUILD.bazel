@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-compositor-swipes",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/session/rikka-session",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-compositor-swipes",
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/session/rikka-session",
+        "@crates//:slotmap",
+    ],
+)

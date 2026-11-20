@@ -1,0 +1,51 @@
+---
+import { mascot, site } from "../site";
+import ThemeToggle from "./ThemeToggle.astro";
+---
+
+<footer class="footer">
+  <div class="container bar">
+    <span class="brand">{site.name}</span>
+    <nav aria-label="Links">
+      <a href={site.repository}>GitHub</a>
+      <a href={site.discord}>Discord</a>
+      <a href={mascot.repository}>Mascot</a>
+    </nav>
+    <p class="credit">Character © Project Rikka</p>
+    <ThemeToggle />
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--hairline);
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 28px;
+    padding-block: 28px;
+  }
+
+  .brand {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  nav {
+    display: flex;
+    gap: 20px;
+  }
+
+  nav a {
+    color: var(--subtext);
+  }
+
+  .credit {
+    margin-left: auto;
+  }
+</style>

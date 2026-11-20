@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-nix-log",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/fixtures/build.jsonl",
+    ],
+    deps = [
+        ":rikka-nix-log",
+    ],
+)

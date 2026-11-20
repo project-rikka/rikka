@@ -1,0 +1,17 @@
+# The screen cast backend, as a unit rather than as something the bus starts and forgets.
+#
+# A portal backend that outlives the session it answered for is one that answers the
+# next session out of a Wayland connection to a compositor that is gone. `PartOf=` is
+# what stops it with the session; the bus reaches it through this unit rather than
+# directly because of the `SystemdService=` line in its D-Bus service file, which is
+# what puts a name the bus activates under something that can be stopped at all.
+
+[Unit]
+Description=Portal service (Rikka screen cast)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=dbus
+BusName=org.freedesktop.impl.portal.desktop.rikkacast
+ExecStart=@BINDIR@/rikka-portal-cast

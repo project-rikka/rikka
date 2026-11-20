@@ -1,0 +1,32 @@
+load("//bazel/go:defs.bzl", "rikka_go_library")
+load("//sdk/codegen:defs.bzl", "rikka_bindings")
+
+OUTS = [
+    "callbacks.go",
+    "doc.go",
+    "go.mod",
+    "rikka.go",
+    "runtime.go",
+]
+
+rikka_bindings(
+    name = "generated",
+    language = "go",
+    outs = OUTS,
+    visibility = ["//sdk:__pkg__"],
+)
+
+filegroup(
+    name = "package",
+    srcs = OUTS,
+)
+
+rikka_go_library(
+    name = "go",
+    srcs = glob(["*.go"]) + ["go.mod"],
+    headers = ["//sdk/bindings/c:include/rikka/rikka.h"],
+    include = "sdk/bindings/c/include",
+    library = "//sdk/native:versioned",
+    pkgconfig = "rikka",
+    visibility = ["//visibility:public"],
+)

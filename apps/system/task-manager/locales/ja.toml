@@ -1,0 +1,151 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[units]
+per-second = "{value}/秒"
+megabits = "{value} Mbps"
+ghz = "{value} GHz"
+milliseconds = "{value} ms"
+celsius = "{value} °C"
+
+[tasks]
+title = "タスク マネージャー"
+search = "名前、PID、コマンドで検索"
+end-task = "タスクの終了"
+kill-task = "強制終了"
+kernel-thread = "カーネル スレッド"
+enabled = "有効"
+disabled = "無効"
+yes = "はい"
+no = "いいえ"
+
+[tasks.end-error]
+no-such-process = "そのプロセスはすでに終了している。"
+permission-denied = "このプロセスを終了する権限がない。"
+failed = "プロセスを終了できなかった。"
+
+[tasks.tab]
+processes = "プロセス"
+performance = "パフォーマンス"
+details = "詳細"
+
+[tasks.column]
+name = "名前"
+pid = "PID"
+status = "状態"
+user = "ユーザー名"
+cpu = "CPU"
+memory = "メモリ"
+disk = "ディスク"
+gpu = "GPU"
+threads = "スレッド"
+command = "コマンド ライン"
+
+[tasks.section]
+apps = "アプリ ({count})"
+background = "バックグラウンド プロセス ({count})"
+system = "システム プロセス ({count})"
+
+[tasks.state]
+running = "実行中"
+sleeping = "待機中"
+waiting = "I/O 待ち"
+stopped = "一時停止"
+zombie = "終了済み"
+idle = "アイドル"
+
+[tasks.resource]
+cpu = "CPU"
+memory = "メモリ"
+disk = "ディスク {index} ({name})"
+gpu = "GPU {index}"
+
+[tasks.graph]
+span = "60 秒"
+zero = "0"
+full = "100%"
+
+[tasks.card]
+cpu = "{usage}  {speed}"
+memory = "{used}/{total} ({usage})"
+network = "送信 {send}  受信 {receive}"
+
+[tasks.cpu]
+graph = "60 秒間の使用率 (%)"
+cores-graph = "論理プロセッサごとの使用率 (%)"
+overall = "全体"
+logical = "論理プロセッサ"
+usage = "使用率"
+speed = "速度"
+processes = "プロセス数"
+threads = "スレッド数"
+handles = "ハンドル数"
+uptime = "稼働時間"
+base-speed = "基本速度:"
+sockets = "ソケット:"
+physical = "コア:"
+logical-count = "論理プロセッサ数:"
+virtualization = "仮想化:"
+l1 = "L1 キャッシュ:"
+l2 = "L2 キャッシュ:"
+l3 = "L3 キャッシュ:"
+
+[tasks.memory]
+graph = "メモリ使用量"
+composition = "メモリ構成"
+in-use = "使用中"
+available = "利用可能"
+committed = "コミット済み"
+committed-value = "{used}/{limit}"
+cached = "キャッシュ済み"
+paged = "ページ プール"
+nonpaged = "非ページ プール"
+total = "搭載メモリ:"
+swap = "スワップ:"
+
+[tasks.disk]
+graph = "アクティブな時間 (%)"
+transfer = "ディスク転送速度"
+active = "アクティブな時間"
+response = "平均応答時間"
+read = "読み取り速度"
+write = "書き込み速度"
+capacity = "容量:"
+kind = "種類:"
+system = "システム ディスク:"
+queue = "キューの長さ:"
+nvme = "SSD (NVMe)"
+ssd = "SSD"
+hdd = "ハードディスク"
+
+[tasks.network]
+graph = "スループット"
+send = "送信"
+receive = "受信"
+adapter = "アダプター名:"
+kind = "接続の種類:"
+state = "状態:"
+connected = "接続済み"
+disconnected = "未接続"
+speed = "リンク速度:"
+signal = "信号強度:"
+ipv4 = "IPv4 アドレス:"
+ipv6 = "IPv6 アドレス:"
+mac = "MAC アドレス:"
+ethernet = "イーサネット"
+wifi = "Wi-Fi"
+loopback = "ループバック"
+virtual = "仮想アダプター"
+
+[tasks.gpu]
+graph = "GPU 使用率 (%)"
+dedicated-graph = "専用 GPU メモリ"
+usage = "使用率"
+dedicated = "専用 GPU メモリ"
+shared = "共有 GPU メモリ"
+temperature = "GPU 温度"
+driver = "ドライバー:"
+slot = "バス:"
+encode = "エンコード:"
+decode = "デコード:"

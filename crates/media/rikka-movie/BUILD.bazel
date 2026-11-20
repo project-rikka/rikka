@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-movie",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/graphics/rikka-picture",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-audio-decode",
+        "@crates//:thiserror",
+    ],
+)

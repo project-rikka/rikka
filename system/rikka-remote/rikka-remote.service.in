@@ -1,0 +1,9 @@
+[Unit]
+Description=Remote desktop (Rikka)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=@BINDIR@/rikka-remote
+Restart=on-failure
+RestartSec=5

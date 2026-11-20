@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=ADE
+GenericName=Agent Development Environment
+GenericName[ja]=エージェント開発環境
+GenericName[zh_CN]=智能体开发环境
+Comment=Talk to a language model about a project
+Comment[ja]=プロジェクトについて言語モデルと話します
+Comment[zh_CN]=与语言模型讨论一个项目
+Exec=rikka-ade
+Icon=applications-development
+Terminal=false
+Categories=Development;IDE;
+Keywords=agent;ade;ai;llm;model;chat;project;assistant;
+Keywords[ja]=エージェント;ADE;AI;LLM;モデル;チャット;プロジェクト;アシスタント;
+Keywords[zh_CN]=智能体;ADE;AI;LLM;模型;对话;项目;助手;
+StartupNotify=true

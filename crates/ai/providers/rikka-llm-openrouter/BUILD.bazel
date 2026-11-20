@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-llm-openrouter",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-adapter",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-oauth",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)

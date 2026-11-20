@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "animate-transport",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-cast",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-audio-decode",
+        "//crates/ui/rikka-ui",
+    ],
+)

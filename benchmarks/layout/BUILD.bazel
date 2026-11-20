@@ -1,0 +1,32 @@
+load("//benchmarks:defs.bzl", "bench_binary", "bench_library", "bench_test")
+
+bench_library(
+    name = "layout_bench",
+    link_deps = [
+        "@yoga",
+    ],
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+    deps = [
+        "//crates/ui/rikka-ui",
+        "@bench_crates//:taffy",
+    ],
+)
+
+bench_test(
+    name = "main",
+    deps = [
+        ":layout_bench",
+    ],
+)
+
+bench_binary(
+    name = "layout",
+    srcs = glob(["benches/**/*.rs"]),
+    crate_root = "benches/layout.rs",
+    deps = [
+        ":layout_bench",
+        "@bench_crates//:divan",
+    ],
+)

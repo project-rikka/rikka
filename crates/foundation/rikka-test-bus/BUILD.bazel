@@ -1,0 +1,9 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-bus",
+    testonly = True,
+    visibility = [
+        "//visibility:public",
+    ],
+)

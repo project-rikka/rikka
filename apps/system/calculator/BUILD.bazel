@@ -1,0 +1,13 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-calculator",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//apps/system/calculator/crates/calc-engine",
+        "//crates/foundation/rikka-i18n",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)

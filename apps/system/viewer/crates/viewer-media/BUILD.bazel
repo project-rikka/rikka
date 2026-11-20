@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "viewer-media",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/viewer:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-format",
+        "//crates/graphics/rikka-psd",
+        "//crates/media/rikka-media-format",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":viewer-media",
+    ],
+)

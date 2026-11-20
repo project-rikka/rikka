@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "discord-core",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-account-book",
+        "//crates/desktop/rikka-secrets",
+        "@crates//:futures-channel",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":discord-core",
+        "@crates//:serde_json",
+    ],
+)

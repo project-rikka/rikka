@@ -1,0 +1,38 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "shell-wallpaper",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-open",
+        "//crates/desktop/rikka-thumbnails",
+        "//crates/desktop/rikka-xdg",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-theme",
+        "//crates/graphics/rikka-theme-seed",
+        "//crates/media/rikka-media-format",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":shell-wallpaper",
+        "//crates/foundation/rikka-dirs",
+    ],
+)

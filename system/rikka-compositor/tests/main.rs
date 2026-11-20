@@ -1,0 +1,15 @@
+mod color;
+mod common;
+mod decorations;
+mod desktop;
+mod frames;
+mod input;
+mod output_capture;
+mod sandbox;
+mod selection;
+mod switcher;
+mod virtual_input;
+mod window_capture;
+mod window_views;
+mod windows;
+mod workspaces;

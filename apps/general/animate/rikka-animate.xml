@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="model/x.rikka-motion">
+    <comment>Rikka motion</comment>
+    <comment xml:lang="ja">Rikka モーション</comment>
+    <comment xml:lang="zh_CN">Rikka 动作</comment>
+    <sub-class-of type="application/json"/>
+    <glob pattern="*.rmotion"/>
+    <magic priority="60">
+      <match type="string" value="&quot;rikka-motion&quot;" offset="0:64"/>
+    </magic>
+  </mime-type>
+  <mime-type type="model/x.vrma">
+    <comment>VRM animation</comment>
+    <comment xml:lang="ja">VRM アニメーション</comment>
+    <comment xml:lang="zh_CN">VRM 动画</comment>
+    <sub-class-of type="model/gltf-binary"/>
+    <glob pattern="*.vrma" weight="60"/>
+  </mime-type>
+</mime-info>

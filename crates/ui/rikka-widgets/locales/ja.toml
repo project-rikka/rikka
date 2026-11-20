@@ -1,0 +1,56 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[widgets.command]
+back = "戻る"
+forward = "進む"
+up = "上へ"
+home = "ホーム"
+refresh = "再読み込み"
+undo = "元に戻す"
+redo = "やり直し"
+cut = "切り取り"
+copy = "コピー"
+paste = "貼り付け"
+select-all = "すべて選択"
+select-none = "選択を解除"
+delete = "削除"
+find = "検索"
+find-next = "次を検索"
+find-previous = "前を検索"
+zoom-in = "拡大"
+zoom-out = "縮小"
+zoom-reset = "実際のサイズ"
+new = "新規"
+new-tab = "新しいタブ"
+open = "開く"
+save = "保存"
+save-as = "名前を付けて保存…"
+close = "閉じる"
+quit = "終了"
+next-tab = "次のタブ"
+previous-tab = "前のタブ"
+rename = "名前を変更"
+properties = "プロパティ"
+fullscreen = "全画面表示"
+preferences = "設定"
+context-menu = "メニューを表示"
+
+[widgets.copy]
+copy = "コピー"
+copied = "コピーしました"
+
+[widgets.toolbar]
+more = "その他"
+
+[widgets.unsaved]
+title = "“{name}” への変更を保存しますか？"
+body = "保存しないと変更は失われます。"
+discard = "保存しない"
+cancel = "キャンセル"
+save = "保存"
+
+[widgets.prompt]
+ok = "OK"
+cancel = "キャンセル"

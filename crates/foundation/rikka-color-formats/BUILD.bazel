@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-color-formats",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-settings",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-color-formats",
+        "//crates/session/rikka-settings",
+        "@crates//:serde_json",
+    ],
+)

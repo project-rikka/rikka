@@ -1,0 +1,64 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-web",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-clipboard",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-shipped",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-picture",
+        "//crates/ui/rikka-nested",
+        "//crates/ui/rikka-ui",
+        "//crates/web/rikka-gecko-protocol",
+        "@crates//:base64",
+        "@crates//:futures-channel",
+        "@crates//:percent-encoding",
+        "@crates//:rustix",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-web",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-picture",
+        "//crates/ui/rikka-ui",
+        "//crates/web/rikka-gecko-protocol",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:rustix",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-web",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-ui",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

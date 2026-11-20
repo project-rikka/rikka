@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "ade-watch",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/ade:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-watch",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":ade-watch",
+        "@crates//:tempfile",
+    ],
+)

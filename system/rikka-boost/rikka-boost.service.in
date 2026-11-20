@@ -1,0 +1,12 @@
+[Unit]
+Description=Keeps the GPU's clocks up while the Rikka desktop is in use
+
+[Service]
+Type=dbus
+BusName=os.rikka.Boost1
+ExecStart=@BINDIR@/rikka-boost
+ExecStopPost=@BINDIR@/rikka-boost --lower
+Restart=on-failure
+NoNewPrivileges=yes
+ProtectHome=yes
+PrivateTmp=yes

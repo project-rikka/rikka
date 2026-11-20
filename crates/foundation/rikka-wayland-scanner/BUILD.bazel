@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-wayland-scanner",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-xml",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/golden/client.rs.golden",
+        "tests/golden/example.xml",
+        "tests/golden/server.rs.golden",
+        "tests/golden/shared.rs.golden",
+    ],
+    deps = [
+        ":rikka-wayland-scanner",
+        "@crates//:tempfile",
+    ],
+)

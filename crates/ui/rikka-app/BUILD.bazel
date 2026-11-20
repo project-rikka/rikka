@@ -1,0 +1,45 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-app",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-clipboard",
+        "//crates/desktop/rikka-instance",
+        "//crates/foundation/rikka-heap",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-log",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-picture",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-appearance",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-ui-host",
+        "//crates/ui/rikka-widgets",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [
+            "//crates/foundation/rikka-wayland",
+            "//crates/foundation/rikka-wayland-client",
+            "//crates/session/rikka-blur",
+            "//crates/session/rikka-present",
+            "//crates/session/rikka-seam",
+            "//crates/session/rikka-session",
+            "//crates/session/rikka-settings",
+            "//crates/ui/rikka-seat",
+        ],
+        "@platforms//os:windows": [
+            "//crates/desktop/rikka-clipboard-core",
+            "//crates/foundation/rikka-input",
+            "//crates/win32/rikka-swapchain",
+            "@crates//:windows",
+            "@crates//:windows-core",
+        ],
+    }),
+)

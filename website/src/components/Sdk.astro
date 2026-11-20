@@ -1,0 +1,185 @@
+---
+import { Code } from "astro:components";
+import { examples } from "../data/sdk";
+import { site } from "../site";
+import { syntaxThemes } from "../theme/syntax";
+
+const examplesUrl = `${site.repository}/tree/main/sdk/examples`;
+const languages = new Intl.ListFormat("en", { type: "disjunction" }).format(
+  examples.map((example) => example.language),
+);
+---
+
+<section class="section" id="sdk" aria-labelledby="sdk-title">
+  <div class="container layout">
+    <div class="section-head">
+      <h2 id="sdk-title">Rikka SDK</h2>
+      <p>Build native Rikka apps in {languages}.</p>
+      <a class="more" href={examplesUrl}>
+        Browse examples
+      </a>
+    </div>
+    <div class="viewer" data-tabs>
+      <div class="tabs" role="tablist" aria-label="Language">
+        {examples.map((example, index) => (
+          <button
+            type="button"
+            role="tab"
+            id={`tab-${example.grammar}`}
+            aria-controls={`panel-${example.grammar}`}
+            aria-selected={index === 0 ? "true" : "false"}
+            tabindex={index === 0 ? 0 : -1}
+          >
+            {example.language}
+          </button>
+        ))}
+      </div>
+      {examples.map((example, index) => (
+        <div
+          class="panel"
+          role="tabpanel"
+          id={`panel-${example.grammar}`}
+          aria-labelledby={`tab-${example.grammar}`}
+          hidden={index !== 0}
+        >
+          <p class="path">{example.path}</p>
+          <Code
+            code={example.source.trimEnd()}
+            lang={example.grammar}
+            themes={syntaxThemes}
+            defaultColor={false}
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<script>
+  for (const viewer of document.querySelectorAll<HTMLElement>("[data-tabs]")) {
+    const tabs = [
+      ...viewer.querySelectorAll<HTMLButtonElement>('[role="tab"]'),
+    ];
+
+    const select = (chosen: HTMLButtonElement) => {
+      for (const tab of tabs) {
+        const selected = tab === chosen;
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        document.getElementById(tab.getAttribute("aria-controls")!)!.hidden =
+          !selected;
+      }
+    };
+
+    const step = (from: HTMLButtonElement, offset: number) => {
+      const index = (tabs.indexOf(from) + offset + tabs.length) % tabs.length;
+      return tabs[index]!;
+    };
+
+    for (const tab of tabs) {
+      tab.addEventListener("click", () => select(tab));
+      const targets: Record<string, () => HTMLButtonElement> = {
+        ArrowRight: () => step(tab, 1),
+        ArrowLeft: () => step(tab, -1),
+        Home: () => tabs[0]!,
+        End: () => tabs[tabs.length - 1]!,
+      };
+      tab.addEventListener("keydown", (event) => {
+        const target = targets[event.key]?.();
+        if (target) {
+          event.preventDefault();
+          select(target);
+          target.focus();
+        }
+      });
+    }
+  }
+</script>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr);
+    align-items: start;
+    gap: clamp(32px, 5vw, 64px);
+  }
+
+  .more {
+    justify-self: start;
+    font-weight: 500;
+  }
+
+  .viewer {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--corner-panel);
+    background: var(--mantle);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 2px;
+    padding: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  [role="tab"] {
+    flex: none;
+    height: 32px;
+    padding-inline: 12px;
+    border: 0;
+    border-radius: var(--corner-item);
+    background: transparent;
+    color: var(--subtext);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition:
+      background-color var(--quick) var(--ease),
+      color var(--quick) var(--ease);
+  }
+
+  [role="tab"]:hover {
+    background: var(--hover);
+    color: var(--text);
+  }
+
+  [role="tab"][aria-selected="true"] {
+    background: var(--base);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--hairline);
+  }
+
+  .path {
+    padding: 14px 20px 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  .panel :global(pre),
+  .panel :global(pre span) {
+    color: light-dark(var(--shiki-light), var(--shiki-dark));
+  }
+
+  .panel :global(pre) {
+    max-height: 30rem;
+    margin: 0;
+    padding: 12px 20px 20px;
+    overflow: auto;
+    background: transparent;
+    line-height: 1.65;
+    tab-size: 4;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  @media (max-width: 899px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

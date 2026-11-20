@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-runtime",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__pkg__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-wayland",
+        "//crates/foundation/rikka-wayland-client",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/session/rikka-blur",
+        "//crates/session/rikka-present",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-window-view",
+        "//crates/ui/rikka-seat",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-ui-host",
+        "//crates/ui/rikka-ui-video",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

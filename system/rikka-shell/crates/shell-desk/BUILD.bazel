@@ -1,0 +1,37 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-desk",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-battery",
+        "//crates/daemons/rikka-bluetooth",
+        "//crates/daemons/rikka-mpris",
+        "//crates/daemons/rikka-sound",
+        "//crates/desktop/rikka-dialog",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-theme",
+        "//crates/media/rikka-media-format",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/status/rikka-sysmon",
+        "//crates/status/rikka-weather",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/desk-layout",
+        "//system/rikka-shell/crates/shell-feeds",
+        "//system/rikka-shell/crates/shell-kit",
+        "//system/rikka-shell/crates/shell-wallpaper",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:tracing",
+    ],
+)

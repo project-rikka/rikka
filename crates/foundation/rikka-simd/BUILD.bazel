@@ -1,0 +1,16 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-simd",
+    cranelift = False,
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-simd",
+    ],
+)

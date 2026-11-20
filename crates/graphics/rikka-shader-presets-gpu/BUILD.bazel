@@ -1,0 +1,90 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_library", "rikka_test")
+load(":programs.bzl", "preset_programs")
+
+preset_programs(
+    name = "programs",
+    library = "//crates/graphics/rikka-renderer-3d/shaders:lib",
+    presets = [
+        "anime",
+        "endfield_body",
+        "endfield_face",
+        "endfield_hair",
+        "endfield_skin",
+        "flat",
+        "genshin_body",
+        "genshin_face",
+        "glow",
+        "gooch",
+        "halftone",
+        "hatching",
+        "hybrid",
+        "mmd",
+        "mtoon",
+        "painterly",
+        "pbr",
+        "pbr_cloth",
+        "pbr_eye",
+        "pbr_glass",
+        "pbr_hair",
+        "pbr_skin",
+        "sketch",
+        "starrail_body",
+        "starrail_face",
+        "starrail_hair",
+        "toon_basic",
+        "zenless_body",
+        "zenless_face",
+        "zenless_hair",
+    ],
+)
+
+filegroup(
+    name = "programs_data",
+    srcs = [":programs"],
+    output_group = "compile_data",
+)
+
+rikka_library(
+    name = "rikka-shader-presets-gpu",
+    srcs = glob(["src/**/*.rs"]) + [":programs"],
+    compile_data = [":programs_data"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-programs",
+        "//crates/graphics/rikka-spirv",
+    ],
+)
+
+rikka_binary(
+    name = "presets-tool",
+    srcs = ["tools/presets.rs"],
+    crate_root = "tools/presets.rs",
+    deps = [
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/graphics/rikka-shader-presets",
+        "//crates/graphics/rikka-shader-programs",
+        "//crates/graphics/rikka-slang",
+        "//crates/graphics/rikka-spirv",
+        "@crates//:serde_json",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    limit = 180,
+    deps = [
+        ":rikka-shader-presets-gpu",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/graphics/rikka-shader-presets",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/graphics/rikka-test-renderer-3d",
+    ],
+)

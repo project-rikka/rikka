@@ -1,0 +1,31 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-network",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/foundation/rikka-dirs",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-network",
+        "//crates/daemons/rikka-test-objects",
+        "//crates/foundation/rikka-test-bus",
+        "@crates//:futures-util",
+        "@crates//:tokio",
+        "@crates//:zbus",
+    ],
+)

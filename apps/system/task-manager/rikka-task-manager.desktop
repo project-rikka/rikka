@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Task Manager
+Name[ja]=タスク マネージャー
+Name[zh_CN]=任务管理器
+GenericName=System Monitor
+GenericName[ja]=システム モニター
+GenericName[zh_CN]=系统监视器
+Comment=Watch what is running and what it is costing
+Comment[ja]=実行中のプロセスと、その負荷を確認します
+Comment[zh_CN]=查看正在运行的进程及其资源占用
+Exec=rikka-task-manager
+Icon=utilities-system-monitor
+Terminal=false
+Categories=System;Monitor;
+Keywords=task;process;cpu;memory;disk;network;gpu;performance;monitor;
+Keywords[ja]=タスク;プロセス;CPU;メモリ;ディスク;ネットワーク;GPU;パフォーマンス;監視;
+Keywords[zh_CN]=任务;进程;CPU;内存;磁盘;网络;GPU;性能;监视;
+StartupNotify=true

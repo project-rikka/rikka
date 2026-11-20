@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-usage-bar",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-llm",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)

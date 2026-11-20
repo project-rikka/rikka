@@ -1,0 +1,32 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-lock",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-power",
+        "//crates/desktop/rikka-pam",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/shell-feeds",
+        "//system/rikka-shell/crates/shell-kit",
+        "//system/rikka-shell/crates/shell-wallpaper",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:serde",
+        "@crates//:tracing",
+        "@crates//:zeroize",
+    ],
+)

@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_test")
+
+rikka_binary(
+    name = "rikka-sdk-codegen",
+    compile_data = glob(["templates/**"]) + ["askama.toml"],
+    visibility = ["//sdk:__subpackages__"],
+    deps = [
+        "@crates//:askama",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    data = [":rikka-sdk-codegen"],
+    env = {"RIKKA_SDK_CODEGEN": "$(rootpath :rikka-sdk-codegen)"},
+)

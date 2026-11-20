@@ -1,0 +1,26 @@
+# This session, as `systemd --user` knows it.
+#
+# `graphical-session.target` refuses to be started by hand: what a desktop is meant to
+# bring is a target of its own bound to it, which is this one. Until something does,
+# nothing keyed to a graphical session runs -- the desktop portal is
+# `Requisite=graphical-session.target` and fails outright, and `xdg-user-dirs.service`
+# wants `graphical-session-pre.target`, which is where a person's Downloads folder
+# comes from.
+#
+# rikka-compositor starts this where it publishes the session's environment, and on the
+# way out starts rikka-session-shutdown.target, which is what ends it -- stopping this
+# one would not, and that file says why. What is `PartOf=graphical-session.target` --
+# the portal and its backends, most of all -- then comes down with the session that
+# started it rather than outliving it and answering the next one about a screen that is
+# gone.
+
+[Unit]
+Description=Rikka session
+Documentation=man:systemd.special(7)
+BindsTo=graphical-session.target
+Wants=graphical-session-pre.target
+After=graphical-session-pre.target
+Wants=xdg-desktop-autostart.target
+Before=xdg-desktop-autostart.target
+Wants=rikka-replay.service
+Wants=rikka-remote.service

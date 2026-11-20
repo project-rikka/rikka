@@ -1,0 +1,22 @@
+# What takes the session back down, and the only thing that can.
+#
+# Stopping `rikka-session.target` is not enough on its own: everything waiting on a
+# graphical session declares a dependency on `graphical-session.target`, and a target
+# something active depends on is one `StopWhenUnneeded=` leaves standing. The desktop
+# portal is exactly that -- `Requisite=graphical-session.target` -- so a session that
+# only stopped its own target would leave the portal running and the machine still in a
+# graphical session that has no screen behind it.
+#
+# `Conflicts=` is what says the opposite thing: starting this stops those, and stopping
+# `graphical-session.target` stops in turn everything that is `PartOf=` it. rikka-compositor
+# starts this with `replace-irreversibly` on the way out, so a job queued behind it
+# cannot undo it. `StopWhenUnneeded=` then takes this one away again the moment it has
+# done its work, leaving nothing behind for the next session to find.
+
+[Unit]
+Description=Shut down the Rikka session
+Documentation=man:systemd.special(7)
+DefaultDependencies=no
+StopWhenUnneeded=true
+Conflicts=graphical-session.target graphical-session-pre.target rikka-session.target
+After=graphical-session.target graphical-session-pre.target rikka-session.target

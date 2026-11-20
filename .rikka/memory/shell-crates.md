@@ -1,0 +1,17 @@
+---
+title: Shell crate layout (framework, feature crates, edges)
+description: rikka-shell is a wiring binary over shell-kit, shell-runtime and one app-private crate per feature; edges, catalogs.
+about: system/rikka-shell/crates
+tags: [shell, layering]
+---
+
+- `system/rikka-shell/src` keeps only wiring: `main.rs` (feature list per profile), `appearance.rs` (theme following), `language.rs` (catalogs) and `logging.rs` (filter `rikka_shell=debug,shell_=debug`, so every `shell-*` crate logs at debug).
+- `shell-kit` is the builder and feature API every feature compiles against: `Shell`, `Feature`, `Host`/`Slot`, `SurfaceDesc`, presences, waiting services, wall clock, idle, typist, `StateFile`, `Recents`, shared widgets (`floating`, `popover`, `sheet`, …) and the namespaced modules `launch`, `pictures`, `appearance`, `taskbar` (strip geometry and `TaskbarVisibility`) and `toplevels`.
+- `shell-runtime` (`shell_runtime::run(shell)`, only the binary depends on it) is the only crate that sees the Wayland event loop, the presenter, blur, the seat, the window views and rikka-ui-host. It takes the built shell apart with `Shell::into_parts()` and reaches the descriptions through `shell_kit::hosting` (`Parts`, `ErasedSurface`, `SurfaceSettings`, `Domains`, `Idles`, `Session`, `LoopWaker`, …), which features do not use. rikka-wayland still reaches shell-kit, only through the clipboard and virtual-input clients `Host` lends.
+- Shared feature crates: `shell-apps` (desktop entries, icons, footprints), `shell-wallpaper` (library, loader, `Backdrop`, `MaterialTheme`, `ShownOn`, `stage` geometry for overview cards), `shell-feeds` (`Feeds`, `Daemons`, status `symbols`, `dates`, `ScreenRecording`), `shell-notifications`.
+- One crate per feature: bar, desk, desk-editor, overview, launcher, assistant, translate, color-picker, capture, markup, trim (with the instant-replay chooser), lock (with the keyring prompt), polkit, clipboard, emoji, keyboard, ime, switcher, power-saving, system-update. Pure tested cores stay in their own crates (task-board, desk-layout, overview-layout, switcher-layout, app-arrivals, code-meaning, icon-footprint, shell-activity).
+- Heavy dependencies sit in one crate each: agent stack and rikka-chat → assistant, rikka-movie → trim, rikka-image-edit → markup, rikka-capture/record/barcode → capture, rikka-pam/secrets → lock, rikka-nix → system-update.
+- Feature edges are one-way: bar → apps, feeds, ime, notifications; capture → feeds, markup, trim, notifications; translate, color-picker → capture; desk → feeds, wallpaper; overview, desk-editor → desk; lock → feeds, wallpaper; markup, trim, system-update → notifications.
+- Cross-feature interfaces belong to the lower crate: the bar reads and stops a recording through `shell_feeds::ScreenRecording` (made by `Capture::recording()`, carrying its stop request), toggles the assistant with `rikka_assist::ASSISTANT` + `shell_kit::TOGGLE`, and shows notification history through `History`/`HistoryList`/`card`. The desk owns `rikka.desk`'s address; `DeskEditor` serves it.
+- The locale catalog stays with the binary (`system/rikka-shell/locales`): lookups are runtime keys, so feature crates call `tr!` with `shell.*` keys and a string edit relinks only the binary.
+- Longest compile chain ends rikka-widgets → shell-kit → shell-wallpaper → shell-desk → shell-desk-editor → binary; shell-runtime builds beside the features after rikka-ui-host; an edit in a leaf feature recompiles that crate and relinks the binary.

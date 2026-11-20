@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=@BINDIR@/rikka-video-thumbnailer
+Exec=@BINDIR@/rikka-video-thumbnailer -s %s -- %i %o
+MimeType=application/mxf;application/vnd.rn-realmedia;video/3gpp;video/3gpp2;video/dv;video/mj2;video/mp2t;video/mp4;video/mpeg;video/ogg;video/quicktime;video/vnd.avi;video/vnd.rn-realvideo;video/webm;video/x-flic;video/x-flv;video/x-m4v;video/x-matroska;video/x-mjpeg;video/x-mpeg2;video/x-ms-asf;video/x-ms-wmv;video/x-msvideo;video/x-nsv;video/x-ogm+ogg;video/x-theora+ogg;

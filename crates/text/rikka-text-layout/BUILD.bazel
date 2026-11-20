@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-text-layout",
+    cranelift = False,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/text/rikka-text-catalog",
+        "//crates/text/rikka-text-font",
+        "//crates/text/rikka-text-shape",
+        "//crates/text/rikka-text-unicode",
+        "@crates//:smallvec",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-text-layout",
+        "//crates/text/rikka-text-catalog",
+        "//crates/text/rikka-text-unicode",
+    ],
+)

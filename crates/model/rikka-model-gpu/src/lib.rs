@@ -1,0 +1,23 @@
+mod describe;
+mod draw;
+mod error;
+mod gpu_model;
+mod head;
+mod materials;
+mod meshes;
+mod options;
+mod prepared;
+mod restyle;
+mod styles;
+mod textures;
+
+pub use describe::{MaterialDescs, describe_material};
+pub use draw::ModelDrawing;
+pub use error::{Error, Result};
+pub use gpu_model::GpuModel;
+pub use head::HeadRest;
+pub use materials::{MaterialImage, class_preset};
+pub use options::UploadOptions;
+pub use prepared::Prepared;
+pub use restyle::Restyle;
+pub use styles::MaterialStyle;

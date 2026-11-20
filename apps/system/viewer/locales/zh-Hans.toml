@@ -1,0 +1,59 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[viewer]
+title = "查看器"
+
+[viewer.zoom]
+fit = "适应窗口"
+
+[viewer.text]
+lines = "{count} 行"
+truncated = "仅前 32 MiB"
+caret = "第 {line} 行，第 {column} 列"
+modified = "未保存"
+saving = "正在保存…"
+unsaved = "无法保存：{reason}"
+lossy = "已保存为 {encoding}；部分字符无法写入"
+converted = "已转换为 {encoding} 保存"
+preview = "预览"
+source = "源码"
+
+[viewer.audio]
+unplayable = "无法播放音频：{reason}"
+
+[viewer.video]
+undecodable = "无法解码此视频。"
+
+[viewer.figure]
+detail = "{triangles} 个三角形 · {materials} 个材质"
+animation = "动画"
+motion = "{model} · {keyframes} 个关键帧 · {length}"
+nameless = "未指定模型"
+choose = "选择模型…"
+chooser = "选择要应用此动作的模型"
+accept = "打开"
+unmoved = "此动作不影响此模型。"
+unsupported_version = "不支持 {format} 版本 {version}。"
+required_extensions = "此文件需要查看器不支持的扩展：{extensions}"
+
+[viewer.figure.limit]
+file_bytes = "文件过大，无法打开（{actual}，上限 {allowed}）。"
+resource_bytes = "此模型使用的文件过大，无法打开（{actual}，上限 {allowed}）。"
+total_bytes = "模型及其文件总计过大，无法打开（{actual}，上限 {allowed}）。"
+vertices = "此模型顶点过多，无法打开（{actual}，上限 {allowed}）。"
+indices = "此模型三角形索引过多，无法打开（{actual}，上限 {allowed}）。"
+keyframes = "此动作关键帧过多，无法打开（{actual}，上限 {allowed}）。"
+
+[viewer.status]
+unsupported = "不支持的文件类型。"
+unreadable = "无法读取文件：{reason}"
+too_large = "图片过大，无法显示（{width} × {height} 像素）。"
+empty = "未指定文件。"
+
+[ui.find]
+pattern = "查找"
+replacement = "替换"
+nothing = "无结果"
+broken = "模式无效"

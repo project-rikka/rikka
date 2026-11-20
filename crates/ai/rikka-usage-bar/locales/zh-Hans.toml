@@ -1,0 +1,22 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[usage]
+used = "已用 {percent}%"
+extra = "额外用量"
+resets = "{left}后重置"
+resets-now = "即将重置"
+
+[usage.window]
+session = "会话（5 小时）"
+daily = "每天"
+weekly = "每周"
+monthly = "每月"
+annual = "每年"
+unnamed = "用量"
+
+[usage.left]
+minutes = "{count} 分钟"
+hours = "{count} 小时"
+days = "{count} 天"

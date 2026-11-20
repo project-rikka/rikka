@@ -1,0 +1,1 @@
+This conversation continues from an earlier part that was summarised to save context. The summary below is now the complete record of that part. Carry on from it without repeating work that is done. If something you need is missing, look it up again or ask the person; do not guess.

@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-open",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-open",
+        "//apps/system/files/crates/files-vfs",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-open",
+    ],
+)

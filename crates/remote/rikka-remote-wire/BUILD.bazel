@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-remote-wire",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-remote-wire",
+        "//crates/session/rikka-settings",
+    ],
+)

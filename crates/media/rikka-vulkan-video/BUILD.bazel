@@ -1,0 +1,30 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-vulkan-video",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/graphics/rikka-gpu",
+        "//crates/media/rikka-annexb",
+        "//crates/media/rikka-dmabuf-convert",
+        "@crates//:ash",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-vulkan-video",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "//crates/media/rikka-video",
+        "@crates//:libc",
+    ],
+)

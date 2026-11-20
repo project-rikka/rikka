@@ -1,0 +1,32 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "nixpkgs-catalog",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/packages:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "@crates//:brotli-decompressor",
+        "@crates//:memchr",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:zstd",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "tests/packages.json",
+    ],
+    deps = [
+        ":nixpkgs-catalog",
+        "//crates/foundation/rikka-types",
+        "@crates//:brotli",
+    ],
+)

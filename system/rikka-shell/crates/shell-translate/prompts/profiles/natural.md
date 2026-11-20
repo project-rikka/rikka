@@ -1,0 +1,1 @@
+Keep the register, tone and politeness of the original: casual stays casual, formal stays formal, curt stays curt. Where {{target_language}} must mark politeness the original leaves open, such as familiar or respectful address or a level of honorifics, choose what the original's tone and the relationship it implies call for, and keep to it throughout.

@@ -1,0 +1,16 @@
+---
+title: Proton Drive sync engine
+description: rikka-proton-drive-sync syncs local folders with Drive both ways as a Computers device over a SQLite state.
+about: crates/proton/rikka-proton-drive-sync
+tags: [proton, drive]
+---
+
+- Layers: `rikka-proton-drive-sync-state` (pure `reconcile(&State, &Context) -> Plan` three-way merge plus the SQLite `Store`, no Drive dependency) → `rikka-proton-drive-sync` (engine). Tests share `rikka-test-proton-drive`'s stateful `DummyDrive`; `stall_uploads_after(n)`, `wait_for_block_uploads(n)` and `release_uploads()` stage interrupted uploads without polling.
+- Plan phases run in order `Bookkeeping` (link/rebind/refresh/forget/set aside), `Move`, `Create`, `Trash`, then `Transfer` with `transfers(n)` concurrency; each synced root is an `engine::root::SyncRoot`.
+- Entry: `DriveSync::builder(client)` with `.state_folder() .device_name() .computer_folder() .my_files_folder(path, remote) .transfers(n)`, then `.start()`; `status/watch/items/device/pause/resume/sync_now/shutdown`. `items()` broadcasts `ItemUpdate`s; uploads report `ItemState::Transferred { direction, bytes }` each time block progress is journaled, so `bytes` is what a resume will keep.
+- The machine registers as a Linux device, stores its id, and reports `SyncState=On` with `LastSyncTime` after a complete sync (at most every 5 min, again on clean shutdown).
+- State is `<state_folder>/sync.sqlite` (WAL, exclusive lock): local, remote and synced tables, per-volume event cursors, the operation journal and resumable upload drafts (`drafts`/`draft_blocks`). Upload progress goes through a channel to a per-upload task that writes batches (`Store::record_draft_progress`); the upload waits for it before finishing. No secrets are stored; keys come back from the server.
+- Local identity is the inode, remote the LinkId; synced rows keep both sides' parent and name so renamed/escaped names stay stable. Ignore rules (`.~*`, `~$*`, `*.tmp`, …) apply to both sides.
+- Local changes: the watcher coalesces into one `LocalChanges` set (deduplicated paths, or a full rescan past 4096 paths or on overflow) behind a `Notify`; full scan on start, else per-folder rescans debounced 300 ms–2 s. `pause`/`resume` are a `watch<bool>`, `sync_now`/`shutdown` a bounded command channel; edits by size/mtime then SHA-1. Remote: `catch_up` every 30 s or on `sync_now`, refetching changed links; `needs_refresh` re-enumerates. `with_feed(&VolumeFeed)` (published by the `DriveFeed` from `VolumeFeed::follow(drive)` registered on an `EventLoop`) applies event pages that start at its own cursor and skips self-polling volumes fed in the last 60 s.
+- Conflicts follow the official client: edit/edit keeps remote and uploads `name (# Edit conflict <date> <device> #).ext`; edit beats delete; move/move keeps remote; new name clashes link equal content or rename with `# Name clash`. Folders are trashed only when everything inside may go.
+- Downloads write a temp file, fsync and set mtime off the async workers. New files are renamed in without overwrite; existing ones are swapped with `RENAME_EXCHANGE` and the displaced file is checked and swapped back if it changed meanwhile. After a crash, leftover temps go to the trash. Local deletes go to `rikka-trash`, else `.~rikka-sync-recycle`. Retries back off 5 s to 1 h; the journal resumes work after a crash.

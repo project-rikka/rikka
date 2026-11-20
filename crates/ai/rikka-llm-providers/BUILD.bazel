@@ -1,0 +1,38 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-llm-providers",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/providers/rikka-llm-anthropic",
+        "//crates/ai/providers/rikka-llm-antigravity",
+        "//crates/ai/providers/rikka-llm-claude-code",
+        "//crates/ai/providers/rikka-llm-codex",
+        "//crates/ai/providers/rikka-llm-compatible",
+        "//crates/ai/providers/rikka-llm-openai",
+        "//crates/ai/providers/rikka-llm-openrouter",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-adapter",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-llm-providers",
+        "//crates/ai/providers/rikka-llm-antigravity",
+        "//crates/ai/providers/rikka-llm-claude-code",
+        "//crates/ai/providers/rikka-llm-codex",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-test-llm",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

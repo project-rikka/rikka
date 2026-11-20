@@ -1,0 +1,13 @@
+load("//bazel/slang:defs.bzl", "rikka_shaders")
+
+rikka_shaders(
+    name = "fluid_kernels",
+    crate_root = "src/lib.rs",
+    imports = ["//crates/physics/rikka-physics-gpu/shaders:lib"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    vulkan_memory_model = True,
+)

@@ -1,0 +1,242 @@
+load("//benchmarks:defs.bzl", "bench_binary", "bench_library", "bench_test")
+
+bench_library(
+    name = "ui_scene",
+    srcs = glob(["scene/**/*.rs"]),
+    crate_root = "scene/lib.rs",
+    deps = ["@crates//:rustix"],
+)
+
+bench_library(
+    name = "ui_rikka_views",
+    srcs = glob(["views/rikka/**/*.rs"]),
+    crate_root = "views/rikka/lib.rs",
+    deps = [
+        ":ui_scene",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)
+
+bench_library(
+    name = "ui_gpui_upstream",
+    srcs = glob(["views/gpui/**/*.rs"]),
+    aliases = {"@bench_crates//:gpui_pre": "gpui"},
+    crate_root = "views/gpui/lib.rs",
+    deps = [
+        ":ui_scene",
+        "@bench_crates//:gpui_pre",
+    ],
+)
+
+bench_library(
+    name = "ui_gpui_fast",
+    srcs = glob(["views/gpui/**/*.rs"]),
+    aliases = {"@bench_crates//:gpui_fast": "gpui"},
+    crate_root = "views/gpui/lib.rs",
+    deps = [
+        ":ui_scene",
+        "@bench_crates//:gpui_fast",
+    ],
+)
+
+bench_library(
+    name = "ui_egui_views",
+    srcs = glob(["views/egui/**/*.rs"]),
+    crate_root = "views/egui/lib.rs",
+    deps = [
+        ":ui_scene",
+        "@bench_crates//:egui",
+    ],
+)
+
+bench_library(
+    name = "ui_iced_views",
+    srcs = glob(["views/iced/**/*.rs"]),
+    crate_root = "views/iced/lib.rs",
+    deps = [
+        ":ui_scene",
+        "@bench_crates//:iced_core",
+        "@bench_crates//:iced_widget",
+    ],
+)
+
+bench_library(
+    name = "ui_frontends",
+    srcs = glob(["src/frontend/**/*.rs"]),
+    aliases = {
+        "@bench_crates//:gpui_fast": "gpui_fast",
+        "@bench_crates//:gpui_fast_wgpu": "gpui_fast_wgpu",
+        "@bench_crates//:gpui_pre": "gpui_pre",
+        "@bench_crates//:gpui_pre_wgpu": "gpui_pre_wgpu",
+    },
+    crate_root = "src/frontend/lib.rs",
+    deps = [
+        ":ui_egui_views",
+        ":ui_gpui_fast",
+        ":ui_gpui_upstream",
+        ":ui_iced_views",
+        ":ui_rikka_views",
+        ":ui_scene",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-ui",
+        "@bench_crates//:egui",
+        "@bench_crates//:gpui_fast",
+        "@bench_crates//:gpui_fast_wgpu",
+        "@bench_crates//:gpui_pre",
+        "@bench_crates//:gpui_pre_wgpu",
+        "@bench_crates//:iced_core",
+        "@bench_crates//:iced_runtime",
+        "@bench_crates//:iced_tiny_skia",
+    ],
+)
+
+bench_library(
+    name = "ui_compare",
+    srcs = glob(["src/compare/**/*.rs"]),
+    crate_root = "src/compare/lib.rs",
+    deps = [
+        ":ui_scene",
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-virtual-input",
+        "//crates/status/rikka-nvml",
+        "//crates/status/rikka-sysmon",
+        "@crates//:async-io",
+        "@crates//:futures-util",
+        "@crates//:libc",
+        "@crates//:rustix",
+        "@crates//:serde",
+        "@crates//:tempfile",
+    ],
+)
+
+bench_test(
+    name = "main",
+    deps = [
+        ":ui_frontends",
+        ":ui_scene",
+        "@crates//:rustix",
+    ],
+)
+
+bench_binary(
+    name = "frames",
+    srcs = ["benches/frames.rs"],
+    crate_root = "benches/frames.rs",
+    deps = [
+        ":ui_frontends",
+        ":ui_scene",
+        "@bench_crates//:divan",
+    ],
+)
+
+_APPS = {
+    "UI_BENCH_BUI": ":bui",
+    "UI_BENCH_EGUI": ":egui",
+    "UI_BENCH_GPUI": ":gpui",
+    "UI_BENCH_GPUI_FAST": ":gpui_fast",
+    "UI_BENCH_ICED": ":iced",
+    "UI_BENCH_RIKKA": ":rikka",
+}
+
+_COMPOSITOR = "//system/rikka-compositor"
+
+bench_binary(
+    name = "compare",
+    srcs = ["benches/compare.rs"],
+    crate_root = "benches/compare.rs",
+    data = list(_APPS.values()) + [_COMPOSITOR],
+    env = {
+        variable: "$(rootpath {})".format(app)
+        for variable, app in _APPS.items()
+    } | {"UI_BENCH_COMPOSITOR": "$(rootpath {})".format(_COMPOSITOR)},
+    deps = [
+        ":ui_compare",
+        ":ui_scene",
+        "@crates//:serde_json",
+    ],
+)
+
+bench_binary(
+    name = "rikka",
+    srcs = glob(["apps/rikka/**/*.rs"]),
+    crate_root = "apps/rikka/main.rs",
+    deps = [
+        ":ui_rikka_views",
+        ":ui_scene",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)
+
+bench_binary(
+    name = "gpui",
+    srcs = ["apps/gpui/main.rs"],
+    aliases = {
+        ":ui_gpui_upstream": "ui_gpui_views",
+        "@bench_crates//:gpui_pre": "gpui",
+        "@bench_crates//:gpui_pre_platform": "gpui_platform",
+    },
+    crate_root = "apps/gpui/main.rs",
+    deps = [
+        ":ui_gpui_upstream",
+        ":ui_scene",
+        "@bench_crates//:gpui_pre",
+        "@bench_crates//:gpui_pre_platform",
+    ],
+)
+
+bench_binary(
+    name = "gpui_fast",
+    srcs = ["apps/gpui/main.rs"],
+    aliases = {
+        ":ui_gpui_fast": "ui_gpui_views",
+        "@bench_crates//:gpui_fast": "gpui",
+        "@bench_crates//:gpui_fast_platform": "gpui_platform",
+    },
+    crate_root = "apps/gpui/main.rs",
+    deps = [
+        ":ui_gpui_fast",
+        ":ui_scene",
+        "@bench_crates//:gpui_fast",
+        "@bench_crates//:gpui_fast_platform",
+    ],
+)
+
+bench_binary(
+    name = "bui",
+    srcs = ["apps/bui/main.rs"],
+    crate_root = "apps/bui/main.rs",
+    link_deps = ["@bui//:kit"],
+    deps = [
+        ":ui_scene",
+        "@bench_crates//:blenderui",
+    ],
+)
+
+bench_binary(
+    name = "egui",
+    srcs = ["apps/egui/main.rs"],
+    crate_root = "apps/egui/main.rs",
+    deps = [
+        ":ui_egui_views",
+        ":ui_scene",
+        "@bench_crates//:eframe",
+        "@bench_crates//:egui",
+    ],
+)
+
+bench_binary(
+    name = "iced",
+    srcs = ["apps/iced/main.rs"],
+    crate_root = "apps/iced/main.rs",
+    deps = [
+        ":ui_iced_views",
+        ":ui_scene",
+        "@bench_crates//:iced",
+    ],
+)

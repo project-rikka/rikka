@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Music
+Name[ja]=ミュージック
+Name[zh_CN]=音乐
+GenericName=Music Player
+GenericName[ja]=音楽プレイヤー
+GenericName[zh_CN]=音乐播放器
+Comment=Play your music library and streaming services in high resolution
+Comment[ja]=手持ちの音楽ライブラリとストリーミングサービスをハイレゾで再生します
+Comment[zh_CN]=以高解析度播放本地音乐库和流媒体服务
+Exec=rikka-music
+Icon=multimedia-audio-player
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+Keywords=music;player;library;local;flac;hi-res;lossless;dsd;bit-perfect;spotify;youtube;qobuz;soundcloud;playlist;
+Keywords[ja]=音楽;プレイヤー;ライブラリ;ローカル;flac;ハイレゾ;ロスレス;dsd;ビットパーフェクト;spotify;youtube;qobuz;soundcloud;プレイリスト;
+Keywords[zh_CN]=音乐;播放器;音乐库;本地;flac;高解析度;无损;dsd;比特完美;spotify;youtube;qobuz;soundcloud;歌单;
+StartupNotify=true

@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "cli-command",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-cli:__subpackages__",
+    ],
+    deps = [
+        "@crates//:clap",
+        "@crates//:clap_complete",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":cli-command",
+        "@crates//:clap",
+    ],
+)

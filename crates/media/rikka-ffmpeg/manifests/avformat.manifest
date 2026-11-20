@@ -1,0 +1,170 @@
+# Manifest for avformat.rs / swscale.rs transcription (libavformat 63, libswscale 10)
+#
+# Note: AVIndexEntry (libavformat/avformat.h) contains C bitfields
+# (`int flags:2; int size:30;`) after `timestamp`. Only its leading `pos`
+# and `timestamp` are transcribed (as a PREFIX, read through pointers
+# returned by avformat_index_get_entry_from_timestamp), so no bitfield had
+# to be represented in Rust. No bitfields were encountered in any
+# transcribed struct.
+#
+# FF_API_* gate evaluation (LIBAVFORMAT_VERSION_MAJOR == 62, from
+# version_major.h): FF_API_COMPUTE_PKT_FIELDS2, FF_API_INTERNAL_TIMING,
+# FF_API_NO_DEFAULT_TLS_VERIFY are all (62 < 63) == true, but none of them
+# gate any field inside AVFormatContext/AVStream/AVIOInterruptCB in this
+# header revision (no #if FF_API_* blocks appear inside those three struct
+# bodies at all). FF_API_R_FRAME_RATE is unconditionally 1 (true); it gates
+# the doc comment above AVStream.r_frame_rate only, not the field itself
+# (r_frame_rate is unconditional in this header) -- field included.
+
+SIZEOF avformat AVFormatContext
+OFFSET avformat AVFormatContext av_class
+OFFSET avformat AVFormatContext iformat
+OFFSET avformat AVFormatContext oformat
+OFFSET avformat AVFormatContext priv_data
+OFFSET avformat AVFormatContext pb
+OFFSET avformat AVFormatContext ctx_flags
+OFFSET avformat AVFormatContext nb_streams
+OFFSET avformat AVFormatContext streams
+OFFSET avformat AVFormatContext nb_stream_groups
+OFFSET avformat AVFormatContext stream_groups
+OFFSET avformat AVFormatContext nb_chapters
+OFFSET avformat AVFormatContext chapters
+OFFSET avformat AVFormatContext url
+OFFSET avformat AVFormatContext start_time
+OFFSET avformat AVFormatContext duration
+OFFSET avformat AVFormatContext bit_rate
+OFFSET avformat AVFormatContext packet_size
+OFFSET avformat AVFormatContext max_delay
+OFFSET avformat AVFormatContext flags
+OFFSET avformat AVFormatContext probesize
+OFFSET avformat AVFormatContext max_analyze_duration
+OFFSET avformat AVFormatContext key
+OFFSET avformat AVFormatContext keylen
+OFFSET avformat AVFormatContext nb_programs
+OFFSET avformat AVFormatContext programs
+OFFSET avformat AVFormatContext video_codec_id
+OFFSET avformat AVFormatContext audio_codec_id
+OFFSET avformat AVFormatContext subtitle_codec_id
+OFFSET avformat AVFormatContext data_codec_id
+OFFSET avformat AVFormatContext metadata
+OFFSET avformat AVFormatContext start_time_realtime
+OFFSET avformat AVFormatContext fps_probe_size
+OFFSET avformat AVFormatContext error_recognition
+OFFSET avformat AVFormatContext interrupt_callback
+OFFSET avformat AVFormatContext debug
+OFFSET avformat AVFormatContext max_streams
+OFFSET avformat AVFormatContext max_index_size
+OFFSET avformat AVFormatContext max_picture_buffer
+OFFSET avformat AVFormatContext max_interleave_delta
+OFFSET avformat AVFormatContext max_ts_probe
+OFFSET avformat AVFormatContext max_chunk_duration
+OFFSET avformat AVFormatContext max_chunk_size
+OFFSET avformat AVFormatContext max_probe_packets
+OFFSET avformat AVFormatContext strict_std_compliance
+OFFSET avformat AVFormatContext event_flags
+OFFSET avformat AVFormatContext avoid_negative_ts
+OFFSET avformat AVFormatContext audio_preload
+OFFSET avformat AVFormatContext use_wallclock_as_timestamps
+OFFSET avformat AVFormatContext skip_estimate_duration_from_pts
+OFFSET avformat AVFormatContext avio_flags
+OFFSET avformat AVFormatContext duration_estimation_method
+OFFSET avformat AVFormatContext skip_initial_bytes
+OFFSET avformat AVFormatContext correct_ts_overflow
+OFFSET avformat AVFormatContext seek2any
+OFFSET avformat AVFormatContext flush_packets
+OFFSET avformat AVFormatContext probe_score
+OFFSET avformat AVFormatContext format_probesize
+OFFSET avformat AVFormatContext codec_whitelist
+OFFSET avformat AVFormatContext format_whitelist
+OFFSET avformat AVFormatContext protocol_whitelist
+OFFSET avformat AVFormatContext protocol_blacklist
+OFFSET avformat AVFormatContext io_repositioned
+OFFSET avformat AVFormatContext video_codec
+OFFSET avformat AVFormatContext audio_codec
+OFFSET avformat AVFormatContext subtitle_codec
+OFFSET avformat AVFormatContext data_codec
+OFFSET avformat AVFormatContext metadata_header_padding
+OFFSET avformat AVFormatContext opaque
+OFFSET avformat AVFormatContext control_message_cb
+OFFSET avformat AVFormatContext output_ts_offset
+OFFSET avformat AVFormatContext dump_separator
+OFFSET avformat AVFormatContext io_open
+OFFSET avformat AVFormatContext io_close2
+OFFSET avformat AVFormatContext duration_probesize
+OFFSET avformat AVFormatContext name
+
+SIZEOF avformat AVStream
+OFFSET avformat AVStream av_class
+OFFSET avformat AVStream index
+OFFSET avformat AVStream id
+OFFSET avformat AVStream codecpar
+OFFSET avformat AVStream priv_data
+OFFSET avformat AVStream time_base
+OFFSET avformat AVStream start_time
+OFFSET avformat AVStream duration
+OFFSET avformat AVStream nb_frames
+OFFSET avformat AVStream disposition
+OFFSET avformat AVStream discard
+OFFSET avformat AVStream sample_aspect_ratio
+OFFSET avformat AVStream metadata
+OFFSET avformat AVStream avg_frame_rate
+OFFSET avformat AVStream attached_pic
+OFFSET avformat AVStream event_flags
+OFFSET avformat AVStream r_frame_rate
+OFFSET avformat AVStream pts_wrap_bits
+
+SIZEOF avformat AVIOInterruptCB
+OFFSET avformat AVIOInterruptCB callback
+OFFSET avformat AVIOInterruptCB opaque
+
+PREFIX avformat AVIndexEntry
+OFFSET avformat AVIndexEntry pos
+OFFSET avformat AVIndexEntry timestamp
+
+PREFIX avformat AVOutputFormat
+OFFSET avformat AVOutputFormat name
+OFFSET avformat AVOutputFormat long_name
+OFFSET avformat AVOutputFormat mime_type
+OFFSET avformat AVOutputFormat extensions
+OFFSET avformat AVOutputFormat audio_codec
+OFFSET avformat AVOutputFormat video_codec
+OFFSET avformat AVOutputFormat subtitle_codec
+OFFSET avformat AVOutputFormat flags
+
+PREFIX avformat AVInputFormat
+OFFSET avformat AVInputFormat name
+OFFSET avformat AVInputFormat long_name
+OFFSET avformat AVInputFormat flags
+
+CONST avformat AVFMT_NOFILE i32
+CONST avformat AVFMT_GLOBALHEADER i32
+CONST avformat AVFMT_VARIABLE_FPS i32
+CONST avformat AVSEEK_FLAG_BACKWARD i32
+CONST avformat AVSEEK_FLAG_BYTE i32
+CONST avformat AVSEEK_FLAG_ANY i32
+CONST avformat AVSEEK_FLAG_FRAME i32
+CONST avformat AVIO_FLAG_READ i32
+CONST avformat AVIO_FLAG_WRITE i32
+CONST avformat AVIO_FLAG_READ_WRITE i32
+CONST avformat AV_DISPOSITION_ATTACHED_PIC i32
+CONST avformat AV_DISPOSITION_DEFAULT i32
+CONST avformat AVFMT_FLAG_GENPTS i32
+CONST avformat AVFMT_FLAG_CUSTOM_IO i32
+CONST avformat AVSEEK_SIZE i32
+CONST avformat AVSEEK_FORCE i32
+
+PREFIX avformat AVIOContext
+OFFSET avformat AVIOContext av_class
+OFFSET avformat AVIOContext buffer
+OFFSET avformat AVIOContext buffer_size
+OFFSET avformat AVIOContext buf_ptr
+OFFSET avformat AVIOContext buf_end
+OFFSET avformat AVIOContext opaque
+
+CONST swscale SWS_FAST_BILINEAR i32
+CONST swscale SWS_BILINEAR i32
+CONST swscale SWS_BICUBIC i32
+CONST swscale SWS_LANCZOS i32
+CONST swscale SWS_FULL_CHR_H_INT i32
+CONST swscale SWS_FULL_CHR_H_INP i32
+CONST swscale SWS_ACCURATE_RND i32

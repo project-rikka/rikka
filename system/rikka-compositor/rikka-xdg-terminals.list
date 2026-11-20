@@ -1,0 +1,3 @@
+# The terminal Rikka opens when nothing else is chosen. A person who prefers
+# another says so in their own xdg-terminals.list, which is read first.
+rikka-terminal.desktop

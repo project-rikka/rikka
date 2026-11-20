@@ -1,0 +1,20 @@
+mod breaking;
+mod clusters;
+mod decoration;
+mod ellipsis;
+mod ellipsis_glyphs;
+mod emit;
+mod engine;
+mod glyph;
+mod paragraph_layout;
+mod params;
+mod pieces;
+mod plan;
+mod row;
+mod tabs;
+
+pub use decoration::{Decoration, DecorationKind};
+pub use glyph::Glyph;
+pub use paragraph_layout::ParagraphLayout;
+pub use params::{Align, LayoutParams, Wrap};
+pub use row::Row;

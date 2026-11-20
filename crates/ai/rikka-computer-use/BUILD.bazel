@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-computer-use",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-computer",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-tool",
+        "//crates/ai/rikka-tool-docs",
+        "//crates/ai/rikka-tools",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-seam",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-computer-use",
+        "//crates/ai/rikka-tool",
+        "//crates/ai/rikka-tool-docs",
+        "//crates/ai/rikka-tools",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

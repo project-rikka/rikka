@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-inspector",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-cast",
+        "//apps/general/animate/crates/animate-cloth",
+        "//apps/general/animate/crates/animate-edit",
+        "//apps/general/animate/crates/animate-fluid",
+        "//apps/general/animate/crates/animate-hold",
+        "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-solve",
+        "//apps/general/animate/crates/animate-transport",
+        "//apps/general/animate/crates/animate-ui",
+        "//apps/general/animate/crates/animate-wind",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-keyframe",
+        "//crates/model/rikka-model",
+        "//crates/physics/rikka-physics-tailor",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-timeline",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)

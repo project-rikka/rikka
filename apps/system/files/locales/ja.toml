@@ -1,0 +1,257 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[files]
+title = "ファイル"
+
+[files.toolbar]
+path = "パスまたは URI"
+search = "検索"
+sort = "並べ替え"
+tools = "その他"
+view = "表示"
+
+[files.places]
+pinned = "ピン留め"
+system = "システム"
+volume = "{size} ボリューム"
+devices = "デバイス"
+trash = "ゴミ箱"
+home = "ホーム"
+
+[files.menu]
+open = "開く"
+open-with = "別のアプリで開く"
+open-tab = "新しいタブで開く"
+terminal = "端末で開く"
+wallpaper = "壁紙に設定"
+new-tab = "新しいタブ"
+restore = "元に戻す"
+copy = "コピー"
+cut = "切り取り"
+rename = "名前の変更"
+trash = "ゴミ箱へ移動"
+delete = "完全に削除"
+properties = "プロパティ"
+extract = "ここに展開"
+compress = "圧縮…"
+convert = "変換"
+new-folder = "新しいフォルダー"
+new-file = "新しいファイル"
+paste = "貼り付け"
+empty-trash = "ゴミ箱を空にする"
+select-all = "すべて選択"
+refresh = "最新の情報に更新"
+hidden = "隠しファイルを表示"
+search-contents = "ファイルの中身も検索"
+pin = "サイドバーにピン留め"
+unpin = "サイドバーから外す"
+mount = "マウント"
+unmount = "マウント解除"
+eject = "取り出す"
+lock = "ロック"
+unlock = "ロック解除"
+desktop-default = "既定のアプリ"
+
+[files.undo]
+copy = "元に戻す - コピー"
+move = "元に戻す - 移動"
+rename = "元に戻す - 名前の変更"
+trash = "元に戻す - ゴミ箱へ移動"
+restore = "元に戻す - ゴミ箱から復元"
+new-folder = "元に戻す - 新しいフォルダー"
+new-file = "元に戻す - 新しいファイル"
+
+[files.redo]
+copy = "やり直し - コピー"
+move = "やり直し - 移動"
+rename = "やり直し - 名前の変更"
+trash = "やり直し - ゴミ箱へ移動"
+restore = "やり直し - ゴミ箱から復元"
+new-folder = "やり直し - 新しいフォルダー"
+new-file = "やり直し - 新しいファイル"
+
+[files.column]
+name = "名前"
+modified = "更新日時"
+kind = "種類"
+size = "サイズ"
+
+[files.view]
+icons = "大きいアイコン"
+details = "詳細"
+
+[files.dialog]
+confirm-delete = "完全に削除しますか？"
+confirm-delete-detail = "{count} 個の項目が削除されます。元に戻すことはできません。"
+cancel = "キャンセル"
+close = "閉じる"
+delete = "削除"
+confirm-run = "このプログラムを実行しますか？"
+confirm-run-detail = "「{name}」はプログラムです。入手元を信頼できる場合にのみ実行してください。"
+run = "実行"
+
+[files.new]
+folder = "新しいフォルダー"
+file = "新しいファイル.txt"
+
+[files.chooser]
+title-open = "開く"
+title-save = "名前を付けて保存"
+title-save-into = "フォルダーに保存"
+title-folder = "フォルダーの選択"
+open = "開く"
+save = "保存"
+name = "名前"
+filter = "すべてのファイル"
+saving-here = "{count} 個のファイルをこのフォルダーに保存します。"
+replace = "「{name}」を置き換えますか？"
+replace-detail = "同じ名前のファイルがすでにあります。置き換えると上書きされます。"
+replace-yes = "置き換える"
+
+[files.properties]
+items = "{count} 個の項目"
+folders = "フォルダー"
+files = "ファイル"
+total-size = "合計サイズ"
+kind = "種類"
+kind-detail = "{description}（{mime}）"
+location = "場所"
+size = "サイズ"
+modified = "更新日時"
+created = "作成日時"
+permissions = "アクセス権"
+target = "リンク先"
+
+[files.status]
+loading = "読み込んでいます…"
+searching = "検索しています… {count} 件"
+items = "{count} 個の項目"
+selected = "{total} 個中 {count} 個を選択"
+selected-size = "{total} 個中 {count} 個を選択（{size}）"
+empty = "このフォルダーは空です"
+
+[files.job]
+copy = "コピーしています"
+move = "移動しています"
+trash = "ゴミ箱へ移動しています"
+delete = "削除しています"
+restore = "元に戻しています"
+compress = "圧縮しています"
+extract = "展開しています"
+convert = "変換しています"
+preparing = "{task}: 準備しています"
+progress = "{task}: {done} / {total}"
+cancel = "中止"
+dismiss = "閉じる"
+
+[files.conflict]
+exists = "「{name}」はすでに存在します"
+source = "コピー元"
+existing = "既存"
+detail = "{size} ・ {modified}"
+skip-all = "すべてスキップ"
+skip = "スキップ"
+keep = "両方残す"
+replace = "置き換える"
+
+[files.error]
+not-found = "「{name}」が見つかりません"
+denied = "「{name}」を操作する権限がありません"
+exists = "「{name}」はすでに存在します"
+not-empty = "「{name}」は空ではありません"
+no-space = "「{name}」を保存する空き容量がありません"
+into-itself = "「{name}」をそれ自身の中へは移動できません"
+bad-name = "「{name}」は名前として使えません"
+empty-name = "名前を入力してください"
+no-backend = "{scheme}: は開けません"
+locked = "「{name}」にはパスワードが必要です"
+wrong-password = "「{name}」のパスワードが違います"
+cancelled = "中止しました"
+other = "「{name}」: {message}"
+unknown = "「{name}」は扱えませんでした"
+and-more = "{first}（ほか {count} 件失敗）"
+too-many = "結果が多すぎるため検索を中断しました"
+launch = "アプリケーションを起動できませんでした: {reason}"
+bookmarks = "ブックマークを保存できませんでした: {reason}"
+wallpaper = "壁紙を設定できませんでした: {reason}"
+
+[files.error.wrong-kind]
+folder = "「{name}」はフォルダーではありません"
+file = "「{name}」はファイルではありません"
+
+[files.error.unsupported]
+anything = "「{name}」は変更できません"
+create = "「{name}」には作成できません"
+rename = "「{name}」は名前を変更できません"
+trash = "「{name}」はゴミ箱へ移動できません"
+write = "「{name}」には書き込めません"
+move = "「{name}」は移動できません"
+restore = "「{name}」は元に戻せません"
+
+[files.kind]
+extension = "{extension} ファイル"
+generic = "ファイル"
+
+[files.size]
+bytes = "{grouped} バイト"
+detailed = "{rounded}（{exact}）"
+
+[files.unlock]
+heading = "{name} のロックを解除"
+detail = "このボリュームは暗号化されています。パスフレーズを入力してください。"
+passphrase = "パスフレーズ"
+wrong = "パスフレーズが違います。"
+open = "ロック解除"
+
+[files.compress]
+heading = "{count} 個の項目を圧縮"
+name = "アーカイブ名"
+level = "圧縮率"
+level-default = "標準"
+level-fastest = "最速"
+level-best = "最小"
+password = "パスワード（省略可）"
+go = "圧縮"
+
+[files.convert]
+shrink = "縮小"
+extract = "音声を取り出す"
+strip = "メタデータを削除（Exif・位置情報）"
+more = "詳細…"
+animation = "GIF アニメーション"
+sound-only = "{format}（音声のみ）"
+heading = "{count} 個の項目を変換"
+format = "形式"
+quality = "品質"
+quality-standard = "標準"
+quality-high = "高"
+quality-best = "最高"
+size = "サイズ"
+size-original = "元のサイズ"
+size-half = "半分（50%）"
+size-side = "長辺 {size} px"
+size-lines = "{size}p"
+suffix-half = "（50%）"
+suffix-side = "（{size}px）"
+suffix-clean = "（メタデータなし）"
+suffix-converted = "（変換済み）"
+go = "変換"
+
+[files.locked]
+heading = "「{name}」は保護されています"
+detail = "このアーカイブは暗号化されています。パスワードを入力してください。"
+password = "パスワード"
+wrong = "パスワードが違います。"
+open = "開く"
+
+[files.device]
+unavailable = "ディスクをマウントできません: udisks2 が動作していません。"
+not-authorized = "権限がありません。"
+busy = "ディスクは使用中です。開いているファイルを閉じてからやり直してください。"
+not-supported = "このディスクでは実行できません。"
+already-mounted = "すでにマウントされています。"
+not-mounted = "マウントされていません。"
+wrong-passphrase = "パスフレーズが違います。"
+refused = "ディスク操作に失敗しました: {message}"

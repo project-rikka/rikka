@@ -1,0 +1,14 @@
+---
+import Hero from "../components/Hero.astro";
+import Sdk from "../components/Sdk.astro";
+import Base from "../layouts/Base.astro";
+import { site } from "../site";
+---
+
+<Base
+  title={`${site.name} · Wayland compositor for NixOS`}
+  description={site.description}
+>
+  <Hero />
+  <Sdk />
+</Base>

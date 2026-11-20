@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-record",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-video",
+        "//crates/session/rikka-capture",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

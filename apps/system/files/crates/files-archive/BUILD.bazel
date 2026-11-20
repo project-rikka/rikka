@@ -1,0 +1,31 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-archive",
+    target_compatible_with = ["@platforms//os:linux"],
+    cranelift = False,
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-vfs",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+        "//crates/foundation/rikka-archive",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-archive",
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-vfs",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+    ],
+)

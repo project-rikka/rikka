@@ -1,0 +1,12 @@
+---
+title: Shared keyframe store, easings and timeline widgets
+description: rikka-keyframe (Sequence, Penner Easing, CubicBezier fit) and rikka-timeline (TimeScale, ticks, playhead, glyphs).
+about: crates/ui/rikka-timeline
+tags: [animation, ui]
+---
+
+- `crates/foundation/rikka-keyframe` (public, no deps) is the model half: `Frame` (u32, i64: `ZERO`, `to_f64`, `from_f64`, `offset`), `Framed`, and `Sequence<K: Framed>`, the frame-sorted store (`key`, `find`, `held_at` (first key before it), `previous`/`next` (strict), `insert` replaces, `remove`, `around(f64) -> Around::{Held, Between(Segment)}`, `segment_at`, `edit` re-sorts keeping the later repeat, `first_change`).
+- Animate's `animate_track::Tracks` keeps one `Arc<Sequence>` per id; Cut's `cut_project::Track` wraps a `Sequence<Key<K>>`. Interpolation stays per app: VMD curves and Hermite tags in Animate, speed/influence handles in Cut.
+- `Easing { family: Family, ease: Ease }` evaluates Penner families analytically (`at`, `reversed`, `Family::overshoots`). `CubicBezier` holds the CSS keywords (`EASE`, `EASE_IN`, …) and `CubicBezier::fit(easing)`: end tangents match the easing, handle lengths minimise the largest error (grid then pattern search), Out is In reflected, InOut is point-symmetric; non-overshooting fits stay in the unit square; Elastic and Bounce have none.
+- `crates/ui/rikka-timeline` (public, over rikka-ui and rikka-widgets) is the UI half, generic over `Frame`: `TimeScale` (px per frame within a `ZoomRange`, first frame, width, end; zoom at a pointer, notches of 1.2, level slider, fit, follow with a 10% margin, scrolling clamped to half a view past the end, `extent()`, `nearest`), `TimeLane` (scale plus origin and area), `Ticks::new(per_frame, fps, label_room).across()` (steps on seconds and minutes), `ScrollExtent`/`ScrollTrack`/`Thumb` with `paint_thumb`, `Playhead<C: Cue>` (`Head::Tab` or `Head::Numbered`), `KeyGlyph`/`KeyShape`, `Band`, `press` (pick rules → `Pick::{Toggled, Held { solo }}`), `KeyShift` (whole-frame drag within a reach, snap pull), `CurvePlot` (with `knob`/`knob_at`, the one handle-knob look and hit test of Animate's curve editor and Cut's segment graph), `curve_tile`, `easing_grid`/`EasingRow` and the `timeline.easing.*` family/ease labels (`CATALOGS`, embedded by both apps).
+- Each app keeps its own observed container (Animate `timeline::Timeline`, Cut `timeline::Scale`) holding a `TimeScale` copy and notifying its observers.

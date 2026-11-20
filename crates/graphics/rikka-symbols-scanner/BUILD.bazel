@@ -1,0 +1,41 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "lib",
+    crate_name = "rikka_symbols_scanner",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/text/rikka-text-font",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_binary(
+    name = "rikka-symbols-scanner",
+    visibility = [
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        ":lib",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    data = glob(
+        ["tests/**"],
+        allow_empty = True,
+        exclude = ["tests/**/*.rs"],
+    ) + [":rikka-symbols-scanner"],
+    deps = [
+        "//crates/text/rikka-test-fonts",
+        "@crates//:tempfile",
+    ],
+)

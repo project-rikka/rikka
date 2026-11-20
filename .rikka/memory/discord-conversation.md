@@ -1,0 +1,22 @@
+---
+title: Discord conversation region (rikka-discord)
+description: apps/system/discord/src/conversation: list, Rich rendering, composer, pickers, overlays, forum, and its seams with the shell.
+about: apps/system/discord/src/conversation
+tags: [application, discord]
+---
+
+- The shell calls only `conversation::view(chat)` and `Chat::entered()`; the desk reads `Conversation::members_shown()`.
+- `Conversation` nests `#[state]` `Composer`, `Reading`, `Overlay`, `Forum`, `Media`; every field is tracked or `#[untracked]`, so handlers targeting any of them re-view nothing beyond what read the changed keys.
+- `entered()` switches the shown `Seat` (account key, channel): drafts, replies and uploads are kept per seat, the NEW divider (`Since`) is snapshot from `Store::last_read`, forums load posts, and a 1 s `discord-conversation-tick` expires typing, counts slowmode and moves the relative-time clock.
+- `list/items.rs` is the pure grouping (7-minute author runs, day separators, NEW divider); each message cell is a `component_with` over `message::Props` (Arc pointer equality), so only changed messages re-view. Cells are keyed and named by `Item::name`, so older pages loaded at the top keep the reader in place.
+- The list is wrapped in the shared `jump_to_end` over `Reading::place()`, with `.unseen(fresh)` as the badge and `.more_beyond(!reached_newest)`; its press runs `jump_to_present`.
+- `message/rich.rs` shapes `discord_core::Rich` once into `Shaped` blocks of `rich_text` runs and renders them with a per-message `local_state` holding hover and revealed spoilers.
+- Writes are optimistic through `LinkedAccount::apply`/`change` and undone on a refused answer; sending mints a nonce (`Client::mint`), pends through `Store::pend`, and keeps the wire `Draft` in the `Outbox` keyed by that `MessageId` (upload progress, retry, discard).
+- Mentions and custom emoji are written as display text and converted at send by `discord_client::writing::{mention, emoji}`; `writing::message_link` feeds "copy link".
+- Anchored layers (menu, emoji/sticker picker, pins, threads, thread naming, delete confirmation) are one `overlay::Shown`; right-click uses `context_row` rows inside a `context_area`.
+- Pictures open in `lightbox/`, a full-window layer the desk pushes anchored with `Anchor::covering(BODY)` while `Overlay::gallery()` is `Shown::Viewer(Gallery)`. `message::view` builds one `Album` per message (sender plus `Shot`s from image attachments, revealed spoilers only, and embed images/thumbnails); each picture tile goes through `album.framed(url, container)`, which opens the gallery on click and aims the `Shot` on right-click.
+- The lightbox opens pictures at natural size, shrunk to fit but never enlarged; `framing.rs` places a `rikka_widgets::PanZoom` (the Paint/Viewer rules: absolute scale 0.02–16, unbounded pan, a pan in Fit keeps its scale) in the resting room between the bars, click toggles a detail zoom (actual size, at least twice fit), wheel/pinch/keys zoom by 1.25 steps, drag and touchpad scroll pan, and any zoom or pan hides the bars until `0` fits again; `face.rs` loads the full picture over the cached chat preview (probe, GIF frames, >4096 px shrunk off-thread).
+- `stage::Stage` fills the layer and owns the bars as children `[top, middle, bottom]`; it reads the middle child's rect (minus `gutter`) as the resting room. It reports zoom through `on_zoom` into `Overlay::zoomed`, and the view wraps the bars in `chrome::hidden_while` (fade + `INERT`), so a zoomed picture uses the whole layer.
+- The `Backdrop` is `MODAL` but ignores presses outside its bounds so the window's title bar still moves and resizes the window. Picture menu items (copy image, save, copy/open link) come from `lightbox::picture_items`: the stage shows them in its own `ContextMenu` (right-click, Menu key; Ctrl+C copies), and a message menu opened over a picture appends them (`Shown::Menu::picture`).
+- Emoji data is the shared `rikka_emoji::Catalog`; recents live in `<account folder>/recent-emoji.json`.
+- Media plays from the `rikka_net::DiskCache` at `$XDG_CACHE_HOME/rikka/discord/media` (14-day expiry); downloads go to the XDG Downloads folder. Video attachments play as one `rikka_movie::Movie` (picture and sound), audio as a `rikka_audio::Track`; their listeners feed a keyed `stream` that stops playback at the end or on failure and moves the audio progress, with no timer. In-place video needs `App::plays_video(VideoStore::default())`.

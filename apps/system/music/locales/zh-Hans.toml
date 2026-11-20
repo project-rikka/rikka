@@ -1,0 +1,302 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[music]
+title = "音乐"
+play = "播放"
+shuffle = "随机播放"
+
+[music.signing]
+with = "使用 {name} 继续"
+connecting = "正在连接…"
+browser = "请在浏览器中完成 {name} 登录。"
+again = "再次打开页面"
+cancel = "取消"
+page = "登录 {name}"
+page-closed = "登录页面意外关闭。"
+
+[music.accounts]
+saved = "账号"
+add = "添加账号"
+expired = "已退出 {name}。请重新登录。"
+unknown = "不支持 {name}。"
+
+[music.local]
+name = "本地音乐"
+here = "在这台电脑上"
+scanning = "正在扫描… {read} / {total}"
+finding = "正在查找音乐… 已找到 {count} 个"
+filling = "正在建立音乐库"
+empty = "音乐库中还没有音乐"
+missing = "本地音乐不可用"
+offline = "位于未连接的驱动器上"
+album-gone = "这张专辑已不在音乐库中"
+artist-gone = "这位艺人已不在音乐库中"
+disc = "光盘 {number}"
+disc-named = "光盘 {number} · {name}"
+folder-empty = "此文件夹中没有音乐"
+
+[music.settings]
+title = "设置"
+back = "返回"
+accounts = "账号"
+quality = "品质"
+audio = "音质"
+image = "画质"
+storage = "存储"
+cache = "缓存已播放的音乐"
+cache-used = "已用空间"
+cache-clear = "清除"
+sources = "备用播放顺序"
+library = "音乐库"
+output = "输出"
+
+[music.quality]
+low = "低"
+standard = "标准"
+highest = "最高"
+
+[music.cache]
+off = "关闭"
+
+[music.fidelity]
+high = "高解析"
+lossless = "无损"
+format = "{bits} 位 / {rate} kHz"
+dsd = "DSD{multiple} · {rate} MHz"
+bitrate = "{kbps} kbps"
+
+[music.nav]
+home = "首页"
+search = "搜索"
+songs = "喜欢的歌曲"
+playlists = "歌单"
+blends = "Rikka 歌单"
+albums = "专辑"
+artists = "艺人"
+songs-all = "歌曲"
+genres = "风格"
+folders = "文件夹"
+
+[music.home]
+picks = "快速精选"
+recent = "最近播放"
+following = "来自你关注的人"
+mixes = "推荐混音"
+albums = "你收藏的专辑"
+playlists = "我的歌单"
+artists = "你喜欢的艺人"
+new = "新发行"
+acclaimed = "口碑专辑"
+popular = "热门播放"
+curated = "编辑精选歌单"
+added = "最近添加"
+favourites = "收藏"
+empty = "暂无推荐"
+
+[music.gallery]
+all = "显示全部"
+
+[music.search]
+placeholder = "搜索歌曲、艺人和专辑"
+hint = "搜索歌曲、艺人和专辑"
+none = "没有结果"
+songs = "歌曲"
+artists = "艺人"
+albums = "专辑"
+playlists = "歌单"
+
+[music.songs]
+title = "喜欢的歌曲"
+empty = "没有喜欢的歌曲"
+
+[music.artist]
+popular = "热门"
+albums = "专辑"
+singles = "单曲和 EP"
+appears = "参与作品"
+
+[music.mix]
+title = "{name} 混音"
+seeded = "基于 {name}"
+
+[music.kind]
+album = "专辑"
+artist = "艺人"
+playlist = "歌单"
+collection = "收藏"
+mix = "混音"
+blend = "Rikka 歌单"
+
+[music.release]
+album = "专辑"
+single = "单曲"
+ep = "EP"
+compilation = "合辑"
+
+[music.column]
+title = "标题"
+album = "专辑"
+artist = "艺人"
+year = "年份"
+format = "格式"
+plays = "播放次数"
+added = "添加日期"
+length = "时长"
+
+[music.count]
+songs = "{count, plural, other {# 首歌曲}}"
+albums = "{count, plural, other {# 张专辑}}"
+artists = "{count, plural, other {# 位艺人}}"
+genres = "{count, plural, other {# 种风格}}"
+
+[music.queue]
+empty = "没有正在播放的歌曲。"
+now = "正在播放"
+next = "接下来"
+end = "队列已到末尾"
+
+[music.player]
+unavailable = "无法播放这首歌。"
+refused = "{name} 不允许此账号播放。"
+nowhere = "已登录的服务都无法播放这首来自 {name} 的歌曲。"
+via = "正在通过 {name} 播放"
+
+[music.playlist]
+empty = "此歌单为空。"
+
+[music.blend]
+empty = "此歌单为空。"
+gone = "此歌单已被删除。"
+local = "保存在这台电脑上"
+saved-in = "已保存到 {names}"
+syncing = "正在同步…"
+unsynced = "无法与 {names} 同步"
+
+[music.menu]
+play-next = "下一首播放"
+queue = "添加到队列"
+add-to-playlist = "添加到歌单"
+remove-from-playlist = "从此歌单中移除"
+remove-from-queue = "从队列中移除"
+save = "添加到喜欢的歌曲"
+unsave = "从喜欢的歌曲中移除"
+radio = "前往歌曲电台"
+artist = "前往艺人"
+album = "前往专辑"
+copy-song-link = "复制歌曲链接"
+new-playlist = "新建歌单…"
+loading = "正在加载歌单…"
+rename = "重命名…"
+delete = "删除…"
+forget = "从曲库中移除"
+copy-playlist-link = "复制歌单链接"
+new-blend = "新建 Rikka 歌单…"
+sync = "立即同步"
+elsewhere = "来自 {name}"
+reveal = "在“文件”中显示"
+
+[music.dialog]
+create = "新建歌单"
+rename = "重命名歌单"
+delete = "要删除此歌单吗？"
+delete-message = "“{name}”将从你的曲库中删除。"
+name = "歌单名称"
+suggested = "我的歌单 #{count}"
+make = "创建"
+save = "保存"
+erase = "删除"
+cancel = "取消"
+create-blend = "新建 Rikka 歌单"
+suggested-blend = "Rikka 歌单 #{count}"
+delete-blend-message = "“{name}”将从这台电脑和所有保存它的服务中删除。"
+
+[music.edit]
+added = "已添加到 {name}"
+removed = "已从 {name} 中移除"
+copied = "链接已复制"
+failed = "无法更改：{reason}"
+
+[music.library]
+choose = "添加音乐文件夹"
+add = "添加文件夹…"
+open = "音乐库设置"
+folders = "文件夹"
+index = "音乐库"
+status = "状态"
+current = "已是最新"
+rescan = "重新扫描"
+contents = "内容"
+music = "音乐文件夹"
+remote = "网络文件夹"
+added = "已添加的文件夹"
+
+[music.span]
+minutes = "{minutes} 分钟"
+hours = "{hours} 小时 {minutes} 分钟"
+
+[music.unit]
+khz = "{rate} kHz"
+mhz = "{rate} MHz"
+
+[music.sort]
+artist = "艺人"
+title = "标题"
+year = "年份"
+added = "最近添加"
+
+[music.signal]
+source = "音源"
+dsd-to-pcm = "DSD 转 PCM"
+resample = "采样率转换"
+downmix = "缩混"
+upmix = "声道扩展"
+replay-gain = "ReplayGain"
+decibels = "{db} dB"
+volume = "音量"
+dither = "抖动"
+bits = "{bits} 位"
+float = "{bits} 位浮点"
+native-dsd = "原生 DSD"
+dop = "DSD over PCM (DoP)"
+mono = "单声道"
+stereo = "立体声"
+channels = "{count} 声道"
+exclusive = "独占"
+bluetooth = "蓝牙 {codec}"
+software = "软件音量"
+stream = "PipeWire 流音量"
+device = "设备音量"
+hardware = "硬件音量"
+fell-back = "{device}：{reason}"
+instead = "正在通过系统输出播放"
+pinned = "PipeWire 正以 {rate} 运行。"
+allow = "允许切换采样率"
+switching = "已允许切换采样率"
+
+[music.refusal]
+missing = "未连接"
+busy = "正被其他程序使用"
+busy-by = "正被 {holder} 使用"
+unsupported = "无法播放此格式"
+lost = "已断开"
+released = "已交给其他程序"
+unopenable = "无法打开（{reason}）"
+
+[music.output]
+device = "输出设备"
+system = "系统默认"
+shared = "共享 · PipeWire"
+exclusive = "独占"
+playing = "正在播放"
+up-to = "最高 {bits} 位 / {rate}"
+native = "原生 {dsd}"
+dop = "DoP 最高 {dsd}"
+levelling = "音量均衡"
+replay-gain = "ReplayGain"
+preamp = "前置增益"
+clipping = "防止削波"
+off = "关"
+track = "曲目"
+album = "专辑"

@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-thumbnails",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "@crates//:md_5",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-thumbnails",
+    ],
+)

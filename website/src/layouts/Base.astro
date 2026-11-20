@@ -1,0 +1,73 @@
+---
+import "@fontsource-variable/inter/opsz.css";
+import "@fontsource-variable/jetbrains-mono/wght.css";
+import "virtual:rikka-theme.css";
+import "../styles/global.css";
+import { dark, light } from "virtual:rikka-theme";
+import Footer from "../components/Footer.astro";
+import { CARD } from "../brand/card";
+import { site } from "../site";
+import { THEME_STORAGE_KEY } from "../theme/preference";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, site.url);
+const ogImage = new URL("/og.png", site.url);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="color-scheme" content="light dark" />
+    {[light, dark].map((palette) => (
+      <meta
+        name="theme-color"
+        content={palette.colors.base}
+        media={`(prefers-color-scheme: ${palette.variant})`}
+        data-scheme={palette.variant}
+        data-light={light.colors.base}
+        data-dark={dark.colors.base}
+      />
+    ))}
+    <script is:inline define:vars={{ key: THEME_STORAGE_KEY }}>
+      try {
+        const chosen = localStorage.getItem(key);
+        if (chosen === "light" || chosen === "dark") {
+          document.documentElement.dataset.theme = chosen;
+          for (const meta of document.querySelectorAll(
+            'meta[name="theme-color"]',
+          )) {
+            meta.content = meta.dataset[chosen];
+          }
+        }
+      } catch {}
+    </script>
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/icon.png" type="image/png" sizes="192x192" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content={String(CARD.width)} />
+    <meta property="og:image:height" content={String(CARD.height)} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </head>
+  <body>
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

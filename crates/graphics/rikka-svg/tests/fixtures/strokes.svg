@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none" stroke="#241f31">
+  <path d="M10 14h40" stroke-width="8" stroke-linecap="butt"/>
+  <path d="M10 30h40" stroke-width="8" stroke-linecap="round"/>
+  <path d="M10 46h40" stroke-width="8" stroke-linecap="square"/>
+  <path d="M70 46l14-30 14 30" stroke-width="6" stroke-linejoin="miter"/>
+  <path d="M96 46l10-30 10 30" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M70 76l14-20 14 20" stroke-width="6" stroke-linejoin="bevel"/>
+  <path d="M100 78l6-22 6 22" stroke-width="4" stroke-miterlimit="2"/>
+  <path d="M10 64h50" stroke-width="3" stroke-dasharray="6 3"/>
+  <path d="M10 74h50" stroke-width="3" stroke-dasharray="6,3,1" stroke-dashoffset="4"/>
+  <path d="M10 84h50" stroke-width="4" stroke-dasharray="0 7" stroke-linecap="round"/>
+  <circle cx="30" cy="108" r="14" stroke-width="4" stroke-dasharray="8 4" stroke="#1a5fb4"/>
+  <rect x="62" y="92" width="30" height="28" stroke-width="5" stroke-opacity="0.5" stroke="#e01b24" fill="#f9f06b"/>
+  <path d="M100 96q20 0 0 24" stroke-width="7" stroke-linecap="round" stroke="#26a269" paint-order="stroke" fill="#f6f5f4"/>
+  <path d="M68.5 100v14zM104 84.25h16zM110 88l8 6z" stroke-width="3" stroke="#613583"/>
+  <path d="M6 121.5h20h-12" stroke-width="2" stroke-linecap="round"/>
+</svg>

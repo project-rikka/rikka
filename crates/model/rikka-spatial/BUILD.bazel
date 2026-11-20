@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-spatial",
+    cranelift = False,
+    visibility = ["//visibility:public"],
+    deps = [
+        "@crates//:glam",
+        "@crates//:smallvec",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-spatial",
+        "@crates//:glam",
+    ],
+)

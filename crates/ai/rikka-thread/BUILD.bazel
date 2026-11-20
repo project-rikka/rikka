@@ -1,0 +1,50 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-thread",
+    compile_data = [
+        "prompts/revised.md",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-accounts",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-tools",
+        "//crates/foundation/rikka-file-edit",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:rustc-hash",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-thread",
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-accounts",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-test-llm",
+        "//crates/ai/rikka-tools",
+        "//crates/foundation/rikka-sync",
+        "@crates//:futures-util",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

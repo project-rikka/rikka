@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-physics-gpu",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-spirv",
+        "//crates/physics/rikka-physics-gpu/shaders:scan_kernels",
+        "@crates//:bytemuck",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":rikka-physics-gpu",
+        "//crates/graphics/rikka-gpu",
+        "//crates/physics/rikka-physics-gpu/shaders:scan_kernels",
+    ],
+)

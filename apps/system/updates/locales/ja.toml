@@ -1,0 +1,49 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[updates]
+title = "システム更新"
+empty = "まだシステムの変更はありません"
+unavailable = "rikka-nixctl に接続できません: {reason}"
+disconnected = "システムバスへの接続が閉じられました"
+unreadable = "このログを読み込めませんでした: {reason}"
+find = "ログ内を検索"
+copy = "ログをコピー"
+save = "ログを保存…"
+save-title = "ログを保存"
+unsaved = "ログを保存できませんでした: {reason}"
+dismiss = "閉じる"
+retry = "再試行"
+
+[updates.operation]
+apply = "システムの変更"
+update = "システムの更新"
+rollback = "世代 {generation} への切り戻し"
+
+[updates.state]
+running = "実行中"
+done = "完了"
+failed = "失敗"
+interrupted = "中断"
+
+[updates.phase]
+preparing = "準備しています"
+locking = "flake の入力を更新しています"
+evaluating = "構成を評価しています"
+building = "ビルドしています"
+activating = "新しい構成に切り替えています"
+staging = "次回の起動を準備しています"
+checking = "変更内容を確認しています"
+
+[updates.detail]
+started = "{time} に開始"
+generation = "世代 {generation}"
+took = "所要時間 {duration}"
+next-boot = "再起動後に有効になります"
+built = "ビルド {done}/{expected}"
+fetched = "ダウンロード {done}/{expected} パス"
+downloaded = "{size} 転送"
+untouched = "システムは変更されていません。"
+modified = "システムの一部が変更された可能性があります。"
+interrupted = "rikka-nixctl が途中で終了しました。"

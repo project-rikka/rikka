@@ -1,0 +1,14 @@
+load("@nix//:paths.bzl", "NIX")
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-embedded-fonts",
+    rustc_env = {
+        "RIKKA_EMBEDDED_ICON_FONTS": NIX["icon_fonts"],
+        "RIKKA_EMBEDDED_UI_FONTS": NIX["windows_runtime"] + "/share/rikka/fonts",
+    },
+    target_compatible_with = ["@platforms//os:windows"],
+    visibility = [
+        "//crates:__subpackages__",
+    ],
+)

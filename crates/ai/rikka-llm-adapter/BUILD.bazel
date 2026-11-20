@@ -1,0 +1,36 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-llm-adapter",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-catalog",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-oauth",
+        "//crates/foundation/rikka-sync",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-llm-adapter",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-test-llm",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-oauth",
+        "//crates/foundation/rikka-sync",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:tokio",
+    ],
+)

@@ -1,0 +1,298 @@
+load("@@//third_party/comparators:wayland.bzl", "wayland_protocol")
+load("@nix//:paths.bzl", "NIX")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+_SYSTEM = [flag for flag in NIX["cflags"].split(" ") if flag]
+
+_FEATURES = [
+    "BUI_GPU",
+    "BUI_IMAGE_SVG",
+    "BUI_TEXT_FREETYPE",
+]
+
+_C = [
+    "-std=gnu11",
+    "-w",
+]
+
+_CXX = [
+    "-std=gnu++20",
+    "-w",
+]
+
+_RELEASE = ["-O3"]
+
+_KIT = ["-O2"]
+
+_PROTOCOLS = {
+    "xdg-decoration-unstable-v1": "@@//crates/foundation/rikka-wayland-protocols:xml/protocols/unstable/xdg-decoration/xdg-decoration-unstable-v1.xml",
+    "xdg-shell": "@@//crates/foundation/rikka-wayland-protocols:xml/protocols/stable/xdg-shell/xdg-shell.xml",
+}
+
+[
+    wayland_protocol(
+        name = "protocol_" + name,
+        src = xml,
+        code = "wayland/{}-client-protocol.c".format(name),
+        header = "wayland/{}-client-protocol.h".format(name),
+    )
+    for name, xml in _PROTOCOLS.items()
+]
+
+_CORE = [
+    "BLI_assert.c",
+    "BLI_dynstr.c",
+    "BLI_ghash.c",
+    "BLI_ghash_utils.c",
+    "BLI_linklist.c",
+    "BLI_memarena.c",
+    "BLI_mempool.c",
+    "array_utils_c.c",
+    "bui_system_stubs.c",
+    "bui_threads.c",
+    "endian_switch.c",
+    "fnmatch.c",
+    "gsqueue.c",
+    "guardedalloc.c",
+    "hash_mm2.c",
+    "hash_mm3.c",
+    "listbase.c",
+    "math_base.c",
+    "math_color.c",
+    "math_geom.c",
+    "math_matrix_c.c",
+    "math_rotation_c.c",
+    "math_vector.c",
+    "matrix_invert.c",
+    "rct.c",
+    "sort_utils.c",
+    "stack.c",
+    "string.c",
+    "string_cursor_utf8.c",
+    "string_utf8.c",
+    "svd_m3.c",
+    "wcwidth/wcwidth.c",
+]
+
+_CORE_INCLUDES = [
+    "core",
+    "core/include",
+    "core/intern",
+    "core/intern/atomic",
+    "core/intern/wcwidth",
+    "types/dna/include",
+]
+
+cc_library(
+    name = "core",
+    srcs = ["core/intern/" + source for source in _CORE],
+    hdrs = glob([
+        "core/include/**/*.h",
+        "core/include/**/*.hh",
+    ]),
+    additional_compiler_inputs = ["core/intern/bui_c_compat.h"],
+    copts = _C + _RELEASE + [
+        "-funsigned-char",
+        "-include",
+        "$(location core/intern/bui_c_compat.h)",
+    ],
+    includes = _CORE_INCLUDES,
+    linkopts = [
+        "-lm",
+        "-lpthread",
+    ],
+    textual_hdrs = glob([
+        "core/intern/**/*.h",
+        "core/intern/**/*_inline.c",
+        "types/dna/include/**/*.h",
+    ]),
+    deps = [":core_cxx"],
+)
+
+cc_library(
+    name = "core_cxx",
+    srcs = [
+        "core/intern/bui_blender_c.cc",
+        "core/intern/expr_pylike_eval.cc",
+        "core/intern/string_search.cc",
+    ],
+    copts = _CXX + _RELEASE + ["-funsigned-char"],
+    includes = _CORE_INCLUDES,
+    textual_hdrs = glob([
+        "core/include/**/*.h",
+        "core/include/**/*.hh",
+        "core/intern/**/*.h",
+        "core/intern/**/*_inline.c",
+        "types/dna/include/**/*.h",
+    ]),
+)
+
+cc_library(
+    name = "freetype",
+    srcs = [
+        "gpu/extern/freetype/src/" + source
+        for source in [
+            "autofit/autofit.c",
+            "base/ftbase.c",
+            "base/ftbbox.c",
+            "base/ftbitmap.c",
+            "base/ftdebug.c",
+            "base/ftinit.c",
+            "base/ftmm.c",
+            "base/ftsystem.c",
+            "cff/cff.c",
+            "pshinter/pshinter.c",
+            "psaux/psaux.c",
+            "psnames/psnames.c",
+            "sfnt/sfnt.c",
+            "smooth/smooth.c",
+            "truetype/truetype.c",
+        ]
+    ],
+    copts = _C + _RELEASE,
+    includes = [
+        "gpu/extern/freetype/bui",
+        "gpu/extern/freetype/include",
+    ],
+    local_defines = [
+        "FT2_BUILD_LIBRARY",
+        "FT_CONFIG_OPTIONS_H=<bui_ftoption.h>",
+        "FT_CONFIG_MODULES_H=<bui_ftmodule.h>",
+    ],
+    textual_hdrs = glob(
+        [
+            "gpu/extern/freetype/**/*.c",
+            "gpu/extern/freetype/**/*.h",
+        ],
+    ),
+)
+
+cc_library(
+    name = "gpu",
+    srcs = [
+        "gpu/intern/gpu_d3d11.c",
+        "gpu/intern/gpu_gl.c",
+        "gpu/intern/gpu_null.c",
+        "gpu/intern/gpu_raster.c",
+    ],
+    hdrs = glob([
+        "gpu/include/**/*.h",
+        "gpu/include/**/*.hh",
+    ]),
+    copts = _C + _RELEASE,
+    includes = ["gpu/include"],
+    linkopts = ["-ldl"],
+    local_defines = _FEATURES + [
+        "BUI_GPU_GL=1",
+        "BUI_SLUG_DEFAULT=1",
+        "BUI_TEXT_FT=1",
+        "FT_CONFIG_OPTIONS_H=<bui_ftoption.h>",
+        "FT_CONFIG_MODULES_H=<bui_ftmodule.h>",
+    ],
+    textual_hdrs = glob([
+        "gpu/intern/**/*.h",
+        "gpu/extern/*.h",
+        "gpu/extern/freetype/**/*.h",
+    ]),
+    deps = [
+        ":core",
+        ":freetype",
+    ],
+)
+
+cc_library(
+    name = "kit_cxx",
+    srcs = glob(["kit/intern/blender/*.cc"]),
+    copts = _CXX + _KIT,
+    includes = [
+        "kit/include",
+        "kit/intern",
+    ],
+    local_defines = _FEATURES,
+    textual_hdrs = glob([
+        "kit/include/*.h",
+        "kit/intern/**/*.h",
+    ]),
+    deps = [
+        ":core",
+        ":gpu",
+    ],
+)
+
+cc_library(
+    name = "kit",
+    srcs = [
+        "kit/intern/" + source
+        for source in [
+            "image/anim.c",
+            "image/cache.c",
+            "image/draw.c",
+            "image/filetype.c",
+            "image/format_svg.c",
+            "image/imbuf.c",
+            "image/loader.c",
+            "image/movie.c",
+            "image/play.c",
+            "image/video.c",
+            "kit_color.c",
+            "kit_core.c",
+            "kit_custom.c",
+            "kit_draw.c",
+            "kit_filebrowser.c",
+            "kit_frame.c",
+            "kit_icons_data.c",
+            "kit_icons_svg.c",
+            "kit_ime.c",
+            "kit_ime_win32.c",
+            "kit_menus.c",
+            "kit_nodes.c",
+            "kit_regions.c",
+            "kit_textarea.c",
+            "kit_theme_presets.c",
+            "kit_views.c",
+            "kit_widgets.c",
+            "kit_window_linux.c",
+            "kit_window_null.c",
+            "kit_window_wayland.c",
+            "kit_window_win32.c",
+            "kit_window_x11.c",
+        ]
+    ] + [
+        "kit/extern/nanosvg/blender_nanosvg.c",
+        "kit/extern/nanosvg/blender_raster.c",
+        "kit/extern/wayland_dynload/wayland_dynload_client.c",
+        "kit/extern/wayland_dynload/wayland_dynload_cursor.c",
+        "kit/extern/wayland_dynload/wayland_dynload_utils.c",
+    ] + [
+        "wayland/{}-client-protocol.c".format(name)
+        for name in _PROTOCOLS
+    ],
+    hdrs = ["kit/include/BUI_kit.h"],
+    copts = _C + _KIT + _SYSTEM,
+    includes = [
+        "kit/extern/nanosvg",
+        "kit/extern/wayland_dynload",
+        "kit/include",
+        "kit/intern",
+        "wayland",
+    ],
+    linkopts = ["-ldl"],
+    local_defines = _FEATURES + [
+        "BUI_WINDOW_WAYLAND",
+        "BUI_WINDOW_X11",
+    ],
+    textual_hdrs = glob([
+        "kit/intern/**/*.h",
+        "kit/extern/nanosvg/*.h",
+        "kit/extern/wayland_dynload/*.h",
+    ]) + [
+        "wayland/{}-client-protocol.h".format(name)
+        for name in _PROTOCOLS
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":core",
+        ":gpu",
+        ":kit_cxx",
+    ],
+)

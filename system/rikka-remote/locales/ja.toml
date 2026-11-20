@@ -1,0 +1,15 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[remote.connected]
+summary = "リモートデスクトップが接続されました"
+body = "{who} がこのデスクトップを表示・操作しています"
+
+[remote.refused]
+summary = "リモートのサインインを拒否しました"
+body = "{from} からリモートデスクトップのパスワードが誤って入力されました"
+
+[remote.received]
+summary = "ファイルを受信しました"
+body = "{name} を {folder} に保存しました"

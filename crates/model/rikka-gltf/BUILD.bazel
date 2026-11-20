@@ -1,0 +1,43 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+exports_files(
+    [
+        "assets/fox.glb",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+rikka_library(
+    name = "rikka-gltf",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/model/rikka-model-core",
+        "@crates//:base64",
+        "@crates//:serde",
+        "@crates//:serde_json",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "assets/fox.glb",
+    ],
+    deps = [
+        ":rikka-gltf",
+        "//crates/model/rikka-model-core",
+        "@crates//:tempfile",
+    ],
+)
+
+filegroup(
+    name = "assets",
+    srcs = glob(["assets/**"]),
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+)

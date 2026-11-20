@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Rikka
+Comment=A Wayland session with a modern UI
+Comment[ja]=モダンな UI の Wayland セッション
+Exec=rikka-compositor
+TryExec=rikka-compositor
+# What the display manager puts in XDG_CURRENT_DESKTOP for this session, and
+# therefore which `<desktop>-portals.conf` xdg-desktop-portal reads. The
+# compositor sets the same variable for everything it starts itself, so a
+# session brought up by hand behaves the same way as one a display manager
+# started.
+DesktopNames=rikka

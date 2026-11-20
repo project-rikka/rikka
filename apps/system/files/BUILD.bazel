@@ -1,0 +1,61 @@
+load("//bazel/rust:defs.bzl", "rikka_binary", "rikka_library")
+
+rikka_library(
+    name = "files",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/files/crates/files-archive",
+        "//apps/system/files/crates/files-convert",
+        "//apps/system/files/crates/files-core",
+        "//apps/system/files/crates/files-dialog",
+        "//apps/system/files/crates/files-drives",
+        "//apps/system/files/crates/files-find",
+        "//apps/system/files/crates/files-ipc",
+        "//apps/system/files/crates/files-open",
+        "//apps/system/files/crates/files-places",
+        "//apps/system/files/crates/files-thumbs",
+        "//apps/system/files/crates/files-undo",
+        "//apps/system/files/crates/files-vfs",
+        "//apps/system/files/crates/files-wallpaper",
+        "//crates/desktop/rikka-clipboard",
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-open",
+        "//crates/desktop/rikka-thumbnails",
+        "//crates/desktop/rikka-xdg",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-sync",
+        "//crates/graphics/rikka-image",
+        "//crates/session/rikka-settings",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_binary(
+    name = "rikka-file-dialog",
+    target_compatible_with = ["@platforms//os:linux"],
+    crate_root = "src/bin/dialog.rs",
+    deps = [
+        ":files",
+        "//crates/ui/rikka-app",
+    ],
+)
+
+rikka_binary(
+    name = "rikka-files",
+    target_compatible_with = ["@platforms//os:linux"],
+    crate_root = "src/bin/files.rs",
+    deps = [
+        ":files",
+        "//crates/ui/rikka-app",
+    ],
+)

@@ -1,0 +1,8 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[figure.align]
+left = "Align Left"
+center = "Center"
+right = "Align Right"

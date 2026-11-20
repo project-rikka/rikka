@@ -1,0 +1,80 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[packages]
+title = "パッケージ"
+search = "nixpkgs を名前や説明で検索"
+found = "{count} 件"
+channel = "nixpkgs {name}"
+
+[packages.index]
+locating = "このシステム向けのパッケージ索引を探しています…"
+downloading = "パッケージ索引をダウンロードしています… {received} / {total}"
+receiving = "パッケージ索引をダウンロードしています… {received}"
+indexing = "パッケージ一覧を準備しています…"
+
+[packages.section]
+search = "検索"
+installed = "インストール済み"
+generations = "世代"
+apps = "Rikka のアプリ"
+
+[packages.empty]
+catalog = "パッケージ索引にパッケージがありません。"
+search = "「{query}」に一致するパッケージはありません。"
+installed = "インストール済みのパッケージはありません。"
+generations = "システム世代がありません。"
+apps = "このシステムには Rikka のアプリの一覧がありません。Rikka を配布版からインストールすると表示されます。"
+
+[packages.state]
+installed = "インストール済み"
+adding = "インストール予定"
+removing = "削除予定"
+
+[packages.action]
+install = "インストール"
+remove = "削除"
+revert = "取り消す"
+apply = "適用"
+discard = "破棄"
+update = "システムを更新"
+roll-back = "この世代に戻す"
+retry = "再試行"
+close = "閉じる"
+
+[packages.plan]
+title = "適用待ちの変更"
+adding = "インストール"
+removing = "削除"
+and-more = "{listed}  ほか {count} 件"
+settings = "必要な設定"
+
+[packages.needs]
+group = "{name} グループに参加する"
+unfree = "非自由ソフトウェアを許可"
+
+[packages.work]
+authorising = "認証を待っています…"
+running = "適用中…"
+not-started = "開始できませんでした: {reason}"
+
+[packages.generation]
+current = "実行中"
+
+[packages.detail]
+unknown = "nixpkgs にありません。次のビルドは失敗します。"
+attribute = "属性"
+set = "パッケージセット"
+licences = "ライセンス"
+main-program = "コマンド"
+outputs = "出力"
+platforms = "対応プラットフォーム"
+definition = "定義場所"
+about = "詳細"
+maintainers = "メンテナー"
+team = "チーム"
+unfree = "非フリー"
+
+[packages.apps]
+required = "常にインストール"

@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "overview-layout",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":overview-layout",
+        "//crates/foundation/rikka-types",
+    ],
+)

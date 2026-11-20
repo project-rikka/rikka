@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-document",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-fluid",
+        "//apps/general/animate/crates/animate-look",
+        "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-wind",
+        "//crates/foundation/rikka-file-format",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-document",
+        "//apps/general/animate/crates/animate-fluid",
+        "//apps/general/animate/crates/animate-look",
+        "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-wind",
+        "//crates/foundation/rikka-file-format",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "@crates//:tempfile",
+    ],
+)

@@ -1,0 +1,257 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[files]
+title = "文件"
+
+[files.toolbar]
+path = "路径或 URI"
+search = "搜索"
+sort = "排序"
+tools = "更多"
+view = "视图"
+
+[files.places]
+pinned = "已固定"
+system = "系统"
+volume = "{size} 卷"
+devices = "设备"
+trash = "回收站"
+home = "主目录"
+
+[files.menu]
+open = "打开"
+open-with = "用其他应用程序打开"
+open-tab = "在新标签页中打开"
+terminal = "在终端中打开"
+wallpaper = "设为壁纸"
+new-tab = "新建标签页"
+restore = "还原"
+copy = "复制"
+cut = "剪切"
+rename = "重命名"
+trash = "移到回收站"
+delete = "永久删除"
+properties = "属性"
+extract = "解压到此处"
+compress = "压缩…"
+convert = "转换"
+new-folder = "新建文件夹"
+new-file = "新建文件"
+paste = "粘贴"
+empty-trash = "清空回收站"
+select-all = "全选"
+refresh = "刷新"
+hidden = "显示隐藏文件"
+search-contents = "同时搜索文件内容"
+pin = "固定到侧栏"
+unpin = "从侧栏移除"
+mount = "挂载"
+unmount = "卸载"
+eject = "弹出"
+lock = "锁定"
+unlock = "解锁"
+desktop-default = "默认应用程序"
+
+[files.undo]
+copy = "撤销复制"
+move = "撤销移动"
+rename = "撤销重命名"
+trash = "撤销移到回收站"
+restore = "撤销还原"
+new-folder = "撤销新建文件夹"
+new-file = "撤销新建文件"
+
+[files.redo]
+copy = "重做复制"
+move = "重做移动"
+rename = "重做重命名"
+trash = "重做移到回收站"
+restore = "重做还原"
+new-folder = "重做新建文件夹"
+new-file = "重做新建文件"
+
+[files.column]
+name = "名称"
+modified = "修改日期"
+kind = "类型"
+size = "大小"
+
+[files.view]
+icons = "大图标"
+details = "详细信息"
+
+[files.dialog]
+confirm-delete = "要永久删除吗？"
+confirm-delete-detail = "将删除 {count} 个项目。此操作无法撤销。"
+cancel = "取消"
+close = "关闭"
+delete = "删除"
+confirm-run = "要运行此程序吗？"
+confirm-run-detail = "“{name}”是一个程序。仅在信任其来源时才运行。"
+run = "运行"
+
+[files.new]
+folder = "新建文件夹"
+file = "新建文件.txt"
+
+[files.chooser]
+title-open = "打开"
+title-save = "另存为"
+title-save-into = "保存到文件夹"
+title-folder = "选择文件夹"
+open = "打开"
+save = "保存"
+name = "名称"
+filter = "所有文件"
+saving-here = "将有 {count} 个文件保存到此文件夹。"
+replace = "要替换「{name}」吗？"
+replace-detail = "同名文件已存在。替换后原有内容将被覆盖。"
+replace-yes = "替换"
+
+[files.properties]
+items = "{count} 个项目"
+folders = "文件夹"
+files = "文件"
+total-size = "总大小"
+kind = "类型"
+kind-detail = "{description}（{mime}）"
+location = "位置"
+size = "大小"
+modified = "修改日期"
+created = "创建日期"
+permissions = "访问权限"
+target = "链接目标"
+
+[files.status]
+loading = "正在读取…"
+searching = "正在搜索… 已找到 {count} 个"
+items = "{count} 个项目"
+selected = "已选择 {total} 个中的 {count} 个"
+selected-size = "已选择 {total} 个中的 {count} 个（{size}）"
+empty = "此文件夹为空"
+
+[files.job]
+copy = "正在复制"
+move = "正在移动"
+trash = "正在移到回收站"
+delete = "正在删除"
+restore = "正在还原"
+compress = "正在压缩"
+extract = "正在解压"
+convert = "正在转换"
+preparing = "{task}：正在准备"
+progress = "{task}：{done} / {total}"
+cancel = "停止"
+dismiss = "关闭"
+
+[files.conflict]
+exists = "「{name}」已存在"
+source = "来源"
+existing = "已有"
+detail = "{size} · {modified}"
+skip-all = "全部跳过"
+skip = "跳过"
+keep = "两者都保留"
+replace = "替换"
+
+[files.error]
+not-found = "找不到「{name}」"
+denied = "没有操作「{name}」的权限"
+exists = "「{name}」已存在"
+not-empty = "「{name}」不是空的"
+no-space = "没有足够空间存放「{name}」"
+into-itself = "无法将「{name}」移动到它自身之中"
+bad-name = "「{name}」不能用作名称"
+empty-name = "请输入名称"
+no-backend = "{scheme}: 无法打开"
+locked = "“{name}”需要密码"
+wrong-password = "“{name}”的密码不正确"
+cancelled = "已停止"
+other = "「{name}」：{message}"
+unknown = "无法处理「{name}」"
+and-more = "{first}（另有 {count} 个失败）"
+too-many = "结果过多，已停止搜索"
+launch = "无法启动应用程序：{reason}"
+bookmarks = "无法保存书签：{reason}"
+wallpaper = "无法设置壁纸：{reason}"
+
+[files.error.wrong-kind]
+folder = "「{name}」不是文件夹"
+file = "「{name}」不是文件"
+
+[files.error.unsupported]
+anything = "无法更改「{name}」"
+create = "无法在「{name}」中创建"
+rename = "无法重命名「{name}」"
+trash = "无法将「{name}」移到回收站"
+write = "无法写入「{name}」"
+move = "无法移动「{name}」"
+restore = "无法还原「{name}」"
+
+[files.kind]
+extension = "{extension} 文件"
+generic = "文件"
+
+[files.size]
+bytes = "{grouped} 字节"
+detailed = "{rounded}（{exact}）"
+
+[files.unlock]
+heading = "解锁 {name}"
+detail = "此卷已加密。请输入密码短语。"
+passphrase = "密码短语"
+wrong = "密码短语不正确。"
+open = "解锁"
+
+[files.compress]
+heading = "压缩 {count} 个项目"
+name = "压缩包名称"
+level = "压缩率"
+level-default = "标准"
+level-fastest = "最快"
+level-best = "最小"
+password = "密码（可选）"
+go = "压缩"
+
+[files.convert]
+shrink = "缩小"
+extract = "提取音频"
+strip = "移除元数据（Exif、位置信息）"
+more = "更多选项…"
+animation = "GIF 动画"
+sound-only = "{format}（仅音频）"
+heading = "转换 {count} 个项目"
+format = "格式"
+quality = "质量"
+quality-standard = "标准"
+quality-high = "高"
+quality-best = "最佳"
+size = "尺寸"
+size-original = "原始尺寸"
+size-half = "一半（50%）"
+size-side = "长边 {size} 像素"
+size-lines = "{size}p"
+suffix-half = "（50%）"
+suffix-side = "（{size}px）"
+suffix-clean = "（无元数据）"
+suffix-converted = "（已转换）"
+go = "转换"
+
+[files.locked]
+heading = "“{name}”受密码保护"
+detail = "此压缩包已加密，请输入密码。"
+password = "密码"
+wrong = "密码不正确。"
+open = "打开"
+
+[files.device]
+unavailable = "无法挂载磁盘：udisks2 未运行。"
+not-authorized = "权限不足。"
+busy = "磁盘正在使用中。请关闭其中打开的内容后重试。"
+not-supported = "该磁盘不支持此操作。"
+already-mounted = "已经挂载。"
+not-mounted = "尚未挂载。"
+wrong-passphrase = "密码短语不正确。"
+refused = "磁盘操作失败：{message}"

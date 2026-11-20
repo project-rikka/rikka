@@ -1,0 +1,21 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+cc_library(
+    name = "bullet",
+    srcs = glob([
+        "src/LinearMath/*.cpp",
+        "src/BulletCollision/**/*.cpp",
+        "src/BulletDynamics/**/*.cpp",
+    ]),
+    hdrs = glob([
+        "src/*.h",
+        "src/LinearMath/**/*.h",
+        "src/BulletCollision/**/*.h",
+        "src/BulletDynamics/**/*.h",
+    ]),
+    copts = [
+        "-w",
+    ],
+    includes = ["src"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-theme-seed",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-material-color",
+        "//crates/media/rikka-media",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:toml",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-theme-seed",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "@crates//:tempfile",
+    ],
+)

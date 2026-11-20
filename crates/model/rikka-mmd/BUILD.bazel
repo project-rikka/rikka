@@ -1,0 +1,52 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+exports_files(
+    [
+        "assets/mmd/miku.pmx",
+        "assets/mmd/motion.vmd",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+rikka_library(
+    name = "rikka-mmd",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-keyframe",
+        "//crates/model/rikka-model-core",
+        "@crates//:encoding_rs",
+        "@crates//:rustc-hash",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "assets/mmd/miku.pmx",
+        "assets/mmd/motion.vmd",
+        "assets/mmd/spa/hair.png",
+        "assets/mmd/tex/B.png",
+        "assets/mmd/tex/eye.png",
+        "assets/mmd/tex/hair.png",
+        "assets/mmd/tex/other.png",
+        "assets/mmd/tex/skin.png",
+        "assets/mmd/toon/B.png",
+        "assets/mmd/toon/W.png",
+        "assets/mmd/toon/hair.png",
+        "assets/mmd/toon/skin.png",
+    ],
+    deps = [
+        ":rikka-mmd",
+        "//crates/model/rikka-model-core",
+    ],
+)
+
+filegroup(
+    name = "assets",
+    srcs = glob(["assets/**"]),
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+)

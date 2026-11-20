@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-dialog",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-mime",
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-portal",
+        "@crates//:serde",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-dialog",
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-portal",
+    ],
+)

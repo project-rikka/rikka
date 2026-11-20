@@ -1,0 +1,16 @@
+exports_files(
+    ["rikka.ridl"],
+    visibility = ["//sdk:__subpackages__"],
+)
+
+filegroup(
+    name = "bindings",
+    srcs = [
+        "//sdk/bindings/c:generated",
+        "//sdk/bindings/cpp:generated",
+        "//sdk/bindings/csharp:generated",
+        "//sdk/bindings/go:generated",
+        "//sdk/bindings/java:generated",
+        "//sdk/bindings/python:generated",
+    ],
+)

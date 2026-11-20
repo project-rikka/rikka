@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Animate
+Name[ja]=アニメート
+Name[zh_CN]=动画
+GenericName=3D Animation
+GenericName[ja]=3D アニメーション
+GenericName[zh_CN]=3D 动画
+Comment=Play motions on 3D characters against a timeline with camera work and music
+Comment[ja]=3D キャラクターのモーションをカメラワークと音楽に合わせてタイムラインで再生します
+Comment[zh_CN]=在时间轴上配合摄像机与音乐播放 3D 角色的动作
+Exec=rikka-animate %F
+Icon=applications-multimedia
+Terminal=false
+Categories=Graphics;3DGraphics;AudioVideo;
+Keywords=animation;motion;mmd;pmx;vmd;vrm;vrma;fbx;gltf;glb;dance;3d;character;timeline;
+Keywords[ja]=アニメーション;モーション;MMD;ダンス;3D;キャラクター;タイムライン;
+StartupNotify=true
+MimeType=model/x.pmx;model/x.vmd;model/vrm;model/x.vrma;model/x.fbx;model/gltf-binary;model/gltf+json;model/x.rikka-motion;

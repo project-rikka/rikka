@@ -1,0 +1,9 @@
+mod albums;
+mod artwork;
+mod folders;
+mod identity;
+mod offline;
+mod scanning;
+mod schema;
+mod search;
+mod support;

@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "ade-command",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/ade:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/ade/crates/ade-scope",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":ade-command",
+        "//apps/system/ade/crates/ade-scope",
+        "@crates//:tempfile",
+    ],
+)

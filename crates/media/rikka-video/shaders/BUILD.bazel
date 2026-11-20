@@ -1,0 +1,11 @@
+load("//bazel/slang:defs.bzl", "rikka_shaders")
+
+rikka_shaders(
+    name = "video_kernels",
+    crate_root = "src/lib.rs",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+)

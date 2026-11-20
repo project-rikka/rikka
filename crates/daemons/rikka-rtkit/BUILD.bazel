@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-rtkit",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:libc",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:zbus",
+    ],
+)

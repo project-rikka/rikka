@@ -1,0 +1,25 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[cast]
+title = "共享屏幕"
+subtitle = "“{app}”想要查看你的屏幕内容"
+subtitle-unknown = "某个应用想要查看你的屏幕内容"
+hint-multiple = "可以选择多个"
+looking = "正在查找可共享的内容"
+failure = "无法读取屏幕：{reason}"
+monitor-unnamed = "未命名的显示器"
+window-unnamed = "无标题窗口"
+remember = "不再询问"
+remember-session = "在此应用运行期间不再询问"
+share = "共享"
+cancel = "取消"
+
+[cast.tab]
+monitors = "屏幕"
+windows = "窗口"
+
+[cast.empty]
+monitors = "没有可共享的显示器"
+windows = "没有可共享的窗口"

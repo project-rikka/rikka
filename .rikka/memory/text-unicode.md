@@ -1,0 +1,23 @@
+---
+title: Unicode data and algorithms (rikka-text-unicode)
+description: Generated UCD 17 tries, segmentation with SA dictionaries, line breaking, bidi, normalization, script runs, emoji.
+about: crates/text/rikka-text-unicode
+tags: [text, unicode]
+---
+
+- Bottom of the text stack with no dependencies and `//visibility:public`: `rikka-text-shape`, `rikka-text-catalog` and `rikka-text-layout` use it, and any crate or app that needs Unicode properties or normalization depends on it directly.
+- UCD source and conformance files are vendored in `crates/text/rikka-text-unicode/ucd/`. `src/tables/*.rs` is generated and committed.
+- Regenerate with `bazel run //crates/text/rikka-text-unicode-gen -- "$PWD"` from the workspace root. The generator owns each packed word's bit layout. Its `tests/freshness.rs` runs the generator binary on the vendored sources in a scratch root and fails when the committed tables are stale.
+- `properties(c)` answers every hot property in one trie lookup. Every generated enum has `from_bits(u8)`, the inverse of `as u8`, for packed storage. Shaping-only categories (Indic categories, joining group) live in a second trie.
+- `Script::opentype_tags()` lists tags in preference order (`dev3`, `dev2`, `deva`). An empty slice means DFLT.
+- Normalization: `decompose`/`compose` are the single-step functions the shaper uses. `nfc`/`nfd`/`nfkc`/`nfkd` return `Cow`, and `*_into` append to a caller's buffer. Compatibility decompositions are a second trie into fully expanded sequences; the conformance test covers all four forms.
+- Segmentation: `graphemes`, `word_segments` and `line_breaks` (UAX #14 rev 55) iterate over `&str` with byte offsets. `LineBreaks::untailored` and `WordSegments::untailored` give the plain UAX algorithms the conformance tests check.
+- `WordSegments::new(text, WordRule)`: `Prose` (what `word_segments` uses) is UAX #29 with the dictionaries; `Code` additionally treats MidLetter, MidNum, MidNumLet and quotes as Other, so `foo.bar`, `can't`, `1,2` and `1.5` split while `snake_case`, `camelCase` and `x86` stay one word (no sub-word stops). Editors choose the rule; the rule never changes `line_breaks`.
+- `line_breaks` runs a minimized DFA that rikka-text-unicode-gen derives from its own UAX #14 rule evaluator (`rikka-text-unicode-gen/src/line_break`). Column classes sit beside the property words, and the few lookahead rules (LB15b/c, LB19a, LB25, LB28a) use side tables. Change rules in the generator, never in `tables/line_break.rs`.
+- Bidi: reuse a `Bidi` analyzer. `analyze` returns per-byte levels, and `reorder_line` fills a reusable `VisualLine`. L3 is not applied, and L4 mirroring is the shaper's job.
+- `script_runs` implements UAX #24 with a bracket stack. `emoji_sequence` and `emoji_presentation` follow UTS #51; `basic_emoji` is the stricter ED-20 basic emoji set (no lone regional indicators, no keycap base + FE0F, FE0E makes text), checked against `emoji-test.txt`.
+- Complex-context (Line_Break=SA) runs of Thai, Lao, Khmer and Myanmar are split into dictionary words by default: `line_breaks` adds Allowed breaks, `word_segments` treats SA letters as ALetter (ICU tailoring) and cuts at the words, and `dictionary_breaks` yields only those cuts. Other SA scripts have no dictionary and stay whole.
+- `segmentation/dictionary` follows ICU's `dictbe.cpp` engines (three-word lookahead, resync, marks, Thai suffixes) and drops cuts inside a grapheme. `tests/dictionary_break.rs` checks it against ICU's `rbbitst.txt` (`tests/icu/`), including its 42 Chinese and Japanese word cases.
+- ICU's word lists live in `dictionaries/` (credited in `crates/text/THIRD_PARTY.md`). The generator compiles each SA list into a minimized DAWG packed as a label-checked double array (`src/tables/*.dict`, u32 slots: label, accepting bit, target base), over per-script symbols listed in `tables/dictionaries.rs`.
+- Chinese and Japanese: in tailored word segmentation every Han, Hiragana and Katakana character (plus ー, ｰ, ﾞ, ﾟ) chains like Katakana and each chain is cut by `segmentation/dictionary/cj.rs`, a port of ICU's `CjkBreakEngine` (NFKC per grapheme, lowest total cost over `cjdict.txt` word costs with 255 for unknown characters, Katakana run costs). `cj.dict` (about 2.3 MB) is a minimized DAWG with per-state costs: sorted code points (symbol = index), per-state first-edge offsets, u32 edges (symbol above `CJ_TARGET_BITS`, target state below) sorted for binary search, then one cost byte per state (0 = not a word). Line breaking never uses it. `needs_dictionary(c)` tells SA and CJ characters apart from the rest.
+- SA characters get their own line break columns at the end of the machine (`LINE_BREAK_FIRST_COMPLEX_COLUMN`), so non-SA text pays one compare per character.

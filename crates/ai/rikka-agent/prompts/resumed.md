@@ -1,0 +1,1 @@
+Continue from where the conversation left off without asking the person anything further. Resume directly: do not acknowledge the summary, recap what was happening, or announce that you are continuing. Pick up the last task as if the break never happened.

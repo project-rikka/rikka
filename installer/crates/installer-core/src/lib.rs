@@ -1,0 +1,44 @@
+mod answers;
+mod catalog;
+mod configuration;
+mod disk;
+mod error;
+mod flake;
+mod generated;
+mod gpu;
+mod kernel;
+mod keyboard;
+mod locale;
+mod password;
+mod plan;
+mod release;
+mod rikka;
+mod search;
+mod secret;
+mod step;
+mod storage;
+mod validate;
+
+pub use answers::{Answers, Channel};
+pub use catalog::{Catalog, Component, Offer, PACKAGES_FLAKE};
+pub use disk::{ByteSize, Disk, DiskKind};
+pub use error::{Error, Result};
+pub use generated::{GeneratedFile, SECRETS_MODE, generate};
+pub use gpu::{Gpu, GpuVendor, NvidiaDriver};
+pub use kernel::Kernel;
+pub use keyboard::{KEYBOARDS, Keyboard};
+pub use locale::{LOCALES, Locale};
+pub use password::{Strength, hash_password};
+pub use plan::{PartitionPlan, PartitionRole, PartitionSpec};
+pub use release::{FALLBACK_RELEASE, stable_release};
+pub use rikka::{BASE_PACKAGES, fcitx5_addons};
+pub use rikka_nixos_layout::{DIRECTORY, FLAKE};
+pub use search::subsequence;
+pub use secret::{Secret, byte_index};
+pub use step::Step;
+pub use storage::{Filesystem, Swap};
+pub use validate::{Problem, validate, validate_step};
+
+pub const SECRETS_DIR: &str = "/etc/nixos-secrets";
+
+pub const TARGET_ROOT: &str = "/mnt";

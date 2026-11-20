@@ -1,0 +1,12 @@
+[Unit]
+Description=Instant replay (Rikka)
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+ExecStart=@BINDIR@/rikka-replay
+Restart=on-failure
+RestartSec=5
+Slice=background.slice
+Nice=10
+IOSchedulingClass=idle

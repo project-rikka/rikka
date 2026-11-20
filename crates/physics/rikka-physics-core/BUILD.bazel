@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-physics-core",
+    cranelift = False,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-simd",
+        "//crates/foundation/rikka-sync",
+        "//crates/physics/rikka-physics-math",
+        "@crates//:bytemuck",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-physics-core",
+        "@crates//:bytemuck",
+    ],
+)

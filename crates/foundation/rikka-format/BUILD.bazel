@@ -1,0 +1,18 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-format",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:jiff",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-format",
+    ],
+)

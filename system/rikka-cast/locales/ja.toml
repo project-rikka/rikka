@@ -1,0 +1,25 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[cast]
+title = "画面の共有"
+subtitle = "「{app}」が画面の内容を見ようとしています"
+subtitle-unknown = "アプリが画面の内容を見ようとしています"
+hint-multiple = "複数選べます"
+looking = "共有できるものを探しています"
+failure = "画面を読み取れません: {reason}"
+monitor-unnamed = "名前のない画面"
+window-unnamed = "無題のウィンドウ"
+remember = "次回から確認しない"
+remember-session = "このアプリを終了するまで確認しない"
+share = "共有"
+cancel = "キャンセル"
+
+[cast.tab]
+monitors = "画面"
+windows = "ウィンドウ"
+
+[cast.empty]
+monitors = "共有できる画面がありません"
+windows = "共有できるウィンドウがありません"

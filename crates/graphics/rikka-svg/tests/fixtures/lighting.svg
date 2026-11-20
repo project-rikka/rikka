@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="140" viewBox="0 0 200 140">
+  <defs>
+    <filter id="distant" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="bump"/>
+      <feDiffuseLighting in="bump" surfaceScale="4" diffuseConstant="1" lighting-color="#f6d32d">
+        <feDistantLight azimuth="45" elevation="40"/>
+      </feDiffuseLighting>
+      <feComposite in2="SourceAlpha" operator="in"/>
+    </filter>
+    <filter id="point" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="bump"/>
+      <feDiffuseLighting in="bump" surfaceScale="3" lighting-color="white">
+        <fePointLight x="130" y="20" z="30"/>
+      </feDiffuseLighting>
+      <feComposite in2="SourceAlpha" operator="in"/>
+    </filter>
+    <filter id="spot" color-interpolation-filters="sRGB">
+      <feDiffuseLighting in="SourceAlpha" surfaceScale="1" lighting-color="#99c1f1">
+        <feSpotLight x="20" y="80" z="60" pointsAtX="60" pointsAtY="120" pointsAtZ="0" specularExponent="2" limitingConeAngle="40"/>
+      </feDiffuseLighting>
+    </filter>
+    <filter id="shine" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="bump"/>
+      <feSpecularLighting in="bump" surfaceScale="5" specularConstant="1" specularExponent="20" lighting-color="white" result="highlight">
+        <fePointLight x="150" y="60" z="60"/>
+      </feSpecularLighting>
+      <feComposite in="highlight" in2="SourceAlpha" operator="in" result="glint"/>
+      <feComposite in="SourceGraphic" in2="glint" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="70" height="50" rx="12" fill="#3584e4" filter="url(#distant)"/>
+  <circle cx="135" cy="35" r="26" fill="#e01b24" filter="url(#point)"/>
+  <rect x="10" y="76" width="80" height="54" fill="#000" filter="url(#spot)"/>
+  <circle cx="150" cy="104" r="28" fill="#26a269" filter="url(#shine)"/>
+</svg>

@@ -1,0 +1,17 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("//sdk/codegen:defs.bzl", "rikka_bindings")
+
+rikka_bindings(
+    name = "generated",
+    language = "cpp",
+    outs = ["include/rikka/rikka.hpp"],
+    visibility = ["//sdk:__pkg__"],
+)
+
+cc_library(
+    name = "cpp",
+    hdrs = ["include/rikka/rikka.hpp"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = ["//sdk/bindings/c"],
+)

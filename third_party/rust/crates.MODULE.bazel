@@ -1,0 +1,1191 @@
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+crate.spec(
+    package = "aes",
+    version = "0.9",
+)
+crate.spec(
+    package = "aes-gcm",
+    version = "0.11",
+)
+crate.spec(
+    default_features = False,
+    package = "alacritty_terminal",
+    version = "0.26",
+)
+crate.spec(
+    package = "alsa",
+    version = "0.11",
+)
+crate.spec(
+    package = "anyhow",
+    version = "1",
+)
+crate.spec(
+    package = "arc-swap",
+    version = "1",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "alloc",
+        "zeroize",
+    ],
+    package = "argon2",
+    version = "0.6",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "config",
+        "derive",
+        "std",
+    ],
+    package = "askama",
+    version = "0.16",
+)
+crate.spec(
+    package = "ash",
+    version = "0.38",
+)
+crate.spec(
+    package = "async-io",
+    version = "2",
+)
+crate.spec(
+    package = "async-trait",
+    version = "0.1",
+)
+crate.spec(
+    package = "base64",
+    version = "0.23",
+)
+crate.spec(
+    package = "bitflags",
+    version = "2",
+)
+crate.spec(
+    package = "blocking",
+    version = "=1.6.2",
+)
+crate.spec(
+    package = "brotli",
+    version = "8",
+)
+crate.spec(
+    package = "brotli-decompressor",
+    version = "5",
+)
+crate.spec(
+    features = ["derive"],
+    package = "bytemuck",
+    version = "1",
+)
+crate.spec(
+    package = "bytes",
+    version = "1",
+)
+crate.spec(
+    package = "bzip2",
+    version = "0.6",
+)
+crate.spec(
+    package = "cbc",
+    version = "0.2",
+)
+crate.spec(
+    features = ["zeroize"],
+    package = "chacha20poly1305",
+    version = "0.11",
+)
+crate.spec(
+    package = "chardetng",
+    version = "0.1",
+)
+crate.spec(
+    features = [
+        "derive",
+        "env",
+        "wrap_help",
+    ],
+    package = "clap",
+    version = "4",
+)
+crate.spec(
+    package = "clap_complete",
+    version = "4",
+)
+crate.spec(
+    package = "crc32fast",
+    version = "1.5",
+)
+crate.spec(
+    package = "crossterm",
+    version = "0.29",
+)
+crate.spec(
+    default_features = False,
+    features = ["zeroize"],
+    package = "crypto-bigint",
+    version = "0.7",
+)
+crate.spec(
+    package = "ctr",
+    version = "0.10",
+)
+crate.spec(
+    package = "curve25519-dalek",
+    version = "5",
+)
+crate.spec(
+    package = "davey",
+    version = "0.1.4",
+)
+crate.spec(
+    package = "drm",
+    version = "0.14",
+)
+crate.spec(
+    package = "drm-ffi",
+    version = "0.9",
+)
+crate.spec(
+    package = "drm-fourcc",
+    version = "2.2",
+)
+crate.spec(
+    package = "ed25519-dalek",
+    version = "3",
+)
+crate.spec(
+    package = "encoding_rs",
+    version = "0.8",
+)
+crate.spec(
+    package = "etagere",
+    version = "0.3",
+)
+crate.spec(
+    package = "fend-core",
+    version = "1.5",
+)
+crate.spec(
+    features = ["zlib-rs"],
+    package = "flate2",
+    version = "1.1",
+)
+crate.spec(
+    default_features = False,
+    features = ["std"],
+    package = "futures-channel",
+    version = "0.3",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "sink",
+        "std",
+    ],
+    package = "futures-util",
+    version = "0.3",
+)
+crate.spec(
+    default_features = False,
+    features = ["drm-support"],
+    package = "gbm",
+    version = "0.18",
+)
+crate.spec(
+    package = "getrandom",
+    version = "0.4",
+)
+crate.spec(
+    package = "gif",
+    version = "0.14",
+)
+crate.spec(
+    features = ["bytemuck"],
+    package = "glam",
+    version = "0.33",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "std",
+        "vulkan",
+    ],
+    package = "gpu-allocator",
+    version = "0.28",
+)
+crate.spec(
+    package = "grep-matcher",
+    version = "0.1",
+)
+crate.spec(
+    package = "grep-regex",
+    version = "0.1",
+)
+crate.spec(
+    package = "grep-searcher",
+    version = "0.1",
+)
+crate.spec(
+    package = "half",
+    version = "2",
+)
+crate.spec(
+    package = "hkdf",
+    version = "0.13",
+)
+crate.spec(
+    package = "hmac",
+    version = "0.13",
+)
+crate.spec(
+    package = "http",
+    version = "1",
+)
+crate.spec(
+    package = "ignore",
+    version = "0.4",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "jpeg",
+        "webp",
+    ],
+    package = "image",
+    version = "0.25",
+)
+crate.spec(
+    package = "imara-diff",
+    version = "0.2",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "libinput_1_21",
+        "udev",
+    ],
+    package = "input",
+    version = "0.9",
+)
+crate.spec(
+    package = "jiff",
+    version = "0.2",
+)
+crate.spec(
+    package = "jiff-tzdb",
+    version = "0.1",
+)
+crate.spec(
+    package = "libc",
+    version = "0.2",
+)
+crate.spec(
+    package = "libloading",
+    version = "0.8",
+)
+crate.spec(
+    default_features = False,
+    package = "libseat",
+    version = "0.2",
+)
+crate.spec(
+    features = ["v1_0_0"],
+    package = "libspa",
+    version = "0.10",
+)
+crate.spec(
+    package = "lofty",
+    version = "0.25",
+)
+crate.spec(
+    package = "lzma-rust2",
+    version = "0.18",
+)
+crate.spec(
+    default_features = False,
+    features = ["std"],
+    package = "material-colors",
+    version = "0.4.2",
+)
+crate.spec(
+    package = "md-5",
+    version = "0.11",
+)
+crate.spec(
+    package = "memchr",
+    version = "2",
+)
+crate.spec(
+    features = [
+        "local_dynamic_tls",
+        "no_thp",
+    ],
+    package = "mimalloc",
+    version = "0.1",
+)
+crate.spec(
+    package = "mime_guess",
+    version = "2",
+)
+crate.spec(
+    package = "moxcms",
+    version = "0.8",
+)
+crate.spec(
+    package = "nvml-wrapper",
+    version = "0.12",
+)
+crate.spec(
+    default_features = False,
+    features = ["bundled"],
+    package = "opusic-sys",
+    version = "0.7.5",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "ecdh",
+        "std",
+    ],
+    package = "p256",
+    version = "0.14",
+)
+crate.spec(
+    package = "percent-encoding",
+    version = "2",
+)
+crate.spec(
+    features = ["v1_0_0"],
+    package = "pipewire",
+    version = "0.10",
+)
+crate.spec(
+    features = [
+        "encryption",
+        "pem",
+        "std",
+    ],
+    package = "pkcs8",
+    version = "0.11",
+)
+crate.spec(
+    package = "png",
+    version = "0.18",
+)
+crate.spec(
+    package = "proc-macro2",
+    version = "1",
+)
+crate.spec(
+    package = "prost",
+    version = "0.14",
+)
+crate.spec(
+    package = "proton-rpgp",
+    version = "0.3.1",
+)
+crate.spec(
+    package = "proton-srp",
+    version = "0.8",
+)
+crate.spec(
+    default_features = False,
+    features = ["simd"],
+    package = "pulldown-cmark",
+    version = "0.13",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "runtime-tokio",
+        "rustls-aws-lc-rs",
+    ],
+    package = "quinn",
+    version = "0.11",
+)
+crate.spec(
+    package = "quote",
+    version = "1",
+)
+crate.spec(
+    package = "rand",
+    version = "0.9",
+)
+crate.spec(
+    package = "ratatui",
+    version = "0.30",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "aws_lc_rs",
+        "pem",
+    ],
+    package = "rcgen",
+    version = "0.14",
+)
+crate.spec(
+    package = "regex",
+    version = "1",
+)
+crate.spec(
+    features = [
+        "brotli",
+        "cookies",
+        "deflate",
+        "form",
+        "gzip",
+        "json",
+        "multipart",
+        "query",
+        "socks",
+        "stream",
+        "zstd",
+    ],
+    package = "reqwest",
+    version = "0.13",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "raster-images",
+        "svgz",
+        "text",
+    ],
+    package = "resvg",
+    version = "0.48",
+)
+crate.spec(
+    package = "rnix",
+    version = "0.14",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "cr_lines",
+        "simd",
+    ],
+    package = "ropey",
+    version = "1.6",
+)
+crate.spec(
+    package = "rowan",
+    version = "0.16",
+)
+crate.spec(
+    package = "rquickjs",
+    version = "0.14",
+)
+crate.spec(
+    features = ["sha2"],
+    package = "rsa",
+    version = "0.9.10",
+)
+crate.spec(
+    features = [
+        "bundled",
+        "functions",
+    ],
+    package = "rusqlite",
+    version = "0.40",
+)
+crate.spec(
+    package = "rustc-hash",
+    version = "2",
+)
+crate.spec(
+    features = [
+        "event",
+        "fs",
+        "mm",
+        "net",
+        "param",
+        "pipe",
+        "process",
+        "pty",
+        "shm",
+        "stdio",
+        "system",
+        "termios",
+        "thread",
+        "time",
+    ],
+    package = "rustix",
+    version = "1",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "aws-lc-rs",
+        "logging",
+        "std",
+        "tls12",
+    ],
+    package = "rustls",
+    version = "0.23",
+)
+crate.spec(
+    package = "rustls-native-certs",
+    version = "0.8",
+)
+crate.spec(
+    package = "rustls-pemfile",
+    version = "2",
+)
+crate.spec(
+    package = "rustls-pki-types",
+    version = "1",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "aws-lc-rs",
+        "std",
+    ],
+    package = "rustls-webpki",
+    version = "0.103",
+)
+crate.spec(
+    features = [
+        "derive",
+        "rc",
+    ],
+    package = "serde",
+    version = "1",
+)
+crate.spec(
+    features = ["raw_value"],
+    package = "serde_json",
+    version = "1",
+)
+crate.spec(
+    package = "serde_urlencoded",
+    version = "0.7",
+)
+crate.spec(
+    features = [
+        "brotli",
+        "deflate",
+        "lz4",
+        "nt-time",
+        "zstd",
+    ],
+    package = "sevenz-rust2",
+    version = "0.21",
+)
+crate.spec(
+    package = "sha-crypt",
+    version = "0.6",
+)
+crate.spec(
+    package = "sha1",
+    version = "0.11",
+)
+crate.spec(
+    package = "sha2",
+    version = "0.11",
+)
+crate.spec(
+    package = "slotmap",
+    version = "1",
+)
+crate.spec(
+    package = "smallvec",
+    version = "1.15",
+)
+crate.spec(
+    package = "socket2",
+    version = "0.6",
+)
+crate.spec(
+    features = ["full"],
+    package = "syn",
+    version = "2",
+)
+crate.spec(
+    package = "tar",
+    version = "0.4",
+)
+crate.spec(
+    package = "tempfile",
+    version = "3",
+)
+crate.spec(
+    package = "thiserror",
+    version = "2",
+)
+crate.spec(
+    features = [
+        "fs",
+        "io-util",
+        "macros",
+        "net",
+        "process",
+        "rt-multi-thread",
+        "sync",
+        "time",
+    ],
+    package = "tokio",
+    version = "1.53",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "aws_lc_rs",
+        "logging",
+        "tls12",
+    ],
+    package = "tokio-rustls",
+    version = "0.26",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "connect",
+        "handshake",
+        "rustls-tls-native-roots",
+        "stream",
+    ],
+    package = "tokio-tungstenite",
+    version = "0.30",
+)
+crate.spec(
+    package = "toml",
+    version = "1",
+)
+crate.spec(
+    package = "tracing",
+    version = "0.1",
+)
+crate.spec(
+    features = ["env-filter"],
+    package = "tracing-subscriber",
+    version = "0.3",
+)
+crate.spec(
+    package = "tree-sitter",
+    version = "0.27",
+)
+crate.spec(
+    package = "tree-sitter-bash",
+    version = "0.25",
+)
+crate.spec(
+    package = "tree-sitter-c",
+    version = "0.24",
+)
+crate.spec(
+    package = "tree-sitter-c-sharp",
+    version = "0.23",
+)
+crate.spec(
+    package = "tree-sitter-cpp",
+    version = "0.23",
+)
+crate.spec(
+    package = "tree-sitter-css",
+    version = "0.25",
+)
+crate.spec(
+    package = "tree-sitter-diff",
+    version = "0.1",
+)
+crate.spec(
+    package = "tree-sitter-go",
+    version = "0.25",
+)
+crate.spec(
+    package = "tree-sitter-html",
+    version = "0.23",
+)
+crate.spec(
+    package = "tree-sitter-java",
+    version = "0.23",
+)
+crate.spec(
+    package = "tree-sitter-javascript",
+    version = "0.25",
+)
+crate.spec(
+    package = "tree-sitter-json",
+    version = "0.24",
+)
+crate.spec(
+    package = "tree-sitter-language",
+    version = "0.1",
+)
+crate.spec(
+    package = "tree-sitter-lua",
+    version = "0.5",
+)
+crate.spec(
+    package = "tree-sitter-md",
+    version = "0.5",
+)
+crate.spec(
+    package = "tree-sitter-nix",
+    version = "0.3",
+)
+crate.spec(
+    package = "tree-sitter-php",
+    version = "0.24",
+)
+crate.spec(
+    package = "tree-sitter-python",
+    version = "0.25",
+)
+crate.spec(
+    package = "tree-sitter-ruby",
+    version = "0.23",
+)
+crate.spec(
+    package = "tree-sitter-rust",
+    version = "0.24",
+)
+crate.spec(
+    package = "tree-sitter-sequel",
+    version = "0.3",
+)
+crate.spec(
+    package = "tree-sitter-slang",
+    version = "0.3",
+)
+crate.spec(
+    package = "tree-sitter-starlark",
+    version = "1.3",
+)
+crate.spec(
+    package = "tree-sitter-toml-ng",
+    version = "0.7",
+)
+crate.spec(
+    package = "tree-sitter-typescript",
+    version = "0.23",
+)
+crate.spec(
+    package = "tree-sitter-yaml",
+    version = "0.7",
+)
+crate.spec(
+    package = "udev",
+    version = "0.9",
+)
+crate.spec(
+    package = "unicode-width",
+    version = "0.2",
+)
+crate.spec(
+    package = "url",
+    version = "2",
+)
+crate.spec(
+    package = "wayland-client",
+    version = "0.31",
+)
+crate.spec(
+    default_features = False,
+    package = "webp",
+    version = "0.3",
+)
+crate.spec(
+    package = "whatlang",
+    version = "0.18",
+)
+crate.spec(
+    features = [
+        "Foundation",
+        "UI",
+        "UI_ViewManagement",
+        "Win32_Devices_Display",
+        "Win32_Foundation",
+        "Win32_Globalization",
+        "Win32_Graphics_DirectWrite",
+        "Win32_Graphics_Dwm",
+        "Win32_Graphics_Dxgi",
+        "Win32_Graphics_Gdi",
+        "Win32_Graphics_Imaging",
+        "Win32_Media",
+        "Win32_Media_Audio",
+        "Win32_Media_Audio_Endpoints",
+        "Win32_Media_KernelStreaming",
+        "Win32_Media_Multimedia",
+        "Win32_Security",
+        "Win32_Security_Authentication_Identity",
+        "Win32_Security_Authorization",
+        "Win32_Security_Credentials",
+        "Win32_Security_Cryptography",
+        "Win32_Storage_FileSystem",
+        "Win32_System_Com",
+        "Win32_System_Com_StructuredStorage",
+        "Win32_System_Console",
+        "Win32_System_DataExchange",
+        "Win32_System_Diagnostics_Debug",
+        "Win32_System_Environment",
+        "Win32_System_IO",
+        "Win32_System_LibraryLoader",
+        "Win32_System_Memory",
+        "Win32_System_Ole",
+        "Win32_System_Performance",
+        "Win32_System_Pipes",
+        "Win32_System_Power",
+        "Win32_System_ProcessStatus",
+        "Win32_System_Registry",
+        "Win32_System_SystemInformation",
+        "Win32_System_SystemServices",
+        "Win32_System_Threading",
+        "Win32_System_Variant",
+        "Win32_System_WinRT",
+        "Win32_UI_Accessibility",
+        "Win32_UI_Controls",
+        "Win32_UI_HiDpi",
+        "Win32_UI_Input",
+        "Win32_UI_Input_Ime",
+        "Win32_UI_Input_KeyboardAndMouse",
+        "Win32_UI_Input_Pointer",
+        "Win32_UI_Input_Touch",
+        "Win32_UI_Shell",
+        "Win32_UI_Shell_Common",
+        "Win32_UI_Shell_PropertiesSystem",
+        "Win32_UI_TextServices",
+        "Win32_UI_WindowsAndMessaging",
+    ],
+    package = "windows",
+    version = "0.62",
+)
+crate.spec(
+    package = "windows-core",
+    version = "0.62",
+)
+crate.spec(
+    features = [
+        "composite",
+        "res",
+        "xfixes",
+    ],
+    package = "x11rb",
+    version = "0.13",
+)
+crate.spec(
+    features = [
+        "composite",
+        "res",
+        "xfixes",
+    ],
+    package = "x11rb-protocol",
+    version = "0.13",
+)
+crate.spec(
+    package = "x25519-dalek",
+    version = "3",
+)
+crate.spec(
+    package = "x509-cert",
+    version = "0.2",
+)
+crate.spec(
+    features = ["wayland"],
+    package = "xkbcommon",
+    version = "0.8",
+)
+crate.spec(
+    package = "xkeysym",
+    version = "0.2",
+)
+crate.spec(
+    package = "zbus",
+    version = "5",
+)
+crate.spec(
+    package = "zeroize",
+    version = "1",
+)
+crate.spec(
+    features = ["legacy-zip"],
+    package = "zip",
+    version = "8",
+)
+crate.spec(
+    package = "zstd",
+    version = "0.13",
+)
+crate.spec(
+    package = "zvariant",
+    version = "5",
+)
+crate.annotation(
+    build_script_env = {"NUM_JOBS": "16"},
+    build_script_exec_properties = {"EstimatedCPU": "16"},
+    crate = "aws-lc-sys",
+)
+crate.annotation(
+    build_script_rustc_env = {"CARGO_MANIFEST_DIR": "."},
+    crate = "libspa-sys",
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-bash",
+    extra_aliased_targets = {"tree-sitter-bash-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-c",
+    extra_aliased_targets = {"tree-sitter-c-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-c-sharp",
+    extra_aliased_targets = {"tree-sitter-c-sharp-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-cpp",
+    extra_aliased_targets = {"tree-sitter-cpp-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-css",
+    extra_aliased_targets = {"tree-sitter-css-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-diff",
+    extra_aliased_targets = {"tree-sitter-diff-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-go",
+    extra_aliased_targets = {"tree-sitter-go-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-html",
+    extra_aliased_targets = {"tree-sitter-html-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-java",
+    extra_aliased_targets = {"tree-sitter-java-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-javascript",
+    extra_aliased_targets = {"tree-sitter-javascript-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-json",
+    extra_aliased_targets = {"tree-sitter-json-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-lua",
+    extra_aliased_targets = {"tree-sitter-lua-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["tree-sitter-markdown/queries/*.scm", "tree-sitter-markdown-inline/queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-md",
+    extra_aliased_targets = {"tree-sitter-md-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-nix",
+    extra_aliased_targets = {"tree-sitter-nix-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-php",
+    extra_aliased_targets = {"tree-sitter-php-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-python",
+    extra_aliased_targets = {"tree-sitter-python-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-ruby",
+    extra_aliased_targets = {"tree-sitter-ruby-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-rust",
+    extra_aliased_targets = {"tree-sitter-rust-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-sequel",
+    extra_aliased_targets = {"tree-sitter-sequel-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-starlark",
+    extra_aliased_targets = {"tree-sitter-starlark-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-toml-ng",
+    extra_aliased_targets = {"tree-sitter-toml-ng-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-typescript",
+    extra_aliased_targets = {"tree-sitter-typescript-queries": "queries"},
+)
+crate.annotation(
+    additive_build_file_content = """
+filegroup(
+    name = "queries",
+    srcs = glob(["queries/*.scm"]),
+)
+""",
+    crate = "tree-sitter-yaml",
+    extra_aliased_targets = {"tree-sitter-yaml-queries": "queries"},
+)
+
+_RESOLUTION_PINS = [
+    (
+        "cc",
+        "1.2",
+        ["parallel"],
+    ),
+]
+
+[
+    crate.spec(
+        features = features,
+        package = package,
+        version = version,
+    )
+    for package, version, features in _RESOLUTION_PINS
+]
+
+crate.render_config(
+    platforms_template = "@@//bazel/platforms/triples:{triple}",
+    repositories = ["crates"],
+)
+
+crate.from_specs(
+    name = "crates",
+    cargo_lockfile = "//third_party/rust:Cargo.lock",
+    generate_binaries = False,
+    host_tools = "@nix//:rust/host_tools",
+    lockfile = "//third_party/rust:cargo-bazel-lock.json",
+    supported_platform_triples = [
+        "x86_64-pc-windows-gnullvm",
+        "x86_64-unknown-linux-gnu",
+    ],
+)
+use_repo(crate, "crates")

@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-packages",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//apps/system/packages/crates/nixpkgs-search",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-theme",
+        "//crates/nix/rikka-nix",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

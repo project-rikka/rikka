@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-clipboard",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-clipboard-core",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [
+            "//crates/foundation/rikka-wayland",
+            "//crates/foundation/rikka-wayland-client",
+            "//crates/foundation/rikka-worker",
+        ],
+        "@platforms//os:windows": [
+            "//crates/graphics/rikka-png",
+            "@crates//:windows",
+        ],
+    }),
+)

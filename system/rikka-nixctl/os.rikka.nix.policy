@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD polkit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/software/polkit/policyconfig-1.dtd">
+<!--
+  One action for the whole of a change. Changing a NixOS setting is not one command: it
+  is write the generated modules, run a rebuild that takes minutes, and — where the
+  rebuild fails — write them back. `auth_admin_keep` is what makes one answer stand for
+  all of it, so nobody is asked again at the end of a rebuild they walked away from.
+
+  There is deliberately no `org.freedesktop.policykit.exec.path` annotation. polkit
+  executes nothing here: rikka-nixctl is a system service the bus starts, and it asks
+  `CheckAuthorization` about the connection that called it. That is what this looks like
+  on a machine with no setuid program anywhere: NixOS builds the pkexec wrapper only
+  where it is asked to, and this asks nowhere.
+-->
+<policyconfig>
+  <vendor>Rikka</vendor>
+
+  <action id="os.rikka.nix.apply">
+    <description>Change this machine's NixOS configuration</description>
+    <description xml:lang="ja">このコンピューターの NixOS 構成を変更する</description>
+    <description xml:lang="zh-Hans">更改此计算机的 NixOS 配置</description>
+    <message>Authentication is required to change this machine's configuration</message>
+    <message xml:lang="ja">このコンピューターの構成を変更するには認証が必要です</message>
+    <message xml:lang="zh-Hans">更改此计算机的配置需要身份验证</message>
+    <icon_name>system-software-install</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+  </action>
+</policyconfig>

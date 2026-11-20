@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en" data-color-mode="auto">
+<head>
+<meta charset="utf-8">
+<title>BurntSushi/ripgrep: ripgrep recursively searches directories for a regex pattern</title>
+<style>
+body { font: 14px/1.5 -apple-system, "Segoe UI", sans-serif; margin: 0; }
+.AppHeader { display: flex; gap: 8px; padding: 8px 16px; background: #f6f8fa; }
+.markdown-body { max-width: 980px; padding: 16px 32px; }
+.markdown-heading { position: relative; }
+.anchor { position: absolute; left: -20px; }
+.highlight pre, .snippet-clipboard-content pre { background: #f6f8fa; padding: 16px; overflow: auto; }
+.card { display: block; border: 1px solid #d0d7de; padding: 8px; }
+</style>
+</head>
+<body>
+<header class="AppHeader" role="banner">
+  <a href="https://github.com/" aria-label="Homepage" class="AppHeader-logo"><svg height="32" viewBox="0 0 16 16" width="32" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8"></path></svg></a>
+  <nav aria-label="Repository">
+    <ul class="UnderlineNav-body">
+      <li class="nav-item"><a href="/BurntSushi/ripgrep" aria-current="page">Code</a></li>
+      <li class="nav-item"><a href="/BurntSushi/ripgrep/issues">Issues</a></li>
+      <li class="nav-item"><a href="/BurntSushi/ripgrep/pulls">Pull requests</a></li>
+    </ul>
+  </nav>
+  <input id="search" type="text" placeholder="Type to search" aria-label="Search code">
+</header>
+<main id="content">
+<article class="markdown-body entry-content container-lg" itemprop="text">
+<div class="markdown-heading" dir="auto"><h2 id="heading" tabindex="-1" class="heading-element" dir="auto">ripgrep (rg)</h2><a id="user-content-ripgrep-rg" class="anchor" aria-label="Permalink: ripgrep (rg)" href="#ripgrep-rg"><svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path d="m7.775 3.275 1.25-1.25a3.5 3.5 0 1 1 4.95 4.95"></path></svg></a></div>
+<p id="intro" dir="auto">ripgrep is a line-oriented search tool that recursively searches the current
+directory for a regex pattern. By default, ripgrep will respect gitignore rules
+and automatically skip hidden files/directories and binary files. (To disable
+all automatic filtering by default, use <code>rg -uuu</code>.) ripgrep has first class
+support on Windows, macOS and Linux, with binary downloads available for <a href="https://github.com/BurntSushi/ripgrep/releases">every
+release</a>.</p>
+<p id="badges" dir="auto"><a href="https://github.com/BurntSushi/ripgrep/actions"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Build status" style="max-width: 100%;"></a>
+<a href="https://crates.io/crates/ripgrep" rel="nofollow"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Crates.io" style="max-width: 100%;"></a></p>
+<p id="order" dir="auto"><strong>Fast</strong> and <em>friendly</em></p>
+<p id="icons" dir="auto">Press <kbd>Ctrl</kbd> and <span class="material-icons">search</span> to find a file quickly.</p>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto">Installation</h3><a id="user-content-installation" class="anchor" aria-label="Permalink: Installation" href="#installation"><svg class="octicon octicon-link" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M0 0h16v16H0z"></path></svg></a></div>
+<p dir="auto">If you're a <strong>Rust programmer</strong>, ripgrep can be installed with <code>cargo</code>.</p>
+<div id="plain" class="snippet-clipboard-content notranslate position-relative overflow-auto" data-snippet-clipboard-copy-content="# Install with Cargo from crates.io
+$ cargo install ripgrep"><pre class="notranslate"><code># Install with Cargo from crates.io
+$ cargo install ripgrep
+</code></pre></div>
+<div id="shell" class="highlight highlight-source-shell notranslate position-relative overflow-auto" dir="auto" data-snippet-clipboard-copy-content="bat README.md"><pre>bat README.md  <span class="pl-c"><span class="pl-c">#</span> show a file with syntax highlighting</span>
+bat -n src/main.rs  <span class="pl-c"><span class="pl-c">#</span> only show line numbers</span>
+<span class="pl-c"><span class="pl-c">#</span> Install the shell completions into your</span>
+<span class="pl-c"><span class="pl-c">#</span> profile so that they load on every start.</span>
+rg --generate complete-bash <span class="pl-k">&gt;</span> rg.bash</pre></div>
+<div id="rust" class="highlight highlight-source-rust notranslate position-relative overflow-auto" dir="auto"><pre><span class="pl-c">/// Searches the haystack for the given pattern and</span>
+<span class="pl-c">/// reports every match it finds to the printer.</span>
+<span class="pl-k">fn</span> <span class="pl-en">search</span><span class="pl-kos">(</span><span class="pl-s1">pattern</span><span class="pl-kos">:</span> <span class="pl-c1">&amp;</span><span class="pl-smi">str</span><span class="pl-kos">)</span> -&gt; <span class="pl-smi">u64</span> <span class="pl-kos">{</span>
+    <span class="pl-k">let</span> count = <span class="pl-c1">0</span><span class="pl-kos">;</span> <span class="pl-c">// starts at zero</span>
+    <span class="pl-c">// let old = legacy_search(pattern);</span>
+    <span class="pl-c">/* The printer is flushed once the whole</span>
+<span class="pl-c">       file has been searched. */</span>
+    <span class="pl-c1">#<span class="pl-kos">[</span>cfg<span class="pl-kos">(</span>unix<span class="pl-kos">)</span><span class="pl-kos">]</span></span>
+    count
+<span class="pl-kos">}</span></pre></div>
+<div class="markdown-heading" dir="auto"><h3 tabindex="-1" class="heading-element" dir="auto">Performance</h3></div>
+<table id="bench">
+<thead><tr><th>Tool</th><th>Command</th><th>Line count</th><th>Time</th></tr></thead>
+<tbody>
+<tr><td id="tool">ripgrep (Unicode)</td><td id="command"><code>rg -w '[A-Z]+_SUSPEND'</code></td><td>452</td><td>0.136s</td></tr>
+</tbody>
+</table>
+<p id="ja" lang="ja">このツールはとても速いです。</p>
+<p id="held" class="notranslate">Do not translate this sentence.</p>
+<p id="attrs"><abbr title="Regular expression">regex</abbr> support with <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="A screenshot of search results"> and a <button type="button" aria-label="Copy to clipboard"><svg width="16" height="16" aria-hidden="true"><path d="M0 0h16v16H0z"></path></svg></button> button.</p>
+<a id="card" class="card" href="/BurntSushi/ripgrep/blob/master/GUIDE.md"><div>User guide</div><div>Learn how ripgrep filters files and how to configure it.</div></a>
+</article>
+</main>
+</body>
+</html>

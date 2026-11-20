@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-account-book",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-fs",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-account-book",
+        "//crates/desktop/rikka-secrets",
+        "//crates/desktop/rikka-test-keyring",
+        "@crates//:serde",
+        "@crates//:tempfile",
+    ],
+)

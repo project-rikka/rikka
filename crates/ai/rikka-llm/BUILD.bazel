@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-llm",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-tool",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-oauth",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:base64",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:rand",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-llm",
+        "//crates/ai/rikka-test-llm",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

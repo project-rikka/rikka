@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Remote Desktop
+Name[ja]=リモートデスクトップ
+Name[zh_CN]=远程桌面
+GenericName=Remote Desktop Viewer
+GenericName[ja]=リモートデスクトップビューアー
+Comment=View and control another Rikka desktop
+Comment[ja]=別の Rikka デスクトップを表示して操作します
+Comment[zh_CN]=查看并控制另一台 Rikka 桌面
+Exec=rikka-remote-viewer
+Icon=rikka-remote-viewer
+Terminal=false
+Categories=Network;RemoteAccess;
+Keywords=remote;desktop;vnc;rdp;
+Keywords[ja]=リモート;デスクトップ;遠隔操作;
+StartupNotify=true

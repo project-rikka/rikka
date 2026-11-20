@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-mesh-bevel",
+    cranelift = False,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//crates/model/rikka-mesh-edit",
+        "//crates/model/rikka-polymesh",
+        "@crates//:glam",
+        "@crates//:rustc-hash",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    limit = 180,
+    deps = [
+        ":rikka-mesh-bevel",
+        "//crates/model/rikka-mesh-edit",
+        "//crates/model/rikka-polymesh",
+        "//crates/model/rikka-test-meshes",
+        "@crates//:glam",
+    ],
+)

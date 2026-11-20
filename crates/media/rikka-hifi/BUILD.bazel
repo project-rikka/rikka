@@ -1,0 +1,42 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-hifi",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-rtkit",
+        "//crates/foundation/rikka-pipewire",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-hifi-core",
+        "//crates/media/rikka-ring",
+        "@crates//:alsa",
+        "@crates//:async-io",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:libc",
+        "@crates//:libspa",
+        "@crates//:pipewire",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-hifi",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "//crates/media/rikka-audio-decode",
+        "@crates//:async-io",
+        "@crates//:futures-util",
+        "@crates//:zbus",
+    ],
+)

@@ -1,0 +1,32 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//crates/foundation/rikka-wayland-protocols:defs.bzl", "rikka_wayland_protocols")
+
+rikka_library(
+    name = "rikka-wayland-client",
+    srcs = glob(["src/**/*.rs"]) + [":protocols"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-wayland-protocols",
+        "//crates/foundation/rikka-wayland-wire",
+    ],
+)
+
+rikka_wayland_protocols(
+    name = "protocols",
+    out = "src/protocols.rs",
+    side = "client",
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-wayland-client",
+        "//crates/compositor/rikka-compositor-protocols",
+        "//crates/compositor/rikka-compositor-server",
+        "//crates/compositor/rikka-test-display",
+        "@crates//:rustix",
+    ],
+)

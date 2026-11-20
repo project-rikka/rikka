@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-clipboard-core",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:percent-encoding",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-clipboard-core",
+    ],
+)

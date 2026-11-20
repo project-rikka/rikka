@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "settings-avatar",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/settings:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":settings-avatar",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+    ],
+)

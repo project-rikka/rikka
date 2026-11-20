@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-objects",
+    target_compatible_with = ["@platforms//os:linux"],
+    testonly = True,
+    visibility = [
+        "//crates/daemons:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "@crates//:serde",
+        "@crates//:zbus",
+    ],
+)

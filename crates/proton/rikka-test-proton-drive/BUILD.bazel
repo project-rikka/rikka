@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-proton-drive",
+    testonly = True,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-drive",
+        "//crates/proton/rikka-proton-pgp",
+        "//crates/proton/rikka-test-proton",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-text-document",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/text/rikka-text-layout",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-text-document",
+        "//crates/text/rikka-text-layout",
+        "@crates//:ropey",
+    ],
+)

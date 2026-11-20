@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-apps",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-xdg",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-icons",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-settings",
+        "//crates/ui/rikka-ui",
+        "//system/rikka-shell/crates/icon-footprint",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:futures-util",
+        "@crates//:tracing",
+    ],
+)

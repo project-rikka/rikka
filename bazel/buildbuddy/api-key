@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+name=BUILDBUDDY_API_KEY
+workspace="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+common="$(git -C "$workspace" rev-parse --path-format=absolute --git-common-dir)" || {
+    echo "buildbuddy: $workspace is not a git checkout" >&2
+    exit 1
+}
+environment="$(dirname "$common")/.env"
+[ -r "$environment" ] || {
+    echo "buildbuddy: $environment is missing" >&2
+    exit 1
+}
+
+while IFS= read -r line || [ -n "$line" ]; do
+    case $line in
+        "$name="*)
+            line=${line#"$name="}
+            line=${line%$'\r'}
+            line=${line#\"}
+            line=${line%\"}
+            [ -n "$line" ] || break
+            printf '%s' "$line"
+            exit 0
+            ;;
+    esac
+done <"$environment"
+echo "buildbuddy: $name is not set in $environment" >&2
+exit 1

@@ -1,0 +1,52 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-compositor-kms",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/compositor/rikka-compositor-reactor",
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/daemons/rikka-rtkit",
+        "//crates/graphics/rikka-colorimetry",
+        "@crates//:bitflags",
+        "@crates//:drm",
+        "@crates//:drm-ffi",
+        "@crates//:drm-fourcc",
+        "@crates//:gbm",
+        "@crates//:libc",
+        "@crates//:libseat",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:udev",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-compositor-kms",
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/graphics/rikka-colorimetry",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-compositor-kms",
+        "//crates/compositor/rikka-compositor-reactor",
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer",
+        "@crates//:rustix",
+    ],
+)

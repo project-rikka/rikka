@@ -1,0 +1,12 @@
+pub(crate) mod arabic;
+pub(crate) mod complex_shaper;
+pub(crate) mod default;
+pub(crate) mod hangul;
+pub(crate) mod hebrew;
+pub(crate) mod indic;
+pub(crate) mod khmer;
+pub(crate) mod myanmar;
+pub(crate) mod registry;
+pub(crate) mod syllabic;
+pub(crate) mod thai;
+pub(crate) mod universal;

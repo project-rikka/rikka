@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-i18n",
+    proc_macro_deps = [
+        "//crates/foundation/rikka-i18n-macros",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-i18n-catalog",
+        "//crates/foundation/rikka-sync",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-i18n",
+        "@crates//:tempfile",
+    ],
+)

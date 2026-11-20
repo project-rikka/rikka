@@ -1,0 +1,44 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+exports_files(
+    [
+        "assets/knight.fbx",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+rikka_library(
+    name = "rikka-fbx",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/model/rikka-model-core",
+        "@crates//:base64",
+        "@crates//:flate2",
+        "@crates//:rustc-hash",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "assets/knight.fbx",
+        "assets/knight_texture.png",
+        "assets/polygons.fbx",
+    ],
+    deps = [
+        ":rikka-fbx",
+        "//crates/model/rikka-model-core",
+    ],
+)
+
+filegroup(
+    name = "assets",
+    srcs = glob(["assets/**"]),
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+)

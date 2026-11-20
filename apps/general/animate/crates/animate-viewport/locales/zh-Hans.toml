@@ -1,0 +1,28 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[animate.handles]
+global = "全局"
+local = "局部"
+turn = "绕{axis}轴旋转"
+slide = "沿{axis}轴移动"
+space = "全局或局部坐标轴"
+
+[animate.hold]
+grasp = "用{hand}抓取"
+
+[animate.marker]
+eyes = "眼睛"
+mouth = "嘴"
+centre = "中心"
+lower_body = "下半身"
+upper_body = "上半身"
+head = "头"
+shoulder = "肩"
+upper_arm = "上臂"
+elbow = "肘"
+hand = "手"
+foot = "脚"
+toes = "脚尖"
+sided = "{side}{part}"

@@ -1,0 +1,42 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-chat",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-accounts",
+        "//crates/ai/rikka-mcp",
+        "//crates/ai/rikka-thread",
+        "//crates/ai/rikka-tools",
+        "//crates/desktop/rikka-clipboard",
+        "//crates/desktop/rikka-dialog",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-file-edit",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-markdown",
+        "//crates/ui/rikka-syntax",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:futures-util",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-chat",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-mcp",
+        "//crates/ai/rikka-test-mcp",
+        "//crates/ai/rikka-thread",
+        "//crates/ui/rikka-ui",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

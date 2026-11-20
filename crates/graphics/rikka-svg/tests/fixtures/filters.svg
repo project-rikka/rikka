@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="128" viewBox="0 0 192 128">
+  <defs>
+    <clipPath id="cut"><rect x="150" y="100" width="42" height="12"/></clipPath>
+    <filter id="blur"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="small" x="-0.3" y="-0.3" width="1.6" height="1.6"><feGaussianBlur stdDeviation="1.2 0.4"/></filter>
+    <filter id="shadow" x="-0.5" y="-0.5" width="2" height="2" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="soft"/>
+      <feOffset in="soft" dx="3" dy="4" result="moved"/>
+      <feFlood flood-color="#1a5fb4" flood-opacity="0.7"/>
+      <feComposite in2="moved" operator="in" result="tinted"/>
+      <feMerge><feMergeNode in="tinted"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="gray"><feColorMatrix type="saturate" values="0.1"/></filter>
+    <filter id="matrix" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 1 0 0  0 1 0 0 0  1 0 0 0 0  0 0 0 0.8 0"/></filter>
+    <filter id="hue"><feColorMatrix type="hueRotate" values="120"/></filter>
+    <filter id="transfer" color-interpolation-filters="sRGB">
+      <feComponentTransfer><feFuncR type="linear" slope="0.5" intercept="0.25"/><feFuncG type="table" tableValues="1 0"/><feFuncA type="gamma" exponent="2"/></feComponentTransfer>
+    </filter>
+    <filter id="drop" x="-0.4" y="-0.4" width="1.8" height="1.8"><feDropShadow dx="2" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.6"/></filter>
+    <filter id="grow"><feMorphology operator="dilate" radius="2"/></filter>
+    <filter id="mix" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#f6d32d" result="flat"/>
+      <feBlend in="SourceGraphic" in2="flat" mode="multiply"/>
+      <feComposite in2="SourceGraphic" operator="atop"/>
+    </filter>
+    <filter id="arith" color-interpolation-filters="sRGB">
+      <feOffset dx="6" dy="0" result="right"/>
+      <feComposite in="SourceGraphic" in2="right" operator="arithmetic" k1="0" k2="0.6" k3="0.6" k4="0"/>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="28" height="28" fill="#e01b24" filter="url(#blur)"/>
+  <rect x="58" y="10" width="28" height="28" fill="#26a269" filter="url(#small)"/>
+  <circle cx="120" cy="24" r="14" fill="#f6d32d" filter="url(#shadow)"/>
+  <rect x="150" y="10" width="28" height="28" fill="#c061cb" filter="url(#gray)"/>
+  <rect x="10" y="52" width="28" height="28" fill="#ff7800" filter="url(#matrix)"/>
+  <rect x="58" y="52" width="28" height="28" fill="#e01b24" filter="url(#hue)"/>
+  <rect x="106" y="52" width="28" height="28" fill="#3584e4" fill-opacity="0.8" filter="url(#transfer)"/>
+  <path d="M152 56h24v20h-24z" fill="#33d17a" filter="url(#drop)"/>
+  <path d="M14 100h20M24 92v16" stroke="#241f31" stroke-width="2" filter="url(#grow)"/>
+  <circle cx="72" cy="106" r="13" fill="#62a0ea" filter="url(#mix)"/>
+  <rect x="106" y="94" width="20" height="24" fill="#a51d2d" filter="url(#arith)"/>
+  <g clip-path="url(#cut)">
+    <rect x="140" y="92" width="40" height="28" fill="#1c71d8" filter="url(#blur)"/>
+  </g>
+  <rect x="-10" y="60" width="16" height="30" fill="#613583" filter="url(#blur)"/>
+</svg>

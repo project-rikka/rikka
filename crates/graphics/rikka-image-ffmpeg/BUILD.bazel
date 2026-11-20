@@ -1,0 +1,16 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-image-ffmpeg",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/media/rikka-ffmpeg",
+        "@crates//:bytemuck",
+        "@crates//:moxcms",
+        "@crates//:thiserror",
+    ],
+)

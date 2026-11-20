@@ -1,0 +1,185 @@
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate", isolate = True)
+crate.spec(
+    default_features = False,
+    features = [
+        "freetype",
+        "gpu",
+        "slug",
+        "svg",
+    ],
+    package = "blenderui",
+    version = "=0.5.0",
+)
+crate.spec(
+    package = "cosmic-text",
+    version = "0.19",
+)
+crate.spec(
+    package = "divan",
+    version = "0.1.21",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "default_fonts",
+        "wayland",
+        "wgpu",
+    ],
+    package = "eframe",
+    version = "0.36",
+)
+crate.spec(
+    package = "egui",
+    version = "0.36",
+)
+crate.spec(
+    package = "fontdue",
+    version = "0.9",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "test-support",
+        "wayland",
+    ],
+    package = "gpui-fast",
+    version = "=0.1.13",
+)
+crate.spec(
+    default_features = False,
+    features = ["wayland"],
+    package = "gpui-fast-platform",
+    version = "=0.1.13",
+)
+crate.spec(
+    package = "gpui-fast-wgpu",
+    version = "=0.1.13",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "test-support",
+        "wayland",
+    ],
+    package = "gpui-pre",
+    version = "=0.3.11",
+)
+crate.spec(
+    default_features = False,
+    features = ["wayland"],
+    package = "gpui-pre-platform",
+    version = "=0.3.11",
+)
+crate.spec(
+    package = "gpui-pre-wgpu",
+    version = "=0.3.11",
+)
+crate.spec(
+    package = "harfrust",
+    version = "=0.5.2",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "crisp",
+        "lazy",
+        "thread-pool",
+        "tiny-skia",
+        "wayland",
+        "web-colors",
+        "wgpu",
+    ],
+    package = "iced",
+    version = "0.14",
+)
+crate.spec(
+    package = "iced_core",
+    version = "0.14",
+)
+crate.spec(
+    package = "iced_runtime",
+    version = "0.14",
+)
+crate.spec(
+    default_features = False,
+    features = ["wayland"],
+    package = "iced_tiny_skia",
+    version = "0.14",
+)
+crate.spec(
+    features = ["lazy"],
+    package = "iced_widget",
+    version = "0.14",
+)
+crate.spec(
+    package = "icu_normalizer",
+    version = "2.3",
+)
+crate.spec(
+    package = "icu_segmenter",
+    version = "2.3",
+)
+crate.spec(
+    default_features = False,
+    features = ["std"],
+    package = "parley",
+    version = "0.12",
+)
+crate.spec(
+    features = [
+        "parallel",
+        "simd8",
+    ],
+    package = "rapier3d",
+    version = "0.36",
+)
+crate.spec(
+    package = "skrifa",
+    version = "0.48",
+)
+crate.spec(
+    package = "swash",
+    version = "0.2.10",
+)
+crate.spec(
+    package = "taffy",
+    version = "0.14",
+)
+crate.spec(
+    package = "ttf-parser",
+    version = "0.25",
+)
+crate.spec(
+    package = "unicode-bidi",
+    version = "0.3",
+)
+crate.spec(
+    package = "unicode-linebreak",
+    version = "0.1",
+)
+crate.spec(
+    package = "unicode-normalization",
+    version = "0.1",
+)
+crate.spec(
+    package = "unicode-segmentation",
+    version = "1",
+)
+crate.spec(
+    features = ["p2p"],
+    package = "zbus",
+    version = "5",
+)
+crate.annotation(
+    crate = "blenderui-sys",
+    gen_build_script = "off",
+)
+crate.from_specs(
+    name = "bench_crates",
+    cargo_lockfile = "//third_party/comparators:Cargo.lock",
+    generate_binaries = False,
+    host_tools = "@nix//:rust/host_tools",
+    lockfile = "//third_party/comparators:cargo-bazel-lock.json",
+    supported_platform_triples = ["x86_64-unknown-linux-gnu"],
+)
+use_repo(crate, "bench_crates")

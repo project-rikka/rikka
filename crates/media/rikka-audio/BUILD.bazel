@@ -1,0 +1,38 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-audio",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-opus",
+        "//crates/media/rikka-resample",
+        "//crates/media/rikka-ring",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [
+            "//crates/foundation/rikka-pipewire",
+            "@crates//:pipewire",
+        ],
+        "@platforms//os:windows": [
+            "@crates//:windows",
+            "@crates//:windows-core",
+        ],
+    }),
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-audio",
+        "//crates/media/rikka-audio-decode",
+        "@crates//:rustix",
+    ],
+)

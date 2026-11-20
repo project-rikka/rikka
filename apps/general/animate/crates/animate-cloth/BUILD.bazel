@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-cloth",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//crates/model/rikka-model-core",
+        "//crates/physics/rikka-physics-tailor",
+        "@crates//:rustc-hash",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+    ],
+    deps = [
+        ":animate-cloth",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/physics/rikka-physics-tailor",
+    ],
+)

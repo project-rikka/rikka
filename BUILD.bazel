@@ -1,0 +1,11 @@
+exports_files(
+    [
+        "LICENSE",
+        "crates/graphics/THIRD_PARTY.md",
+        "crates/media/THIRD_PARTY.md",
+        "crates/model/THIRD_PARTY.md",
+        "crates/physics/THIRD_PARTY.md",
+        "crates/text/THIRD_PARTY.md",
+    ],
+    visibility = ["//apps/general:__pkg__"],
+)

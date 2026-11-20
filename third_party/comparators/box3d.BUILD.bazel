@@ -1,0 +1,17 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+cc_library(
+    name = "box3d",
+    srcs = glob([
+        "src/**/*.c",
+        "src/**/*.h",
+    ]),
+    hdrs = glob(["include/**/*.h"]),
+    copts = [
+        "-std=c17",
+        "-w",
+    ],
+    includes = ["include"],
+    textual_hdrs = glob(["src/**/*.inl"]),
+    visibility = ["//visibility:public"],
+)

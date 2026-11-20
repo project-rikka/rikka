@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-shader-editor",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-look",
+        "//apps/general/animate/crates/animate-shader",
+        "//apps/general/animate/crates/animate-ui",
+        "//crates/foundation/rikka-fuzzy",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/graphics/rikka-shader-presets",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:rustc-hash",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-shader-editor",
+        "//apps/general/animate/crates/animate-shader",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/ui/rikka-widgets",
+    ],
+)

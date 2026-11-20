@@ -1,0 +1,25 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-compositor-snap",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/compositor/rikka-compositor-tiling",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-compositor-snap",
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/compositor/rikka-compositor-tiling",
+    ],
+)

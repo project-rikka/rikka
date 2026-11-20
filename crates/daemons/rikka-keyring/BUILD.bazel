@@ -1,0 +1,48 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-keyring",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-keyring-vault",
+        "//crates/desktop/rikka-secrets-protocol",
+        "//crates/foundation/rikka-fs",
+        "@crates//:base64",
+        "@crates//:blocking",
+        "@crates//:futures-util",
+        "@crates//:rustix",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zbus",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-keyring",
+        "//crates/desktop/rikka-secrets",
+        "//crates/desktop/rikka-secrets-protocol",
+        "//crates/foundation/rikka-test-bus",
+        "@crates//:futures-util",
+        "@crates//:tempfile",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-keyring",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-test-bus",
+        "@crates//:tempfile",
+        "@crates//:zbus",
+    ],
+)

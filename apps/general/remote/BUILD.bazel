@@ -1,0 +1,38 @@
+load("//bazel/windows:defs.bzl", "rikka_application")
+
+rikka_application(
+    name = "rikka-remote-viewer",
+    product = "Remote Desktop",
+    visibility = ["//apps/general:__pkg__"],
+    deps = [
+        "//apps/general/remote/crates/viewer-hosts",
+        "//crates/desktop/rikka-clipboard",
+        "//crates/desktop/rikka-open",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-picture",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-opus",
+        "//crates/media/rikka-playout",
+        "//crates/media/rikka-video",
+        "//crates/remote/rikka-remote-link",
+        "//crates/remote/rikka-remote-wire",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:bytes",
+        "@crates//:quinn",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+        "@crates//:zeroize",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:rustix"],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)

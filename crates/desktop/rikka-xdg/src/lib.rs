@@ -1,0 +1,23 @@
+mod associations;
+mod catalog;
+mod entry;
+mod error;
+mod exec;
+mod keyfile;
+mod lines;
+mod locale;
+mod recent;
+mod roots;
+mod terminal;
+mod watch;
+
+pub use associations::{Associations, MimeApps};
+pub use catalog::{Catalog, Sources};
+pub use entry::{DesktopEntry, TerminalArgs};
+pub use error::{Error, Result};
+pub use exec::{Codes, Exec, Expansion, FieldCodes, Target};
+pub use keyfile::{Group, KeyFile};
+pub use locale::{language, locales};
+pub use recent::{RecentApplication, RecentFile, RecentFiles};
+pub use terminal::{Terminal, TerminalCommand, TerminalLaunch, Terminals};
+pub use watch::Watch;

@@ -1,0 +1,59 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-widgets",
+    proc_macro_deps = [
+        "//crates/ui/rikka-ui-macros",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-input",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-symbols",
+        "//crates/graphics/rikka-text",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-animation",
+        "//crates/ui/rikka-syntax",
+        "//crates/ui/rikka-ui",
+        "@crates//:rustc-hash",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":rikka-widgets",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-markdown",
+        "//crates/ui/rikka-syntax",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-ui-host",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-widgets",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-picture",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/graphics/rikka-theme",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-ui-host",
+        "@crates//:gbm",
+        "@crates//:libc",
+    ],
+)

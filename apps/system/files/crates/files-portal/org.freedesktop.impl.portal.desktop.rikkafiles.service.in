@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=org.freedesktop.impl.portal.desktop.rikkafiles
+Exec=@BINDIR@/rikka-portal-files
+SystemdService=rikka-portal-files.service

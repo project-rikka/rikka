@@ -1,0 +1,28 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[animate.handles]
+global = "Global"
+local = "Local"
+turn = "Rotate {axis}"
+slide = "Move {axis}"
+space = "Global or Local Axes"
+
+[animate.hold]
+grasp = "{hand} grab"
+
+[animate.marker]
+eyes = "Eyes"
+mouth = "Mouth"
+centre = "Centre"
+lower_body = "Lower body"
+upper_body = "Upper body"
+head = "Head"
+shoulder = "shoulder"
+upper_arm = "arm"
+elbow = "elbow"
+hand = "hand"
+foot = "foot"
+toes = "toes"
+sided = "{side} {part}"

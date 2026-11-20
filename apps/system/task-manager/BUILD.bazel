@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-task-manager",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//apps/system/task-manager/crates/tasks-process",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-theme",
+        "//crates/status/rikka-sysmon",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+    ],
+)

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="140" viewBox="0 0 200 140">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#e01b24"/>
+    </marker>
+    <marker id="dot" markerWidth="6" markerHeight="6" refX="3" refY="3" markerUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="3" fill="#1c71d8"/>
+    </marker>
+    <marker id="start" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="context-stroke"/>
+    </marker>
+    <marker id="big" markerWidth="4" markerHeight="4" refX="2" refY="2" overflow="visible">
+      <rect x="-1" y="-1" width="6" height="6" fill="#26a269"/>
+    </marker>
+    <marker id="angled" markerWidth="8" markerHeight="4" refX="0" refY="2" orient="45" markerUnits="userSpaceOnUse">
+      <rect width="8" height="4" fill="#c061cb"/>
+    </marker>
+  </defs>
+  <path d="M10 20 L90 20 L90 60" fill="none" stroke="#241f31" stroke-width="2" marker-end="url(#arrow)" marker-mid="url(#dot)"/>
+  <polyline points="110,20 150,50 190,20" fill="none" stroke="#1a5fb4" stroke-width="3" marker-start="url(#start)" marker-end="url(#start)"/>
+  <path d="M20 90 C40 70 80 70 100 90 S160 110 180 90" fill="none" stroke="#613583" stroke-width="2" marker-start="url(#arrow)" marker-mid="url(#dot)" marker-end="url(#arrow)"/>
+  <line x1="20" y1="120" x2="80" y2="120" stroke="#241f31" stroke-width="2" marker-start="url(#big)" marker-end="url(#angled)"/>
+  <polygon points="120,110 150,130 180,110 150,100" fill="#f6d32d" stroke="#986a44" marker-mid="url(#dot)" marker-end="url(#dot)"/>
+</svg>

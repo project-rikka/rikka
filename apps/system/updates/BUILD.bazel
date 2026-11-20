@@ -1,0 +1,16 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-updates",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/desktop/rikka-dialog",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/nix/rikka-nix",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:jiff",
+    ],
+)

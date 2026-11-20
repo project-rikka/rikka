@@ -1,0 +1,14 @@
+load("//bazel/python:defs.bzl", "rikka_py_test")
+
+rikka_py_test(
+    name = "api",
+    srcs = ["test_api.py"],
+    deps = ["//sdk/bindings/python"],
+)
+
+rikka_py_test(
+    name = "types",
+    srcs = ["declare.py"],
+    typecheck = True,
+    deps = ["//sdk/bindings/python"],
+)

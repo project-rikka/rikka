@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-window-view",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-wayland",
+        "//crates/foundation/rikka-wayland-client",
+    ],
+)

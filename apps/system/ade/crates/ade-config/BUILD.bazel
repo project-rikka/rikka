@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "ade-config",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/ade:__subpackages__",
+    ],
+    deps = [
+        "//crates/session/rikka-settings",
+        "@crates//:serde",
+        "@crates//:tracing",
+    ],
+)

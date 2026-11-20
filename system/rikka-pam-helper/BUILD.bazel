@@ -1,0 +1,10 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-pam-helper",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/desktop/rikka-pam",
+        "//crates/foundation/rikka-log",
+    ],
+)

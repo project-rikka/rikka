@@ -1,0 +1,162 @@
+load("//benchmarks:defs.bzl", "bench_binary", "bench_cc_library", "bench_library", "bench_test")
+
+bench_cc_library(
+    name = "freetype",
+    srcs = ["native/freetype.c"],
+    copts = [
+        "-std=c17",
+        "-w",
+    ],
+    deps = ["@freetype"],
+)
+
+bench_library(
+    name = "text_samples",
+    srcs = glob(["src/samples/**/*.rs"]),
+    crate_root = "src/samples/lib.rs",
+)
+
+bench_library(
+    name = "text_shaping",
+    srcs = glob(["src/shaping/**/*.rs"]),
+    crate_root = "src/shaping/lib.rs",
+    link_deps = ["@harfbuzz"],
+    deps = [
+        "//crates/text/rikka-test-fonts",
+        "//crates/text/rikka-text-font",
+        "//crates/text/rikka-text-shape",
+        "//crates/text/rikka-text-unicode",
+        "@bench_crates//:harfrust",
+    ],
+)
+
+bench_library(
+    name = "text_parsers",
+    srcs = glob(["src/parsers/**/*.rs"]),
+    crate_root = "src/parsers/lib.rs",
+    deps = [
+        "//crates/text/rikka-test-fonts",
+        "//crates/text/rikka-text-font",
+        "@bench_crates//:skrifa",
+        "@bench_crates//:ttf-parser",
+    ],
+)
+
+bench_library(
+    name = "text_raster",
+    srcs = glob(["src/raster/**/*.rs"]),
+    crate_root = "src/raster/lib.rs",
+    link_deps = [":freetype"],
+    deps = [
+        ":text_parsers",
+        "//crates/text/rikka-text-font",
+        "//crates/text/rikka-text-raster",
+        "@bench_crates//:fontdue",
+        "@bench_crates//:swash",
+    ],
+)
+
+bench_library(
+    name = "text_paragraphs",
+    srcs = glob(["src/paragraphs/**/*.rs"]),
+    crate_root = "src/paragraphs/lib.rs",
+    deps = [
+        ":text_samples",
+        "//crates/text/rikka-text-catalog",
+        "//crates/text/rikka-text-layout",
+        "@bench_crates//:cosmic-text",
+        "@bench_crates//:parley",
+    ],
+)
+
+bench_library(
+    name = "text_unicode",
+    srcs = glob(["src/unicode/**/*.rs"]),
+    crate_root = "src/unicode/lib.rs",
+    deps = [
+        ":text_samples",
+        "//crates/text/rikka-text-unicode",
+        "@bench_crates//:icu_normalizer",
+        "@bench_crates//:icu_segmenter",
+        "@bench_crates//:unicode-bidi",
+        "@bench_crates//:unicode-linebreak",
+        "@bench_crates//:unicode-normalization",
+        "@bench_crates//:unicode-segmentation",
+    ],
+)
+
+bench_test(
+    name = "main",
+    deps = [
+        ":text_parsers",
+        ":text_shaping",
+        ":text_unicode",
+        "//crates/text/rikka-test-fonts",
+    ],
+)
+
+bench_binary(
+    name = "fonts",
+    srcs = ["benches/fonts.rs"],
+    crate_root = "benches/fonts.rs",
+    deps = [
+        ":text_parsers",
+        ":text_raster",
+        "//crates/text/rikka-test-fonts",
+        "//crates/text/rikka-text-font",
+        "@bench_crates//:divan",
+        "@bench_crates//:skrifa",
+        "@bench_crates//:ttf-parser",
+    ],
+)
+
+bench_binary(
+    name = "paragraphs",
+    srcs = ["benches/paragraphs.rs"],
+    crate_root = "benches/paragraphs.rs",
+    deps = [
+        ":text_paragraphs",
+        ":text_samples",
+        "//crates/text/rikka-text-layout",
+        "@bench_crates//:divan",
+    ],
+)
+
+bench_binary(
+    name = "raster",
+    srcs = ["benches/raster.rs"],
+    crate_root = "benches/raster.rs",
+    deps = [
+        ":text_parsers",
+        ":text_raster",
+        "//crates/text/rikka-test-fonts",
+        "//crates/text/rikka-text-font",
+        "@bench_crates//:divan",
+        "@bench_crates//:fontdue",
+        "@bench_crates//:swash",
+    ],
+)
+
+bench_binary(
+    name = "shaping",
+    srcs = ["benches/shaping.rs"],
+    crate_root = "benches/shaping.rs",
+    deps = [
+        ":text_shaping",
+        "//crates/text/rikka-test-fonts",
+        "//crates/text/rikka-text-shape",
+        "@bench_crates//:divan",
+        "@bench_crates//:harfrust",
+    ],
+)
+
+bench_binary(
+    name = "unicode",
+    srcs = ["benches/unicode.rs"],
+    crate_root = "benches/unicode.rs",
+    deps = [
+        ":text_unicode",
+        "//crates/text/rikka-text-unicode",
+        "@bench_crates//:divan",
+    ],
+)

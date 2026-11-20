@@ -1,0 +1,12 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[calculator]
+title = "Calculator"
+
+[calculator.error]
+division-by-zero = "Cannot divide by zero"
+undefined = "Result is undefined"
+invalid-input = "Invalid input"
+overflow = "Overflow"

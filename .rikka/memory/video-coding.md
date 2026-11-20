@@ -1,0 +1,24 @@
+---
+title: Video stills, reading and coding (rikka-video)
+description: rikka-video's poster, stills, sample, FrameReader, trim, convert, packet coding, encoders, live decoders, Previewer.
+about: crates/media/rikka-video
+tags: [media, video]
+---
+
+- `poster(path).with_max_size(PixelSize).decode()` is the representative still: the largest attached cover, else the keyframe at or after Totem's moments (1/3, 2/3, 0.1, 0.9, 0.5) whose RGB variance beats 256 (else the liveliest). It applies the display matrix and pixel aspect, decodes slice-threaded and never enlarges; `rikka_media::still` uses it.
+- `Stills::open(path).with_max_size(..)` is the synchronous sparse-frame reader for thumbnails: `still(at, reach)` answers the frame covering `at`, or any frame starting in [at, at + reach) when a keyframe there is cheaper. `sample(path).with_max_size(..).every(step).each(|at, Image| Flow)` hands steady-step stills.
+- `FrameReader<T>` (`reader/`) is the editors' pull-based frame server: `want(at, ahead)` names a window, `frame(at)` answers without blocking from a cache of converted values, `fit` downscales in swscale, `on_ready` wakes. One `rikka-video-reader` thread per reader decodes with frame threads; dropping goes through the reaper.
+- Reader times count from the container's `start_time`; a frame covers [pts, next pts), the first from zero and the last forever; lookups add 100 µs of slack. It seeks only when the keyframe index (or a 1 s reach) says skipping pays, and re-seeks a second earlier, doubling, when a seek lands past its target.
+- `trim` copies packets losslessly from a keyframe (`Keyframes::scan`) and clamps the last kept picture to the cut's end.
+- `convert(src, dst).video(VideoTarget).audio(AudioTarget).subtitles().on_progress(..).run()` plans one lane per stream: copied when it fits the target, the container accepts it and the codec matches (Matroska copies all it can), else re-encoded in software. Colour tags, rotation and metadata travel; errors `OverSource`, `NothingToWrite`, `Cancelled`.
+- `coded/` is the one encoder front end: `VideoPackets::open(Option<&Gpu>, PacketConfig::new(w, h)…feed(Feed::Memory|Dmabuf).parameter_sets(OutOfBand|InBand))` returns `rikka_coded::Coded` packets (µs pts/dts) per picture (`encode(Picture, at)` or `import(&DmabufSpec)` + `encode_imported`), with `request_keyframe`, `set_bitrate` and `stream() -> StreamInfo`.
+- `Feed::Dmabuf` is always rikka-vulkan-video (`VideoPackets::takes_dmabufs(gpu, codec)`; H.264/HEVC); `Feed::Memory` is FFmpeg (`encode/ffmpeg.rs`, one send/receive `exchange` loop shared with convert and sound coding). FFmpeg's `*_vulkan` encoders are not used.
+- `SoundPackets` codes sound the same way; `Muxer::create(path, &[&StreamInfo])` + `write(stream, Sample)` writes packets without re-encoding (fast start, `hvc1`).
+- Packets are low latency (no B-frames, zero-latency tunes, forced IDR, capped 500 ms VBV, `encode/tuning.rs`). The file `VideoEncoder` is `VideoPackets` in buffered mode (B-frames allowed) plus an `OutputContext` and optional sound track; `push_frame_at` places frames by capture time (`push_imported_at` for dmabufs).
+- `EncoderConfig::backend(EncoderChoice::Auto | Only(EncoderBackend))` and `rate(RateControl::{Default, Bitrate, Quality})`; `VideoEncoder::backend()` is what opened. `quality::pace` applies the speed preset in every rate mode, `quality::apply` the constant quality. `fast_start()` moves the MP4/MOV index to the front.
+- Dmabuf encoding needs a `rikka_gpu::Gpu` with `compute_support().video_encode()`; encoders, `Previewer` and capture pools take `&Gpu`, so the video crates do not depend on rikka-renderer.
+- `AudioEncoder::new(path, AudioConfig::new(rate, ch).codec(AudioCodec::{Aac, Opus, Mp3, Vorbis, Flac, Alac}))` writes one sound stream; `audio/track.rs` picks a supported rate, format and layout, folds channels (ITU downmix), resamples, dithers and pads the last frame.
+- `SwConverter` applies the frame's own matrix and range both ways, so encoding converts RGB with the BT.709 limited range the stream is tagged with. Packets without a duration last one frame.
+- `LiveDecoder::open(LiveCodec::{H264, Hevc, Vp8, Vp9, Av1})` (dav1d first for AV1) decodes access units with low delay into fitted RGBA `LivePicture`s. `GpuLiveDecoder::open(codec, &VideoDeviceHandles)` decodes with FFmpeg's Vulkan hwaccel on the UI renderer's device (from `Feed::wait_for_device`) into `GpuFrame`s carrying an `ExternalVideoFrame`, with no readback. Both share `live/exchange.rs`.
+- `rikka-dmabuf-convert` (internal) is the one dmabuf compute conversion (`Converter::{import, convert, preview}`, `Imported::cropped`): NV12 for rikka-vulkan-video and small RGBA previews for `rikka_video::Previewer`.
+- `tests/machine.rs` guards colour, letterboxing and sharpness of dmabuf-coded clips; `tests/streaming.rs` (in the machine binary) guards in-band parameter sets, on-request keyframes and shrink filtering.

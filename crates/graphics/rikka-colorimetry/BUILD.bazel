@@ -1,0 +1,15 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-colorimetry",
+    visibility = [
+        "//visibility:public",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-colorimetry",
+    ],
+)

@@ -1,0 +1,55 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-proton-vpn",
+    target_compatible_with = ["@platforms//os:linux"],
+    compile_data = [
+        "src/agent/roots.pem",
+        "src/config/openvpn-ca.pem",
+        "src/config/openvpn-tls-crypt.key",
+    ],
+    cranelift = False,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-network",
+        "//crates/foundation/rikka-sync",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-pgp",
+        "@crates//:ed25519-dalek",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:pkcs8",
+        "@crates//:rustix",
+        "@crates//:rustls",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tokio-rustls",
+        "@crates//:tracing",
+        "@crates//:x25519-dalek",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-proton-vpn",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-test-proton",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:pkcs8",
+        "@crates//:rcgen",
+        "@crates//:rustls",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+        "@crates//:tokio-rustls",
+    ],
+)

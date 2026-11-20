@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <clipPath id="round"><circle cx="32" cy="32" r="24"/></clipPath>
+    <clipPath id="box" clipPathUnits="objectBoundingBox"><rect x="0.25" y="0.25" width="0.5" height="0.5"/><circle cx="0.75" cy="0.75" r="0.2"/></clipPath>
+    <clipPath id="star" clip-path="url(#upper)"><path clip-rule="evenodd" d="M32 70l8 22h22l-18 12 8 22-20-14-20 14 8-22-18-12h22z M26 92h12v12h-12z"/></clipPath>
+    <clipPath id="upper"><rect x="0" y="64" width="64" height="46"/></clipPath>
+    <clipPath id="moved" transform="translate(64 64)"><rect width="40" height="40" transform="rotate(15)"/></clipPath>
+  </defs>
+  <g clip-path="url(#round)">
+    <rect width="64" height="64" fill="#1c71d8"/>
+    <rect x="20" width="20" height="64" fill="#f6d32d"/>
+  </g>
+  <rect x="68" y="4" width="56" height="56" fill="#e01b24" clip-path="url(#box)"/>
+  <g clip-path="url(#star)" opacity="0.8">
+    <rect y="64" width="64" height="64" fill="#26a269"/>
+  </g>
+  <rect x="64" y="64" width="64" height="64" fill="#613583" clip-path="url(#moved)"/>
+</svg>

@@ -1,0 +1,13 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[animate.export]
+encoder_auto = "自动"
+encoder_software = "软件"
+speed_fastest = "最快"
+speed_fast = "快速"
+speed_balanced = "均衡"
+speed_slow = "慢速"
+rate_quality = "恒定质量"
+rate_bitrate = "码率"

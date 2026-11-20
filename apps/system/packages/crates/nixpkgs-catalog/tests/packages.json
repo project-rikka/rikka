@@ -1,0 +1,720 @@
+{
+  "version": "2",
+  "packages": {
+    "discord": {
+      "meta": {
+        "available": false,
+        "broken": false,
+        "description": "All-in-one cross-platform voice and text chat for gamers",
+        "downloadPage": "https://discordapp.com/download",
+        "homepage": "https://discordapp.com/",
+        "insecure": false,
+        "license": {
+          "deprecated": false,
+          "free": false,
+          "fullName": "Unfree",
+          "licenseType": "simple",
+          "redistributable": false,
+          "shortName": "unfree"
+        },
+        "mainProgram": "Discord",
+        "maintainers": [
+          {
+            "email": "artturin@artturin.com",
+            "github": "Artturin",
+            "name": "Artturi N"
+          },
+          {
+            "email": "git@evy.pink",
+            "github": "4evy",
+            "name": "4evy"
+          },
+          {
+            "email": "infinidoge@inx.moe",
+            "github": "Infinidoge",
+            "name": "Infinidoge"
+          },
+          {
+            "email": "nixpkgs@missing.ninja",
+            "github": "jopejoe1",
+            "name": "jopejoe1"
+          },
+          {
+            "email": "contact@scrumplex.net",
+            "github": "Scrumplex",
+            "name": "Sefa Eyeoglu"
+          },
+          {
+            "email": "nixpkgs@drifter.dev",
+            "github": "sophiebsw",
+            "name": "Sophia"
+          }
+        ],
+        "name": "discord-1.0.160",
+        "outputsToInstall": [
+          "out"
+        ],
+        "platforms": [
+          "x86_64-linux",
+          "aarch64-darwin"
+        ],
+        "position": "pkgs/by-name/di/discord/metadata.nix:68",
+        "sourceProvenance": [
+          {
+            "isSource": false,
+            "shortName": "binaryNativeCode"
+          }
+        ],
+        "unfree": true,
+        "unsupported": false
+      },
+      "name": "discord-1.0.160",
+      "outputName": "out",
+      "outputs": {
+        "out": null
+      },
+      "pname": "discord",
+      "system": "x86_64-linux",
+      "version": "1.0.160"
+    },
+    "firefox": {
+      "meta": {
+        "available": true,
+        "broken": false,
+        "description": "Web browser built from Firefox source tree",
+        "homepage": "http://www.mozilla.com/en-US/firefox/",
+        "insecure": false,
+        "license": {
+          "deprecated": false,
+          "free": true,
+          "fullName": "Mozilla Public License 2.0",
+          "licenseType": "simple",
+          "redistributable": true,
+          "shortName": "mpl20",
+          "spdxId": "MPL-2.0",
+          "url": "https://spdx.org/licenses/MPL-2.0.html"
+        },
+        "mainProgram": "firefox",
+        "maintainers": [
+          {
+            "email": "ihar.hrachyshka@gmail.com",
+            "github": "booxter",
+            "name": "Ihar Hrachyshka"
+          },
+          {
+            "email": "hexa@darmstadt.ccc.de",
+            "github": "mweinelt",
+            "name": "Martin Weinelt"
+          }
+        ],
+        "maxSilent": 14400,
+        "name": "firefox-unwrapped-157.0.1",
+        "outputsToInstall": [
+          "out"
+        ],
+        "platforms": [
+          "x86_64-linux",
+          "aarch64-darwin",
+          "aarch64-linux",
+          "i686-cygwin",
+          "x86_64-cygwin",
+          "i686-freebsd",
+          "x86_64-freebsd",
+          "aarch64-freebsd",
+          "x86_64-solaris",
+          "arc-linux",
+          "armv5tel-linux",
+          "armv6l-linux",
+          "armv7a-linux",
+          "armv7l-linux",
+          "i686-linux",
+          "loongarch64-linux",
+          "m68k-linux",
+          "sh4-linux",
+          "microblaze-linux",
+          "microblazeel-linux",
+          "mips-linux",
+          "mips64-linux",
+          "mips64el-linux",
+          "mipsel-linux",
+          "powerpc-linux",
+          "powerpc64-linux",
+          "powerpc64le-linux",
+          "riscv32-linux",
+          "riscv64-linux",
+          "s390-linux",
+          "s390x-linux",
+          "aarch64-netbsd",
+          "armv6l-netbsd",
+          "armv7a-netbsd",
+          "armv7l-netbsd",
+          "i686-netbsd",
+          "m68k-netbsd",
+          "mipsel-netbsd",
+          "powerpc-netbsd",
+          "riscv32-netbsd",
+          "riscv64-netbsd",
+          "x86_64-netbsd",
+          "i686-openbsd",
+          "x86_64-openbsd",
+          "x86_64-redox"
+        ],
+        "position": "pkgs/applications/networking/browsers/firefox/packages/firefox.nix:20",
+        "priority": 4,
+        "unfree": false,
+        "unsupported": false
+      },
+      "name": "firefox-157.0.1",
+      "outputName": "out",
+      "outputs": {
+        "out": null
+      },
+      "pname": "firefox",
+      "system": "x86_64-linux",
+      "version": "157.0.1"
+    },
+    "hello": {
+      "meta": {
+        "available": true,
+        "broken": false,
+        "description": "Program that produces a familiar, friendly greeting",
+        "homepage": "https://www.gnu.org/software/hello/manual/",
+        "insecure": false,
+        "license": {
+          "deprecated": false,
+          "free": true,
+          "fullName": "GNU General Public License v3.0 or later",
+          "licenseType": "simple",
+          "redistributable": true,
+          "shortName": "gpl3Plus",
+          "spdxId": "GPL-3.0-or-later",
+          "url": "https://spdx.org/licenses/GPL-3.0-or-later.html"
+        },
+        "longDescription": "GNU Hello is a program that prints \"Hello, world!\" when you run it.\nIt is fully customizable.\n",
+        "mainProgram": "hello",
+        "maintainers": [
+          {
+            "email": "post@steffenvogel.de",
+            "github": "stv0g",
+            "name": "Steffen Vogel"
+          }
+        ],
+        "name": "hello-2.12.3",
+        "outputsToInstall": [
+          "out"
+        ],
+        "platforms": [
+          "x86_64-linux",
+          "aarch64-darwin",
+          "aarch64-linux",
+          "i686-cygwin",
+          "x86_64-cygwin",
+          "i686-freebsd",
+          "x86_64-freebsd",
+          "aarch64-freebsd",
+          "aarch64-genode",
+          "i686-genode",
+          "x86_64-genode",
+          "x86_64-solaris",
+          "javascript-ghcjs",
+          "arc-linux",
+          "armv5tel-linux",
+          "armv6l-linux",
+          "armv7a-linux",
+          "armv7l-linux",
+          "i686-linux",
+          "loongarch64-linux",
+          "m68k-linux",
+          "sh4-linux",
+          "microblaze-linux",
+          "microblazeel-linux",
+          "mips-linux",
+          "mips64-linux",
+          "mips64el-linux",
+          "mipsel-linux",
+          "powerpc-linux",
+          "powerpc64-linux",
+          "powerpc64le-linux",
+          "riscv32-linux",
+          "riscv64-linux",
+          "s390-linux",
+          "s390x-linux",
+          "mmix-mmixware",
+          "aarch64-netbsd",
+          "armv6l-netbsd",
+          "armv7a-netbsd",
+          "armv7l-netbsd",
+          "i686-netbsd",
+          "m68k-netbsd",
+          "mipsel-netbsd",
+          "powerpc-netbsd",
+          "riscv32-netbsd",
+          "riscv64-netbsd",
+          "x86_64-netbsd",
+          "aarch64_be-none",
+          "aarch64-none",
+          "arm-none",
+          "armv6l-none",
+          "avr-none",
+          "i686-none",
+          "microblaze-none",
+          "microblazeel-none",
+          "mips-none",
+          "mips64-none",
+          "msp430-none",
+          "or1k-none",
+          "m68k-none",
+          "powerpc-none",
+          "powerpcle-none",
+          "riscv32-none",
+          "riscv64-none",
+          "rx-none",
+          "s390-none",
+          "s390x-none",
+          "vc4-none",
+          "x86_64-none",
+          "i686-openbsd",
+          "x86_64-openbsd",
+          "x86_64-redox",
+          "wasm64-wasip1",
+          "wasm32-wasip1",
+          "aarch64-windows",
+          "x86_64-windows",
+          "i686-windows",
+          "aarch64-uefi",
+          "x86_64-uefi"
+        ],
+        "position": "pkgs/by-name/he/hello/package.nix:58",
+        "unfree": false,
+        "unsupported": false
+      },
+      "name": "hello-2.12.3",
+      "outputName": "out",
+      "outputs": {
+        "out": null
+      },
+      "pname": "hello",
+      "system": "x86_64-linux",
+      "version": "2.12.3"
+    },
+    "httpx": {
+      "meta": {
+        "available": true,
+        "broken": false,
+        "description": "Fast and multi-purpose HTTP toolkit",
+        "homepage": "https://github.com/projectdiscovery/httpx",
+        "insecure": false,
+        "license": {
+          "deprecated": false,
+          "free": true,
+          "fullName": "MIT License",
+          "licenseType": "simple",
+          "redistributable": true,
+          "shortName": "mit",
+          "spdxId": "MIT",
+          "url": "https://spdx.org/licenses/MIT.html"
+        },
+        "longDescription": "httpx is a fast and multi-purpose HTTP toolkit allow to run multiple\nprobers using retryablehttp library, it is designed to maintain the\nresult reliability with increased threads.\n",
+        "mainProgram": "httpx",
+        "maintainers": [
+          {
+            "email": "mail@fabian-affolter.ch",
+            "github": "fabaff",
+            "name": "Fabian Affolter"
+          }
+        ],
+        "name": "httpx-1.12.0",
+        "outputsToInstall": [
+          "out"
+        ],
+        "platforms": [
+          "aarch64-darwin",
+          "x86_64-linux",
+          "aarch64-linux",
+          "arc-linux",
+          "armv5tel-linux",
+          "armv6l-linux",
+          "armv7a-linux",
+          "armv7l-linux",
+          "i686-linux",
+          "loongarch64-linux",
+          "m68k-linux",
+          "sh4-linux",
+          "microblaze-linux",
+          "microblazeel-linux",
+          "mips-linux",
+          "mips64-linux",
+          "mips64el-linux",
+          "mipsel-linux",
+          "powerpc-linux",
+          "powerpc64-linux",
+          "powerpc64le-linux",
+          "riscv32-linux",
+          "riscv64-linux",
+          "s390-linux",
+          "s390x-linux",
+          "wasm64-wasip1",
+          "wasm32-wasip1",
+          "i686-freebsd",
+          "x86_64-freebsd",
+          "aarch64-freebsd"
+        ],
+        "position": "pkgs/by-name/ht/httpx/package.nix:40",
+        "unfree": false,
+        "unsupported": false
+      },
+      "name": "httpx-1.12.0",
+      "outputName": "out",
+      "outputs": {
+        "out": null
+      },
+      "pname": "httpx",
+      "system": "x86_64-linux",
+      "version": "1.12.0"
+    },
+    "python313Packages.httpx": {
+      "meta": {
+        "available": true,
+        "broken": false,
+        "description": "Next generation HTTP client",
+        "homepage": "https://github.com/encode/httpx",
+        "insecure": false,
+        "isBuildPythonPackage": [
+          "x86_64-linux",
+          "aarch64-linux",
+          "arc-linux",
+          "armv5tel-linux",
+          "armv6l-linux",
+          "armv7a-linux",
+          "armv7l-linux",
+          "i686-linux",
+          "loongarch64-linux",
+          "m68k-linux",
+          "sh4-linux",
+          "microblaze-linux",
+          "microblazeel-linux",
+          "mips-linux",
+          "mips64-linux",
+          "mips64el-linux",
+          "mipsel-linux",
+          "powerpc-linux",
+          "powerpc64-linux",
+          "powerpc64le-linux",
+          "riscv32-linux",
+          "riscv64-linux",
+          "s390-linux",
+          "s390x-linux",
+          "aarch64-darwin",
+          "aarch64-windows",
+          "x86_64-windows",
+          "i686-windows",
+          "i686-freebsd",
+          "x86_64-freebsd",
+          "aarch64-freebsd"
+        ],
+        "license": {
+          "deprecated": false,
+          "free": true,
+          "fullName": "BSD 3-clause \"New\" or \"Revised\" License",
+          "licenseType": "simple",
+          "redistributable": true,
+          "shortName": "bsd3",
+          "spdxId": "BSD-3-Clause",
+          "url": "https://spdx.org/licenses/BSD-3-Clause.html"
+        },
+        "mainProgram": "httpx",
+        "maintainers": [
+          {
+            "email": "mail@fabian-affolter.ch",
+            "github": "fabaff",
+            "name": "Fabian Affolter"
+          }
+        ],
+        "name": "python3.13-httpx-0.28.1",
+        "outputsToInstall": [
+          "out"
+        ],
+        "platforms": [
+          "x86_64-linux",
+          "aarch64-linux",
+          "arc-linux",
+          "armv5tel-linux",
+          "armv6l-linux",
+          "armv7a-linux",
+          "armv7l-linux",
+          "i686-linux",
+          "loongarch64-linux",
+          "m68k-linux",
+          "sh4-linux",
+          "microblaze-linux",
+          "microblazeel-linux",
+          "mips-linux",
+          "mips64-linux",
+          "mips64el-linux",
+          "mipsel-linux",
+          "powerpc-linux",
+          "powerpc64-linux",
+          "powerpc64le-linux",
+          "riscv32-linux",
+          "riscv64-linux",
+          "s390-linux",
+          "s390x-linux",
+          "aarch64-darwin",
+          "aarch64-windows",
+          "x86_64-windows",
+          "i686-windows",
+          "i686-freebsd",
+          "x86_64-freebsd",
+          "aarch64-freebsd"
+        ],
+        "position": "pkgs/development/python-modules/httpx/default.nix:120",
+        "unfree": false,
+        "unsupported": false
+      },
+      "name": "python3.13-httpx-0.28.1",
+      "outputName": "out",
+      "outputs": {
+        "dist": null,
+        "out": null
+      },
+      "pname": "httpx",
+      "system": "x86_64-linux",
+      "version": "0.28.1"
+    },
+    "ripgrep": {
+      "meta": {
+        "available": true,
+        "broken": false,
+        "description": "Utility that combines the usability of The Silver Searcher with the raw speed of grep",
+        "homepage": "https://github.com/BurntSushi/ripgrep",
+        "insecure": false,
+        "license": [
+          {
+            "deprecated": false,
+            "free": true,
+            "fullName": "The Unlicense",
+            "licenseType": "simple",
+            "redistributable": true,
+            "shortName": "unlicense",
+            "spdxId": "Unlicense",
+            "url": "https://spdx.org/licenses/Unlicense.html"
+          },
+          {
+            "deprecated": false,
+            "free": true,
+            "fullName": "MIT License",
+            "licenseType": "simple",
+            "redistributable": true,
+            "shortName": "mit",
+            "spdxId": "MIT",
+            "url": "https://spdx.org/licenses/MIT.html"
+          }
+        ],
+        "mainProgram": "rg",
+        "maintainers": [
+          {
+            "email": "mail@glob.in",
+            "github": "globin",
+            "name": "Robin Gloster"
+          },
+          {
+            "email": "maximilian@mbosch.me",
+            "github": "Ma27",
+            "name": "Maximilian Bosch"
+          },
+          {
+            "github": "zowoq",
+            "name": "zowoq"
+          }
+        ],
+        "name": "ripgrep-15.2.0",
+        "outputsToInstall": [
+          "out"
+        ],
+        "platforms": [
+          "aarch64-darwin",
+          "i686-freebsd",
+          "x86_64-freebsd",
+          "x86_64-solaris",
+          "aarch64-linux",
+          "armv6l-linux",
+          "armv7l-linux",
+          "i686-linux",
+          "loongarch64-linux",
+          "powerpc-linux",
+          "powerpc64-linux",
+          "powerpc64le-linux",
+          "riscv64-linux",
+          "s390x-linux",
+          "x86_64-linux",
+          "aarch64-netbsd",
+          "armv7l-netbsd",
+          "i686-netbsd",
+          "powerpc-netbsd",
+          "x86_64-netbsd",
+          "i686-openbsd",
+          "x86_64-openbsd",
+          "i686-windows",
+          "x86_64-windows",
+          "armv5tel-linux",
+          "armv7a-linux",
+          "m68k-linux",
+          "mips-linux",
+          "mips64-linux",
+          "mipsel-linux",
+          "mips64el-linux",
+          "riscv32-linux",
+          "armv6l-netbsd",
+          "mipsel-netbsd",
+          "riscv64-netbsd",
+          "riscv32-none",
+          "x86_64-redox",
+          "wasm32-wasip1"
+        ],
+        "position": "pkgs/by-name/ri/ripgrep/package.nix:66",
+        "unfree": false,
+        "unsupported": false
+      },
+      "name": "ripgrep-15.2.0",
+      "outputName": "out",
+      "outputs": {
+        "out": null
+      },
+      "pname": "ripgrep",
+      "system": "x86_64-linux",
+      "version": "15.2.0"
+    },
+    "ripgrep-all": {
+      "meta": {
+        "available": true,
+        "broken": false,
+        "description": "Ripgrep, but also search in PDFs, E-Books, Office documents, zip, tar.gz, and more",
+        "homepage": "https://github.com/phiresky/ripgrep-all",
+        "insecure": false,
+        "license": {
+          "deprecated": false,
+          "free": true,
+          "fullName": "GNU Affero General Public License v3.0 or later",
+          "licenseType": "simple",
+          "redistributable": true,
+          "shortName": "agpl3Plus",
+          "spdxId": "AGPL-3.0-or-later",
+          "url": "https://spdx.org/licenses/AGPL-3.0-or-later.html"
+        },
+        "longDescription": "Ripgrep, but also search in PDFs, E-Books, Office documents, zip, tar.gz, etc.\n\nrga is a line-oriented search tool that allows you to look for a regex in\na multitude of file types. rga wraps the awesome ripgrep and enables it\nto search in pdf, docx, sqlite, jpg, movie subtitles (mkv, mp4), etc.\n",
+        "mainProgram": "rga",
+        "maintainers": [
+          {
+            "email": "francesco@zanini.me",
+            "github": "zaninime",
+            "name": "Francesco Zanini"
+          },
+          {
+            "email": "maximilian@mbosch.me",
+            "github": "Ma27",
+            "name": "Maximilian Bosch"
+          }
+        ],
+        "name": "ripgrep-all-0.10.10",
+        "outputsToInstall": [
+          "out"
+        ],
+        "platforms": [
+          "aarch64-darwin",
+          "i686-freebsd",
+          "x86_64-freebsd",
+          "x86_64-solaris",
+          "aarch64-linux",
+          "armv6l-linux",
+          "armv7l-linux",
+          "i686-linux",
+          "loongarch64-linux",
+          "powerpc-linux",
+          "powerpc64-linux",
+          "powerpc64le-linux",
+          "riscv64-linux",
+          "s390x-linux",
+          "x86_64-linux",
+          "aarch64-netbsd",
+          "armv7l-netbsd",
+          "i686-netbsd",
+          "powerpc-netbsd",
+          "x86_64-netbsd",
+          "i686-openbsd",
+          "x86_64-openbsd",
+          "i686-windows",
+          "x86_64-windows",
+          "armv5tel-linux",
+          "armv7a-linux",
+          "m68k-linux",
+          "mips-linux",
+          "mips64-linux",
+          "mipsel-linux",
+          "mips64el-linux",
+          "riscv32-linux",
+          "armv6l-netbsd",
+          "mipsel-netbsd",
+          "riscv64-netbsd",
+          "riscv32-none",
+          "x86_64-redox",
+          "wasm32-wasip1"
+        ],
+        "position": "pkgs/by-name/ri/ripgrep-all/package.nix:56",
+        "unfree": false,
+        "unsupported": false
+      },
+      "name": "ripgrep-all-0.10.10",
+      "outputName": "out",
+      "outputs": {
+        "out": null
+      },
+      "pname": "ripgrep-all",
+      "system": "x86_64-linux",
+      "version": "0.10.10"
+    },
+    "chickenPackages_5.chickenEggs.pebble": {
+      "meta": {
+        "description": "Simple static site generator",
+        "homepage": [
+          "https://wiki.call-cc.org/eggref/5/pebble",
+          "https://example.org/pebble"
+        ],
+        "license": "agpl-3.0-only",
+        "maintainers": [
+          {
+            "github": "corngood",
+            "name": "David McFarland"
+          }
+        ],
+        "platforms": [
+          "x86_64-linux",
+          {
+            "kernel": {
+              "name": "linux"
+            }
+          }
+        ],
+        "position": null,
+        "unfree": null
+      },
+      "name": "chicken-pebble-0.1.5",
+      "outputs": null,
+      "pname": "pebble",
+      "version": "0.1.5"
+    },
+    "aroccStdenv": {
+      "meta": {
+        "license": [
+          "mit",
+          {
+            "fullName": "BSD Zero Clause License",
+            "spdxId": "0BSD"
+          }
+        ]
+      },
+      "name": "stdenv-linux",
+      "pname": "stdenv-linux",
+      "version": ""
+    }
+  }
+}

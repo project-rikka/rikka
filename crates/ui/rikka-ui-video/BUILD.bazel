@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-ui-video",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-picture",
+        "//crates/graphics/rikka-renderer",
+        "//crates/media/rikka-video-play",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-ui-host",
+        "@crates//:rustc-hash",
+    ],
+)

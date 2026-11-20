@@ -1,0 +1,16 @@
+load("//bazel/csharp:defs.bzl", "rikka_csharp_binary")
+load("//sdk/examples:defs.bzl", "example_name")
+
+[
+    rikka_csharp_binary(
+        name = example_name(source.removesuffix(".cs")),
+        srcs = [source],
+        deps = ["//sdk/bindings/csharp"],
+    )
+    for source in glob(["*.cs"])
+]
+
+exports_files(
+    ["Counter.cs"],
+    visibility = ["//website:__pkg__"],
+)

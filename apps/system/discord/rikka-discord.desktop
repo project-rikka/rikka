@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Discord
+GenericName=Discord Client
+GenericName[ja]=Discord クライアント
+GenericName[zh_CN]=Discord 客户端
+Comment=Talk with friends and communities on Discord
+Comment[ja]=Discord で友だちやコミュニティと話します
+Comment[zh_CN]=在 Discord 上与好友和社区交流
+Exec=rikka-discord
+Icon=internet-chat
+Terminal=false
+Categories=Network;InstantMessaging;Chat;
+Keywords=discord;chat;messages;voice;servers;
+Keywords[ja]=discord;チャット;メッセージ;ボイス;サーバー;
+Keywords[zh_CN]=discord;聊天;消息;语音;服务器;
+StartupNotify=true

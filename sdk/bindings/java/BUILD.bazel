@@ -1,0 +1,82 @@
+load("//bazel/java:defs.bzl", "rikka_java_library")
+load("//sdk/codegen:defs.bzl", "rikka_bindings")
+
+TYPES = [
+    "ActionCallback",
+    "Align",
+    "AnchorEdge",
+    "App",
+    "Axis",
+    "BoolCallback",
+    "ButtonVariant",
+    "CheckState",
+    "Color",
+    "ColorRole",
+    "Command",
+    "Context",
+    "DoubleCallback",
+    "Element",
+    "FileChooser",
+    "FileChooserPurpose",
+    "FilesCallback",
+    "Fit",
+    "FontWeight",
+    "Handle",
+    "Image",
+    "IndexCallback",
+    "ItemCallback",
+    "Justification",
+    "KeyCode",
+    "LaunchCallback",
+    "Modifier",
+    "Native",
+    "PathsCallback",
+    "PlaybackState",
+    "Rikka",
+    "RikkaException",
+    "ShapeCallback",
+    "SizeClass",
+    "Sound",
+    "Status",
+    "StringCallback",
+    "TextAlignment",
+    "TextCallback",
+    "TextDocument",
+    "TextRole",
+    "TextTone",
+    "Trampolines",
+    "TransitionStyle",
+    "UnsavedAnswer",
+    "UnsavedCallback",
+    "Video",
+    "View",
+    "ViewCallback",
+    "Window",
+    "WindowBuilder",
+    "WindowRequest",
+    "WorkCallback",
+]
+
+OUTS = [
+    "pom.xml",
+    "src/main/java/module-info.java",
+] + ["src/main/java/os/rikka/%s.java" % name for name in TYPES]
+
+rikka_bindings(
+    name = "generated",
+    language = "java",
+    outs = OUTS,
+    visibility = ["//sdk:__pkg__"],
+)
+
+filegroup(
+    name = "package",
+    srcs = OUTS,
+)
+
+rikka_java_library(
+    name = "java",
+    srcs = glob(["src/main/java/**/*.java"]),
+    libraries = ["//sdk/native:versioned"],
+    visibility = ["//visibility:public"],
+)

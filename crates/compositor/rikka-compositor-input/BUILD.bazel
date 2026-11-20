@@ -1,0 +1,44 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-compositor-input",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/compositor/rikka-compositor-reactor",
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/foundation/rikka-sync",
+        "@crates//:arc-swap",
+        "@crates//:bitflags",
+        "@crates//:input",
+        "@crates//:libc",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-compositor-input",
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/compositor/rikka-compositor-types",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-compositor-input",
+        "//crates/compositor/rikka-compositor-reactor",
+        "@crates//:rustix",
+    ],
+)

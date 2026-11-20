@@ -1,0 +1,57 @@
+mod area;
+mod arrange;
+mod blank;
+mod check;
+mod combine;
+mod convert;
+mod crop;
+mod develop;
+mod document;
+mod edit;
+mod error;
+mod figure;
+mod flood;
+mod format;
+mod history;
+mod layer;
+mod merge;
+mod modify;
+mod outline;
+mod overlay;
+mod preview;
+mod previewing;
+mod raster;
+mod reductions;
+mod region;
+mod resampler;
+mod reshape;
+mod restyle;
+mod save;
+mod shape;
+mod state;
+mod thumbnail;
+mod tile;
+
+pub use area::Area;
+pub use blank::{Backdrop, Blank};
+pub use combine::Combine;
+pub use document::Document;
+pub use edit::{
+    AddMethod, Change, Edit, FigureChange, FigureEdit, PixelChange, Placement, Properties,
+    SelectionAction, StackOrder,
+};
+pub use error::{Error, Result};
+pub use figure::{Figure, FigureId, FigureIds, FigureKind};
+pub use flood::{Flood, FloodMode, Source};
+pub use format::{FileFormat, readable_mime_types};
+pub use history::{Action, FigureAction, History};
+pub use layer::{Layer, LayerId, LayerKind};
+pub use modify::Modify;
+pub use outline::Edge;
+pub use preview::preview;
+pub use region::{Region, Span};
+pub use reshape::Reshape;
+pub use save::{Saved, Saving};
+pub use shape::Shape;
+pub use thumbnail::Thumbnail;
+pub use tile::{Tile, level_for};

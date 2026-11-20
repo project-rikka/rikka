@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Packages
+Name[ja]=パッケージ
+Name[zh_CN]=软件包
+GenericName=Package Manager
+GenericName[ja]=パッケージ マネージャー
+GenericName[zh_CN]=软件包管理器
+Comment=Find, install and remove the software on this machine
+Comment[ja]=ソフトウェアを検索して、インストールや削除を行います
+Comment[zh_CN]=搜索、安装和删除这台计算机上的软件
+Exec=rikka-packages
+Icon=system-software-install
+Terminal=false
+Categories=System;PackageManager;
+Keywords=package;nix;nixos;nixpkgs;install;software;update;generation;rebuild;
+Keywords[ja]=パッケージ;nix;nixos;nixpkgs;インストール;ソフトウェア;更新;世代;再構築;
+Keywords[zh_CN]=软件包;nix;nixos;nixpkgs;安装;软件;更新;世代;重建;
+StartupNotify=true

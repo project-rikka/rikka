@@ -1,0 +1,90 @@
+load("//benchmarks:defs.bzl", "bench_binary", "bench_cc_library", "bench_library", "bench_test")
+
+bench_cc_library(
+    name = "box3d",
+    srcs = [
+        "native/box3d.c",
+        "native/engine.h",
+    ],
+    copts = [
+        "-std=c17",
+        "-w",
+    ],
+    deps = ["@box3d"],
+)
+
+bench_cc_library(
+    name = "bullet",
+    srcs = [
+        "native/bullet.cpp",
+        "native/engine.h",
+    ],
+    copts = [
+        "-w",
+    ],
+    deps = ["@bullet"],
+)
+
+bench_cc_library(
+    name = "jolt",
+    srcs = [
+        "native/engine.h",
+        "native/jolt.cpp",
+    ],
+    copts = [
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-w",
+    ],
+    deps = ["@jolt"],
+)
+
+bench_library(
+    name = "physics_bench",
+    link_deps = [
+        ":box3d",
+        ":bullet",
+        ":jolt",
+    ],
+    visibility = [
+        "//benchmarks:__subpackages__",
+    ],
+    deps = [
+        "//crates/physics/rikka-physics-collision",
+        "//crates/physics/rikka-physics-core",
+        "//crates/physics/rikka-physics-geometry",
+        "//crates/physics/rikka-physics-math",
+        "//crates/physics/rikka-physics-rigid",
+        "@bench_crates//:rapier3d",
+        "@crates//:glam",
+        "@crates//:thiserror",
+    ],
+)
+
+bench_test(
+    name = "main",
+    deps = [
+        ":physics_bench",
+        "@crates//:glam",
+    ],
+)
+
+bench_binary(
+    name = "internals",
+    srcs = ["benches/internals.rs"],
+    crate_root = "benches/internals.rs",
+    deps = [
+        ":physics_bench",
+        "@bench_crates//:divan",
+    ],
+)
+
+bench_binary(
+    name = "rigid",
+    srcs = ["benches/rigid.rs"],
+    crate_root = "benches/rigid.rs",
+    deps = [
+        ":physics_bench",
+        "@bench_crates//:divan",
+    ],
+)

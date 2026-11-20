@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-playout",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/media/rikka-opus",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-playout",
+    ],
+)

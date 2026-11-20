@@ -1,0 +1,33 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[animate.track]
+parts = "所有部位"
+switches = "显示 · IK"
+unlisted = "不在显示框中"
+unmatched = "不在此模型中"
+camera = "摄像机"
+wind = "风"
+morph_eyebrow = "眉部变形"
+morph_eye = "眼部变形"
+morph_mouth = "嘴部变形"
+morph_other = "其他变形"
+pour = "喷出"
+
+[animate.hold]
+pin_lane = "图钉 {number}"
+
+[animate.look.track]
+world = "世界：{node}"
+composite = "合成：{node}"
+material = "{material}：{node}"
+slot = "{figure}：材质 {number}"
+
+[animate.liquid]
+seconds = "{seconds} 秒"
+
+[animate.liquid.section]
+emission = "喷出"
+path = "轨迹"
+shape = "形状"

@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-test-meshes",
+    testonly = True,
+    data = [
+        "//crates/model/rikka-gltf:assets/fox.glb",
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-vrm:assets/avatar.vrm",
+    ],
+    visibility = [
+        "//apps/general/modeler:__subpackages__",
+        "//crates/model:__subpackages__",
+    ],
+    deps = [
+        "//crates/model/rikka-gltf",
+        "//crates/model/rikka-mesh-edit",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-polymesh",
+        "//crates/model/rikka-spatial",
+        "//crates/model/rikka-uv",
+        "//crates/model/rikka-vrm",
+        "@crates//:glam",
+    ],
+)

@@ -1,0 +1,14 @@
+load("//bazel/cc:defs.bzl", "rikka_cc_test")
+
+rikka_cc_test(
+    name = "api",
+    srcs = ["api.cpp"],
+    copts = [
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic",
+    ],
+    deps = ["//sdk/bindings/cpp"],
+)

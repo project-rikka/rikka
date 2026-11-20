@@ -1,0 +1,16 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
+
+config_setting(
+    name = "fastbuild",
+    values = {"compilation_mode": "fastbuild"},
+    visibility = ["//visibility:public"],
+)
+
+selects.config_setting_group(
+    name = "cranelift",
+    match_all = [
+        ":fastbuild",
+        "@platforms//os:linux",
+    ],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,60 @@
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "box3d",
+    build_file = "//third_party/comparators:box3d.BUILD.bazel",
+    sha256 = "69dc39452322141778426118f6b494851eb10c9102026221daf96890b52b0f93",
+    strip_prefix = "box3d-adec25b3010b7b7a715e57ce79595b0d2184474a",
+    url = "https://github.com/erincatto/box3d/archive/adec25b3010b7b7a715e57ce79595b0d2184474a.tar.gz",
+)
+
+http_archive(
+    name = "bui",
+    build_file = "//third_party/comparators:bui.BUILD.bazel",
+    sha256 = "09e5aecb2fd3de773ac25e63069aa2ed09dfcc65d850d12030afd79204d5ff3f",
+    strip_prefix = "BUI-0.5.0",
+    url = "https://github.com/ppmpreetham/BUI/archive/refs/tags/v0.5.0.tar.gz",
+)
+
+http_archive(
+    name = "bullet",
+    build_file = "//third_party/comparators:bullet.BUILD.bazel",
+    integrity = "sha256-G1y05A7tDI1M3GxEDTZWZNGL66ZJerH+iJ9WXCA89ko=",
+    strip_prefix = "bullet3-d1a4256b3a019117f2bb6cb8c63d6367aaf512e2",
+    url = "https://github.com/bulletphysics/bullet3/archive/d1a4256b3a019117f2bb6cb8c63d6367aaf512e2.tar.gz",
+)
+
+http_archive(
+    name = "freetype",
+    build_file = "//third_party/comparators:freetype.BUILD.bazel",
+    integrity = "sha256-F02eU0AuG/nscnfiLsGZuj5Vpr4sB0DLGMDumFD8jDQ=",
+    strip_prefix = "freetype-2.14.1",
+    urls = [
+        "https://download-mirror.savannah.gnu.org/releases/freetype/freetype-2.14.1.tar.gz",
+        "https://mirrors.ocf.berkeley.edu/nongnu/freetype/freetype-2.14.1.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "harfbuzz",
+    build_file = "//third_party/comparators:harfbuzz.BUILD.bazel",
+    sha256 = "d07a007327277708a2a73ae437887cdbaf282937f6d03ca5467723e9099af586",
+    strip_prefix = "harfbuzz-14.6.0",
+    url = "https://github.com/harfbuzz/harfbuzz/releases/download/14.6.0/harfbuzz-14.6.0.tar.xz",
+)
+
+http_archive(
+    name = "jolt",
+    build_file = "//third_party/comparators:jolt.BUILD.bazel",
+    sha256 = "6e069ee0172478cc78182047aac87e5310ba14a67a53348ae14cc37801fd3f8e",
+    strip_prefix = "JoltPhysics-5.6.0",
+    url = "https://github.com/jrouwe/JoltPhysics/archive/refs/tags/v5.6.0.tar.gz",
+)
+
+http_archive(
+    name = "yoga",
+    build_file = "//third_party/comparators:yoga.BUILD.bazel",
+    sha256 = "86b399ac31fd820d8ffa823c3fae31bb690b6fc45301b2a8a966c09b5a088b55",
+    strip_prefix = "yoga-3.2.1",
+    url = "https://github.com/facebook/yoga/archive/refs/tags/v3.2.1.tar.gz",
+)

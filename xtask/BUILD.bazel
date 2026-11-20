@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "xtask",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//crates/desktop/rikka-instance",
+        "//crates/foundation/rikka-net",
+        "//crates/graphics/rikka-ltc",
+        "//crates/graphics/rikka-symbols-scanner:lib",
+        "@crates//:anyhow",
+        "@crates//:base64",
+        "@crates//:clap",
+        "@crates//:memchr",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:tar",
+        "@crates//:toml",
+        "@crates//:zstd",
+    ],
+)

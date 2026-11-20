@@ -1,0 +1,44 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-compositor-seat",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-compositor:__pkg__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/compositor/rikka-compositor-protocols",
+        "//crates/compositor/rikka-compositor-reactor",
+        "//crates/compositor/rikka-compositor-server",
+        "//crates/compositor/rikka-compositor-surface",
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/foundation/rikka-wayland-wire",
+        "@crates//:bitflags",
+        "@crates//:rustc-hash",
+        "@crates//:rustix",
+        "@crates//:slotmap",
+        "@crates//:smallvec",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:xkbcommon",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-compositor-seat",
+        "//crates/compositor/rikka-compositor-geometry",
+        "//crates/compositor/rikka-compositor-protocols",
+        "//crates/compositor/rikka-compositor-server",
+        "//crates/compositor/rikka-compositor-surface",
+        "//crates/compositor/rikka-compositor-types",
+        "//crates/compositor/rikka-test-display",
+        "//crates/foundation/rikka-wayland-client",
+        "@crates//:rustix",
+    ],
+)

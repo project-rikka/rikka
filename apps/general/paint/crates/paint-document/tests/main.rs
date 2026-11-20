@@ -1,0 +1,12 @@
+mod batching;
+mod editing;
+mod figuring;
+mod history;
+mod layering;
+mod lettering;
+mod painting;
+mod region;
+mod reshaping;
+mod saving;
+mod selecting;
+mod support;

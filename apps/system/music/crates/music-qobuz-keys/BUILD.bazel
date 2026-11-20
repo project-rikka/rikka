@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "music-qobuz-keys",
+    target_compatible_with = ["@platforms//os:linux"],
+    cranelift = False,
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-core",
+        "//crates/foundation/rikka-types",
+        "@crates//:aes",
+        "@crates//:aes-gcm",
+        "@crates//:base64",
+        "@crates//:cbc",
+        "@crates//:ctr",
+        "@crates//:hkdf",
+        "@crates//:rand",
+        "@crates//:sha2",
+    ],
+)

@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-heap",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:mimalloc",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:libc"],
+        "@platforms//os:windows": [],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-heap",
+        "@crates//:libc",
+    ],
+)

@@ -1,0 +1,54 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+load("//bazel/slang:defs.bzl", "rikka_shaders")
+load(":programs.bzl", "shader_programs")
+
+rikka_shaders(
+    name = "shaders-3d",
+    srcs = [":programs"],
+    compile_data = [":programs_data"],
+    crate_root = "src/lib.rs",
+    exclude = ["effects/**"],
+    precise_floating_point = True,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = ["//crates/graphics/rikka-shader-programs"],
+)
+
+shader_programs(
+    name = "programs",
+    effects = glob(["effects/*.slang"]),
+    library = ":lib",
+    templates = [
+        "rikka/standard",
+        "rikka/wireframe",
+        "rikka/floor",
+        "rikka/shadow_catcher",
+        "rikka/water",
+        "rikka/skin",
+        "rikka/hair",
+        "rikka/eye",
+        "rikka/workbench",
+        "rikka/unlit",
+    ],
+)
+
+filegroup(
+    name = "programs_data",
+    srcs = [":programs"],
+    output_group = "compile_data",
+)
+
+rikka_binary(
+    name = "programs-tool",
+    srcs = ["tools/programs.rs"],
+    crate_root = "tools/programs.rs",
+    deps = [
+        "//crates/graphics/rikka-shader-programs",
+        "//crates/graphics/rikka-slang",
+        "//crates/graphics/rikka-spirv",
+        "@crates//:serde_json",
+    ],
+)

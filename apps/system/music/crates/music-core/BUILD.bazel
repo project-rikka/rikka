@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "music-core",
+    target_compatible_with = ["@platforms//os:linux"],
+    proc_macro_deps = [
+        "@crates//:async-trait",
+    ],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-account-book",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-worker",
+        "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-hifi",
+        "//crates/text/rikka-text-unicode",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":music-core",
+        "@crates//:tempfile",
+    ],
+)

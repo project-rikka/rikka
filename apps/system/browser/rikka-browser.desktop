@@ -1,0 +1,28 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Browser
+Name[ja]=ブラウザ
+GenericName=Web Browser
+GenericName[ja]=ウェブブラウザ
+Comment=Browse the web
+Comment[ja]=ウェブを閲覧します
+Exec=rikka-browser %U
+Icon=web-browser
+Terminal=false
+Categories=Network;WebBrowser;
+MimeType=text/html;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+Keywords=web;internet;browser;
+Keywords[ja]=ウェブ;インターネット;ブラウザ;
+StartupNotify=true
+Actions=new-window;private-window;
+
+[Desktop Action new-window]
+Name=New Window
+Name[ja]=新しいウィンドウ
+Exec=rikka-browser --new-window
+
+[Desktop Action private-window]
+Name=New Private Window
+Name[ja]=新しいプライベートウィンドウ
+Exec=rikka-browser --private-window

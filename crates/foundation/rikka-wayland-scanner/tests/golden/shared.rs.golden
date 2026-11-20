@@ -1,0 +1,166 @@
+#[allow(clippy::too_many_arguments, clippy::large_enum_variant, clippy::enum_variant_names)]
+pub mod ex_manager_v1 {
+    use rikka_wayland_wire as wire;
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub enum Error {
+        BadItem,
+        NoSummary,
+    }
+
+    impl TryFrom<u32> for Error {
+        type Error = wire::UnknownValue;
+
+        fn try_from(value: u32) -> Result<Self, Self::Error> {
+            match value {
+                0 => Ok(Self::BadItem),
+                1 => Ok(Self::NoSummary),
+                _ => Err(wire::UnknownValue(value)),
+            }
+        }
+    }
+
+    impl From<Error> for u32 {
+        fn from(value: Error) -> u32 {
+            match value {
+                Error::BadItem => 0,
+                Error::NoSummary => 1,
+            }
+        }
+    }
+
+    impl Error {
+        pub fn code(self) -> u32 {
+            u32::from(self)
+        }
+
+        pub fn summary(self) -> &'static str {
+            match self {
+                Self::BadItem => "the item is not usable",
+                Self::NoSummary => "no summary",
+            }
+        }
+    }
+
+    bitflags::bitflags! {
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+        pub struct Edges: u32 {
+            const TOP = 1;
+            const BOTTOM = 2;
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    pub enum Rotation {
+        Normal,
+        _90,
+    }
+
+    impl TryFrom<u32> for Rotation {
+        type Error = wire::UnknownValue;
+
+        fn try_from(value: u32) -> Result<Self, Self::Error> {
+            match value {
+                0 => Ok(Self::Normal),
+                1 => Ok(Self::_90),
+                _ => Err(wire::UnknownValue(value)),
+            }
+        }
+    }
+
+    impl From<Rotation> for u32 {
+        fn from(value: Rotation) -> u32 {
+            match value {
+                Rotation::Normal => 0,
+                Rotation::_90 => 1,
+            }
+        }
+    }
+
+    pub static INTERFACE: wire::Interface = wire::Interface {
+        index: 0,
+        name: "ex_manager_v1",
+        version: 3,
+        requests: &[
+            wire::MessageSpec {
+                name: "destroy",
+                since: 1,
+                destructor: true,
+                signature: &[],
+                children: &[],
+            },
+            wire::MessageSpec {
+                name: "create_item",
+                since: 1,
+                destructor: false,
+                signature: &[wire::ArgType::NewId, wire::ArgType::NullableObject, wire::ArgType::String, wire::ArgType::Uint],
+                children: &[&super::ex_item_v1::INTERFACE],
+            },
+            wire::MessageSpec {
+                name: "share",
+                since: 2,
+                destructor: false,
+                signature: &[wire::ArgType::Fd, wire::ArgType::Array, wire::ArgType::Uint, wire::ArgType::Fixed],
+                children: &[],
+            },
+            wire::MessageSpec {
+                name: "place",
+                since: 3,
+                destructor: false,
+                signature: &[wire::ArgType::Object, wire::ArgType::NullableObject, wire::ArgType::Int, wire::ArgType::Fixed, wire::ArgType::Int, wire::ArgType::NewId],
+                children: &[&super::ex_item_v1::INTERFACE],
+            },
+            wire::MessageSpec {
+                name: "bind",
+                since: 3,
+                destructor: false,
+                signature: &[wire::ArgType::Uint, wire::ArgType::UntypedNewId],
+                children: &[],
+            },
+        ],
+        events: &[
+            wire::MessageSpec {
+                name: "announce",
+                since: 1,
+                destructor: false,
+                signature: &[wire::ArgType::NewId, wire::ArgType::NullableString, wire::ArgType::Int],
+                children: &[&super::ex_item_v1::INTERFACE],
+            },
+            wire::MessageSpec {
+                name: "id",
+                since: 3,
+                destructor: false,
+                signature: &[wire::ArgType::Uint],
+                children: &[],
+            },
+            wire::MessageSpec {
+                name: "table",
+                since: 3,
+                destructor: false,
+                signature: &[wire::ArgType::Fd, wire::ArgType::Uint],
+                children: &[],
+            },
+        ],
+    };
+}
+
+#[allow(clippy::too_many_arguments, clippy::large_enum_variant, clippy::enum_variant_names)]
+pub mod ex_item_v1 {
+    use rikka_wayland_wire as wire;
+
+    pub static INTERFACE: wire::Interface = wire::Interface {
+        index: 1,
+        name: "ex_item_v1",
+        version: 3,
+        requests: &[],
+        events: &[
+            wire::MessageSpec {
+                name: "done",
+                since: 1,
+                destructor: true,
+                signature: &[wire::ArgType::Uint],
+                children: &[],
+            },
+        ],
+    };
+}

@@ -1,0 +1,16 @@
+diff --git a/gfx/layers/apz/src/APZBridge.cpp b/gfx/layers/apz/src/APZBridge.cpp
+index f51d2818ae..13bc66c9c9 100644
+--- a/gfx/layers/apz/src/APZBridge.cpp
++++ b/gfx/layers/apz/src/APZBridge.cpp
+@@ -333,7 +333,10 @@ APZEventResult APZBridge::ReceiveInputEvent(WidgetInputEvent& aEvent,
+               StaticPrefs::general_smoothScroll_mouseWheel()) ||
+              (wheelEvent.mDeltaMode ==
+                   dom::WheelEvent_Binding::DOM_DELTA_PAGE &&
+-              StaticPrefs::general_smoothScroll_pages()))) {
++              StaticPrefs::general_smoothScroll_pages()) ||
++             (wheelEvent.mDeltaMode ==
++                  dom::WheelEvent_Binding::DOM_DELTA_PIXEL &&
++              StaticPrefs::general_smoothScroll_rikka_enabled()))) {
+           scrollMode = ScrollWheelInput::SCROLLMODE_SMOOTH;
+         }
+ 

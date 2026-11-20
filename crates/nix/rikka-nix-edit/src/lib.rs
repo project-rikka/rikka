@@ -1,0 +1,22 @@
+mod check;
+mod document;
+mod error;
+mod expr;
+mod from_nix;
+mod lambda;
+mod locate;
+mod name;
+mod path;
+mod print;
+mod read;
+mod set;
+mod syntax;
+mod text;
+
+pub use document::Document;
+pub use error::{Error, Result};
+pub use expr::Expr;
+pub use from_nix::FromNix;
+pub use lambda::{Formal, Formals, Param};
+pub use path::{AttrPath, IntoAttrPath};
+pub use set::{Entry, Set};

@@ -1,0 +1,1304 @@
+/// The Rikka application SDK. Unless a function says it is thread-safe, call it on the thread
+/// running [app.run]. A call that breaks a documented contract (a NULL where none is allowed,
+/// invalid UTF-8, an unknown enum value, an element function outside a view, a handle used on the
+/// wrong thread) prints a diagnostic and aborts the process. Failures the caller cannot rule out
+/// are reported through [status] and [last_error].
+library rikka version "0.2.0" abi_prefix rk;
+
+/// As an index: nothing is selected.
+const none: usize = max;
+/// Spacing token: 0 px.
+const space_none: f32 = 0.0;
+/// Spacing token: 2 px.
+const space_hair: f32 = 2.0;
+/// Spacing token: 4 px.
+const space_tight: f32 = 4.0;
+/// Spacing token: 8 px.
+const space_snug: f32 = 8.0;
+/// Spacing token: 12 px.
+const space_normal: f32 = 12.0;
+/// Spacing token: 16 px.
+const space_roomy: f32 = 16.0;
+/// Spacing token: 24 px.
+const space_loose: f32 = 24.0;
+/// Spacing token: 32 px.
+const space_wide: f32 = 32.0;
+
+/// A straight-alpha sRGB colour with components from 0 to 1.
+struct color {
+    r: f32,
+    g: f32,
+    b: f32,
+    a: f32,
+}
+
+/// The outcome of an operation that can fail at run time.
+@error(success = ok, message = last_error)
+enum status {
+    /// It succeeded.
+    ok,
+    /// No Wayland compositor could be reached.
+    no_display,
+    /// The GPU or its driver failed.
+    gpu,
+    /// The operating system refused a resource.
+    system,
+    /// The window is closed.
+    closed,
+    /// The person cancelled.
+    cancelled,
+    /// It failed for another reason; [last_error] says why.
+    failed,
+}
+
+/// Placement across a container's axis.
+enum align {
+    start,
+    center,
+    end,
+    /// Fill the cross axis.
+    stretch,
+}
+
+/// Placement of children along a container's axis.
+@value_prefix(justify)
+enum justification {
+    start,
+    center,
+    end,
+}
+
+/// A layout direction.
+enum axis {
+    horizontal,
+    vertical,
+}
+
+/// A step of the type scale.
+enum text_role {
+    display,
+    title,
+    heading,
+    subheading,
+    /// The default.
+    body,
+    label,
+    caption,
+}
+
+/// A theme colour for text.
+enum text_tone {
+    /// The surrounding text colour.
+    default,
+    muted,
+    faint,
+    accent,
+    danger,
+    warning,
+    success,
+}
+
+/// Horizontal alignment of text lines.
+@value_prefix(text_align)
+enum text_alignment {
+    left,
+    center,
+    right,
+    justified,
+}
+
+/// A font weight.
+enum font_weight {
+    thin = 100,
+    light = 300,
+    normal = 400,
+    medium = 500,
+    semibold = 600,
+    bold = 700,
+    black = 900,
+}
+
+/// How prominent a button is.
+enum button_variant {
+    /// The default.
+    primary,
+    secondary,
+    ghost,
+    danger,
+}
+
+/// The size of a control.
+enum size_class {
+    small,
+    /// The default.
+    medium,
+    large,
+}
+
+/// The state of a check mark.
+enum check_state {
+    unchecked,
+    checked,
+    indeterminate,
+}
+
+/// How a picture fills its frame.
+enum fit {
+    /// The default.
+    stretch,
+    contain,
+    cover,
+    natural,
+    scale_down,
+}
+
+/// A colour of the current theme.
+enum color_role {
+    background,
+    surface,
+    surface_variant,
+    text,
+    text_muted,
+    accent,
+    on_accent,
+    selection,
+    on_selection,
+    danger,
+    on_danger,
+    warning,
+    on_warning,
+    success,
+    on_success,
+    outline,
+    overlay,
+}
+
+/// Where an anchored element sits relative to its target.
+enum anchor_edge {
+    below_start,
+    below_end,
+    above_start,
+    above_end,
+    /// To the right, top-aligned.
+    beside_top,
+    /// To the left, top-aligned.
+    beside_left_top,
+    center,
+    /// Exactly over the target.
+    cover,
+}
+
+/// How an element enters and leaves.
+@value_prefix(transition)
+enum transition_style {
+    fade,
+    fade_scale,
+    pop,
+    slide_from_top,
+    slide_from_bottom,
+    slide_from_leading,
+    slide_from_trailing,
+}
+
+/// Something a handler asks of its window.
+enum window_request {
+    /// Close at once.
+    close,
+    /// Close as the close button would, running the close-request callback.
+    ask_to_close,
+    minimize,
+    toggle_maximize,
+    enter_fullscreen,
+    exit_fullscreen,
+    toggle_fullscreen,
+}
+
+/// The answer to an unsaved-changes prompt.
+enum unsaved_answer {
+    save,
+    discard,
+    cancel,
+}
+
+/// What a file chooser picks.
+enum file_chooser_purpose {
+    /// Existing files or folders.
+    open,
+    /// A place to save to.
+    save,
+}
+
+/// Where a sound or video is in its playback.
+enum playback_state {
+    /// It is opening; what was asked meanwhile happens once it is open.
+    loading,
+    /// It is open and not playing.
+    paused,
+    playing,
+    /// It played to its end.
+    ended,
+    /// It cannot be played; its error message says why.
+    failed,
+}
+
+/// A standard command, bound to the desktop's usual keys.
+enum command {
+    back,
+    forward,
+    up,
+    home,
+    refresh,
+    undo,
+    redo,
+    cut,
+    copy,
+    paste,
+    select_all,
+    select_none,
+    delete,
+    find,
+    find_next,
+    find_previous,
+    zoom_in,
+    zoom_out,
+    zoom_reset,
+    new,
+    new_tab,
+    open,
+    save,
+    save_as,
+    close,
+    quit,
+    next_tab,
+    previous_tab,
+    rename,
+    properties,
+    fullscreen,
+    preferences,
+    context_menu,
+}
+
+/// A key. Every Unicode scalar value below 0x110000 names the key that types it; the named keys
+/// below cover the rest.
+@open
+@value_prefix(key)
+enum key_code {
+    enter = 0x1000001,
+    escape,
+    tab,
+    backspace,
+    delete,
+    insert,
+    space,
+    arrow_up,
+    arrow_down,
+    arrow_left,
+    arrow_right,
+    home,
+    end,
+    page_up,
+    page_down,
+    menu,
+    f1 = 0x1000101,
+    f2,
+    f3,
+    f4,
+    f5,
+    f6,
+    f7,
+    f8,
+    f9,
+    f10,
+    f11,
+    f12,
+    f13,
+    f14,
+    f15,
+    f16,
+    f17,
+    f18,
+    f19,
+    f20,
+    f21,
+    f22,
+    f23,
+    f24,
+}
+
+/// Keyboard modifiers held with a key.
+@value_prefix(modifier)
+flags modifiers {
+    shift = 0x1,
+    control = 0x2,
+    alt = 0x4,
+    /// The Super or Windows key.
+    logo = 0x8,
+}
+
+/// Declares content into a view. It runs whenever the content may have changed and must only
+/// describe it.
+/// @param view The view to declare into.
+callback view_fn(view: view);
+
+/// Declares one item of a lazy collection when it comes into view.
+/// @param view The view to declare the item into.
+/// @param index The item's index.
+/// @param selected Whether the item is selected.
+callback item_fn(view: view, index: usize, selected: bool);
+
+/// Reacts to an event. The window's view runs again afterwards unless [context.skip_view] is
+/// called.
+callback action_fn(context: context);
+
+/// Reacts to an event carrying a flag.
+callback bool_fn(context: context, value: bool);
+
+/// Reacts to an event carrying a number.
+callback double_fn(context: context, value: f64);
+
+/// Reacts to an event carrying an index.
+callback index_fn(context: context, index: usize);
+
+/// Reacts to a window changing size or state.
+/// @param width Logical width.
+/// @param height Logical height.
+callback shape_fn(context: context, width: f32, height: f32, maximized: bool, fullscreen: bool);
+
+/// Receives the arguments of a later start of a single-instance application.
+/// @param arguments The command-line arguments, program name excluded.
+callback launch_fn(context: context, arguments: [string]);
+
+/// Receives text that may be absent.
+/// @param present Whether there was text.
+/// @param text The text, empty when absent.
+callback text_fn(context: context, present: bool, text: string);
+
+/// Receives the outcome of a file chooser.
+/// @param status [status.ok] with the chosen paths, [status.cancelled] or [status.failed].
+/// @param paths The chosen paths.
+callback files_fn(context: context, status: status, paths: [string]);
+
+/// Receives paths of local files.
+callback paths_fn(context: context, paths: [string]);
+
+/// Receives text.
+callback string_fn(context: context, text: string);
+
+/// Receives the answer to an unsaved-changes prompt.
+callback unsaved_fn(context: context, answer: unsaved_answer);
+
+/// Does blocking work on a background thread.
+callback work_fn();
+
+/// The version of the loaded library, packed as major << 22 | minor << 12 | patch.
+@thread_safe
+fn version() -> u32;
+
+/// Describes the last failure on the calling thread.
+/// @returns Valid until the next failing call on this thread; empty if nothing failed.
+@thread_safe
+fn last_error() -> borrowed string;
+
+/// Opens a web address in the desktop's browser, or another URL in the program that handles its
+/// scheme, such as mailto: in the mail program.
+/// @param url An absolute URL such as https://example.org.
+@thread_safe
+fn open_url(url: string) throws status;
+
+/// Opens a file or folder in the desktop's default program for it.
+/// @param path Absolute, or relative to the working directory.
+@thread_safe
+fn open_file(path: string) throws status;
+
+/// An application: its identity and first windows.
+@builder
+owned class app {
+    /// Makes an application.
+    /// @param id The reverse-DNS application id, such as org.example.notes; it names the desktop
+    /// entry and the bus name.
+    constructor(id: string);
+
+    /// Makes later starts hand their arguments to the running instance's
+    /// [window_builder.on_launch] callback instead of starting anew.
+    fn set_single_instance(single: bool);
+
+    /// Adds a window opened when the application starts.
+    fn add_window(window: owned window_builder);
+
+    /// Runs the application on the calling thread until its last window closes.
+    fn run(owned self) throws status;
+}
+
+/// The description of a window to open.
+@builder
+owned class window_builder {
+    /// Describes a window whose content view declares. The window follows the desktop's theme
+    /// and language.
+    /// @param view Declares the window's content.
+    constructor(view: view_fn);
+
+    /// Sets the initial title.
+    fn set_title(title: string);
+
+    /// Sets the initial logical size; 800 by 600 unless set.
+    fn set_size(width: f32, height: f32);
+
+    /// Sets the smallest logical size.
+    fn set_min_size(width: f32, height: f32);
+
+    /// Sets whether the person may resize the window.
+    fn set_resizable(resizable: bool);
+
+    /// Sets whether the window opens maximized.
+    fn set_maximized(maximized: bool);
+
+    /// Makes the window a dialog of another window of this application.
+    fn set_parent(parent: window);
+
+    /// Sets whether the window blocks its parent.
+    fn set_modal(modal: bool);
+
+    /// Runs once the window opens; start timers or background work here.
+    fn on_start(callback: action_fn);
+
+    /// Runs instead of closing when the person asks to close the window; request
+    /// [window_request.close] to close it.
+    fn on_close_request(callback: action_fn);
+
+    /// Runs when the window gains or loses keyboard focus.
+    /// @param callback Receives whether the window is focused.
+    fn on_focus_change(callback: bool_fn);
+
+    /// Runs when the window first shows and whenever its size or state changes.
+    fn on_shape(callback: shape_fn);
+
+    /// Receives later starts of a single-instance application; the first window with this
+    /// callback gets them.
+    fn on_launch(callback: launch_fn);
+
+    /// Binds a key chord anywhere in the window.
+    fn add_shortcut(key: key_code, modifiers: modifiers, callback: action_fn);
+
+    /// Binds a standard command anywhere in the window.
+    fn add_command(command: command, callback: action_fn);
+}
+
+/// The description of a file chooser dialog.
+@builder
+owned class file_chooser {
+    /// Describes a file chooser.
+    constructor(purpose: file_chooser_purpose, title: string);
+
+    /// Names the accepting button.
+    fn set_accept_label(label: string);
+
+    /// Lets the person pick several files.
+    fn set_multiple(multiple: bool);
+
+    /// Picks folders instead of files.
+    fn set_directory(directory: bool);
+
+    /// Sets the folder it opens in.
+    fn set_folder(path: string);
+
+    /// Suggests a file name to save as.
+    fn set_name(name: string);
+
+    /// Adds a named filter; the patterns and types added next belong to it.
+    fn add_filter(name: string);
+
+    /// Adds a glob such as *.png to the last filter.
+    fn add_filter_pattern(pattern: string);
+
+    /// Adds a MIME type such as image/png to the last filter.
+    fn add_filter_mime_type(mime_type: string);
+}
+
+/// An open window.
+shared class window {
+    /// Runs the window's view again soon, after state changed outside a callback.
+    @thread_safe
+    fn invalidate();
+
+    /// Runs a callback on the application thread with the window's context; the view runs again
+    /// afterwards.
+    /// @returns [status.ok], or [status.closed] if the window is gone; the callback then never
+    /// runs.
+    @thread_safe
+    fn post(@any_thread callback: action_fn) -> status;
+
+    /// Whether the window is still open.
+    @thread_safe
+    readonly property is_open: bool;
+
+    /// Sets the window's title.
+    @thread_safe
+    fn set_title(title: string);
+}
+
+/// A picture to show: a file, encoded bytes or raw pixels.
+shared class image {
+    /// Refers to a picture file, decoded when first shown. SVG files stay sharp at every size.
+    @thread_safe
+    constructor file(path: string);
+
+    /// Copies an encoded picture (PNG, JPEG, WebP and the like), decoded when first shown.
+    @thread_safe
+    constructor encoded(data: [u8]);
+
+    /// Copies straight-alpha RGBA8 pixels, rows top to bottom without padding.
+    /// @param pixels width * height * 4 bytes.
+    @thread_safe
+    constructor rgba(width: u32, height: u32, pixels: [u8]);
+}
+
+/// A sound or piece of music played from a file: MP3, FLAC, Ogg Vorbis, Opus, WAV, AAC and the
+/// like. It opens in the background and streams, so long pieces cost little memory. Views that
+/// read its state or position run again as it plays. A playing sound keeps playing after its
+/// last reference is gone, until it pauses or ends.
+shared class sound {
+    /// Opens a sound file in the background.
+    @thread_safe
+    constructor(path: string);
+
+    /// Starts or resumes playing; from the start once it has ended. A sound still opening starts
+    /// once it is open.
+    @thread_safe
+    fn play();
+
+    /// Pauses where it is.
+    @thread_safe
+    fn pause();
+
+    /// Pauses and returns to the start.
+    @thread_safe
+    fn stop();
+
+    /// Moves to a point, at most its end.
+    /// @param seconds From the start; not below 0.
+    @thread_safe
+    fn seek(seconds: f64);
+
+    /// Runs a callback on a window each time it plays to its end, replacing the previous one.
+    /// @param window The window whose context the callback receives.
+    @thread_safe
+    fn on_end(window: window, @any_thread callback: action_fn);
+
+    /// Where it is in its playback.
+    @thread_safe
+    readonly property state: playback_state;
+
+    /// Whether it plays, or will once it is open.
+    @thread_safe
+    readonly property is_playing: bool;
+
+    /// The point it has reached, in seconds from the start.
+    @thread_safe
+    readonly property position: f64;
+
+    /// Its length in seconds; 0 while unknown.
+    @thread_safe
+    readonly property duration: f64;
+
+    /// Its loudness, from 0 to 1; 1 unless set.
+    /// @set Not below 0 nor above 1.
+    @thread_safe
+    property volume: f64;
+
+    /// Whether it starts over when it reaches its end.
+    @thread_safe
+    property looping: bool;
+
+    /// Why it cannot be played; empty unless its state is [playback_state.failed].
+    @thread_safe
+    readonly property error_message: string;
+}
+
+/// A video played from a file, such as MP4, WebM or Matroska, with its sound, shown by
+/// [view.video_view]. It opens once a view shows it. Views that read its state or position run
+/// again as it plays. A playing video keeps playing after its last reference is gone, until it
+/// pauses or ends.
+shared class video {
+    /// Refers to a video file.
+    @thread_safe
+    constructor(path: string);
+
+    /// Starts or resumes playing; from the start once it has ended. A video still opening starts
+    /// once it is open.
+    @thread_safe
+    fn play();
+
+    /// Pauses where it is.
+    @thread_safe
+    fn pause();
+
+    /// Pauses and returns to the start.
+    @thread_safe
+    fn stop();
+
+    /// Moves to a point, at most its end.
+    /// @param seconds From the start; not below 0.
+    @thread_safe
+    fn seek(seconds: f64);
+
+    /// Runs a callback on a window each time it plays to its end, replacing the previous one.
+    /// @param window The window whose context the callback receives.
+    @thread_safe
+    fn on_end(window: window, @any_thread callback: action_fn);
+
+    /// Where it is in its playback.
+    @thread_safe
+    readonly property state: playback_state;
+
+    /// Whether it plays, or will once it is open.
+    @thread_safe
+    readonly property is_playing: bool;
+
+    /// The point it has reached, in seconds from the start.
+    @thread_safe
+    readonly property position: f64;
+
+    /// Its length in seconds; 0 while unknown.
+    @thread_safe
+    readonly property duration: f64;
+
+    /// The loudness of its sound, from 0 to 1; 1 unless set.
+    /// @set Not below 0 nor above 1.
+    @thread_safe
+    property volume: f64;
+
+    /// Whether it starts over when it reaches its end.
+    @thread_safe
+    property looping: bool;
+
+    /// Its picture's width in pixels; 0 until it is open.
+    @thread_safe
+    readonly property width: f32;
+
+    /// Its picture's height in pixels; 0 until it is open.
+    @thread_safe
+    readonly property height: f32;
+
+    /// Why it cannot be played, or why it plays without sound; empty otherwise.
+    @thread_safe
+    readonly property error_message: string;
+}
+
+/// Editable text with caret, selection, input method state and undo history, shown by text
+/// fields and editors.
+local class text_document {
+    /// Makes a document holding text.
+    constructor(text: string);
+
+    /// The document's text; reading copies it.
+    /// @set Replaces the text as one undoable edit.
+    property text: string;
+
+    /// Replaces the text and forgets the undo history and saved state.
+    fn reset(text: string);
+
+    /// The text's length in UTF-8 bytes.
+    readonly property length: usize;
+
+    /// A number that changes whenever the text does; handy as the digest of [view.memo].
+    readonly property revision: u64;
+
+    /// Whether the text changed since it was last marked saved.
+    readonly property is_modified: bool;
+
+    /// Marks the current text as saved.
+    fn mark_saved();
+
+    /// Types text at the caret, replacing the selection.
+    fn insert(text: string);
+
+    /// A copy of the selected text.
+    readonly property selected_text: string;
+
+    /// Selects all text.
+    fn select_all();
+
+    /// Whether there is an edit to undo.
+    readonly property can_undo: bool;
+
+    /// Whether there is an edit to redo.
+    readonly property can_redo: bool;
+
+    /// Undoes the last edit.
+    /// @returns Whether there was one.
+    fn undo() -> bool;
+
+    /// Redoes the last undone edit.
+    /// @returns Whether there was one.
+    fn redo() -> bool;
+}
+
+/// The context of a callback reacting to the person or the system.
+scoped class context {
+    /// The window the callback belongs to.
+    readonly property window: borrowed window;
+
+    /// Tells the SDK that this callback changed nothing the view shows.
+    fn skip_view();
+
+    /// Asks something of the window.
+    fn request(request: window_request);
+
+    /// Opens another window.
+    fn open_window(window: owned window_builder);
+
+    /// Runs a callback once after a delay. A timer or task with the same key is replaced; all of
+    /// them stop when the window closes.
+    /// @param key Names the timer.
+    fn after(key: string, milliseconds: u32, callback: action_fn);
+
+    /// Runs a callback repeatedly. A timer or task with the same key is replaced; all of them
+    /// stop when the window closes.
+    /// @param key Names the timer.
+    /// @param milliseconds The period.
+    fn every(key: string, milliseconds: u32, callback: action_fn);
+
+    /// Stops the timer or task with a key.
+    fn cancel(key: string);
+
+    /// Runs blocking work on a background thread, then a callback on the application thread. The
+    /// callback does not run if the window closed first.
+    fn run_in_background(@any_thread task: (work: work_fn, done: action_fn));
+
+    /// Puts text on the clipboard.
+    fn set_clipboard_text(text: string);
+
+    /// Reads the clipboard's text without blocking.
+    fn read_clipboard_text(callback: text_fn);
+
+    /// Shows a file chooser over the window without blocking.
+    fn choose_files(chooser: owned file_chooser, callback: files_fn);
+
+    /// Shows a message over the window with an OK button, without blocking.
+    fn alert(title: string, message: string);
+
+    /// Asks the person to confirm something over the window, without blocking.
+    /// @param accept_label Names the confirming button with a verb, such as Delete.
+    /// @param callback Receives whether the person confirmed; dismissing counts as declining.
+    fn confirm(title: string, message: string, accept_label: string, callback: bool_fn);
+}
+
+/// The builder a view callback declares a window's content into.
+scoped class view {
+    /// A colour of the theme the view is drawn in. Views run again when the desktop's theme
+    /// changes.
+    fn palette_color(role: color_role) -> color;
+
+    /// Whether the view is drawn in a dark theme.
+    readonly property is_dark: bool;
+
+    /// A column: children stack top to bottom.
+    container column();
+
+    /// A row: children line up from the leading edge.
+    container row();
+
+    /// A grid of equal columns filled row by row.
+    /// @param columns At least 1.
+    container grid(columns: u32);
+
+    /// A box: a decorated, pressable frame around its children, which stack top to bottom.
+    container box();
+
+    /// A vertically scrolling area. Give it a height, or let it fill or grow.
+    container scroll();
+
+    /// A scrolling settings-style page of sections.
+    container page();
+
+    /// A headed section of a page.
+    container section(heading: string);
+
+    /// A card: a raised surface around its children.
+    container card();
+
+    /// A labelled form row around one control.
+    container field(label: string);
+
+    /// A button whose content is its children.
+    container custom_button();
+
+    /// Two panes divided by a draggable gutter; give it exactly two children, and
+    /// [view.on_resize] to make it draggable.
+    /// @param axis [axis.horizontal] puts the panes side by side.
+    /// @param ratio The first pane's share, from 0 to 1.
+    container split(axis: axis, ratio: f32);
+
+    /// One page of a stack; changing the page turns to the new content with a transition. Give
+    /// it exactly one child.
+    /// @param page Which page is shown.
+    container page_stack(page: usize);
+
+    /// A modal sheet shown over the window while it is declared; its children stack top to
+    /// bottom.
+    container sheet();
+
+    /// A popover shown while it is declared, placed with [view.anchor].
+    container popover();
+
+    /// A centred icon-and-message page for empty or failed states; its children are its actions.
+    /// @param icon A Material Symbols name.
+    container status_page(icon: string, message: string);
+
+    /// The right-click menu of the current element; its children are menu items.
+    container context_menu();
+
+    /// A menu shown while it is declared, placed with [view.anchor]; its children are menu items.
+    container popup_menu();
+
+    /// A menu bar; its children are [view.menu] containers.
+    container menu_bar();
+
+    /// A menu of a menu bar; its children are menu items.
+    container menu(title: string);
+
+    /// A submenu inside a menu; its children are menu items.
+    container submenu(label: string);
+
+    /// A segmented control; its children are segments.
+    /// @param selected The selected segment.
+    container segmented(selected: usize);
+
+    /// A drop-down choice; its children are options.
+    /// @param selected The chosen option, or [none].
+    container combo(selected: usize);
+
+    /// A tab strip; its children are tabs. Show the selected tab's content beside it.
+    /// @param selected The selected tab.
+    container tabs(selected: usize);
+
+    /// A sidebar navigation list; its children are nav items and headers.
+    /// @param selected The selected entry, counting headers.
+    container nav_list(selected: usize);
+
+    /// A scrolling list; its children are list items and headers. Prefer [view.lazy_list] for
+    /// long lists.
+    container list();
+
+    /// Declares content that is declared again only when its digest changes.
+    /// @param digest Summarises everything the content shows.
+    /// @param content Declares the content into the view it receives.
+    element memo(digest: u64, content: view_fn);
+
+    /// Declares a labelled segment.
+    element segment(label: string);
+
+    /// Declares an icon segment; a segmented control holds either only labelled or only icon
+    /// segments.
+    /// @param icon A Material Symbols name.
+    /// @param label Names the segment in its tooltip.
+    element icon_segment(icon: string, label: string);
+
+    /// Declares an option of a combo.
+    element option(label: string);
+
+    /// Declares a tab.
+    element tab(label: string);
+
+    /// Declares a navigation entry.
+    element nav_item(label: string);
+
+    /// Declares a heading between navigation entries.
+    element nav_header(label: string);
+
+    /// Declares a list row.
+    element list_item(label: string);
+
+    /// Declares a heading row of a list.
+    element list_header(label: string);
+
+    /// Declares a menu entry.
+    element menu_item(label: string);
+
+    /// Declares a heading in a menu.
+    element menu_header(label: string);
+
+    /// Declares a line between menu entries.
+    element menu_separator();
+
+    /// Declares text.
+    element text(text: string);
+
+    /// Declares an icon.
+    /// @param name A Material Symbols name such as search or delete; an unknown name aborts.
+    element icon(name: string);
+
+    /// Declares a picture.
+    element image_view(image: image);
+
+    /// Declares a video's picture; it opens once shown. Size it, and fit it with
+    /// [view.image_fit].
+    element video_view(video: video);
+
+    /// Declares empty space that grows to fill its row or column.
+    element spacer();
+
+    /// Declares a horizontal hairline.
+    element divider();
+
+    /// Declares a vertical hairline.
+    element vertical_divider();
+
+    /// Declares a labelled button.
+    element button(label: string);
+
+    /// Declares an icon-only button; name it with [view.tooltip].
+    /// @param icon A Material Symbols name.
+    element icon_button(icon: string);
+
+    /// Declares a checkbox.
+    /// @param label Empty for none.
+    element checkbox(state: check_state, label: string);
+
+    /// Declares an on/off switch.
+    element toggle(on: bool);
+
+    /// Declares a radio button; react with [view.on_press].
+    /// @param label Empty for none.
+    element radio(selected: bool, label: string);
+
+    /// Declares a slider, from 0 to 1 unless given [view.range].
+    element slider(value: f64);
+
+    /// Declares a numeric entry that reports on Enter or when focus leaves.
+    element number_field(value: f64);
+
+    /// Declares a progress bar.
+    /// @param fraction From 0 to 1.
+    element progress(fraction: f64);
+
+    /// Declares a progress bar for work of unknown length.
+    element progress_indeterminate();
+
+    /// Declares a busy spinner.
+    element spinner();
+
+    /// Declares a circular gauge.
+    /// @param fraction From 0 to 1.
+    element gauge(fraction: f64);
+
+    /// Declares a single-line text entry editing a document.
+    element text_field(document: text_document);
+
+    /// Declares a multi-line scrolling text editor editing a document.
+    element text_editor(document: text_document);
+
+    /// Declares an inline warning line; [view.on_dismiss] adds its dismiss button.
+    element banner(message: string);
+
+    /// Declares the standard Save / Don't Save / Cancel sheet, shown while it is declared.
+    /// @param name The document's name.
+    /// @param saving Whether a save is under way.
+    element unsaved_prompt(name: string, saving: bool, callback: unsaved_fn);
+
+    /// Declares a list that declares only the rows in view; each call of item declares one list
+    /// item.
+    element lazy_list(count: usize, item: item_fn);
+
+    /// Declares a scrolling column that declares only the items in view; each call of item
+    /// declares one element.
+    element lazy_column(count: usize, item: item_fn);
+
+    /// Declares a scrolling grid that declares only the items in view; each call of item
+    /// declares one element.
+    /// @param columns At least 1.
+    element lazy_grid(count: usize, columns: u32, item: item_fn);
+
+    /// Sets the current element's width in logical pixels.
+    modifier width(width: f32);
+
+    /// Sets the current element's height.
+    modifier height(height: f32);
+
+    /// Sets the current element's smallest width.
+    modifier min_width(width: f32);
+
+    /// Sets the current element's smallest height.
+    modifier min_height(height: f32);
+
+    /// Sets the current element's largest width.
+    modifier max_width(width: f32);
+
+    /// Sets the current element's largest height.
+    modifier max_height(height: f32);
+
+    /// Makes the current element as wide as its parent.
+    modifier fill_width();
+
+    /// Makes the current element as tall as its parent.
+    modifier fill_height();
+
+    /// Lets the current element take a share of the room left in its row or column.
+    modifier grow(factor: f32);
+
+    /// Sets how much the current element gives way when room is short; 0 keeps its size.
+    modifier shrink(factor: f32);
+
+    /// Places the current element across its parent's axis.
+    modifier align_self(align: align);
+
+    /// Adds space around the current element.
+    modifier margin(margin: f32);
+
+    /// Adds space around the current element, edge by edge.
+    modifier margin_edges(top: f32, right: f32, bottom: f32, left: f32);
+
+    /// Fades the current element, from 0 to 1.
+    modifier opacity(opacity: f32);
+
+    /// Paints a colour behind the current element.
+    modifier background(color: color);
+
+    /// Names the current element in a tooltip.
+    modifier tooltip(text: string);
+
+    /// Gives the current element an identity that keeps its state when siblings come and go, and
+    /// makes it a target for [view.anchor].
+    modifier key(key: string);
+
+    /// Animates the current element in and out as it is declared and dropped.
+    modifier transition(style: transition_style);
+
+    /// Places the current popover or popup menu against the element with a key.
+    /// @param target The target's [view.key].
+    /// @param x Horizontal offset.
+    /// @param y Gap away from the target for above and below edges, else vertical offset.
+    modifier anchor(target: string, edge: anchor_edge, x: f32, y: f32);
+
+    /// Sets the space between the current container's children.
+    modifier gap(gap: f32);
+
+    /// Sets the space inside the current container's edges.
+    modifier padding(padding: f32);
+
+    /// Sets the space inside the current container's edges, edge by edge.
+    modifier padding_edges(top: f32, right: f32, bottom: f32, left: f32);
+
+    /// Places the current row, column or grid's children across its axis.
+    modifier align_items(align: align);
+
+    /// Places the current row, column or grid's children along its axis.
+    modifier justify(justify: justification);
+
+    /// Lets the current row wrap onto new lines.
+    modifier wrap_items();
+
+    /// Gives the current box the theme's surface colour and rounded corners.
+    modifier surface();
+
+    /// Rounds the current box or picture.
+    modifier corner_radius(radius: f32);
+
+    /// Outlines the current box.
+    modifier border(width: f32, color: color);
+
+    /// Clips the current box's children to its rounded bounds.
+    modifier clip_content();
+
+    /// Sets the current text's step of the type scale.
+    modifier text_style(role: text_role);
+
+    /// Colours the current text from the theme.
+    modifier tone(tone: text_tone);
+
+    /// Sets the current text's size in logical pixels.
+    modifier text_size(size: f32);
+
+    /// Sets the current text's weight.
+    modifier text_weight(weight: font_weight);
+
+    /// Slants the current text.
+    modifier text_italic();
+
+    /// Aligns the current text's lines.
+    modifier text_align(align: text_alignment);
+
+    /// Keeps the current text on one line, ending it with an ellipsis when it does not fit.
+    modifier text_no_wrap();
+
+    /// Sets the current text in the monospace font.
+    modifier text_monospace();
+
+    /// Sets the current text's line height as a multiple of its size.
+    modifier text_line_height(line_height: f32);
+
+    /// Colours the current text, icon, slider, progress bar, spinner, gauge, list item or banner.
+    modifier tint(color: color);
+
+    /// Sets the current icon's size in logical pixels.
+    modifier icon_size(size: f32);
+
+    /// Draws the current icon filled.
+    modifier icon_filled();
+
+    /// Enables or disables the current control or item.
+    modifier enabled(enabled: bool);
+
+    /// Sets the size of the current control.
+    modifier control_size(size: size_class);
+
+    /// Sets how prominent the current button is.
+    modifier button_style(variant: button_variant);
+
+    /// Shows the current button as busy.
+    modifier loading(loading: bool);
+
+    /// Sets the current slider or number field's bounds.
+    /// @param max Not below min.
+    modifier range(min: f64, max: f64);
+
+    /// Sets the current slider or number field's step.
+    modifier step(step: f64);
+
+    /// Marks the current slider with evenly spaced ticks.
+    modifier ticks(count: u32);
+
+    /// Sets how many decimals the current number field shows.
+    /// @param decimals At most 255.
+    modifier decimals(decimals: u32);
+
+    /// Shows a unit after the current number field's value.
+    modifier unit(unit: string);
+
+    /// Shows a hint in the current text field, text editor or combo while it is empty.
+    modifier placeholder(text: string);
+
+    /// Hides the current text field's characters.
+    modifier secret(secret: bool);
+
+    /// Limits the current text field to a number of characters.
+    modifier max_length(length: usize);
+
+    /// Marks the current text field as holding an invalid value.
+    modifier invalid(invalid: bool);
+
+    /// Focuses the current text field or editor when it appears.
+    modifier autofocus(autofocus: bool);
+
+    /// Makes the current text editor read-only.
+    modifier read_only(read_only: bool);
+
+    /// Sets whether the current text editor wraps long lines.
+    modifier wrap_lines(wrap: bool);
+
+    /// Turns on the current text editor's code assists: bracket pairs, indentation, comments and
+    /// completion.
+    modifier code(code: bool);
+
+    /// Shows line numbers beside the current text editor.
+    modifier line_numbers(shown: bool);
+
+    /// Highlights the current text editor's text as a language.
+    /// @param language A language name such as rust, c or python; an unknown name aborts.
+    modifier syntax(language: string);
+
+    /// Sets how the current picture fills its frame.
+    modifier image_fit(fit: fit);
+
+    /// Adds a second line to the current list item.
+    modifier secondary_text(text: string);
+
+    /// Adds text at the end of the current list item.
+    modifier trailing_text(text: string);
+
+    /// Puts an icon before the current list item, nav item, tab, menu item or banner.
+    /// @param icon A Material Symbols name.
+    modifier leading_icon(icon: string);
+
+    /// Puts a checkbox in the current list item; react with [view.on_toggle].
+    modifier check(state: check_state);
+
+    /// Gives the current tab a close button; react with [view.on_close] on the tabs.
+    modifier closable(closable: bool);
+
+    /// Shows a key chord beside the current menu item.
+    modifier shortcut_text(text: string);
+
+    /// Marks the current menu item as chosen.
+    modifier checked(checked: bool);
+
+    /// Selects an item of the current list or lazy collection.
+    /// @param index The selected item, or [none].
+    modifier selection(index: usize);
+
+    /// Declares that every item of the current lazy collection has one height, which makes long
+    /// collections cheaper.
+    modifier item_extent(extent: f32);
+
+    /// Keeps the current scroll area or lazy collection at its end as content grows, until the
+    /// person scrolls away.
+    modifier scroll_follow(follow: bool);
+
+    /// Accepts files dropped on the current element, which lights up while they hover over it.
+    /// @param callback Receives the dropped files' paths.
+    modifier on_drop_files(callback: paths_fn);
+
+    /// Accepts text dropped on the current element, which lights up while it hovers over it.
+    /// Dropped links that are not local files arrive here too.
+    /// @param callback Receives the dropped text.
+    modifier on_drop_text(callback: string_fn);
+
+    /// Reacts to the current button, box, radio button or menu item being pressed.
+    modifier on_press(callback: action_fn);
+
+    /// Reacts to the current checkbox, switch or list item check being toggled.
+    /// @param callback Receives the new state.
+    modifier on_toggle(callback: bool_fn);
+
+    /// Reacts to the current slider moving or number field committing.
+    /// @param callback Receives the new value.
+    modifier on_value(callback: double_fn);
+
+    /// Reacts to the current slider being released.
+    /// @param callback Receives the final value.
+    modifier on_value_commit(callback: double_fn);
+
+    /// Reacts to a choice in the current segmented control, combo, tabs, nav list, list or lazy
+    /// collection.
+    /// @param callback Receives the chosen index.
+    modifier on_select(callback: index_fn);
+
+    /// Reacts to an item of the current list or lazy collection being opened by double-click or
+    /// Enter.
+    /// @param callback Receives the item's index.
+    modifier on_activate(callback: index_fn);
+
+    /// Reacts to the person editing the current text field or editor.
+    modifier on_change(callback: action_fn);
+
+    /// Reacts to Enter in the current text field or number field.
+    modifier on_submit(callback: action_fn);
+
+    /// Reacts to focus leaving the current text field or editor.
+    modifier on_blur(callback: action_fn);
+
+    /// Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
+    /// declaring it to close it.
+    modifier on_dismiss(callback: action_fn);
+
+    /// Reacts to a tab's close button in the current tabs.
+    /// @param callback Receives the tab's index.
+    modifier on_close(callback: index_fn);
+
+    /// Gives the current tabs a new-tab button.
+    modifier on_new(callback: action_fn);
+
+    /// Reacts to the pointer entering and leaving the current box.
+    /// @param callback Receives whether the pointer is over it.
+    modifier on_hover(callback: bool_fn);
+
+    /// Makes the current split draggable.
+    /// @param callback Receives the first pane's new share.
+    modifier on_resize(callback: double_fn);
+
+    /// Binds a key chord while focus is inside the current element.
+    modifier on_shortcut(key: key_code, modifiers: modifiers, callback: action_fn);
+
+    /// Binds a standard command while focus is inside the current element.
+    modifier on_command(command: command, callback: action_fn);
+}

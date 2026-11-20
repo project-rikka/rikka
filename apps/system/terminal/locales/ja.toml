@@ -1,0 +1,15 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[terminal]
+title = "端末"
+
+[terminal.tab]
+untitled = "端末"
+
+[ui.find]
+pattern = "検索"
+replacement = "置換"
+nothing = "一致なし"
+broken = "パターンが不正です"

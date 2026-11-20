@@ -1,0 +1,7 @@
+load("//bazel/go:defs.bzl", "rikka_go_test")
+
+rikka_go_test(
+    name = "api",
+    srcs = ["api_test.go"],
+    library = "//sdk/bindings/go",
+)

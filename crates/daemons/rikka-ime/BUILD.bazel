@@ -1,0 +1,30 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-ime",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/session/rikka-seam",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-ime",
+        "@crates//:serde_json",
+    ],
+)

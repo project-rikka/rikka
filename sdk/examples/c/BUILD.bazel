@@ -1,0 +1,22 @@
+load("//bazel/cc:defs.bzl", "rikka_cc_binary")
+
+[
+    rikka_cc_binary(
+        name = source.removesuffix(".c"),
+        srcs = [source],
+        copts = [
+            "-std=c11",
+            "-Wall",
+            "-Wextra",
+            "-Werror",
+            "-pedantic",
+        ],
+        deps = ["//sdk/bindings/c"],
+    )
+    for source in glob(["*.c"])
+]
+
+exports_files(
+    ["counter.c"],
+    visibility = ["//website:__pkg__"],
+)

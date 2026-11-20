@@ -1,0 +1,49 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[updates]
+title = "系统更新"
+empty = "还没有系统更改"
+unavailable = "无法连接 rikka-nixctl：{reason}"
+disconnected = "与系统总线的连接已关闭"
+unreadable = "无法读取此日志：{reason}"
+find = "在日志中查找"
+copy = "复制日志"
+save = "保存日志…"
+save-title = "保存日志"
+unsaved = "无法保存日志：{reason}"
+dismiss = "关闭"
+retry = "重试"
+
+[updates.operation]
+apply = "系统更改"
+update = "系统更新"
+rollback = "回滚到第 {generation} 代"
+
+[updates.state]
+running = "进行中"
+done = "已完成"
+failed = "失败"
+interrupted = "已中断"
+
+[updates.phase]
+preparing = "正在准备"
+locking = "正在更新 flake 输入"
+evaluating = "正在求值配置"
+building = "正在构建"
+activating = "正在切换到新配置"
+staging = "正在准备下次启动"
+checking = "正在检查将要发生的更改"
+
+[updates.detail]
+started = "开始于 {time}"
+generation = "第 {generation} 代"
+took = "耗时 {duration}"
+next-boot = "重启后生效"
+built = "已构建 {done}/{expected}"
+fetched = "已下载 {done}/{expected} 个路径"
+downloaded = "已传输 {size}"
+untouched = "系统未被更改。"
+modified = "系统可能已被部分更改。"
+interrupted = "rikka-nixctl 在更改完成前退出了。"

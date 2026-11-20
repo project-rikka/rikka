@@ -1,0 +1,55 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[remote]
+title = "远程桌面"
+cancel = "取消"
+reconnect = "重新连接"
+back = "桌面列表"
+connecting = "正在连接 {host}…"
+saved = "{name} 已保存到桌面"
+upload-failed = "无法发送文件：{reason}"
+stats = "{codec} {width}×{height} · {megabits} Mbps · {rtt} ms · 丢失 {loss}%"
+chords = "Ctrl+Alt+Shift 加 M 捕获鼠标，F 切换全屏，S 显示统计，Q 断开连接"
+stats-toggle = "统计"
+
+[remote.hosts]
+heading = "桌面"
+address = "地址"
+placeholder = "主机 或 主机:端口"
+connect = "连接"
+empty = "添加允许远程查看器的 Rikka 桌面的地址。"
+forget = "移除"
+fingerprint = "指纹 {fingerprint}"
+new = "尚未连接"
+
+[remote.sign-in]
+heading = "登录 {host}"
+password = "{user} 的密码"
+remember = "在此设备上保持登录"
+submit = "登录"
+wrong = "密码不正确。"
+throttled = "尝试次数过多。请在 {seconds} 秒后重试。"
+unavailable = "桌面无法验证密码：{detail}"
+
+[remote.changed]
+heading = "此桌面的身份已改变"
+body = "{host} 上的桌面出示了与之前不同的证书。如果它没有重新安装，可能有人正在截取连接。"
+seen = "新指纹 {fingerprint}"
+trust = "信任新身份"
+
+[remote.ended]
+replaced = "另一个查看器接管了此桌面。"
+stopped = "桌面已停止共享。"
+signed-out = "已退出登录。"
+disconnected = "桌面结束了会话。"
+unsupported = "此桌面使用另一个协议版本。"
+failed = "连接失败：{reason}"
+
+[remote.toolbar]
+disconnect = "断开连接"
+fullscreen = "全屏"
+mouse = "捕获鼠标"
+keyframe = "刷新画面"
+sign-out = "退出登录"

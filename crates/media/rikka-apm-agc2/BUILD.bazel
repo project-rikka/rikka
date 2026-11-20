@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-apm-agc2",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/media/rikka-apm-audio",
+        "//crates/media/rikka-fft",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-apm-agc2",
+        "//crates/media/rikka-apm-audio",
+    ],
+)

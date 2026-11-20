@@ -1,0 +1,151 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[units]
+per-second = "{value}/s"
+megabits = "{value} Mbps"
+ghz = "{value} GHz"
+milliseconds = "{value} ms"
+celsius = "{value} °C"
+
+[tasks]
+title = "Task Manager"
+search = "Search by name, PID or command"
+end-task = "End task"
+kill-task = "Force end task"
+kernel-thread = "Kernel thread"
+enabled = "Enabled"
+disabled = "Disabled"
+yes = "Yes"
+no = "No"
+
+[tasks.end-error]
+no-such-process = "That process has already ended."
+permission-denied = "Not allowed to end this process."
+failed = "The process could not be ended."
+
+[tasks.tab]
+processes = "Processes"
+performance = "Performance"
+details = "Details"
+
+[tasks.column]
+name = "Name"
+pid = "PID"
+status = "Status"
+user = "User"
+cpu = "CPU"
+memory = "Memory"
+disk = "Disk"
+gpu = "GPU"
+threads = "Threads"
+command = "Command line"
+
+[tasks.section]
+apps = "Apps ({count})"
+background = "Background processes ({count})"
+system = "System processes ({count})"
+
+[tasks.state]
+running = "Running"
+sleeping = "Sleeping"
+waiting = "Waiting for I/O"
+stopped = "Suspended"
+zombie = "Ended"
+idle = "Idle"
+
+[tasks.resource]
+cpu = "CPU"
+memory = "Memory"
+disk = "Disk {index} ({name})"
+gpu = "GPU {index}"
+
+[tasks.graph]
+span = "60 seconds"
+zero = "0"
+full = "100%"
+
+[tasks.card]
+cpu = "{usage}  {speed}"
+memory = "{used}/{total} ({usage})"
+network = "S {send}  R {receive}"
+
+[tasks.cpu]
+graph = "% utilization over 60 seconds"
+cores-graph = "% utilization per logical processor"
+overall = "Overall"
+logical = "Logical processors"
+usage = "Utilization"
+speed = "Speed"
+processes = "Processes"
+threads = "Threads"
+handles = "Handles"
+uptime = "Up time"
+base-speed = "Base speed:"
+sockets = "Sockets:"
+physical = "Cores:"
+logical-count = "Logical processors:"
+virtualization = "Virtualization:"
+l1 = "L1 cache:"
+l2 = "L2 cache:"
+l3 = "L3 cache:"
+
+[tasks.memory]
+graph = "Memory usage"
+composition = "Memory composition"
+in-use = "In use"
+available = "Available"
+committed = "Committed"
+committed-value = "{used}/{limit}"
+cached = "Cached"
+paged = "Paged pool"
+nonpaged = "Non-paged pool"
+total = "Installed memory:"
+swap = "Swap:"
+
+[tasks.disk]
+graph = "% active time"
+transfer = "Disk transfer rate"
+active = "Active time"
+response = "Average response time"
+read = "Read speed"
+write = "Write speed"
+capacity = "Capacity:"
+kind = "Type:"
+system = "System disk:"
+queue = "Queue length:"
+nvme = "SSD (NVMe)"
+ssd = "SSD"
+hdd = "Hard disk"
+
+[tasks.network]
+graph = "Throughput"
+send = "Send"
+receive = "Receive"
+adapter = "Adapter name:"
+kind = "Connection type:"
+state = "State:"
+connected = "Connected"
+disconnected = "Disconnected"
+speed = "Link speed:"
+signal = "Signal strength:"
+ipv4 = "IPv4 address:"
+ipv6 = "IPv6 address:"
+mac = "MAC address:"
+ethernet = "Ethernet"
+wifi = "Wi-Fi"
+loopback = "Loopback"
+virtual = "Virtual adapter"
+
+[tasks.gpu]
+graph = "% GPU utilization"
+dedicated-graph = "Dedicated GPU memory"
+usage = "Utilization"
+dedicated = "Dedicated GPU memory"
+shared = "Shared GPU memory"
+temperature = "GPU temperature"
+driver = "Driver:"
+slot = "Bus:"
+encode = "Encode:"
+decode = "Decode:"

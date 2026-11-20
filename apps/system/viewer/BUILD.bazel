@@ -1,0 +1,32 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-viewer",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//apps/system/viewer/crates/viewer-media",
+        "//apps/system/viewer/crates/viewer-psd",
+        "//apps/system/viewer/crates/viewer-text",
+        "//crates/desktop/rikka-dialog",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/media/rikka-audio",
+        "//crates/media/rikka-movie",
+        "//crates/model/rikka-model",
+        "//crates/model/rikka-model-gpu",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-markdown",
+        "//crates/ui/rikka-syntax",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-ui-video",
+        "//crates/ui/rikka-viewport",
+        "//crates/ui/rikka-widgets",
+        "@crates//:futures-channel",
+    ],
+)

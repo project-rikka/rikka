@@ -1,0 +1,15 @@
+---
+title: Music local library (music-tags, music-library, music-local)
+description: How rikka-music indexes local files (tags, SQLite index, watching) and serves them as the always-linked local service.
+about: apps/system/music/crates/music-library
+tags: [music, library]
+---
+
+- `music-tags::read(path)` gives `Tagged { tags, audio }` over lofty: multi-valued fields only where the container splits them, R128 preferred over REPLAYGAIN (Q7.8/256 + 5 dB), legacy ID3/RIFF text repaired with chardetng. DSF/DFF properties and ID3 bytes come from `rikka_audio_decode::DsdInfo::read` (the ID3v2 is read through lofty's `MpegFile`). TAK/TTA/WMA answer `Error::Unsupported` and the library probes them with rikka-audio-decode instead.
+- `music_core::Codec` is the one codec vocabulary (stable `as_str` slugs for the DB, `From<rikka_audio_decode::Codec>`); `Fidelity` is built from it.
+- `music-library`: `Setup::new(db, artwork).music_folder(p).exclude(p).open()` starts scanning; the app excludes `$XDG_MUSIC_DIR/Playlists`. DB `$XDG_STATE_HOME/rikka/music/local/library.sqlite`, artwork `$XDG_CACHE_HOME/rikka/music/local/artwork/<sha256-16>.<ext>` plus `-300`/`-600` jpg. Rows carry `music_core::Fidelity` directly. Single-query reads exist for whole sets (`artist_tracks`, `tracks_of_albums`, `tracks_under(path)`, `counts`, `count_under`); use them instead of per-album or per-folder loops. Changes stream as a `rikka_worker::Broadcast<Change>` (`Library::subscribe`); `Change::Listening` (favourites, plays) is separate from index changes.
+- Kept tables (`identities`, `listening`, `folders`) are never dropped; the index tables rebuild when `INDEX_VERSION` changes. The track id is `identities.id` and survives moves (same inode, or size + tag fingerprint + length); favourites and plays hang off it. Album/artist/genre ids are FNV-1a of folded names.
+- Threads: one writer `rikka-music-db`, pooled readers, `rikka-music-scan`, up to 8 `rikka-music-tags`, `rikka-music-watch` (rikka-watch, 1.5 s debounce, 15 min rescans on network filesystems), `rikka-music-mounts` (mountinfo; offline roots keep their tracks as unavailable).
+- Search folds text with `music_core::fold` (NFKD, strip combining marks, lowercase, NFKC) into FTS5 `trigram`; queries under 3 characters use `instr`.
+- `music-local` is the adapter (slug `local`, `Kind::Local`): registered through `Providers::try_provider` with the library the app opened in `main` (`Local::library(&roots)` gives the Setup), always linked, no sign-in, no service playlists (Rikka playlists only), `lookup` = ISRC, then title/artist within ±10 s, then search. Its `LocalOrigin::locate` gives the path and ReplayGain; plays are counted by `music_core::PlayCounter` on a `rikka-music-plays` thread. Item ids are the library's numeric ids, artwork is `file://`.
+- The app's local views live in `apps/system/music/src/local/` (`pages::view` hands local places to `local::page`; `Place::{Liked, Songs, Albums, Artists, Genres, Folders, Genre, Folder}`), read through `local::Shelf::read` keyed by `Music.indexed`, which advances on every library change.

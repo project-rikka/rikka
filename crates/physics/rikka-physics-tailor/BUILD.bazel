@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-physics-tailor",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-file-format",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-model-core",
+        "@crates//:glam",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-vrm:assets/avatar.vrm",
+    ],
+    deps = [
+        ":rikka-physics-tailor",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-vrm",
+        "@crates//:glam",
+        "@crates//:tempfile",
+    ],
+)

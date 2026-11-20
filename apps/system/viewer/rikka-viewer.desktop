@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Viewer
+Name[ja]=ビューアー
+Name[zh_CN]=查看器
+GenericName=Media Viewer
+GenericName[ja]=メディアビューアー
+GenericName[zh_CN]=媒体查看器
+Comment=Take a quick look at pictures, sound, film, models and text
+Comment[ja]=画像・音声・動画・3Dモデル・テキストをすばやく確認します
+Comment[zh_CN]=快速查看图片、音频、视频、3D 模型和文本
+Exec=rikka-viewer %U
+Icon=multimedia-photo-viewer
+Terminal=false
+Categories=Graphics;Viewer;
+Keywords=view;image;photo;picture;psd;photoshop;music;audio;video;movie;model;3d;gltf;vrm;fbx;text;preview;
+Keywords[ja]=表示;閲覧;画像;写真;フォトショップ;音楽;音声;動画;映像;モデル;3D;テキスト;プレビュー;
+StartupNotify=true
+MimeType=image/png;image/jpeg;image/gif;image/webp;image/bmp;image/x-bmp;image/vnd.microsoft.icon;image/x-icon;image/tiff;image/x-tga;image/x-targa;image/qoi;image/x-portable-bitmap;image/x-portable-graymap;image/x-portable-pixmap;image/x-portable-anymap;image/vnd.radiance;image/x-exr;image/avif;image/heif;image/heic;image/jp2;image/x-jp2-codestream;image/jxl;image/x-dds;image/vnd.adobe.photoshop;audio/mpeg;audio/mp4;audio/x-m4a;audio/flac;audio/x-flac;audio/ogg;audio/x-vorbis+ogg;audio/x-opus+ogg;audio/opus;audio/wav;audio/x-wav;audio/vnd.wave;audio/aac;audio/x-aiff;audio/x-matroska;audio/x-ms-wma;video/mp4;video/x-m4v;video/x-matroska;video/webm;video/quicktime;video/x-msvideo;video/mpeg;video/mp2t;video/x-flv;video/ogg;video/x-ms-asf;video/x-ms-wmv;video/3gpp;video/3gpp2;model/gltf+json;model/gltf-binary;model/vrm;model/x.fbx;model/x.pmx;model/x.vmd;model/stl;application/x-blender;text/plain;text/markdown;text/csv;text/tab-separated-values;text/xml;text/html;text/css;text/javascript;text/rust;text/x-csrc;text/x-chdr;text/x-c++src;text/x-c++hdr;text/x-python;text/x-java;text/x-go;text/x-shellscript;text/x-log;application/json;application/xml;application/toml;application/yaml;application/x-shellscript;

@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "installer-sys",
+    visibility = [
+        "//installer:__subpackages__",
+    ],
+    deps = [
+        "//installer/crates/installer-core",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":installer-sys",
+        "//installer/crates/installer-core",
+    ],
+)

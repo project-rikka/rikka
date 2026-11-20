@@ -1,0 +1,6 @@
+[portal]
+DBusName=org.freedesktop.impl.portal.desktop.rikkacast
+Interfaces=org.freedesktop.impl.portal.ScreenCast;
+# Deprecated in favour of `rikka-portals.conf`, and kept because a machine
+# whose xdg-desktop-portal predates that file still reads this line.
+UseIn=rikka;

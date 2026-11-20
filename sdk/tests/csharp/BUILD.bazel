@@ -1,0 +1,7 @@
+load("//bazel/csharp:defs.bzl", "rikka_csharp_test")
+
+rikka_csharp_test(
+    name = "api",
+    srcs = ["Api.cs"],
+    deps = ["//sdk/bindings/csharp"],
+)

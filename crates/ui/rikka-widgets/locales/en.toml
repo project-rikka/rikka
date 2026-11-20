@@ -1,0 +1,56 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[widgets.command]
+back = "Back"
+forward = "Forward"
+up = "Up"
+home = "Home"
+refresh = "Refresh"
+undo = "Undo"
+redo = "Redo"
+cut = "Cut"
+copy = "Copy"
+paste = "Paste"
+select-all = "Select All"
+select-none = "Select None"
+delete = "Delete"
+find = "Find"
+find-next = "Find Next"
+find-previous = "Find Previous"
+zoom-in = "Zoom In"
+zoom-out = "Zoom Out"
+zoom-reset = "Actual Size"
+new = "New"
+new-tab = "New Tab"
+open = "Open"
+save = "Save"
+save-as = "Save As…"
+close = "Close"
+quit = "Quit"
+next-tab = "Next Tab"
+previous-tab = "Previous Tab"
+rename = "Rename"
+properties = "Properties"
+fullscreen = "Full Screen"
+preferences = "Preferences"
+context-menu = "Show Menu"
+
+[widgets.copy]
+copy = "Copy"
+copied = "Copied"
+
+[widgets.toolbar]
+more = "More"
+
+[widgets.unsaved]
+title = "Save changes to “{name}”?"
+body = "Your changes will be lost if you don’t save them."
+discard = "Don’t Save"
+cancel = "Cancel"
+save = "Save"
+
+[widgets.prompt]
+ok = "OK"
+cancel = "Cancel"

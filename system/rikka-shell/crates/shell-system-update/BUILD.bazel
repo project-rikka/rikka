@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-system-update",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/daemons/rikka-notifications",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-sync",
+        "//crates/nix/rikka-nix",
+        "//crates/session/rikka-seam",
+        "//crates/ui/rikka-ui",
+        "//system/rikka-shell/crates/shell-kit",
+        "//system/rikka-shell/crates/shell-notifications",
+        "@crates//:tracing",
+    ],
+)

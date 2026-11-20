@@ -1,0 +1,38 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-translate",
+    target_compatible_with = ["@platforms//os:linux"],
+    compile_data = [
+        "prompts/image.md",
+        "prompts/profiles/business.md",
+        "prompts/profiles/casual.md",
+        "prompts/profiles/natural.md",
+        "prompts/profiles/polite.md",
+        "prompts/text.md",
+    ],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-accounts",
+        "//crates/ai/rikka-prompt",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-languages",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/session/rikka-settings",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/shell-capture",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

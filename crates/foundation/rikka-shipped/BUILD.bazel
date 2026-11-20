@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-shipped",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = select({
+        "@platforms//os:linux": ["@crates//:libc"],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)

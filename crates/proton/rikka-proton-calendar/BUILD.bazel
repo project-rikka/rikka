@@ -1,0 +1,48 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-proton-calendar",
+    compile_data = [
+        "data/windows-zones.txt",
+    ],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-contacts",
+        "//crates/proton/rikka-proton-contentline",
+        "//crates/proton/rikka-proton-key-transparency",
+        "//crates/proton/rikka-proton-mail",
+        "//crates/proton/rikka-proton-pgp",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:jiff-tzdb",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-proton-calendar",
+        "//crates/proton/rikka-proton-account",
+        "//crates/proton/rikka-proton-api",
+        "//crates/proton/rikka-proton-cache",
+        "//crates/proton/rikka-proton-contentline",
+        "//crates/proton/rikka-proton-mail",
+        "//crates/proton/rikka-proton-pgp",
+        "//crates/proton/rikka-test-proton",
+        "@crates//:jiff",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+    ],
+)

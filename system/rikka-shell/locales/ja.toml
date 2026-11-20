@@ -1,0 +1,628 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[shell.centre]
+sound = "サウンド"
+microphone = "マイク"
+muted = "ミュート"
+airplane = "機内モード"
+quiet = "通知オフ"
+notifications = "通知"
+no-notifications = "新しい通知はありません"
+clear-notifications = "すべて消去"
+said-on = "{month}月{day}日 {time}"
+on = "オン"
+unavailable = "利用できません"
+output = "出力"
+playing = "再生中"
+input = "入力"
+recording = "録音中"
+wifi = "Wi-Fi"
+off = "オフ"
+not-joined = "未接続"
+joined = "接続済み"
+leave = "切断"
+looking = "ネットワークを検索中…"
+passphrase = "パスワード"
+join = "接続"
+sound-settings = "サウンド設定…"
+network-settings = "ネットワーク設定…"
+bluetooth = "Bluetooth"
+not-connected = "未接続"
+nothing-paired = "ペアリング済みのデバイスはありません"
+bluetooth-settings = "Bluetooth設定…"
+charged = "満充電"
+charging = "充電中"
+until-full = "満充電まで {time}"
+left = "残り {time}"
+
+[shell.tray]
+empty = "トレイには何もありません"
+
+[shell.tasks]
+new-window = "新しいウィンドウ"
+maximize = "最大化"
+restore = "元のサイズに戻す"
+minimize = "最小化"
+move = "ワークスペースへ移動"
+move-all = "すべてワークスペースへ移動"
+workspace = "ワークスペース {number}"
+close = "ウィンドウを閉じる"
+close-all = "すべてのウィンドウを閉じる"
+untitled = "無題のウィンドウ"
+
+[shell.capture.target]
+region = "範囲"
+window = "ウィンドウ"
+screen = "全画面"
+
+[shell.capture.picture]
+name = "スクリーンショット"
+saved = "スクリーンショットを保存しました"
+copied = "スクリーンショットをコピーしました"
+failed = "スクリーンショットを撮影できませんでした"
+
+[shell.capture.video]
+name = "画面録画"
+started = "画面を録画しています"
+saved = "録画を保存しました"
+failed = "録画できませんでした"
+
+[shell.capture.scan]
+name = "コードスキャナー"
+looking = "コードを探しています…"
+found = "{count} 個のコードが見つかりました"
+none = "コードが見つかりません — ドラッグで囲んでください"
+missed = "ここではコードを読めませんでした。少し広めに囲んでください。"
+barcode = "バーコード"
+open = "開く"
+copy = "コピー"
+copy-password = "パスワードをコピー"
+copy-name = "名前をコピー"
+join = "接続"
+settings = "Wi-Fi 設定"
+password = "パスワード"
+hidden = "非公開ネットワーク"
+copied = "クリップボードにコピーしました"
+not-copied = "コードをコピーできませんでした"
+joined = "{network} に接続しました"
+not-joined = "{network} に接続できませんでした"
+
+[shell.capture.scan.kind]
+link = "リンク"
+network = "Wi-Fi ネットワーク"
+text = "テキスト"
+
+[shell.capture.scan.security]
+open = "オープン"
+wep = "WEP"
+personal = "WPA/WPA2"
+wpa3 = "WPA3"
+enterprise = "エンタープライズ"
+
+[shell.capture.scan.caution]
+unencrypted = "暗号化されていません。同じネットワークの他人に送信内容を見られます。"
+foreign-letters = "アドレスに他の文字体系の文字が使われています。ブラウザーが読む形で表示しています。"
+credentials = "「@」より前の文字は行き先を偽っています。実際には上のサイトが開きます。"
+numeric-host = "アドレスが名前ではなく番号だけです。"
+
+[shell.capture.scan.unjoinable]
+no-radio = "このコンピューターには Wi-Fi がありません。"
+radio-off = "Wi-Fi がオフです。"
+needs-account = "このネットワークにはアカウントが必要です。Wi-Fi 設定から接続してください。"
+out-of-range = "このネットワークは範囲外です。"
+
+[shell.capture.scan.failure]
+secrets = "パスワードが受け入れられませんでした。"
+handshake = "ネットワークへのサインインが完了しませんでした。"
+address = "ネットワークからアドレスが割り当てられませんでした。"
+dropped = "接続が切れました。"
+missing = "Wi-Fi デバイスが見つからなくなりました。"
+silent = "ネットワークが時間内に応答しませんでした。"
+
+[shell.color-picker]
+name = "カラー ピッカー"
+pick = "取得"
+empty = "画面から色を取得すると、ここに並びます。"
+remove = "削除"
+cancel = "キャンセル"
+select = "選択"
+
+[shell.color-picker.export]
+name = "エクスポート"
+by-color = "色ごとにまとめる"
+by-format = "形式ごとにまとめる"
+title = "色をエクスポート"
+stem = "colors"
+text = "テキスト ファイル"
+json = "JSON ファイル"
+failed = "色をエクスポートできませんでした"
+
+[shell.markup]
+title = "スクリーンショットを編集"
+save = "保存"
+
+[shell.markup.tool]
+pen = "ペン"
+highlighter = "蛍光ペン"
+line = "直線"
+arrow = "矢印"
+rectangle = "四角形"
+ellipse = "楕円"
+eraser = "消しゴム"
+
+[shell.markup.width]
+thin = "細い"
+medium = "標準"
+thick = "太い"
+
+[shell.trim]
+title = "録画を切り取る"
+replay = "リプレイを切り取る"
+save = "保存"
+
+[shell.replay]
+name = "インスタントリプレイ"
+title = "インスタントリプレイ"
+saved = "リプレイを保存しました"
+failed = "リプレイを保存できませんでした"
+off = "インスタントリプレイはオフです。設定でオンにできます。"
+empty = "まだ何も記録されていません"
+display = "ディスプレイ {name}"
+ended = "{kind} · 閉じました"
+[shell.clipboard]
+title = "クリップボードの履歴"
+search = "履歴を検索"
+empty = "コピーしたものはまだありません"
+no-match = "見つかりませんでした"
+clear = "すべて消去"
+clear-unpinned = "ピン留め以外を消去"
+files = "ファイル"
+full = "ピン留めが履歴を埋めているため、新しいコピーは保存されません"
+
+[shell.emoji]
+title = "絵文字"
+search = "絵文字を検索"
+recent = "最近使った絵文字"
+clear-recent = "消去"
+no-recent = "使った絵文字がここに並びます"
+no-match = "見つかりませんでした"
+
+[shell.emoji.group]
+smileys = "スマイリー"
+people = "人と体"
+nature = "動物と自然"
+food = "食べ物と飲み物"
+travel = "旅行と場所"
+activities = "アクティビティ"
+objects = "物"
+symbols = "記号"
+flags = "旗"
+
+[shell.emoji.tone]
+plain = "標準"
+light = "明るい肌色"
+medium-light = "やや明るい肌色"
+medium = "中間の肌色"
+medium-dark = "やや暗い肌色"
+dark = "暗い肌色"
+[shell.launcher]
+search = "検索"
+empty = "見つかりませんでした"
+
+[shell.launcher.provider]
+calculator = "電卓"
+commands = "コマンド"
+programs = "プログラム"
+web = "ウェブ"
+
+[shell.launcher.command]
+theme = "テーマ"
+wallpaper = "壁紙"
+
+[shell.launcher.wallpaper]
+summary = "デスクトップの背景の画像を変更する"
+
+[shell.launcher.theme]
+summary = "デスクトップの配色を変更する"
+in-use = "使用中"
+dark = "ダーク"
+light = "ライト"
+
+[shell.launcher.run]
+command = "このコマンドを実行"
+
+[shell.launcher.web]
+search = "ウェブで検索"
+open = "このアドレスを開く"
+
+[shell.overview]
+untitled = "名前のないウィンドウ"
+
+[shell.notifications]
+waiting = "他 {count} 件"
+open = "開く"
+
+[shell.system-update]
+app-name = "システム更新"
+show-log = "ログを表示"
+applying = "システムの変更を適用しています"
+updating = "システムを更新しています"
+rolling-back = "世代 {generation} に戻しています"
+applied = "システムの変更を適用しました"
+updated = "システムを更新しました"
+rolled-back = "世代 {generation} に戻しました"
+not-applied = "システムの変更を適用できませんでした"
+not-updated = "システムを更新できませんでした"
+not-rolled-back = "世代 {generation} に戻せませんでした"
+preparing = "準備しています…"
+locking = "flake の入力を更新しています…"
+evaluating = "構成を評価しています…"
+building = "ビルドしています…"
+built = "ビルド {done}/{expected}"
+fetched = "ダウンロード {done}/{expected}"
+activating = "新しい構成に切り替えています…"
+staging = "次回の起動を準備しています…"
+checking = "変更内容を確認しています…"
+generation = "世代 {generation}"
+next-boot = "再起動後に有効になります"
+untouched = "システムは変更されていません。"
+modified = "システムの一部が変更された可能性があります。"
+interrupted = "rikka-nixctl が途中で終了しました。"
+
+[shell.polkit]
+title = "認証が必要です"
+needed = "この操作には管理者の権限が必要です。"
+checking = "確認しています…"
+failed = "認証できませんでした。もう一度お試しください。"
+details = "詳細"
+action = "アクション"
+user = "{name}（{account}）"
+cancel = "キャンセル"
+authenticate = "認証"
+
+[shell.keyring]
+title = "キーリングのロックを解除"
+create-title = "保存するサインイン情報を守る"
+locked = "アプリが保存済みのパスワードやサインイン情報を必要としています。ログインパスワードを入力して開いてください。"
+create = "保存するパスワードやサインイン情報を守るパスワードを決めてください。ログインパスワードにすると、ログイン時に自動で開きます。"
+changed = "ログインパスワードが変わりました。保存済みのパスワードやサインイン情報を残すには、以前のパスワードを入力してください。"
+login-password = "ログインパスワード"
+previous-password = "以前のログインパスワード"
+checking = "開いています…"
+refused = "このパスワードではキーリングを開けません。"
+broken = "いまはキーリングに接続できません。"
+forgot = "思い出せない"
+reset-warning = "やり直すと、保存済みのパスワードとサインイン情報はすべて消えます。各アプリで再度サインインが必要になります。"
+back = "戻る"
+start-over = "やり直す"
+cancel = "キャンセル"
+unlock = "ロックを解除"
+
+[shell.lock]
+password = "パスワード"
+refused = "パスワードが違います。もう一度お試しください。"
+broken = "現在パスワードを確認できません。"
+caps-lock = "Caps Lock がオンです"
+power-off = "シャットダウン"
+reboot = "再起動"
+suspend = "スリープ"
+
+[shell.translate]
+auto = "言語を検出"
+other = "他の言語…"
+placeholder = "テキストを入力"
+awaiting = "翻訳"
+unconfigured = "サインインしているアカウントがありません。設定の AI からサインインしてください。"
+blind = "{model} は画像を読み取れません。別のモデルを選んでください。"
+too-much = "{written} 文字あります。一度に翻訳できるのは {most} 文字までです。"
+model = "モデル"
+run = "翻訳"
+stop = "停止"
+
+[shell.translate.effort]
+name = "思考"
+
+[shell.translate.profile]
+natural = "自然"
+casual = "カジュアル"
+polite = "丁寧"
+business = "ビジネス"
+
+[shell.assistant]
+title = "アシスタント"
+threads = "会話"
+new = "新しい会話"
+close = "閉じる"
+back = "会話に戻る"
+servers = "MCP サーバー"
+place = "アシスタント"
+untitled = "新しい会話"
+no-threads = "まだ何も聞かれていません"
+placeholder = "このデスクトップについて聞く"
+opening = "アシスタントを準備しています…"
+unready = "アシスタントを準備できませんでした"
+start = "ファイルやデスクトップ、画面上のことを聞いてください"
+working = "作業中…"
+noticed = "バックグラウンドジョブから結果が届きました"
+model = "モデル"
+reasoning = "思考"
+folded = "ここまでの会話を要約しました"
+folding = "会話を要約しています…"
+unfoldable = "要約する内容がまだありません。"
+busy = "会話を切り替える前に、実行中の作業を止めてください。"
+main = "メイン"
+rest = "…他 {count} 行"
+
+[shell.assistant.ask]
+written = "自分の言葉で答える"
+back = "戻る"
+next = "次へ"
+answer = "回答"
+stop = "中止"
+
+[shell.assistant.attach]
+chooser = "ファイルを添付"
+accept = "添付"
+pasted = "貼り付けた画像"
+dropped = "ドロップした画像"
+unreadable = "ドロップされたデータを読み取れませんでした。"
+rest = "他 {count} 件"
+refused = "添付できませんでした: {reason}"
+
+[shell.assistant.command.compact]
+hint = "[残したい内容]"
+about = "ここまでの会話を要約してコンテキストを空ける"
+
+[shell.assistant.span]
+now = "たった今"
+minutes = "{count}分"
+hours = "{count}時間"
+days = "{count}日"
+
+[shell.indicators.input-method]
+methods = "入力方式"
+modes = "モードとツール"
+settings = "入力ソースの設定…"
+
+[shell.indicators.ai-usage]
+title = "AI 使用量"
+asking = "使用量を読み込み中…"
+unmetered = "使用量の上限なし"
+settings = "AI の設定…"
+
+[shell.island]
+date = "{month}月{day}日({weekday})"
+long-date = "{month}月{day}日 {weekday}"
+brightness = "明るさ"
+playing-through = "再生先"
+microphone-muted = "マイクをミュートしました"
+microphone-live = "マイクをオンにしました"
+plugged = "充電器を接続しました"
+unplugged = "充電器を外しました"
+battery-low = "バッテリー残量が少なくなっています"
+running-low = "バッテリー残量低下 · {charge}"
+charged = "充電が完了しました"
+connected = "接続しました"
+disconnected = "切断しました"
+power-mode = "電源モード"
+online = "オンライン"
+offline = "オフライン"
+vpn-on = "VPN に接続しました"
+vpn-off = "VPN を切断しました"
+microphone = "マイク"
+camera = "カメラ"
+screen = "画面共有"
+in-use = "使用中"
+recording = "録画中"
+stop = "停止"
+charging = "充電中"
+until-full = "{charge} · 満充電まで {time}"
+high-low = "最高 {high} · 最低 {low}"
+
+[shell.island.profile]
+power-saver = "省電力"
+balanced = "バランス"
+performance = "パフォーマンス"
+
+[shell.island.weekday.short]
+mon = "月"
+tue = "火"
+wed = "水"
+thu = "木"
+fri = "金"
+sat = "土"
+sun = "日"
+
+[shell.island.weekday.long]
+mon = "月曜日"
+tue = "火曜日"
+wed = "水曜日"
+thu = "木曜日"
+fri = "金曜日"
+sat = "土曜日"
+sun = "日曜日"
+
+[shell.island.weather]
+clear = "快晴"
+mainly-clear = "晴れ"
+partly-cloudy = "晴れ時々曇り"
+overcast = "曇り"
+fog = "霧"
+drizzle = "霧雨"
+freezing-rain = "着氷性の雨"
+rain = "雨"
+snow = "雪"
+showers = "にわか雨"
+snow-showers = "にわか雪"
+thunderstorm = "雷雨"
+hail = "雹を伴う雷雨"
+unknown = "不明"
+
+[shell.desk.editor]
+title = "ウィジェット"
+done = "完了"
+search = "ウィジェットを検索"
+no-match = "一致するウィジェットはありません"
+size-label = "サイズ"
+duplicate = "複製"
+remove = "削除"
+clear = "すべて削除"
+clear-yes = "削除"
+cancel = "キャンセル"
+
+[shell.desk.editor.size]
+small = "S"
+medium = "M"
+large = "L"
+extra-large = "XL"
+
+[shell.desk.editor.size-name]
+small = "小"
+medium = "中"
+large = "大"
+extra-large = "特大"
+
+[shell.desk.menu]
+edit = "ウィジェットを編集"
+remove = "ウィジェットを削除"
+wallpaper = "壁紙を変更…"
+settings = "ディスプレイと外観の設定"
+[shell.desk.widget.clock]
+name = "時計"
+local = "ローカル時刻"
+same-time = "ここと同じ時刻"
+today = "今日"
+tomorrow = "明日"
+yesterday = "昨日"
+relative = "{day} {shift}"
+hours = "{sign}{hours}時間"
+hours-minutes = "{sign}{hours}時間{minutes}分"
+unknown-zone = "不明なタイムゾーン"
+week = "第{week}週"
+week-day = "第{week}週 · {day}日目"
+
+[shell.desk.widget.calendar]
+name = "カレンダー"
+
+[shell.desk.widget.date]
+long = "{month}月{day}日 {weekday}"
+day-month = "{month}月{day}日"
+month = "{month}月"
+month-year = "{year}年{month}月"
+
+[shell.desk.widget.date.initial]
+mon = "月"
+tue = "火"
+wed = "水"
+thu = "木"
+fri = "金"
+sat = "土"
+sun = "日"
+
+[shell.desk.widget.weather]
+name = "天気"
+loading = "天気を取得しています…"
+unlocated = "現在地がわかりません"
+unavailable = "天気を取得できません"
+high-low = "最高 {high} · 最低 {low}"
+now = "現在"
+hour = "{hour}時"
+today = "今日"
+air-index = "AQI {index} · {quality}"
+
+[shell.desk.widget.weather.quality]
+good = "良好"
+moderate = "普通"
+sensitive = "敏感な人は注意"
+unhealthy = "健康に悪い"
+very-unhealthy = "非常に悪い"
+hazardous = "危険"
+
+[shell.desk.widget.media]
+name = "再生中"
+idle = "再生していません"
+
+[shell.desk.widget.monitor]
+name = "システムモニター"
+title = "システム"
+measuring = "計測しています…"
+cpu = "CPU"
+memory = "メモリー"
+gpu = "GPU"
+network = "ネットワーク"
+disk = "ディスク"
+of = "{used} / {total}"
+free = "空き {free} · 読込 {read} · 書込 {write}"
+summary = "稼働 {up} · 負荷 {load}"
+up-days = "{days}日{hours}時間"
+up-hours = "{hours}時間{minutes}分"
+
+[shell.desk.widget.monitor.short]
+cpu = "CPU"
+memory = "MEM"
+gpu = "GPU"
+network = "NET"
+disk = "DISK"
+
+[shell.desk.widget.power]
+name = "バッテリー"
+this-computer = "このコンピューター"
+device = "デバイス"
+charging = "充電中"
+until-full = "満充電まで {time}"
+full = "充電完了"
+left = "残り {time}"
+on-battery = "バッテリー駆動"
+connected = "電源に接続中"
+plugged = "電源で動作中"
+drawing = "消費電力 {watts} W"
+minutes = "{minutes}分"
+hours = "{hours}時間{minutes}分"
+
+[shell.desk.widget.note]
+name = "メモ"
+placeholder = "メモを入力…"
+
+[shell.desk.widget.photos]
+name = "写真"
+looking = "写真を探しています…"
+missing = "フォルダーが見つかりません"
+empty = "写真がありません"
+unreadable = "この写真は表示できません"
+pictures = "ピクチャ"
+
+[shell.desk.widget.options]
+face = "表示"
+digital = "デジタル"
+analog = "アナログ"
+seconds = "秒を表示"
+zone = "タイムゾーン"
+zone-search = "都市を検索"
+first-day = "週の始まり"
+first-day-region = "地域の設定に従う"
+sunday = "日曜日"
+monday = "月曜日"
+saturday = "土曜日"
+air = "大気質を表示"
+place = "地点"
+place-here = "{place}(現在地)"
+place-set = "地点の変更"
+open-settings = "設定を開く"
+waveform = "波形を表示"
+devices = "デバイスを表示"
+note = "メモ"
+clear = "消去"
+folder = "フォルダー"
+choose = "選択…"
+choose-folder = "写真のフォルダーを選択"
+folder-reset = "ピクチャ フォルダーに戻す"
+interval = "切り替え間隔"
+every-30 = "30秒"
+every-60 = "1分"
+every-300 = "5分"
+every-1800 = "30分"
+every-3600 = "1時間"
+shuffle = "シャッフル"
+fill = "枠いっぱいに表示"

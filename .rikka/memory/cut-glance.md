@@ -1,0 +1,14 @@
+---
+title: Cut timeline thumbnails and waveforms
+description: cut-filmstrip (tile plan, thumbnail workers), cut-waveform (peak pyramid, disk cache) and the Lanes painting over them.
+about: apps/general/cut
+tags: [video, timeline]
+---
+
+- `cut-filmstrip` (UI-free over `rikka_video::Stills`): `tiles(Mode, Footage, Window, thumb width)` plans what a clip shows. `Mode::{Continuous, Head, HeadAndTail, Off}`.
+- Continuous tiles sit on a power-of-two grid of source frames anchored at media frame 0, so zooming and trimming reuse thumbnails. The head tile is the exact in-point. A grid tile's `reach` (its span, clipped to the clip's last frame) lets `Stills` show a keyframe inside the span instead of decoding up to the time. Held frames past the media repeat its last frame with no reach.
+- `Filmstrips::new()` starts two `rikka-cut-filmstrip-N` `rikka_worker::Worker`s (joined on drop; spawn failure is `Error::Spawn`, and the app then shows no thumbnails). `set_requests(list)` replaces the priority list (newest wins); a worker prefers the next later time in the file it holds open (three kept). `find(request)` answers the kept thumbnail, or a nearby or other-size stand-in with `exact == false`. Thumbnails are RGBA `Arc<[u8]>` at `decoded_height` steps, LRU-kept within 192 MiB. Files that do not open, and single times that fail, are not retried.
+- `cut-waveform`: `Peaks` keeps per-channel min/max/RMS buckets of 64 frames (i16/u16) and a ×4 pyramid; `summary`/`mixed` read the coarsest level with four or more buckets per query and fall back to finer levels where coarser ones are not built yet, so a growing analysis is drawable. `Scale::{Logarithmic (48 dB floor), Linear}` maps amplitude × clip volume to 0..1; `Scale::clips` marks peaks over 0 dBFS.
+- `Waveforms::new(cache) -> Result` runs two `rikka_worker::Worker` decoders (`rikka-cut-waveform-0/1`, stopped and joined on drop) over one queue, decoding through `rikka_audio_decode::read(path).decoder()`, publishing progress every 150 ms. Complete results are stored as `RCWF` files named by an FNV hash of the path in `~/.cache/rikka/cut/waveforms`; a file whose path, length or modification time differs, or a damaged cache, is analysed again.
+- App glue: `glance::MediaPreviews` (Rc in `Cut`) owns both services and a `Watchers` that repaints `Lanes` when anything arrives; `glance::Display { thumbnails, waveform }` lives in `Cut` and is kept in preferences (`timeline-thumbnails`, `timeline-waveform`, View menu submenus).
+- `lanes/parts.rs` `Parts::layout` splits a footage body into a 16 px name strip and a picture band (58 %) over a sound band when tall enough; short bodies show only the name. `strip.rs` asks visible tiles first, then half a view either side; `wave.rs` draws one column per px (stereo lanes from 44 px), RMS inside peaks, dimmed when muted, following `LivePreview` volume previews. Ghosts and offline media draw neither.

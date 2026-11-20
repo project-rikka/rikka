@@ -1,0 +1,43 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "shell-assistant",
+    target_compatible_with = ["@platforms//os:linux"],
+    compile_data = [
+        "prompts/apps.md",
+        "prompts/compact.md",
+        "prompts/environment.md",
+        "prompts/pointed.md",
+        "prompts/system.md",
+    ],
+    visibility = [
+        "//system/rikka-shell:__subpackages__",
+    ],
+    deps = [
+        "//crates/ai/rikka-agent",
+        "//crates/ai/rikka-assist",
+        "//crates/ai/rikka-chat",
+        "//crates/ai/rikka-computer-use",
+        "//crates/ai/rikka-llm",
+        "//crates/ai/rikka-llm-accounts",
+        "//crates/ai/rikka-mcp",
+        "//crates/ai/rikka-prompt",
+        "//crates/ai/rikka-thread",
+        "//crates/ai/rikka-tools",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-seam",
+        "//crates/session/rikka-session",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//system/rikka-shell/crates/shell-kit",
+        "@crates//:futures-util",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)

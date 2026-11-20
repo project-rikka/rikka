@@ -1,0 +1,17 @@
+---
+title: In-house Wayland client (rikka-wayland-client)
+description: rikka-wayland-wire's client half and the generated proxies: connection, routes, queues, keys, events, thread model.
+about: crates/foundation/rikka-wayland-client
+tags: [wayland, client]
+---
+
+- `rikka-wayland-client` is the client door: generated proxies for every vendored interface (`wl_surface::{WlSurface, Event}`), re-exports of `rikka_wayland_wire::client::{Connection, Queue, Route, Handle, ObjectId, Proxy, Error, ProtocolError}`, `connect_to_env()`/`connect_to(path)`/`from_socket(fd)` returning `(Connection, WlDisplay)`, and `Globals` (registry list with `bind(versions)`, `bind_all`, `bind_global`).
+- `Connection` is `Clone + Send + Sync` (`AsFd` for polling). Any thread sends; exactly one reads at a time. `read()` takes the read turn, reads without blocking and hands events out; `Queue::blocking_dispatch`/`roundtrip` take the turn themselves when nobody holds it, otherwise wait for the reader. `flush()` blocks until written, `try_flush()` does not. The first failure is sticky (`Connection::error()`).
+- Every object has a route, inherited from the object that created it: a `Queue<S>` (`queue.route()`), a tap (`Route::tap::<P>(closure)`, run on the reading thread) or `Route::discard()`. `proxy.via(&route)` returns the same object whose *children* take another route, so `display.via(&queue.route()).get_registry()` puts a whole client on one queue. The display itself discards.
+- `Queue<S>`: `on::<P>(|state, proxy, event| ..)` registers one handler per interface (none = dropped), `dispatch_pending`, `blocking_dispatch`, `roundtrip`, `sync() -> Barrier` with `has_passed(barrier)` (a non-blocking `wl_display.sync` on this queue; barriers pass in order), `set_waker(Waker)` (woken when the queue becomes non-empty or the connection fails).
+- Requests are methods named after the XML; one that creates an object returns its proxy (`wl_registry.bind::<P>(name, version) -> P`), a destructor marks it dead at once. A request named like an accessor gets `send_` (`zwp_virtual_keyboard_v1.send_key`). Requests on dead objects, below their `since` version or naming dead objects are dropped (debug log).
+- Events are owned (`String`, `Vec<u8>`, `OwnedFd`), `'static` and `#[non_exhaustive]`; enum arguments are `Result<Enum, UnknownValue>` (`raw_value` gives the number back), bitfields are bitflags with SCREAMING names.
+- Per-object data is a Copy `Key` (`set_key`/`with_key`/`key::<K>()`), as on the server; rich data lives in the owner's map (or in a tap's closure). Every event's proxy carries the keys the object had when the event was read, so `key()` still answers for events queued before the object's destructor event and `delete_id`. `Proxy::object_id()` is an `ObjectId` (wire id plus generation; itself a `Key`) that never collides after id reuse.
+- Ids are reused only after `wl_display.delete_id`; events for an object the client destroyed are dropped (fds closed, children marked destroyed). `wl_display.error` becomes `Error::Protocol { interface, object, code, message }`.
+- Tests: `tests/bytes.rs` holds golden byte fixtures per argument kind in both directions against a raw socket peer; `tests/session.rs` runs against `rikka-test-display`. `rikka-compositor-server/tests/conformance.rs` is the one libwayland (`wayland-client`) test, an independent oracle.
+- Every client in the workspace uses it, mostly through `rikka-wayland` (see the Wayland client layer note); only the conformance oracle links `wayland-client`.

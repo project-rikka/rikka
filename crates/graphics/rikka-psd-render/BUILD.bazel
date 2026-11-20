@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-psd-render",
+    cranelift = False,
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-simd",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-psd",
+        "//crates/graphics/rikka-vector",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-psd-render",
+        "//crates/graphics/rikka-psd",
+    ],
+)

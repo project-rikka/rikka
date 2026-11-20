@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-portal-backend",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/session/rikka-portal",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:tracing",
+        "@crates//:zbus",
+    ],
+)

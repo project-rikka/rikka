@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "files-core",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-file-operations",
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-format",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":files-core",
+    ],
+)

@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-tool-docs",
+    compile_data = [
+        "prompts/ask.md",
+        "prompts/bash.md",
+        "prompts/computer.md",
+        "prompts/deferred.md",
+        "prompts/desktop.md",
+        "prompts/edit.md",
+        "prompts/job.md",
+        "prompts/reading.md",
+        "prompts/tool_search.md",
+        "prompts/tool_search_apps.md",
+        "prompts/view.md",
+        "prompts/write.md",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/ai/rikka-prompt",
+        "@crates//:thiserror",
+    ],
+)

@@ -1,0 +1,56 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-video",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-image",
+        "//crates/media/rikka-annexb",
+        "//crates/media/rikka-coded",
+        "//crates/media/rikka-ffmpeg",
+        "//crates/media/rikka-resample",
+        "//crates/media/rikka-video-core",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [
+            "//crates/media/rikka-dmabuf-convert",
+            "//crates/media/rikka-vulkan-video",
+        ],
+        "@platforms//os:windows": [],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":rikka-video",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-test-renderer",
+        "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-video-play",
+        "@crates//:tempfile",
+    ],
+)
+
+rikka_test(
+    name = "machine",
+    machine = True,
+    deps = [
+        ":rikka-video",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-image",
+        "//crates/graphics/rikka-renderer",
+        "@crates//:libc",
+        "@crates//:tempfile",
+    ],
+)

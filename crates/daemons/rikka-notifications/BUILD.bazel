@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-notifications",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-sync",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zbus",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-notifications",
+        "//crates/foundation/rikka-test-bus",
+        "@crates//:zbus",
+    ],
+)

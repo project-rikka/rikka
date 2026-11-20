@@ -1,0 +1,65 @@
+name: rbe-image
+
+on:
+  push:
+    paths:
+      - flake.nix
+      - flake.lock
+      - rust-toolchain.toml
+      - nix/**
+      - third_party/rust/Cargo.lock
+      - website/package.json
+      - website/package-lock.json
+      - .github/workflows/rbe-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: rbe-image
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache
+
+      - uses: actions/checkout@v5
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Name the image
+        id: image
+        run: |
+          echo "reference=$(nix eval --raw .#rbe-image.imageName):$(nix eval --raw .#rbe-image.imageTag)" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether the registry already has it
+        id: published
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if nix run nixpkgs#skopeo -- inspect --creds "${{ github.actor }}:$REGISTRY_TOKEN" \
+              "docker://${{ steps.image.outputs.reference }}" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push
+        if: steps.published.outputs.exists == 'false'
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          nix build .#rbe-image --out-link stream
+          ./stream | nix run nixpkgs#skopeo -- copy \
+            --dest-creds "${{ github.actor }}:$REGISTRY_TOKEN" \
+            docker-archive:/dev/stdin \
+            "docker://${{ steps.image.outputs.reference }}"

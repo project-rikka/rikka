@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Getting started - Example Docs</title>
+<style>
+body { font: 16px/1.6 system-ui, sans-serif; margin: 0; display: flex; }
+.md-sidebar { width: 220px; padding: 16px; }
+.md-content { flex: 1; padding: 16px 32px; max-width: 860px; }
+pre { background: #f5f5f5; padding: 12px; }
+.admonition { border-left: 4px solid #448aff; padding: 4px 12px; }
+.admonition-title { font-weight: bold; }
+</style>
+</head>
+<body>
+<nav class="md-sidebar" aria-label="Navigation">
+  <ul class="md-nav__list">
+    <li class="md-nav__item"><a class="md-nav__link" href="/">Home</a></li>
+    <li class="md-nav__item"><a class="md-nav__link" href="/start/">Getting started</a></li>
+    <li class="md-nav__item"><a class="md-nav__link" href="/reference/">Reference</a></li>
+  </ul>
+</nav>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1 id="getting-started">Getting started</h1>
+<p id="lead">This guide walks you through installing the library, writing your first program and running it from the command line.</p>
+<p id="react">The page keeps this sentence up to date while you read.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p id="note">Every example on this page runs with <code>python3</code> on Linux and macOS without extra packages.</p>
+</div>
+<h2 id="installation">Installation</h2>
+<ol>
+<li id="step">Download the archive from the release page and unpack it somewhere safe.</li>
+<li>Add the <code>bin</code> folder to your <code>PATH</code>.</li>
+</ol>
+<div id="pygments" class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="n">radius</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the area of a circle with the given radius.&quot;&quot;&quot;</span>
+    <span class="c1"># Multiply by pi and the squared radius.</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">radius</span> <span class="o">**</span> <span class="mi">2</span>
+</code></pre></div>
+<pre id="prism" class="language-js"><code class="language-js"><span class="token comment">// Load the configuration before anything else.</span>
+<span class="token keyword">const</span> config <span class="token operator">=</span> <span class="token function">load</span><span class="token punctuation">(</span><span class="token string">"app.json"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<pre id="shiki" class="shiki github-light" style="background-color:#fff;color:#24292e" tabindex="0" data-language="ts"><code><span class="line"><span style="color:#6A737D">// Fetch the index and print how many entries it has.</span></span>
+<span class="line"><span style="color:#D73A49">const</span><span style="color:#24292E"> url </span><span style="color:#D73A49">=</span><span style="color:#032F62"> "https://example.com/index.json"</span><span style="color:#24292E">; </span><span style="color:#6A737D">// remote copy</span></span>
+<span class="line"><span style="color:#D73A49">const</span><span style="color:#24292E"> note </span><span style="color:#D73A49">=</span><span style="color:#032F62"> "// not a comment"</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6A737D">/* Entries are</span></span>
+<span class="line"><span style="color:#6A737D">   counted lazily. */</span></span></code></pre>
+<pre id="hljs"><code class="hljs language-python"><span class="hljs-keyword">import</span> sys
+<span class="hljs-comment"># Print every argument on its own line.</span>
+<span class="hljs-keyword">for</span> arg <span class="hljs-keyword">in</span> sys.argv:
+    <span class="hljs-built_in">print</span>(arg)
+</code></pre>
+<pre id="plain"><code class="language-python">def area(radius):
+    """Return the area of a circle with the given radius.
+
+    The radius must not be negative.
+    """
+    # Multiply by pi and the squared radius.
+    x = "# not a comment"
+    return math.pi * radius ** 2  # exact enough for drawing
+</code></pre>
+<p id="closing">That is all you need to get started with the library.</p>
+</article>
+</div>
+</body>
+</html>

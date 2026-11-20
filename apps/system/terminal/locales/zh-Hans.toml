@@ -1,0 +1,15 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[terminal]
+title = "终端"
+
+[terminal.tab]
+untitled = "终端"
+
+[ui.find]
+pattern = "查找"
+replacement = "替换"
+nothing = "无结果"
+broken = "模式无效"

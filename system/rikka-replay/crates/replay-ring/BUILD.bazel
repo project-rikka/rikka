@@ -1,0 +1,20 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "replay-ring",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//system/rikka-replay:__subpackages__",
+    ],
+    deps = [
+        "//crates/media/rikka-coded",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":replay-ring",
+        "//crates/media/rikka-coded",
+    ],
+)

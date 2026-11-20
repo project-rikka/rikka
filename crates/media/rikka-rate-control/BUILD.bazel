@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-rate-control",
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//system/rikka-remote:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-rate-control",
+    ],
+)

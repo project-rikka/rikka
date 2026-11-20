@@ -1,0 +1,35 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-physics",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/model/rikka-model-core",
+        "//crates/physics/rikka-physics-cloth",
+        "//crates/physics/rikka-physics-fluid",
+        "//crates/physics/rikka-physics-liquid",
+        "//crates/physics/rikka-physics-tailor",
+        "@crates//:glam",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    gpu = True,
+    deps = [
+        ":rikka-physics",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/model/rikka-model-core",
+        "//crates/physics/rikka-physics-cloth",
+        "//crates/physics/rikka-physics-liquid",
+        "//crates/physics/rikka-physics-tailor",
+        "@crates//:glam",
+    ],
+)

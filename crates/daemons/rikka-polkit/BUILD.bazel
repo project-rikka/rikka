@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-polkit",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/daemons/rikka-bus",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-worker",
+        "@crates//:futures-channel",
+        "@crates//:libc",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zbus",
+        "@crates//:zvariant",
+    ],
+)

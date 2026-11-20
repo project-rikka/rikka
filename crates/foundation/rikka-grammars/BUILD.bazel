@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-grammars",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-shipped",
+        "@crates//:libloading",
+        "@crates//:tracing",
+        "@crates//:tree-sitter",
+        "@crates//:tree-sitter-language",
+    ],
+)

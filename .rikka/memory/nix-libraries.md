@@ -1,0 +1,17 @@
+---
+title: Nix editing libraries (crates/nix)
+description: rikka-nix-edit edits and writes Nix losslessly in nixfmt style; rikka-nixos-layout is Rikka's /etc/nixos module set.
+about: crates/nix
+tags: [nix, library]
+---
+
+- Layers: `rikka-nix-edit` (generic, Rikka-free) → `rikka-nixos-layout` (Rikka's `/etc/nixos` layout) → `rikka-nix-protocol` (wire names, records, `Request`, `Run`) → `rikka-nix` (apps' client). The installer uses the first two directly; apps use `rikka-nix`; the root daemon and its journal use the protocol crate.
+- `rikka-nix-edit` parses with rnix. `Document` holds the source and its green tree, so it is `Send` and reparses only when edited. Every edit is atomic: on an error the document is left unchanged.
+- `Document::get::<T: FromNix>(path)` reads through nested, flat and parenthesized spellings, and merges flat siblings into one `Set`. It returns `Mismatch` for the wrong kind and `Opaque` for anything that needs evaluation (`mkIf`, `let`, `inherit`, interpolation).
+- `Document::add_formal(name)` adds a name to the root lambda's argument pattern (no-op when present; `NotFunction` otherwise). The printer follows nixfmt for patterns: more than two names or any default breaks them one per line.
+- `set` replaces a value in place, keeping the key's spelling, comments and trailing comments. A new attribute goes into the deepest attribute set already on its path. `remove` keeps the comments above the binding. It prunes parent sets left holding only whitespace (a set with a comment stays) and turns an emptied body back into `{ }`. Bindings on one line that go together are removed as one span.
+- `include(path, item)` / `exclude(path, item)` edit list membership without touching other items: `include` creates the list or appends a missing item, `exclude` drops it and removes the binding once the list is empty; a list that needs evaluation or is not a plain list is refused (`Opaque`/`Mismatch`).
+- Paths are `AttrPath`, parsed from Nix syntax (`a."b.c"`) or built from segments, which are quoted as needed. Every API taking a path takes `impl IntoAttrPath` (`&str`, segment arrays, `AttrPath`).
+- `Expr` is typed and has no raw-text variant. `Set` is a deferred builder: a bad path is reported when the set is written. References, identifiers, path literals and numbers are checked at the terminal (`Document::new/with_header/set`). `Expr::let_in` and `Set::bind_dynamic` (`${key} = value;`) are write-only: the reader still reports them as `Opaque`.
+- The printer follows nixfmt (RFC 166): lists of two or more items break one per line, non-empty sets always break, and a function whose argument is a pattern starts on the line after `name =`. Tests use `rikka-test-nixfmt::assert_formatted` (runs `nixfmt` from the dev shell) to check that output is a nixfmt fixed point.
+- `rikka-nixos-layout` provides: `Module` (names, paths, `formals()`, `blank()`, `document(body)`); `Modules`, the whole generated directory in memory (missing file → blank, unparsable → error naming the file, root always regenerated); and `Packages`, a `with pkgs; [ … ]` list built from nixpkgs' dot-separated attribute names (never parsed as Nix, so it cannot fail). It reads through `pkgs.`, writes non-identifier names as `pkgs."…"`, and `names()` gives them back as `nix search` spells them. `HEADER` is plain text that is written out as `#` comments.

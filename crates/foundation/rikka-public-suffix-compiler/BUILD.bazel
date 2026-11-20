@@ -1,0 +1,11 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-public-suffix-compiler",
+    visibility = [
+        "//crates/foundation/rikka-public-suffix:__pkg__",
+    ],
+    deps = [
+        "@crates//:thiserror",
+    ],
+)

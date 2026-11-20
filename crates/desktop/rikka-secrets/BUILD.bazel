@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-secrets",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/desktop/rikka-secrets-protocol",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+    ] + select({
+        "@platforms//os:linux": [
+            "@crates//:futures-util",
+            "@crates//:tokio",
+            "@crates//:zbus",
+        ],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-secrets",
+        "//crates/desktop/rikka-test-keyring",
+        "//crates/foundation/rikka-test-bus",
+        "@crates//:futures-util",
+        "@crates//:serde",
+        "@crates//:zbus",
+    ],
+)

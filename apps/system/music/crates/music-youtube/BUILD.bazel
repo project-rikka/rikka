@@ -1,0 +1,32 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "music-youtube",
+    target_compatible_with = ["@platforms//os:linux"],
+    compile_data = [
+        "js/astring.js",
+        "js/meriyah.js",
+        "js/prelude.js",
+        "js/solver.js",
+    ],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-core",
+        "//apps/system/music/crates/music-stream",
+        "//crates/desktop/rikka-account-book",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-symbols",
+        "@crates//:futures-util",
+        "@crates//:rand",
+        "@crates//:rquickjs",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha1",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ],
+)

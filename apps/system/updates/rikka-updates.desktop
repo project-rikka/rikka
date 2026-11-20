@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=System Updates
+Name[ja]=システム更新
+Name[zh_CN]=系统更新
+GenericName=System Update Log
+GenericName[ja]=システム更新ログ
+GenericName[zh_CN]=系统更新日志
+Comment=Follow and review changes applied to this system
+Comment[ja]=このシステムに適用された変更の進行状況とログを確認します
+Comment[zh_CN]=查看应用到此系统的更改及其日志
+Exec=rikka-updates
+Icon=system-software-update
+Terminal=false
+Categories=System;Monitor;
+Keywords=update;rebuild;nixos;log;generation;
+Keywords[ja]=更新;再構築;nixos;ログ;世代;
+Keywords[zh_CN]=更新;重建;nixos;日志;世代;
+StartupNotify=true

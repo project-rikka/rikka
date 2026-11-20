@@ -1,0 +1,56 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[widgets.command]
+back = "后退"
+forward = "前进"
+up = "向上"
+home = "主页"
+refresh = "刷新"
+undo = "撤销"
+redo = "重做"
+cut = "剪切"
+copy = "复制"
+paste = "粘贴"
+select-all = "全选"
+select-none = "取消选择"
+delete = "删除"
+find = "查找"
+find-next = "查找下一个"
+find-previous = "查找上一个"
+zoom-in = "放大"
+zoom-out = "缩小"
+zoom-reset = "实际大小"
+new = "新建"
+new-tab = "新建标签页"
+open = "打开"
+save = "保存"
+save-as = "另存为…"
+close = "关闭"
+quit = "退出"
+next-tab = "下一个标签页"
+previous-tab = "上一个标签页"
+rename = "重命名"
+properties = "属性"
+fullscreen = "全屏"
+preferences = "首选项"
+context-menu = "显示菜单"
+
+[widgets.copy]
+copy = "复制"
+copied = "已复制"
+
+[widgets.toolbar]
+more = "更多"
+
+[widgets.unsaved]
+title = "要保存对“{name}”的更改吗？"
+body = "如果不保存，更改将会丢失。"
+discard = "不保存"
+cancel = "取消"
+save = "保存"
+
+[widgets.prompt]
+ok = "确定"
+cancel = "取消"

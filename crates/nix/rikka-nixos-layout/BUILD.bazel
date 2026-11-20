@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-nixos-layout",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//installer:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/nix/rikka-nix-edit",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-nixos-layout",
+        "//crates/nix/rikka-nix-edit",
+        "//crates/nix/rikka-test-nixfmt",
+        "@crates//:tempfile",
+    ],
+)

@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "viewer-psd",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/viewer:__subpackages__",
+    ],
+    deps = [
+        "//crates/graphics/rikka-psd",
+        "//crates/graphics/rikka-psd-render",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":viewer-psd",
+        "//crates/graphics/rikka-psd",
+    ],
+)

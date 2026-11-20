@@ -1,0 +1,80 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[packages]
+title = "软件包"
+search = "按名称或描述搜索 nixpkgs"
+found = "{count} 个"
+channel = "nixpkgs {name}"
+
+[packages.index]
+locating = "正在查找适用于本系统的软件包索引…"
+downloading = "正在下载软件包索引… {received} / {total}"
+receiving = "正在下载软件包索引… {received}"
+indexing = "正在准备软件包列表…"
+
+[packages.section]
+search = "搜索"
+installed = "已安装"
+generations = "世代"
+apps = "Rikka 应用"
+
+[packages.empty]
+catalog = "软件包索引中没有软件包。"
+search = "没有与“{query}”匹配的软件包。"
+installed = "没有已安装的软件包。"
+generations = "没有系统世代。"
+apps = "此系统没有 Rikka 应用列表；从 Rikka 发行版安装后即会显示。"
+
+[packages.state]
+installed = "已安装"
+adding = "待安装"
+removing = "待删除"
+
+[packages.action]
+install = "安装"
+remove = "删除"
+revert = "撤销"
+apply = "应用"
+discard = "放弃"
+update = "更新系统"
+roll-back = "回退到此世代"
+retry = "重试"
+close = "关闭"
+
+[packages.plan]
+title = "待应用的更改"
+adding = "待安装"
+removing = "待删除"
+and-more = "{listed}  以及其他 {count} 个"
+settings = "所需设置"
+
+[packages.needs]
+group = "加入 {name} 用户组"
+unfree = "允许非自由软件包"
+
+[packages.work]
+authorising = "正在等待授权…"
+running = "正在应用…"
+not-started = "无法开始：{reason}"
+
+[packages.generation]
+current = "正在运行"
+
+[packages.detail]
+unknown = "nixpkgs 中没有此属性。下次构建将失败。"
+attribute = "属性"
+set = "软件包集"
+licences = "许可证"
+main-program = "命令"
+outputs = "输出"
+platforms = "支持的平台"
+definition = "定义位置"
+about = "详细说明"
+maintainers = "维护者"
+team = "团队"
+unfree = "非自由"
+
+[packages.apps]
+required = "始终安装"

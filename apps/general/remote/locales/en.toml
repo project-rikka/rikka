@@ -1,0 +1,55 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[remote]
+title = "Remote Desktop"
+cancel = "Cancel"
+reconnect = "Reconnect"
+back = "Desktops"
+connecting = "Connecting to {host}…"
+saved = "{name} was saved on the desktop"
+upload-failed = "Cannot send a file: {reason}"
+stats = "{codec} {width}×{height} · {megabits} Mbps · {rtt} ms · {loss}% lost"
+chords = "Ctrl+Alt+Shift with M captures the mouse, F switches full screen, S shows statistics, Q disconnects"
+stats-toggle = "Statistics"
+
+[remote.hosts]
+heading = "Desktops"
+address = "Address"
+placeholder = "host or host:port"
+connect = "Connect"
+empty = "Add the address of a Rikka desktop that allows remote viewers."
+forget = "Forget"
+fingerprint = "Fingerprint {fingerprint}"
+new = "Not connected yet"
+
+[remote.sign-in]
+heading = "Sign in to {host}"
+password = "Password of {user}"
+remember = "Stay signed in on this device"
+submit = "Sign in"
+wrong = "The password was not accepted."
+throttled = "Too many attempts. Try again in {seconds} s."
+unavailable = "The desktop cannot check passwords: {detail}"
+
+[remote.changed]
+heading = "This desktop's identity changed"
+body = "The desktop at {host} presents another certificate than before. If it was not reinstalled, someone may be intercepting the connection."
+seen = "New fingerprint {fingerprint}"
+trust = "Trust the new identity"
+
+[remote.ended]
+replaced = "Another viewer took over this desktop."
+stopped = "The desktop stopped sharing."
+signed-out = "Signed out."
+disconnected = "The desktop ended the session."
+unsupported = "This desktop speaks another protocol version."
+failed = "The connection failed: {reason}"
+
+[remote.toolbar]
+disconnect = "Disconnect"
+fullscreen = "Full screen"
+mouse = "Capture the mouse"
+keyframe = "Refresh the picture"
+sign-out = "Sign out"

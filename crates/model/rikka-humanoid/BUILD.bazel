@@ -1,0 +1,27 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-humanoid",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/model/rikka-model-core",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-fbx:assets/knight.fbx",
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-vrm:assets/avatar.vrm",
+    ],
+    deps = [
+        ":rikka-humanoid",
+        "//crates/model/rikka-fbx",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-vrm",
+    ],
+)

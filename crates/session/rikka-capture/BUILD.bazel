@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "rikka-capture",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-wayland",
+        "//crates/foundation/rikka-wayland-client",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-gpu",
+        "//crates/media/rikka-dmabuf-convert",
+        "@crates//:gbm",
+        "@crates//:rustix",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)

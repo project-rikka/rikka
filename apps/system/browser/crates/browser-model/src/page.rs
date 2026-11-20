@@ -1,0 +1,37 @@
+use std::sync::Arc;
+
+pub trait LivePage {
+    type View: Clone;
+
+    fn view(&self) -> &Self::View;
+}
+
+#[derive(Debug, Default)]
+pub enum Page<L> {
+    #[default]
+    Unloaded,
+    Discarded(Arc<[u8]>),
+    Live(L),
+}
+
+impl<L> Page<L> {
+    pub fn live(&self) -> Option<&L> {
+        match self {
+            Page::Live(live) => Some(live),
+            Page::Unloaded | Page::Discarded(_) => None,
+        }
+    }
+
+    pub fn live_mut(&mut self) -> Option<&mut L> {
+        match self {
+            Page::Live(live) => Some(live),
+            Page::Unloaded | Page::Discarded(_) => None,
+        }
+    }
+}
+
+impl<L: LivePage> Page<L> {
+    pub fn view(&self) -> Option<&L::View> {
+        self.live().map(LivePage::view)
+    }
+}

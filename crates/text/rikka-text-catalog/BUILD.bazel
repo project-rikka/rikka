@@ -1,0 +1,40 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-text-catalog",
+    cranelift = False,
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-xml",
+        "//crates/text/rikka-text-font",
+        "//crates/text/rikka-text-unicode",
+        "@crates//:rustc-hash",
+        "@crates//:thiserror",
+    ] + select({
+        "@platforms//os:linux": [
+            "//crates/foundation/rikka-types",
+            "@crates//:rustix",
+        ],
+        "@platforms//os:windows": [
+            "//crates/text/rikka-embedded-fonts",
+            "@crates//:windows",
+        ],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-text-catalog",
+        "//crates/text/rikka-text-font",
+        "//crates/text/rikka-text-unicode",
+    ],
+)

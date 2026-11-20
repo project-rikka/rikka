@@ -1,0 +1,42 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+exports_files(
+    ["assets/studio.blend"],
+    visibility = ["//crates/model/rikka-model:__pkg__"],
+)
+
+rikka_library(
+    name = "rikka-blend",
+    compile_data = ["assets/template.blend.zst"],
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-types",
+        "//crates/model/rikka-armature",
+        "//crates/model/rikka-mesh-modifiers",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-model-scene",
+        "//crates/model/rikka-polymesh",
+        "@crates//:flate2",
+        "@crates//:rustc-hash",
+        "@crates//:zstd",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    data = glob(["assets/**"]),
+    deps = [
+        ":rikka-blend",
+        "//crates/foundation/rikka-types",
+        "//crates/model/rikka-armature",
+        "//crates/model/rikka-mesh-modifiers",
+        "//crates/model/rikka-model-core",
+        "//crates/model/rikka-model-scene",
+        "//crates/model/rikka-polymesh",
+        "@crates//:flate2",
+    ],
+)

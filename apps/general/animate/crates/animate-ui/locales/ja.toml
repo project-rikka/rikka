@@ -1,0 +1,49 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[animate.tip]
+clear_keys = "キーをすべて削除"
+add_key = "キーを打つ"
+
+[animate.part]
+root = "位置"
+torso = "体幹"
+head = "頭"
+left_arm = "左腕"
+right_arm = "右腕"
+left_fingers = "左手指"
+right_fingers = "右手指"
+left_leg = "左脚"
+right_leg = "右脚"
+gaze = "視線"
+
+[animate.hand]
+left = "左"
+right = "右"
+thumb = "親指"
+index = "人差し指"
+middle = "中指"
+ring = "薬指"
+little = "小指"
+
+[animate.hold]
+left_hand = "左手"
+right_hand = "右手"
+
+[animate.wind.setting]
+yaw = "向き (°)"
+pitch = "上下 (°)"
+speed = "風速 (m/s)"
+turbulence = "乱れ"
+gust = "突風 (Hz)"
+
+[animate.liquid.setting]
+rate = "流量 (L/s)"
+volume = "量 (L)"
+launch = "出る位置"
+target = "落ちる位置"
+speed = "速さ (m/s)"
+arc = "弧の高さ (m)"
+width = "太さ (m)"
+spread = "広がり (°)"
