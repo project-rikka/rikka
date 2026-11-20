@@ -24,7 +24,8 @@ float rikka_npr_outline_width(
     float channel, float multiplier)
 {
     float depth = max(rikka_npr_depth(context, position), context.view.near);
-    float to_pixels = 0.5 * context.view.viewport.y * rikka_npr_focal(context) / depth;
+    float projected = context.view.projection[3][3] < 0.5 ? depth : 1.0;
+    float to_pixels = 0.5 * context.view.viewport.y * rikka_npr_focal(context) / projected;
     float w;
     switch (int(mode)) {
     case 1:
@@ -35,7 +36,7 @@ float rikka_npr_outline_width(
             rikka_npr_eye_distance(context, depth, scale, fov), near, middle, far, near_scale, middle_scale, far_scale);
         break;
     case 3:
-        w = width * depth / rikka_npr_focal(context);
+        w = width * projected / rikka_npr_focal(context);
         break;
     default:
         w = width * scale;
