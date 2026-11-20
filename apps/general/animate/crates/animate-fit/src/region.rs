@@ -73,14 +73,33 @@ impl Region {
         matches!(self, Self::UpperLeg(_) | Self::LowerLeg(_) | Self::Foot(_))
     }
 
-    pub(crate) fn avoids(self) -> u16 {
+    pub(crate) fn avoids(self, cover: Cover) -> u16 {
         let legs = |side: Side| Self::UpperLeg(side).bit() | Self::LowerLeg(side).bit();
         let both_legs = legs(Side::Left) | legs(Side::Right);
-        match self {
-            Self::UpperArm(_) => Self::Torso.bit(),
-            Self::LowerArm(_) | Self::Hand(_) => Self::Torso.bit() | Self::Head.bit() | both_legs,
-            Self::LowerLeg(side) => legs(side.other()),
-            Self::Torso | Self::Head | Self::UpperLeg(_) | Self::Foot(_) => 0,
+        let around = Self::Torso.bit() | Self::Head.bit() | both_legs;
+        match (cover, self) {
+            (Cover::Skin, Self::UpperArm(_)) => Self::Torso.bit(),
+            (Cover::Skin, Self::LowerArm(_) | Self::Hand(_)) => around,
+            (Cover::Skin, Self::LowerLeg(side)) => legs(side.other()),
+            (Cover::Garment, Self::UpperArm(_) | Self::LowerArm(_) | Self::Hand(_)) => around,
+            (
+                _,
+                Self::Torso | Self::Head | Self::UpperLeg(_) | Self::LowerLeg(_) | Self::Foot(_),
+            ) => 0,
         }
     }
+
+    pub(crate) fn probes(self) -> bool {
+        Cover::ALL.into_iter().any(|cover| self.avoids(cover) != 0)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub(crate) enum Cover {
+    Skin,
+    Garment,
+}
+
+impl Cover {
+    pub(crate) const ALL: [Self; 2] = [Self::Skin, Self::Garment];
 }

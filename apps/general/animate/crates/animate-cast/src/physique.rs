@@ -4,7 +4,7 @@ use animate_body::Body;
 use animate_fit::Physique;
 use rikka_model::Model;
 use rikka_model::humanoid::Anatomy;
-use rikka_physics_tailor::ClothAnalysis;
+use rikka_physics_tailor::{ClothAnalysis, Wearer};
 
 pub type BodyFit = Result<Option<Arc<Physique>>, BodyFitError>;
 
@@ -21,7 +21,6 @@ pub fn fit_physique(
     let Some((body, analysis)) = body.zip(analysis) else {
         return Ok(None);
     };
-    let skin =
-        rikka_physics_tailor::Body::from_model(model, anatomy, analysis).map_err(BodyFitError)?;
-    Ok(Some(Arc::new(Physique::new(body, model, &skin))))
+    let wearer = Wearer::from_model(model, anatomy, analysis).map_err(BodyFitError)?;
+    Ok(Some(Arc::new(Physique::new(body, model, &wearer))))
 }

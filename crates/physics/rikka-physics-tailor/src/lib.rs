@@ -22,6 +22,7 @@ mod strands;
 mod style;
 mod tuning;
 mod underlay;
+mod wearer;
 mod wind;
 
 pub use analysis::{AnalyzedPiece, ClothAnalysis};
@@ -40,4 +41,5 @@ pub use pick::{ParticlePick, PickWeight};
 pub use preset::Preset;
 pub use style::{CURVE_SAMPLES, Curve, Flutter, Inertia, Style};
 pub use tuning::ClothTuning;
+pub use wearer::{Garment, GarmentVertex, Wearer};
 pub use wind::Wind;

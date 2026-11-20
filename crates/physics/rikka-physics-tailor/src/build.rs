@@ -39,7 +39,7 @@ impl ClothAsset {
             }
         }
         let skin = skin(&figure, &roles);
-        let spreads = spreads(&figure, cloth_settings);
+        let spreads = analysis.spreads();
         let enabled: Vec<&AnalyzedPiece> = analysis
             .pieces()
             .iter()
@@ -73,7 +73,7 @@ impl ClothAsset {
                             head,
                             &piece.vertices,
                             &roles,
-                            &spreads,
+                            spreads,
                             BandWidths::from_band(spacings[at]),
                         );
                     }
@@ -115,7 +115,7 @@ impl ClothAsset {
         for ((piece, sheet), ribbon) in enabled.iter().zip(sheets).zip(ribbons) {
             let proxy = match ribbon {
                 Some(ribbon) => Some(ribbon),
-                None => sheet.and_then(|sheet| sheet.proxy(&figure, &spreads)),
+                None => sheet.and_then(|sheet| sheet.proxy(&figure, spreads)),
             };
             let Some(proxy) = proxy else {
                 continue;
@@ -161,14 +161,4 @@ impl ClothAsset {
     pub fn particle_count(&self) -> usize {
         self.pieces.iter().map(|piece| piece.particles.len()).sum()
     }
-}
-
-fn spreads(figure: &Figure<'_>, cloth_settings: &ClothSettings) -> Vec<f32> {
-    let mut spreads = vec![1.0; figure.vertices.len()];
-    for (key, paint) in cloth_settings.paint_entries() {
-        if let (Some(spread), Some(vertex)) = (paint.spread, figure.index(key)) {
-            spreads[vertex as usize] = spread;
-        }
-    }
-    spreads
 }

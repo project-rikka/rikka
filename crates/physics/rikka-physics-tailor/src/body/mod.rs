@@ -7,16 +7,13 @@ mod pose;
 mod solid;
 
 use glam::Vec3;
-use rikka_humanoid::Anatomy;
-use rikka_model_core::{Model, NodeId};
+use rikka_model_core::NodeId;
 
-use crate::analysis::ClothAnalysis;
 use crate::asset::{Body, BodyCollider, BodyVertex};
 use crate::cloth_settings::Role;
-use crate::error::Result;
 use crate::figure::{Figure, Skeleton};
 use crate::frame::particle_normals;
-use crate::geometry::{Decimator, PointGrid, Shell, Union, is_proper};
+use crate::geometry::{Decimator, Shell, is_proper};
 use pose::Pose;
 use solid::Solid;
 
@@ -39,28 +36,7 @@ pub(crate) fn skin(figure: &Figure<'_>, roles: &[Role]) -> Skin {
     let members: Vec<u32> = (0..roles.len() as u32)
         .filter(|vertex| roles[*vertex as usize] == Role::Body)
         .collect();
-    let grid = PointGrid::new(
-        members
-            .iter()
-            .enumerate()
-            .map(|(at, vertex)| (at as u32, figure.vertices[*vertex as usize].position)),
-        WELD * 4.0,
-    );
-    let mut union = Union::new(members.len());
-    for (at, vertex) in members.iter().enumerate() {
-        let position = figure.vertices[*vertex as usize].position;
-        for other in grid.near(position, WELD) {
-            if other as usize > at
-                && figure.vertices[members[other as usize] as usize]
-                    .position
-                    .distance(position)
-                    <= WELD
-            {
-                union.join(at as u32, other);
-            }
-        }
-    }
-    let (labels, count) = union.labels();
+    let (labels, count) = figure.weld(&members, WELD);
     let mut source = vec![u32::MAX; count];
     for (vertex, label) in members.iter().zip(&labels) {
         if source[*label as usize] == u32::MAX {
@@ -144,13 +120,6 @@ fn decimated(
         }
     }
     (reduced.positions, reduced.triangles, sources)
-}
-
-impl Body {
-    pub fn from_model(model: &Model, anatomy: &Anatomy, analysis: &ClothAnalysis) -> Result<Body> {
-        let figure = Figure::new(model, anatomy)?;
-        Ok(skin(&figure, analysis.roles()).body)
-    }
 }
 
 pub(crate) fn colliders(

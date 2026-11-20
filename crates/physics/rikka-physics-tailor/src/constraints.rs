@@ -51,7 +51,7 @@ pub(crate) fn build_constraints(
         edges.sort_unstable_by_key(|edge| edge.ends);
         graph = structure(&proxy, &edges);
     }
-    pin_loose_parts(&mut proxy, &graph);
+    pin_loose_parts(&graph, &proxy.positions, &mut proxy.pinned);
     let reached = graph.reach(
         (0..proxy.len() as u32).filter(|particle| proxy.pinned[*particle as usize]),
         f32::INFINITY,
@@ -275,9 +275,9 @@ fn structure(proxy: &Proxy, edges: &[Edge]) -> Graph {
     )
 }
 
-fn pinned_components(proxy: &Proxy, labels: &[u32], count: usize) -> Vec<bool> {
+fn pinned_components(pinned: &[bool], labels: &[u32], count: usize) -> Vec<bool> {
     let mut anchored = vec![false; count];
-    for (label, pinned) in labels.iter().zip(&proxy.pinned) {
+    for (label, pinned) in labels.iter().zip(pinned) {
         anchored[*label as usize] |= *pinned;
     }
     anchored
@@ -285,7 +285,7 @@ fn pinned_components(proxy: &Proxy, labels: &[u32], count: usize) -> Vec<bool> {
 
 fn seams(proxy: &Proxy, graph: &Graph) -> Vec<Edge> {
     let (labels, count) = graph.components();
-    let mut anchored = pinned_components(proxy, &labels, count);
+    let mut anchored = pinned_components(&proxy.pinned, &labels, count);
     let mut seams = Vec::new();
     loop {
         let mut joined = false;
@@ -329,14 +329,14 @@ fn seams(proxy: &Proxy, graph: &Graph) -> Vec<Edge> {
     }
 }
 
-fn pin_loose_parts(proxy: &mut Proxy, graph: &Graph) {
+pub(crate) fn pin_loose_parts(graph: &Graph, positions: &[Vec3], pinned: &mut [bool]) {
     let (labels, count) = graph.components();
-    let anchored = pinned_components(proxy, &labels, count);
+    let anchored = pinned_components(pinned, &labels, count);
     let mut top = vec![f32::MIN; count];
-    for (label, position) in labels.iter().zip(&proxy.positions) {
+    for (label, position) in labels.iter().zip(positions) {
         top[*label as usize] = top[*label as usize].max(position.y);
     }
-    for ((label, position), pinned) in labels.iter().zip(&proxy.positions).zip(&mut proxy.pinned) {
+    for ((label, position), pinned) in labels.iter().zip(positions).zip(pinned) {
         if !anchored[*label as usize] && position.y >= top[*label as usize] - TOP_RING {
             *pinned = true;
         }

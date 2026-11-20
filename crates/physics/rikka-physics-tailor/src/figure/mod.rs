@@ -7,7 +7,7 @@ use rikka_model_core::{Bounds, INFLUENCES, Model, NodeId, Skin, Vertices};
 pub(crate) use skeleton::Skeleton;
 
 use crate::error::{Error, Result};
-use crate::geometry::{area, is_proper};
+use crate::geometry::{PointGrid, Union, area, is_proper};
 use crate::key::VertexKey;
 
 #[derive(Clone, Copy, Debug)]
@@ -282,6 +282,24 @@ impl<'m> Figure<'m> {
 
     pub(crate) fn same_distance(&self) -> f32 {
         self.extent * 0.001
+    }
+
+    pub(crate) fn weld(&self, members: &[u32], radius: f32) -> (Vec<u32>, usize) {
+        let position = |at: usize| self.vertices[members[at] as usize].position;
+        let grid = PointGrid::new(
+            (0..members.len()).map(|at| (at as u32, position(at))),
+            radius * 2.0,
+        );
+        let mut union = Union::new(members.len());
+        for at in 0..members.len() {
+            for other in grid.near(position(at), radius) {
+                if other as usize > at && position(other as usize).distance(position(at)) <= radius
+                {
+                    union.join(at as u32, other);
+                }
+            }
+        }
+        union.labels()
     }
 }
 

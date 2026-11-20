@@ -55,6 +55,7 @@ impl AnalyzedPiece {
 pub struct ClothAnalysis {
     parts: Vec<(NodeId, u32, u32)>,
     roles: Vec<Role>,
+    spreads: Vec<f32>,
     pieces: Vec<AnalyzedPiece>,
 }
 
@@ -138,6 +139,7 @@ impl ClothAnalysis {
                 .map(|part| (part.node, part.first, part.len))
                 .collect(),
             roles,
+            spreads: spreads(figure, cloth_settings),
             pieces,
         }
     }
@@ -165,6 +167,10 @@ impl ClothAnalysis {
 
     pub(crate) fn roles(&self) -> &[Role] {
         &self.roles
+    }
+
+    pub(crate) fn spreads(&self) -> &[f32] {
+        &self.spreads
     }
 
     fn index(&self, vertex: VertexKey) -> Option<u32> {
@@ -199,4 +205,14 @@ fn name_pieces(pieces: &mut [AnalyzedPiece]) {
             piece.name = format!("{} {}", names[index], before + 1);
         }
     }
+}
+
+fn spreads(figure: &Figure<'_>, cloth_settings: &ClothSettings) -> Vec<f32> {
+    let mut spreads = vec![1.0; figure.vertices.len()];
+    for (key, paint) in cloth_settings.paint_entries() {
+        if let (Some(spread), Some(vertex)) = (paint.spread, figure.index(key)) {
+            spreads[vertex as usize] = spread;
+        }
+    }
+    spreads
 }

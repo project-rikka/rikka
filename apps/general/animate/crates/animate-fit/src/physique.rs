@@ -2,28 +2,29 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 
 use animate_body::{Body, HumanBone, Joint, Worlds};
-use rikka_model_core::Model;
 use rikka_model_core::glam::Vec3;
-use rikka_physics_tailor::BodyVertex;
+use rikka_model_core::{Model, NodeId};
+use rikka_physics_tailor::Wearer;
 
-use crate::region::Region;
+use crate::garment;
+use crate::region::{Cover, Region};
 use crate::scene::Scene;
 use crate::shell::Shell;
+use crate::surface::samples;
 
 const ARM_PROBE_CELL: f32 = 0.015;
 const LEG_PROBE_CELL: f32 = 0.045;
-const SLICE: f32 = 0.015;
-const SAMPLE: f32 = 0.006;
+pub(crate) const SLICE: f32 = 0.015;
+pub(crate) const SAMPLE: f32 = 0.006;
 const RIGID_SHARE: f32 = 0.5;
 const SHOULDER_SHARE: f32 = 0.4;
 const GAP: f32 = 0.003;
 const FLESH_GIVE: f32 = 0.045;
 const SPARED_WITHIN: f32 = 2.0;
-const MAX_SAMPLES: usize = 24;
 
 const SEGMENT_MARGIN: f32 = 0.02;
 const PELVIS_DEPTH: f32 = 0.6;
-const SHELLED: [HumanBone; 10] = [
+pub(crate) const SHELLED: [HumanBone; 10] = [
     HumanBone::Hips,
     HumanBone::Spine,
     HumanBone::Chest,
@@ -36,9 +37,12 @@ const SHELLED: [HumanBone; 10] = [
     HumanBone::RightLowerLeg,
 ];
 
+pub(crate) type Mask = u64;
+
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Obstacle {
     pub(crate) region: Region,
+    pub(crate) cover: Cover,
     pub(crate) bone: HumanBone,
     pub(crate) shell: Shell,
     pub(crate) centre: Vec3,
@@ -50,7 +54,7 @@ pub(crate) struct Probe {
     pub(crate) region: Region,
     pub(crate) bone: HumanBone,
     pub(crate) local: Vec3,
-    pub(crate) facing: u16,
+    pub(crate) facing: Mask,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -60,7 +64,7 @@ pub(crate) struct Cluster {
     pub(crate) probes: Range<usize>,
     pub(crate) centre: Vec3,
     pub(crate) radius: f32,
-    pub(crate) facing: u16,
+    pub(crate) facing: Mask,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -73,16 +77,26 @@ pub struct Physique {
 
 impl Physique {
     #[must_use]
-    pub fn new(body: &Body, model: &Model, skin: &rikka_physics_tailor::Body) -> Self {
+    pub fn new(body: &Body, model: &Model, wearer: &Wearer) -> Self {
         let scale = body.scale();
         let rest = body.fk(body.rest_pose());
         let folded = body.mapping().folded(model);
+        let skin = &wearer.body;
         let parts: Vec<Part> = skin
             .vertices
             .iter()
-            .map(|vertex| strongest(vertex, &folded))
+            .map(|vertex| strongest(&vertex.joints, &vertex.weights, &folded))
             .collect();
-        let obstacles = obstacles(body, &rest, skin, &parts, scale);
+        let flesh = flesh(skin, &parts, scale);
+        let mut obstacles = obstacles(body, &rest, &flesh, scale);
+        obstacles.extend(garment::obstacles(
+            body,
+            &rest,
+            &wearer.garments,
+            &folded,
+            &flesh,
+            scale,
+        ));
         let mut physique = Self {
             probes: probes(body, &rest, skin, &parts, &obstacles, scale),
             obstacles,
@@ -102,10 +116,12 @@ impl Physique {
     }
 
     pub(crate) fn clearance(&self, probe: usize, obstacle: usize) -> f32 {
-        let both_legs =
-            self.probes[probe].region.is_leg() && self.obstacles[obstacle].region.is_leg();
+        let obstacle = &self.obstacles[obstacle];
+        let fleshy = self.probes[probe].region.is_leg()
+            && obstacle.region.is_leg()
+            && obstacle.cover == Cover::Skin;
         self.scale
-            * match both_legs {
+            * match fleshy {
                 true => -FLESH_GIVE,
                 false => GAP,
             }
@@ -118,7 +134,7 @@ impl Physique {
     fn spare(&mut self, rest: &Worlds) {
         let scene = Scene::new(self, rest.clone());
         let within = SPARED_WITHIN * GAP * self.scale;
-        let touching: Vec<u16> = (0..self.probes.len())
+        let touching: Vec<Mask> = (0..self.probes.len())
             .map(|probe| scene.touching(probe, within))
             .collect();
         for (probe, touching) in self.probes.iter_mut().zip(touching) {
@@ -127,54 +143,47 @@ impl Physique {
     }
 }
 
-type Part = Option<(HumanBone, f32)>;
+pub(crate) type Part = Option<(HumanBone, f32)>;
 
-fn strongest(vertex: &BodyVertex, folded: &[Option<HumanBone>]) -> Part {
-    let (slot, weight) = vertex
-        .weights
+pub(crate) struct Flesh {
+    pub(crate) bone: HumanBone,
+    pub(crate) point: Vec3,
+}
+
+pub(crate) fn strongest(
+    joints: &[NodeId; 4],
+    weights: &[f32; 4],
+    folded: &[Option<HumanBone>],
+) -> Part {
+    let (slot, weight) = weights
         .iter()
         .enumerate()
         .max_by(|one, other| one.1.total_cmp(other.1))?;
-    let bone = folded.get(vertex.joints[slot].index()).copied().flatten()?;
+    let bone = folded.get(joints[slot].index()).copied().flatten()?;
     Some((bone, *weight))
 }
 
-fn obstacles(
-    body: &Body,
-    rest: &Worlds,
-    skin: &rikka_physics_tailor::Body,
-    parts: &[Part],
-    scale: f32,
-) -> Vec<Obstacle> {
-    let mut points: HashMap<HumanBone, Vec<Vec3>> = HashMap::new();
-    let spacing = SAMPLE * scale;
+fn flesh(skin: &rikka_physics_tailor::Body, parts: &[Part], scale: f32) -> Vec<Flesh> {
+    let mut flesh = Vec::new();
     for triangle in &skin.triangles {
         let corners = triangle.map(|corner| skin.vertices[corner as usize].rest);
-        let longest = (0..3)
-            .map(|side| corners[side].distance(corners[(side + 1) % 3]))
-            .fold(0.0, f32::max);
-        let steps = ((longest / spacing).ceil() as usize).clamp(1, MAX_SAMPLES);
-        for one in 0..=steps {
-            for two in 0..=steps - one {
-                let weights = [
-                    one as f32 / steps as f32,
-                    two as f32 / steps as f32,
-                    (steps - one - two) as f32 / steps as f32,
-                ];
-                let nearest = (0..3)
-                    .max_by(|a, b| weights[*a].total_cmp(&weights[*b]))
-                    .unwrap_or(0);
-                let Some((bone, _)) = parts[triangle[nearest] as usize] else {
-                    continue;
-                };
-                if !SHELLED.contains(&bone) {
-                    continue;
-                }
-                let point =
-                    corners[0] * weights[0] + corners[1] * weights[1] + corners[2] * weights[2];
-                points.entry(bone).or_default().push(point);
+        for sample in samples(corners, SAMPLE * scale) {
+            let part = parts[triangle[sample.nearest()] as usize];
+            if let Some((bone, _)) = part.filter(|(bone, _)| !Region::for_bone(*bone).is_arm()) {
+                flesh.push(Flesh {
+                    bone,
+                    point: sample.point,
+                });
             }
         }
+    }
+    flesh
+}
+
+fn obstacles(body: &Body, rest: &Worlds, flesh: &[Flesh], scale: f32) -> Vec<Obstacle> {
+    let mut points: HashMap<HumanBone, Vec<Vec3>> = HashMap::new();
+    for flesh in flesh.iter().filter(|flesh| SHELLED.contains(&flesh.bone)) {
+        points.entry(flesh.bone).or_default().push(flesh.point);
     }
     SHELLED
         .into_iter()
@@ -188,10 +197,11 @@ fn obstacles(
                 .map(|point| joint.local(*point))
                 .filter(|local| (low..=high).contains(&local.dot(axis)))
                 .collect();
-            let shell = Shell::fit(axis, SLICE * scale, &local)?;
+            let shell = Shell::closed(axis, SLICE * scale, &local)?;
             let (centre, radius) = shell.bound();
             Some(Obstacle {
                 region: Region::for_bone(bone),
+                cover: Cover::Skin,
                 bone,
                 shell,
                 centre,
@@ -263,8 +273,8 @@ fn probes(
         let facing = obstacles
             .iter()
             .enumerate()
-            .filter(|(_, obstacle)| region.avoids() & obstacle.region.bit() != 0)
-            .fold(0, |mask, (index, _)| mask | 1 << index);
+            .filter(|(_, obstacle)| region.avoids(obstacle.cover) & obstacle.region.bit() != 0)
+            .fold(0, |mask: Mask, (index, _)| mask | 1 << index);
         probes.push(Probe {
             region,
             bone,
@@ -301,7 +311,7 @@ fn clusters(probes: &[Probe]) -> Vec<Cluster> {
 fn probing(region: Region, bone: HumanBone) -> bool {
     match region {
         Region::Hand(side) => bone == side.hand(),
-        _ => region.avoids() != 0,
+        _ => region.probes(),
     }
 }
 

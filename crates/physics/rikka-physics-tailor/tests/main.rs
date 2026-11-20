@@ -4,3 +4,4 @@ mod cloth_settings;
 mod pick;
 mod strands;
 mod support;
+mod wearer;

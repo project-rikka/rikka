@@ -15,7 +15,6 @@ use crate::layout::topology::{Topology, ancestor_chain};
 const STRETCH_LIMIT: f32 = 0.1;
 const BUCKLE_ANGLE: f32 = 0.35;
 const SHEAR_SHARE: f32 = 0.5;
-const BACKSTOP_TIP_GAIN: f32 = 0.5;
 const LATERAL_SHARE: f32 = 0.25;
 const HARDEST_COMPLIANCE: f32 = -9.0;
 const COMPLIANCE_DECADES: f32 = 7.0;
@@ -211,8 +210,7 @@ fn traits(topology: &Topology, asset: &ClothAsset, styles: &[Style]) -> Vec<Trai
             let described = &described_piece.particles[particle];
             let style = &styles[piece];
             let depth = described.depth.clamp(0.0, 1.0);
-            let reach =
-                described.reach * described.spread.max(0.0) * style.max_distance.sample(depth);
+            let reach = style.reach_at(described.reach, described.spread, depth);
             let carry = style.inertia.depth_carried * (1.0 - depth * depth);
             let radius = described.radius.max(NEAREST_GAP);
             let self_thickness = match described_piece.kind {
@@ -251,15 +249,7 @@ fn traits(topology: &Topology, asset: &ClothAsset, styles: &[Style]) -> Vec<Trai
                 b: [
                     topology.aero_areas[index],
                     style
-                        .backstop
-                        .filter(|distance| *distance >= 0.0)
-                        .map(|distance| {
-                            if described_piece.kind == PieceKind::Sheet {
-                                distance * (1.0 + BACKSTOP_TIP_GAIN * depth * depth)
-                            } else {
-                                distance
-                            }
-                        })
+                        .backstop_at(described_piece.kind, depth)
                         .unwrap_or(OFF),
                     self_thickness,
                     body_radius,

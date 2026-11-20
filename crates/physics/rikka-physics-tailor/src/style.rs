@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use crate::asset::PieceKind;
+
 pub const CURVE_SAMPLES: usize = 16;
+
+const BACKSTOP_TIP_GAIN: f32 = 0.5;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Curve {
@@ -122,4 +126,26 @@ pub struct Style {
     pub thickness: f32,
     pub self_collision: bool,
     pub flutter: Flutter,
+}
+
+impl Style {
+    #[must_use]
+    pub fn reach_at(&self, reach: f32, spread: f32, depth: f32) -> f32 {
+        reach * spread.max(0.0) * self.max_distance.sample(depth)
+    }
+
+    #[must_use]
+    pub fn backstop_at(&self, kind: PieceKind, depth: f32) -> Option<f32> {
+        let distance = self.backstop.filter(|distance| *distance >= 0.0)?;
+        Some(match kind {
+            PieceKind::Sheet => distance * (1.0 + BACKSTOP_TIP_GAIN * depth * depth),
+            PieceKind::Strands => distance,
+        })
+    }
+
+    pub(crate) fn yield_at(&self, kind: PieceKind, reach: f32, spread: f32, depth: f32) -> f32 {
+        let reach = self.reach_at(reach, spread, depth);
+        self.backstop_at(kind, depth)
+            .map_or(reach, |backstop| backstop.min(reach))
+    }
 }

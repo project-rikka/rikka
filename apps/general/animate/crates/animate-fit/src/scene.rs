@@ -1,7 +1,7 @@
 use animate_body::{HumanBone, Joint, Worlds};
 use rikka_model_core::glam::Vec3;
 
-use crate::physique::Physique;
+use crate::physique::{Mask, Physique};
 use crate::region::Region;
 
 #[derive(Debug)]
@@ -65,7 +65,7 @@ impl<'a> Scene<'a> {
                     let apart = self.holder(*obstacle).local(centre).distance(shape.centre);
                     apart - shape.radius - cluster.radius <= margin
                 })
-                .fold(0, |mask, obstacle| mask | 1 << obstacle);
+                .fold(0, |mask: Mask, obstacle| mask | 1 << obstacle);
             if near == 0 {
                 continue;
             }
@@ -81,13 +81,13 @@ impl<'a> Scene<'a> {
         pairs
     }
 
-    pub(crate) fn touching(&self, probe: usize, within: f32) -> u16 {
+    pub(crate) fn touching(&self, probe: usize, within: f32) -> Mask {
         bits(self.physique.probes[probe].facing)
             .filter(|obstacle| self.depth(probe, *obstacle) > -within)
             .fold(0, |mask, obstacle| mask | 1 << obstacle)
     }
 }
 
-fn bits(mask: u16) -> impl Iterator<Item = usize> {
-    (0..u16::BITS as usize).filter(move |index| mask & 1 << index != 0)
+fn bits(mask: Mask) -> impl Iterator<Item = usize> {
+    (0..Mask::BITS as usize).filter(move |index| mask & 1 << index != 0)
 }

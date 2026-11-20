@@ -7,7 +7,7 @@ use glam::Vec3;
 
 use crate::cloth_settings::Role;
 use crate::figure::Figure;
-use crate::geometry::{PointGrid, Shell, Union, area, is_proper};
+use crate::geometry::{PointGrid, Shell, area, is_proper};
 use crate::proxy::{Proxy, UNMAPPED};
 use cluster::Clusters;
 use envelope::Envelope;
@@ -26,7 +26,7 @@ pub(crate) struct Sheet {
 impl Sheet {
     pub(crate) fn new(figure: &Figure<'_>, members: &[u32], roles: &[Role]) -> Option<Sheet> {
         let same = figure.same_distance();
-        let (seed_of, count) = weld(figure, members, same);
+        let (seed_of, count) = figure.weld(members, same);
         let mut positions = vec![Vec3::ZERO; count];
         let mut counts = vec![0u32; count];
         let mut pinned = vec![false; count];
@@ -128,29 +128,4 @@ impl Sheet {
         proxy.spread_mass();
         Some(proxy)
     }
-}
-
-fn weld(figure: &Figure<'_>, members: &[u32], radius: f32) -> (Vec<u32>, usize) {
-    let grid = PointGrid::new(
-        members
-            .iter()
-            .enumerate()
-            .map(|(at, member)| (at as u32, figure.vertices[*member as usize].position)),
-        radius * 2.0,
-    );
-    let mut union = Union::new(members.len());
-    for (at, member) in members.iter().enumerate() {
-        let position = figure.vertices[*member as usize].position;
-        for other in grid.near(position, radius) {
-            if other as usize > at
-                && figure.vertices[members[other as usize] as usize]
-                    .position
-                    .distance(position)
-                    <= radius
-            {
-                union.join(at as u32, other);
-            }
-        }
-    }
-    union.labels()
 }

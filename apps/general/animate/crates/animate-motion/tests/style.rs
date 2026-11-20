@@ -7,7 +7,7 @@ use animate_solve::reach;
 use rikka_humanoid::Anatomy;
 use rikka_model_core::Pose;
 use rikka_model_core::glam::{Quat, Vec3};
-use rikka_physics_tailor::{ClothAnalysis, ClothSettings};
+use rikka_physics_tailor::{ClothAnalysis, ClothSettings, Wearer};
 
 use crate::evaluate::{dancing, eye, keyed, motion, rest, same};
 use crate::support::{BODY, MODEL};
@@ -16,9 +16,8 @@ static PHYSIQUE: LazyLock<Arc<Physique>> = LazyLock::new(|| {
     let anatomy = Anatomy::recognize(&MODEL);
     let analysis =
         ClothAnalysis::new(&MODEL, &anatomy, &ClothSettings::new()).expect("miku analyses");
-    let skin = rikka_physics_tailor::Body::from_model(&MODEL, &anatomy, &analysis)
-        .expect("miku has a skin");
-    Arc::new(Physique::new(&BODY, &MODEL, &skin))
+    let wearer = Wearer::from_model(&MODEL, &anatomy, &analysis).expect("miku has a skin");
+    Arc::new(Physique::new(&BODY, &MODEL, &wearer))
 });
 
 fn reaching(torso: f32) -> HumanMotion {

@@ -19,8 +19,33 @@ struct Spot {
     radius: f32,
 }
 
+enum Level {
+    Within(f32),
+    Beyond(f32),
+}
+
 impl Shell {
-    pub(crate) fn fit(axis: Vec3, slice: f32, points: &[Vec3]) -> Option<Self> {
+    pub(crate) fn closed(axis: Vec3, slice: f32, points: &[Vec3]) -> Option<Self> {
+        let (mut shell, sampled) =
+            Self::gathered(axis, slice, points.iter().map(|point| (*point, 0.0)))?;
+        for ring in &mut shell.rings {
+            fill(ring);
+        }
+        fill_between(&mut shell.rings, &sampled);
+        Some(shell)
+    }
+
+    pub(crate) fn open(axis: Vec3, slice: f32, insets: &[(Vec3, f32)]) -> Option<Self> {
+        let (mut shell, sampled) = Self::gathered(axis, slice, insets.iter().copied())?;
+        fill_between(&mut shell.rings, &sampled);
+        Some(shell)
+    }
+
+    fn gathered(
+        axis: Vec3,
+        slice: f32,
+        insets: impl Iterator<Item = (Vec3, f32)> + Clone,
+    ) -> Option<(Self, Vec<bool>)> {
         let first = axis.any_orthonormal_vector();
         let mut shell = Self {
             axis,
@@ -29,28 +54,28 @@ impl Shell {
             slice,
             rings: Vec::new(),
         };
-        let spots: Vec<Spot> = points.iter().map(|point| shell.spot(*point)).collect();
-        let (from, to) = spots
-            .iter()
-            .fold((f32::MAX, f32::MIN), |(low, high), spot| {
-                (low.min(spot.height), high.max(spot.height))
+        let (from, to) = insets
+            .clone()
+            .map(|(point, _)| point.dot(axis))
+            .fold((f32::MAX, f32::MIN), |(low, high), height| {
+                (low.min(height), high.max(height))
             });
         if from > to {
             return None;
         }
         shell.from = from;
-        let mut rings = vec![[0.0f32; SECTORS]; ((to - from) / slice) as usize + 1];
-        for spot in &spots {
-            let ring = &mut rings[((spot.height - from) / slice) as usize];
+        let count = ((to - from) / slice) as usize + 1;
+        let mut rings = vec![[0.0f32; SECTORS]; count];
+        let mut sampled = vec![false; count];
+        for (point, inset) in insets {
+            let spot = shell.spot(point);
+            let level = ((spot.height - from) / slice) as usize;
             let sector = (spot.sector as usize).min(SECTORS - 1);
-            ring[sector] = ring[sector].max(spot.radius);
+            rings[level][sector] = rings[level][sector].max(spot.radius - inset);
+            sampled[level] = true;
         }
-        for ring in &mut rings {
-            fill(ring);
-        }
-        fill_between(&mut rings);
         shell.rings = rings;
-        Some(shell)
+        Some((shell, sampled))
     }
 
     fn spot(&self, local: Vec3) -> Spot {
@@ -75,25 +100,42 @@ impl Shell {
 
     pub(crate) fn distance(&self, local: Vec3) -> f32 {
         let spot = self.spot(local);
+        match self.level(&spot) {
+            Level::Beyond(beyond) => beyond * self.slice + spot.radius,
+            Level::Within(level) => spot.radius - self.edge_at(level, spot.sector),
+        }
+    }
+
+    pub(crate) fn edge(&self, local: Vec3) -> Option<f32> {
+        let spot = self.spot(local);
+        match self.level(&spot) {
+            Level::Beyond(_) => None,
+            Level::Within(level) => Some(self.edge_at(level, spot.sector)),
+        }
+    }
+
+    fn level(&self, spot: &Spot) -> Level {
         let level = (spot.height - self.from) / self.slice - 0.5;
         let last = self.rings.len() as f32 - 1.0;
         let beyond = (-0.5 - level).max(level - last - 0.5);
-        if beyond > 0.0 {
-            return beyond * self.slice + spot.radius.max(0.0);
+        match beyond > 0.0 {
+            true => Level::Beyond(beyond),
+            false => Level::Within(level.clamp(0.0, last)),
         }
-        let level = level.clamp(0.0, last);
+    }
+
+    fn edge_at(&self, level: f32, sector: f32) -> f32 {
         let below = level.floor() as usize;
         let above = (below + 1).min(self.rings.len() - 1);
         let rise = level - below as f32;
-        let edge = |ring: &[f32; SECTORS]| {
-            let centred = spot.sector - 0.5;
+        let around = |ring: &[f32; SECTORS]| {
+            let centred = sector - 0.5;
             let low = centred.floor();
             let share = centred - low;
             let sector = (low as isize).rem_euclid(SECTORS as isize) as usize;
             ring[sector] + (ring[(sector + 1) % SECTORS] - ring[sector]) * share
         };
-        let edge = edge(&self.rings[below]) * (1.0 - rise) + edge(&self.rings[above]) * rise;
-        spot.radius - edge
+        around(&self.rings[below]) * (1.0 - rise) + around(&self.rings[above]) * rise
     }
 }
 
@@ -129,10 +171,8 @@ fn fill(ring: &mut [f32; SECTORS]) {
     }
 }
 
-fn fill_between(rings: &mut [[f32; SECTORS]]) {
-    let filled: Vec<usize> = (0..rings.len())
-        .filter(|ring| rings[*ring].iter().any(|radius| *radius > 0.0))
-        .collect();
+fn fill_between(rings: &mut [[f32; SECTORS]], sampled: &[bool]) {
+    let filled: Vec<usize> = (0..rings.len()).filter(|ring| sampled[*ring]).collect();
     for ring in 0..rings.len() {
         if filled.contains(&ring) {
             continue;
