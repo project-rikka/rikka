@@ -109,11 +109,12 @@ fn angle_normalized(a: Vec3, b: Vec3) -> f32 {
     }
 }
 
-fn face_angles(mesh: &Polymesh, face: usize) -> Vec<f32> {
+fn face_angles(mesh: &Polymesh, face: usize, angles: &mut Vec<f32>) {
     let verts = mesh.face_verts(face);
     let at = |index: usize| mesh.positions[verts[index] as usize];
     let count = verts.len();
-    let mut angles = vec![0.0; count];
+    angles.clear();
+    angles.resize(count, 0.0);
     let mut this = count - 1;
     let mut previous = normalize(at(this - 1) - at(this));
     for next in 0..count {
@@ -122,7 +123,6 @@ fn face_angles(mesh: &Polymesh, face: usize) -> Vec<f32> {
         previous = following;
         this = next;
     }
-    angles
 }
 
 fn mode_pairs(mesh: &Polymesh, mode: WeightedNormalMode) -> Vec<(f32, usize)> {
@@ -132,13 +132,15 @@ fn mode_pairs(mesh: &Polymesh, mode: WeightedNormalMode) -> Vec<(f32, usize)> {
             .collect(),
         WeightedNormalMode::CornerAngle | WeightedNormalMode::FaceAreaAngle => {
             let mut pairs = Vec::with_capacity(mesh.corner_count());
+            let mut angles = Vec::new();
             for face in 0..mesh.face_count() {
                 let area = match mode {
                     WeightedNormalMode::FaceAreaAngle => face_area(mesh, face),
                     _ => 1.0,
                 };
                 let start = mesh.face(face).start;
-                for (offset, angle) in face_angles(mesh, face).into_iter().enumerate() {
+                face_angles(mesh, face, &mut angles);
+                for (offset, &angle) in angles.iter().enumerate() {
                     let value = PI - angle;
                     let value = match mode {
                         WeightedNormalMode::FaceAreaAngle => value * area,
@@ -249,22 +251,17 @@ pub(crate) fn evaluate(settings: &WeightedNormal, mesh: &mut Polymesh) {
             false => normal,
         };
     }
-    let targets: Vec<Vec3> = match settings.keep_sharp || has_group {
-        true => {
-            let current = mesh.corner_normals();
-            (0..mesh.corner_count())
-                .map(|corner| match items[item_of[corner]].normal {
-                    Vec3::ZERO => current[corner],
-                    normal => normal,
-                })
-                .collect()
-        }
-        false => (0..mesh.corner_count())
-            .map(|corner| items[item_of[corner]].normal)
-            .collect(),
+    let existing = match settings.keep_sharp || has_group {
+        true => mesh.custom_normals(),
+        false => None,
     };
+    let targets: Vec<Vec3> = (0..mesh.corner_count())
+        .map(|corner| match (items[item_of[corner]].normal, existing) {
+            (Vec3::ZERO, Some(existing)) => existing[corner].normalize_or_zero(),
+            (normal, _) => normal,
+        })
+        .collect();
     mesh.sharp_edges_mut();
-    let encoded = mesh.encode_custom_normals(&targets);
-    let decoded = mesh.decode_custom_normals(&encoded);
+    let decoded = mesh.quantize_custom_normals(&targets);
     mesh.custom_normals_mut().copy_from_slice(&decoded);
 }

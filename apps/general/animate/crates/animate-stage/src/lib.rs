@@ -9,7 +9,6 @@ mod holding;
 mod lens;
 mod locator;
 mod marks;
-mod offscreen;
 mod pacer;
 mod pending;
 mod physics;

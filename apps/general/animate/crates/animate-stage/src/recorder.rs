@@ -3,10 +3,10 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
 use std::time::Instant;
 
 use rikka_renderer::{Readback, Renderer};
+use rikka_renderer_3d::OffscreenViewport;
 use rikka_types::PixelSize;
 
-use super::capture::{SETTLE_LIMIT, WARMUP_RENDERS};
-use super::offscreen::Offscreen;
+use super::capture::{SETTLE_LIMIT, WARMUP_RENDERS, still_config};
 use super::render::Render;
 use super::scene::Scene;
 use super::{CaptureView, Replica, StageError};
@@ -14,7 +14,7 @@ use super::{CaptureView, Replica, StageError};
 pub struct Recorder {
     scene: Scene,
     render: Render,
-    offscreen: Offscreen,
+    offscreen: OffscreenViewport,
     shots: u64,
     renderer: Renderer,
     roused: Receiver<()>,
@@ -40,7 +40,7 @@ impl Recorder {
         if let Some(error) = render.errors.pop() {
             return Err(error);
         }
-        let offscreen = Offscreen::open(&mut renderer, size)?;
+        let offscreen = OffscreenViewport::open(&mut renderer, still_config(size))?;
         Ok(Self {
             scene: input.scene,
             render,

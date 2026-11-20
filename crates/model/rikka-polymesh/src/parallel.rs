@@ -35,7 +35,7 @@ fn ranges(len: usize, grain: usize) -> Vec<Range<usize>> {
         .collect()
 }
 
-fn map_chunks<R: Send>(
+pub(crate) fn map_chunks<R: Send>(
     len: usize,
     grain: usize,
     work: impl Fn(Range<usize>) -> R + Sync,

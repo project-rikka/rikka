@@ -348,6 +348,23 @@ impl Polymesh {
     }
 
     pub fn encode_custom_normals(&mut self, normals: &[Vec3]) -> Vec<[i16; 2]> {
+        self.encode_with_fans(normals).0
+    }
+
+    pub fn quantize_custom_normals(&mut self, normals: &[Vec3]) -> Vec<Vec3> {
+        let (encoded, fans) = self.encode_with_fans(normals);
+        let mut decoded = vec![Vec3::ZERO; self.corner_count()];
+        for fan in &fans {
+            let data = encoded[fan.corners[0] as usize];
+            let normal = decode(&fan.space, [i32::from(data[0]), i32::from(data[1])]);
+            for &corner in &fan.corners {
+                decoded[corner as usize] = normal;
+            }
+        }
+        decoded
+    }
+
+    fn encode_with_fans(&mut self, normals: &[Vec3]) -> (Vec<[i16; 2]>, Vec<Fan>) {
         let corners = self.corner_count();
         let faces = self.face_normals();
         let mut sharp_edges = self
@@ -444,7 +461,7 @@ impl Polymesh {
                 encoded[corner as usize] = data;
             }
         }
-        encoded
+        (encoded, fans)
     }
 
     pub fn sharpen_by_angle(&mut self, angle: f32, keep_sharp_edges: bool) {
@@ -515,19 +532,46 @@ impl Polymesh {
         faces: &[Vec3],
         sharpness: &Sharpness<'_>,
         custom: Option<&[[i16; 2]]>,
-        mut fans: Option<&mut Vec<Fan>>,
+        fans: Option<&mut Vec<Fan>>,
     ) -> Vec<Vec3> {
-        let mut normals = vec![Vec3::ZERO; self.corner_count()];
         let point_faces = self.point_faces();
+        let want_fans = fans.is_some();
+        let parts = parallel::map_chunks(self.point_count(), GRAIN, |range| {
+            self.split_range(range, &point_faces, faces, sharpness, custom, want_fans)
+        });
+        let mut normals = vec![Vec3::ZERO; self.corner_count()];
+        let mut fans = fans;
+        for (written, found) in parts {
+            for (corner, normal) in written {
+                normals[corner as usize] = normal;
+            }
+            if let Some(fans) = fans.as_deref_mut() {
+                fans.extend(found);
+            }
+        }
+        normals
+    }
+
+    fn split_range(
+        &self,
+        range: std::ops::Range<usize>,
+        point_faces: &GroupedIndices,
+        faces: &[Vec3],
+        sharpness: &Sharpness<'_>,
+        custom: Option<&[[i16; 2]]>,
+        want_fans: bool,
+    ) -> (Vec<(u32, Vec3)>, Vec<Fan>) {
+        let mut written: Vec<(u32, Vec3)> = Vec::new();
+        let mut found: Vec<Fan> = Vec::new();
         let mut infos: Vec<CornerInfo> = Vec::new();
         let mut others: Vec<u32> = Vec::new();
         let mut links: Vec<Link> = Vec::new();
         let mut directions: Vec<Vec3> = Vec::new();
         let mut visited: Vec<bool> = Vec::new();
         let mut fan: Vec<usize> = Vec::new();
-        let spaces_needed = custom.is_some() || fans.is_some();
+        let spaces_needed = custom.is_some() || want_fans;
 
-        for point in 0..self.point_count() {
+        for point in range {
             let around = point_faces.get(point);
             if around.is_empty() {
                 continue;
@@ -654,8 +698,8 @@ impl Polymesh {
                         let count = fan.len() as i32;
                         normal = decode(&space, [sum[0] / count, sum[1] / count]);
                     }
-                    if let Some(fans) = fans.as_deref_mut() {
-                        fans.push(Fan {
+                    if want_fans {
+                        found.push(Fan {
                             corners: fan
                                 .iter()
                                 .map(|&local| infos[local].corner as u32)
@@ -665,7 +709,7 @@ impl Polymesh {
                     }
                 }
                 for &local in &fan {
-                    normals[infos[local].corner] = normal;
+                    written.push((infos[local].corner as u32, normal));
                     visited[local] = true;
                 }
                 seen += fan.len();
@@ -677,6 +721,6 @@ impl Polymesh {
                 }
             }
         }
-        normals
+        (written, found)
     }
 }

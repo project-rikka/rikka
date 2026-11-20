@@ -2,17 +2,20 @@ use std::time::{Duration, Instant};
 
 use animate_cast::{Shot, time_of};
 use rikka_renderer::Renderer;
-use rikka_renderer_3d::Three;
+use rikka_renderer_3d::{OffscreenViewport, Three, ViewportConfig};
 use rikka_types::PixelSize;
 use tokio::sync::oneshot;
 
-use super::offscreen::Offscreen;
 use crate::StageError;
 use crate::render::Render;
 use crate::scene::Scene;
 
 pub(super) const WARMUP_RENDERS: usize = 4;
 pub(super) const SETTLE_LIMIT: Duration = Duration::from_secs(60);
+
+pub(super) fn still_config(size: PixelSize) -> ViewportConfig {
+    ViewportConfig::new(size.width, size.height).identity(false)
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CaptureView {
@@ -40,7 +43,7 @@ pub struct Capture {
 #[derive(Debug)]
 pub(super) struct PendingCapture {
     capture: Capture,
-    offscreen: Option<Offscreen>,
+    offscreen: Option<OffscreenViewport>,
     pictures: Vec<Picture>,
     started: Instant,
 }
@@ -88,7 +91,10 @@ impl Render {
         };
         let offscreen = match &mut pending.offscreen {
             Some(offscreen) => offscreen,
-            offscreen @ None => offscreen.insert(Offscreen::open(renderer, capture.size)?),
+            offscreen @ None => offscreen.insert(OffscreenViewport::open(
+                renderer,
+                still_config(capture.size),
+            )?),
         };
         self.render_still(
             renderer,
@@ -101,8 +107,7 @@ impl Render {
         if !self.dressing.is_settled() && pending.started.elapsed() < SETTLE_LIMIT {
             return Ok(false);
         }
-        let target = offscreen.present(renderer)?;
-        let rgba = renderer.read_pixels(target)?;
+        let rgba = offscreen.read_pixels(renderer)?;
         pending.pictures.push(Picture { frame, rgba });
         pending.started = Instant::now();
         Ok(pending.pictures.len() == capture.frames.len())
@@ -112,7 +117,7 @@ impl Render {
         &mut self,
         renderer: &mut Renderer,
         scene: &Scene,
-        offscreen: &mut Offscreen,
+        offscreen: &mut OffscreenViewport,
         time: f32,
         view: CaptureView,
         renders: usize,
