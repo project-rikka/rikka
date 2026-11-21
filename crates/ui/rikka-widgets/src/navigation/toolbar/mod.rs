@@ -139,6 +139,49 @@ impl Toolbar {
         row.build().keyed(CONTENT)
     }
 
+    fn room(&self, room: f32) -> Room {
+        Room {
+            inner: (room - self.padding.horizontal()).max(0.0),
+            gap: self.gap,
+            divider: self.divider(),
+            more: More::width(self.size),
+        }
+    }
+
+    fn reprioritized(&self, measures: &[Measure]) -> bool {
+        measures.len() == self.entries.len()
+            && self
+                .entries
+                .iter()
+                .zip(measures)
+                .any(|(entry, measure)| match (entry, measure) {
+                    (Entry::Group { priority, .. }, Measure::Group { priority: was, .. }) => {
+                        priority != was
+                    }
+                    _ => false,
+                })
+    }
+
+    fn measures(&self, measures: &[Measure]) -> Vec<Measure> {
+        self.entries
+            .iter()
+            .zip(measures)
+            .map(|(entry, measure)| match (entry, *measure) {
+                (
+                    Entry::Group { priority, .. },
+                    Measure::Group {
+                        width, overflows, ..
+                    },
+                ) => Measure::Group {
+                    width,
+                    priority: *priority,
+                    overflows,
+                },
+                (_, measure) => measure,
+            })
+            .collect()
+    }
+
     fn overflow(&self, hidden: &[bool]) -> Vec<MenuItem> {
         let mut items = Vec::new();
         for (entry, _) in self
@@ -164,6 +207,7 @@ pub struct ToolbarState {
     hidden: Vec<bool>,
     divided: Vec<bool>,
     room: f32,
+    measures: Vec<Measure>,
 }
 
 impl Widget for Toolbar {
@@ -188,6 +232,10 @@ impl Widget for Toolbar {
     fn build(&self, state: &mut ToolbarState) -> Vec<Element> {
         if state.hidden.len() != self.entries.len() {
             state.hidden = vec![false; self.entries.len()];
+        }
+        if self.reprioritized(&state.measures) {
+            state.measures = self.measures(&state.measures);
+            state.hidden = fit::hidden(&state.measures, &self.room(state.room));
         }
         state.divided = fit::divided(&self.groups(), &state.hidden, self.divided);
         let mut fresh = self.contents.borrow_mut().take().map(Vec::into_iter);
@@ -227,7 +275,7 @@ impl Widget for Toolbar {
 
     fn arranged(&self, state: &mut ToolbarState, arranged: Arranged<'_>) -> bool {
         let room = arranged.room().width();
-        let measures: Vec<Measure> = self
+        let laid: Vec<Measure> = self
             .entries
             .iter()
             .enumerate()
@@ -250,19 +298,12 @@ impl Widget for Toolbar {
                 Entry::Spacer => Measure::Flexible { least: 0.0 },
             })
             .collect();
-        let hidden = fit::hidden(
-            &measures,
-            &Room {
-                inner: (room - self.padding.horizontal()).max(0.0),
-                gap: self.gap,
-                divider: self.divider(),
-                more: More::width(self.size),
-            },
-        );
+        let hidden = fit::hidden(&laid, &self.room(room));
         let moved = room != state.room && hidden.contains(&true);
         let changed = hidden != state.hidden || moved;
         state.hidden = hidden;
         state.room = room;
+        state.measures = laid;
         changed
     }
 }

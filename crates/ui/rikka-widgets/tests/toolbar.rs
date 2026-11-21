@@ -47,7 +47,7 @@ fn shown(width: f32) -> (TypedUi<Bench>, Scene) {
     (ui, scene)
 }
 
-fn click(ui: &mut TypedUi<Bench>, scene: &mut Scene, slot: usize) {
+fn click<S: State>(ui: &mut TypedUi<S>, scene: &mut Scene, slot: usize) {
     let at = Point::new(FIRST + SLOT * slot as f32, ROW);
     ui.handle_event(Event::PointerMoved(at));
     ui.handle_event(Event::PointerPressed {
@@ -63,7 +63,7 @@ fn click(ui: &mut TypedUi<Bench>, scene: &mut Scene, slot: usize) {
     ui.render(scene);
 }
 
-fn press(ui: &mut TypedUi<Bench>, scene: &mut Scene, key: Key) {
+fn press<S: State>(ui: &mut TypedUi<S>, scene: &mut Scene, key: Key) {
     ui.handle_event(Event::KeyPressed {
         key,
         code: KeyCode::UNKNOWN,
@@ -99,4 +99,42 @@ fn overflowed_sliders_follow_arrow_keys() {
         press(&mut ui, &mut scene, key);
     }
     assert_eq!(ui.state().volume, 0.5);
+}
+
+#[derive(State, Default)]
+struct Tabs {
+    pinned: usize,
+    pressed: Vec<&'static str>,
+}
+
+fn tabs(tabs: &Tabs) -> impl View {
+    let mut bar = toolbar();
+    for (index, name) in ["a", "b", "c", "d"].into_iter().enumerate() {
+        let tab = tool_button(MaterialSymbol::STAR, name).on_press(move |tabs: &mut Tabs| {
+            tabs.pressed.push(name);
+            tabs.pinned = index;
+        });
+        let priority = match index == tabs.pinned {
+            true => ToolPriority::Pinned,
+            false => ToolPriority::Normal,
+        };
+        bar = bar.group(tool_group([tab]).priority(priority));
+    }
+    column_of([bar]).fill()
+}
+
+#[test]
+fn newly_pinned_group_comes_out_of_overflow() {
+    let mut scene = Scene::new();
+    let mut ui = TypedUi::new(Tabs::default(), tabs, Theme::dark());
+    ui.set_viewport(Size::new(150.0, HEIGHT), 1.0);
+    ui.render(&mut scene);
+    ui.render(&mut scene);
+    click(&mut ui, &mut scene, 2);
+    for key in [Key::ArrowDown, Key::ArrowDown, Key::Enter] {
+        press(&mut ui, &mut scene, key);
+    }
+    ui.render(&mut scene);
+    click(&mut ui, &mut scene, 1);
+    assert_eq!(ui.state().pressed, ["d", "d"]);
 }
