@@ -1,7 +1,6 @@
 use rikka_mesh_modifiers::{Decimate, DecimateType, Delimit, SymmetryAxis};
 
 use crate::file::Record;
-use crate::write::Struct;
 
 const INVERT_GROUP: i64 = 1;
 const TRIANGULATE: i64 = 1 << 1;
@@ -44,31 +43,4 @@ pub(super) fn read(modifier: &Record<'_>) -> Decimate {
             .unwrap_or(1.0)
             .clamp(0.0, 1000.0),
     }
-}
-
-pub(super) fn write(decimate: &Decimate, record: &mut Struct<'_>) {
-    record
-        .set_int(
-            "mode",
-            TYPES
-                .iter()
-                .position(|kind| *kind == decimate.decimate_type)
-                .unwrap_or(0) as i64,
-        )
-        .set_float("percent", decimate.ratio)
-        .set_int("iter", i64::from(decimate.iterations))
-        .set_float("angle", decimate.angle_limit)
-        .set_int("delimit", i64::from(decimate.delimit.bits()))
-        .set_flag("flag", ALL_BOUNDARY, decimate.use_dissolve_boundaries)
-        .set_flag("flag", TRIANGULATE, decimate.use_collapse_triangulate)
-        .set_flag("flag", SYMMETRY, decimate.use_symmetry)
-        .set_int(
-            "symmetry_axis",
-            AXES.iter()
-                .position(|axis| *axis == decimate.symmetry_axis)
-                .unwrap_or(0) as i64,
-        )
-        .set_text("defgrp_name", &decimate.vertex_group)
-        .set_flag("flag", INVERT_GROUP, decimate.invert_vertex_group)
-        .set_float("defgrp_factor", decimate.vertex_group_factor);
 }

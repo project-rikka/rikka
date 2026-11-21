@@ -6,7 +6,7 @@ const CATALOG: &str = r#"{
   "components": {
     "base": {"name": "Rikka desktop", "summary": "The session", "offer": "required", "version": "0.1.0", "installed": true},
     "browser": {"name": "Browser", "summary": "Browse the web", "offer": "selected", "version": "0.1.0", "installed": true},
-    "modeler": {"name": "Modeler", "summary": "Model in 3D", "offer": "offered", "version": "0.2.0", "installed": false}
+    "cut": {"name": "Cut", "summary": "Edit video", "offer": "offered", "version": "0.2.0", "installed": false}
   }
 }"#;
 
@@ -25,18 +25,15 @@ fn apps_module_round_trips_choices() {
         BTreeSet::from(["browser".to_owned()])
     );
 
-    let chosen = BTreeSet::from(["modeler".to_owned(), "base".to_owned()]);
+    let chosen = BTreeSet::from(["cut".to_owned(), "base".to_owned()]);
     distribution.choose(&mut apps, &chosen).expect("it writes");
     let written = Document::parse(apps.source()).expect("output should parse as Nix");
-    assert_eq!(
-        written.get::<bool>("rikka.apps.modeler.enable"),
-        Ok(Some(true))
-    );
+    assert_eq!(written.get::<bool>("rikka.apps.cut.enable"), Ok(Some(true)));
     assert_eq!(written.get::<bool>("rikka.apps.browser.enable"), Ok(None));
     assert_eq!(written.get::<bool>("rikka.apps.base.enable"), Ok(None));
     assert_eq!(
         distribution.chosen(&written).expect("it reads"),
-        BTreeSet::from(["modeler".to_owned()])
+        BTreeSet::from(["cut".to_owned()])
     );
 }
 

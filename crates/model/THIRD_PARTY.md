@@ -7,11 +7,7 @@ These crates port algorithms, data structures and behaviour from [Blender](https
 - `rikka-mesh-edit`: the BMesh editable mesh kernel, its Euler operators, walkers, selection and custom-data interpolation.
 - `rikka-mesh-bevel`: `bmesh_bevel.cc`, the Bevel operator and modifier and `BKE_curveprofile`.
 - `rikka-mesh-boolean`: the exact and fast boolean solvers, the Intersect operators and the 2D constrained Delaunay triangulation.
-- `rikka-mesh-build`, `rikka-mesh-cut`, `rikka-mesh-reduce`, `rikka-mesh-shape`: the BMesh operators and Edit Mode mesh tools.
+- `rikka-mesh-reduce`: the BMesh removal and merge operators.
 - `rikka-mesh-modifiers`: the mesh modifiers.
 - `rikka-polymesh`: the mesh data layout, attributes and custom normals.
-- `rikka-armature`: armatures, pose evaluation, constraints, deformation and the `intern/iksolver` IK solver.
-- `rikka-uv`: UV unwrapping, projections and the parametrizer.
-- `rikka-uv-pack`: UV island packing and Lightmap Pack.
 - `rikka-spatial`: the KD-tree and BVH queries.
-- `rikka-model-scene`: scene data blocks and object operations.

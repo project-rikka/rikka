@@ -41,12 +41,6 @@ impl Layout {
     pub(crate) fn field_count(&self) -> usize {
         self.fields.len()
     }
-
-    pub(crate) fn fields(&self) -> impl Iterator<Item = (&str, &Field)> {
-        self.fields
-            .iter()
-            .map(|(name, field)| (name.as_str(), field))
-    }
 }
 
 #[derive(Debug)]

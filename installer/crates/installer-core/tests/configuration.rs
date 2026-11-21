@@ -212,13 +212,13 @@ fn flake_takes_nixpkgs_by_channel() {
 fn apps_module_enables_chosen_apps() {
     let mut chosen = answers();
     chosen.choose_app("paint", false);
-    chosen.choose_app("modeler", true);
+    chosen.choose_app("cut", true);
     chosen.choose_app("files", false);
     let files = generated(&chosen);
     let apps = Document::parse(file(&files, "rikka/apps.nix")).expect("output should parse as Nix");
     for (id, enabled) in [
         ("browser", Some(true)),
-        ("modeler", Some(true)),
+        ("cut", Some(true)),
         ("paint", None),
         ("files", None),
         ("base", None),

@@ -158,22 +158,6 @@ pub(crate) const COMPONENTS: &[Component] = &[
         &[icon("rikka-discord", "forum")],
     ),
     application(
-        "modeler",
-        Offer::Offered,
-        &[named(
-            "//apps/general/modeler:rikka-modeler",
-            "rikka-modeler",
-        )],
-        &[
-            data_file(
-                "apps/general/modeler/rikka-modeler.desktop",
-                APPLICATIONS_DIRECTORY,
-            ),
-            data_file("apps/general/modeler/rikka-modeler.xml", MIME_PACKAGES),
-        ],
-        &[icon("rikka-modeler", "deployed_code")],
-    ),
-    application(
         "proton",
         Offer::Offered,
         &[named("//apps/system/proton:rikka-proton", "rikka-proton")],

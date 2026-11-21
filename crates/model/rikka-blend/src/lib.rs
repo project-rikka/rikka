@@ -1,18 +1,7 @@
-mod export;
 pub(crate) mod file;
 pub(crate) mod read;
-mod scene;
-pub(crate) mod write;
 
-use rikka_model_core::{
-    Confidence, Exported, ImportCtx, ImportOptions, Importer, ImporterInfo, Input, Model, Resolver,
-    Result,
-};
-use rikka_model_scene::Scene;
-use rikka_types::CancelToken;
-
-pub use export::BlendExporter;
-pub use scene::{BlendOptions, BlendScene};
+use rikka_model_core::{Confidence, ImportCtx, Importer, ImporterInfo, Input, Model, Result};
 
 const NAME: &str = "Blender";
 
@@ -49,17 +38,4 @@ pub fn sniff(head: &[u8]) -> Confidence {
             None => Confidence::Maybe,
         },
     }
-}
-
-pub fn read_scene(
-    input: &Input<'_>,
-    resolver: &dyn Resolver,
-    options: &ImportOptions,
-    cancel: &CancelToken,
-) -> Result<BlendScene> {
-    scene::read(input, resolver, options, cancel)
-}
-
-pub fn write_scene(scene: &Scene, options: &BlendOptions) -> Result<Exported> {
-    scene::write(scene, options)
 }

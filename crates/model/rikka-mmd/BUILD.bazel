@@ -46,8 +46,5 @@ rikka_test(
 filegroup(
     name = "assets",
     srcs = glob(["assets/**"]),
-    visibility = [
-        "//apps/general/modeler/crates/modeler-session:__pkg__",
-        "//benchmarks:__subpackages__",
-    ],
+    visibility = ["//benchmarks:__subpackages__"],
 )

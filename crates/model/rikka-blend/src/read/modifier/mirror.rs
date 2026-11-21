@@ -1,9 +1,8 @@
 use rikka_mesh_modifiers::Mirror;
 use rikka_model_core::glam::Vec2;
 
-use super::{References, Targets};
+use super::References;
 use crate::file::Record;
-use crate::write::Struct;
 
 const CLIPPING: i64 = 1;
 const MIRROR_U: i64 = 1 << 1;
@@ -43,33 +42,4 @@ pub(super) fn read<'a>(modifier: &Record<'a>, refs: &dyn References<'a>) -> Mirr
         offset: pair("uv_offset_copy"),
         use_correct_order_on_merge: modifier.int("use_correct_order_on_merge").unwrap_or(0) != 0,
     }
-}
-
-pub(super) fn write(mirror: &Mirror, record: &mut Struct<'_>, targets: &dyn Targets) {
-    for axis in 0..3 {
-        record.set_flag("flag", AXIS_X << axis, mirror.use_axis[axis]);
-        record.set_flag("flag", BISECT_X << axis, mirror.use_bisect_axis[axis]);
-        record.set_flag(
-            "flag",
-            BISECT_FLIP_X << axis,
-            mirror.use_bisect_flip_axis[axis],
-        );
-    }
-    record
-        .set_flag("flag", CLIPPING, mirror.use_clip)
-        .set_flag("flag", NO_MERGE, !mirror.use_mirror_merge)
-        .set_flag("flag", VERTEX_GROUPS, mirror.use_mirror_vertex_groups)
-        .set_flag("flag", MIRROR_U, mirror.use_mirror_u)
-        .set_flag("flag", MIRROR_V, mirror.use_mirror_v)
-        .set_flag("flag", MIRROR_UDIM, mirror.use_mirror_udim)
-        .set_int("axis", 0)
-        .set_pointer("mirror_ob", targets.object(mirror.mirror_object))
-        .set_float("tolerance", mirror.merge_threshold)
-        .set_float("bisect_threshold", mirror.bisect_threshold)
-        .set_floats("uv_offset", &mirror.mirror_offset.to_array())
-        .set_floats("uv_offset_copy", &mirror.offset.to_array())
-        .set_bool(
-            "use_correct_order_on_merge",
-            mirror.use_correct_order_on_merge,
-        );
 }

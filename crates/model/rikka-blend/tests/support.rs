@@ -1,12 +1,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use rikka_blend::{BlendImporter, BlendScene, read_scene};
+use rikka_blend::BlendImporter;
 use rikka_model_core::glam::{Mat4, Vec3};
-use rikka_model_core::{
-    DirectoryResolver, Import, ImportOptions, Input, Model, NodeId, Pose, Registry, Result,
-};
-use rikka_types::CancelToken;
+use rikka_model_core::{Import, Model, NodeId, Pose, Registry};
 
 const ASSETS: &str = "crates/model/rikka-blend/assets";
 
@@ -16,27 +13,6 @@ pub(crate) fn asset(name: &str) -> PathBuf {
 
 pub(crate) fn registry() -> Arc<Registry> {
     Arc::new(Registry::new().with_importer(BlendImporter))
-}
-
-pub(crate) fn scene_from(name: &str, bytes: &[u8]) -> Result<BlendScene> {
-    let path = asset(name);
-    read_scene(
-        &Input::new(bytes, Some(&path)),
-        &DirectoryResolver::new(ASSETS),
-        &ImportOptions::default(),
-        &CancelToken::new(),
-    )
-}
-
-pub(crate) fn scene(name: &str) -> BlendScene {
-    let bytes = std::fs::read(asset(name)).expect("the asset exists");
-    scene_from(name, &bytes).expect("the Blender file is read as a scene")
-}
-
-pub(crate) fn keep_output(name: &str, bytes: &[u8]) {
-    if let Some(folder) = std::env::var_os("TEST_UNDECLARED_OUTPUTS_DIR") {
-        std::fs::write(PathBuf::from(folder).join(name), bytes).expect("the output is written");
-    }
 }
 
 pub(crate) fn read(name: &str) -> Model {

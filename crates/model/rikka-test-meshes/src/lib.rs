@@ -7,7 +7,6 @@ mod rng;
 mod samples;
 mod selection;
 mod sweep;
-mod uv;
 mod views;
 
 pub use check::{check, check_polymesh, is_finite, is_polymesh_finite};
@@ -22,5 +21,4 @@ pub use rng::Rng;
 pub use samples::{sample_meshes, sample_patches};
 pub use selection::{Amount, Selection};
 pub use sweep::Sweep;
-pub use uv::{UvSurface, seamed_grid};
 pub use views::{bounds, random_view, screen_point};

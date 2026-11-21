@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use rikka_blend::{BlendImporter, BlendOptions, write_scene};
+use rikka_blend::BlendImporter;
 use rikka_model_core::{Confidence, Import, Importer, Warning};
-use rikka_model_scene::{Empty, Object, ObjectData, Parent, Scene};
 
-use crate::support::{asset, registry, scene_from};
+use crate::support::{asset, registry};
 
 #[test]
 fn only_blender_files_are_claimed() {
@@ -37,10 +36,13 @@ fn unpacked_torus() -> Vec<u8> {
 #[test]
 fn corrupt_files_fail() {
     let unpacked = unpacked_torus();
-    let cases: [&[u8]; 3] = [
+    let studio = std::fs::read(asset("studio.blend")).expect("the asset exists");
+    let cases: [&[u8]; 5] = [
         b"BLENDER",
         b"BLENDER-v250REND",
+        b"BLENDER17-01v0502",
         &unpacked[..unpacked.len() / 2],
+        &studio[..studio.len() / 3],
     ];
     for bytes in cases {
         let result =
@@ -91,119 +93,5 @@ fn faces_naming_missing_vertices_are_dropped() {
             .any(|warning| matches!(warning, Warning::Repaired(_))),
         "{:?}",
         damaged.warnings
-    );
-}
-
-const LARGE_FILE_HEADER: usize = 17;
-const LARGE_BLOCK_HEADER: usize = 32;
-
-struct Block {
-    code: [u8; 4],
-    address: u64,
-    start: usize,
-    length: usize,
-}
-
-fn blocks(bytes: &[u8]) -> Vec<Block> {
-    let word = |at: usize| u64::from_le_bytes(bytes[at..at + 8].try_into().expect("eight bytes"));
-    let mut found = Vec::new();
-    let mut at = LARGE_FILE_HEADER;
-    while at + LARGE_BLOCK_HEADER <= bytes.len() {
-        let code: [u8; 4] = bytes[at..at + 4].try_into().expect("four bytes");
-        let length = word(at + 16) as usize;
-        let start = at + LARGE_BLOCK_HEADER;
-        found.push(Block {
-            code,
-            address: word(at + 8),
-            start,
-            length,
-        });
-        if &code == b"ENDB" {
-            break;
-        }
-        at = start + length;
-    }
-    found
-}
-
-fn written_pair() -> Vec<u8> {
-    let mut scene = Scene::new("Pair");
-    let root = scene.scene_collection();
-    let first = scene
-        .add_object(
-            Object::new("First", ObjectData::Empty(Empty::default())),
-            root,
-        )
-        .expect("added");
-    let second = scene
-        .add_object(
-            Object::new("Second", ObjectData::Empty(Empty::default())),
-            root,
-        )
-        .expect("added");
-    scene.object_mut(first).expect("exists").parent = Some(Parent::Object(second));
-    write_scene(&scene, &BlendOptions::new())
-        .expect("the scene is written")
-        .bytes
-}
-
-#[test]
-fn damaged_scene_files_fail() {
-    let written = written_pair();
-    let mut wrong_dna = written.clone();
-    let dna = blocks(&written)
-        .into_iter()
-        .find(|block| &block.code == b"DNA1")
-        .expect("the file has a DNA1 block");
-    wrong_dna[dna.start..dna.start + 4].copy_from_slice(b"XXXX");
-    let studio = std::fs::read(asset("studio.blend")).expect("the asset exists");
-    let cases: [&[u8]; 4] = [
-        &written[..written.len() / 2],
-        &wrong_dna,
-        &studio[..studio.len() / 3],
-        b"BLENDER17-01v0502",
-    ];
-    for bytes in cases {
-        assert!(
-            scene_from("damaged.blend", bytes).is_err(),
-            "{} bytes were accepted",
-            bytes.len()
-        );
-    }
-}
-
-#[test]
-fn cyclic_parents_are_broken() {
-    let mut bytes = written_pair();
-    let objects: Vec<Block> = blocks(&bytes)
-        .into_iter()
-        .filter(|block| &block.code == b"OB\0\0")
-        .collect();
-    let named = |name: &[u8]| {
-        objects
-            .iter()
-            .find(|block| {
-                bytes[block.start..block.start + block.length]
-                    .windows(name.len())
-                    .any(|window| window == name)
-            })
-            .expect("the object block exists")
-    };
-    let (first, second) = (named(b"OBFirst\0"), named(b"OBSecond\0"));
-    let parent = bytes[first.start..first.start + first.length]
-        .windows(8)
-        .position(|window| window == second.address.to_le_bytes())
-        .expect("the parent pointer is written");
-    let at = second.start + parent;
-    bytes[at..at + 8].copy_from_slice(&first.address.to_le_bytes());
-
-    let read = scene_from("cyclic.blend", &bytes).expect("the file is read");
-    read.scene.validate().expect("the scene is valid");
-    assert!(
-        read.warnings
-            .iter()
-            .any(|warning| matches!(warning, Warning::Repaired(_))),
-        "{:?}",
-        read.warnings
     );
 }

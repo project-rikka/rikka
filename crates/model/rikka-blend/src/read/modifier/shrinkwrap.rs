@@ -1,8 +1,7 @@
 use rikka_mesh_modifiers::{CullFace, Shrinkwrap, WrapMethod, WrapMode};
 
-use super::{References, Targets};
+use super::References;
 use crate::file::Record;
-use crate::write::Struct;
 
 const POSITIVE: i64 = 1;
 const NEGATIVE: i64 = 1 << 1;
@@ -52,49 +51,4 @@ pub(super) fn read<'a>(modifier: &Record<'a>, refs: &dyn References<'a>) -> Shri
         },
         use_invert_cull: options & INVERT_CULL != 0,
     }
-}
-
-pub(super) fn write(shrinkwrap: &Shrinkwrap, record: &mut Struct<'_>, targets: &dyn Targets) {
-    let axes = shrinkwrap
-        .use_project
-        .iter()
-        .enumerate()
-        .filter(|(_, used)| **used)
-        .fold(0, |bits, (axis, _)| bits | 1 << axis);
-    record
-        .set_int(
-            "shrinkType",
-            METHODS
-                .iter()
-                .position(|method| *method == shrinkwrap.wrap_method)
-                .unwrap_or(0) as i64,
-        )
-        .set_int(
-            "shrinkMode",
-            MODES
-                .iter()
-                .position(|mode| *mode == shrinkwrap.wrap_mode)
-                .unwrap_or(0) as i64,
-        )
-        .set_pointer("target", targets.object(shrinkwrap.target))
-        .set_pointer("auxTarget", targets.object(shrinkwrap.auxiliary_target))
-        .set_text("vgroup_name", &shrinkwrap.vertex_group)
-        .set_flag("shrinkOpts", INVERT_GROUP, shrinkwrap.invert_vertex_group)
-        .set_float("keepDist", shrinkwrap.offset)
-        .set_float("projLimit", shrinkwrap.project_limit)
-        .set_int("projAxis", axes)
-        .set_int("subsurfLevels", i64::from(shrinkwrap.subsurf_levels))
-        .set_flag("shrinkOpts", NEGATIVE, shrinkwrap.use_negative_direction)
-        .set_flag("shrinkOpts", POSITIVE, shrinkwrap.use_positive_direction)
-        .set_flag(
-            "shrinkOpts",
-            CULL_FRONT,
-            shrinkwrap.cull_face == CullFace::Front,
-        )
-        .set_flag(
-            "shrinkOpts",
-            CULL_BACK,
-            shrinkwrap.cull_face == CullFace::Back,
-        )
-        .set_flag("shrinkOpts", INVERT_CULL, shrinkwrap.use_invert_cull);
 }

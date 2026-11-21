@@ -6,8 +6,8 @@ use installer_core::{
 pub(crate) const CATALOG: &str = r#"{
   "base": {"name": "Rikka desktop", "summary": "The session", "offer": "required", "version": "0.1.0"},
   "browser": {"name": "Browser", "summary": "Browse the web", "offer": "selected", "version": "0.1.0"},
+  "cut": {"name": "Cut", "summary": "Edit video", "offer": "offered", "version": "0.2.0"},
   "files": {"name": "Files", "summary": "Browse files", "offer": "required", "version": "0.1.0"},
-  "modeler": {"name": "Modeler", "summary": "Model in 3D", "offer": "offered", "version": "0.2.0"},
   "paint": {"name": "Paint", "summary": "Edit pictures", "offer": "selected", "version": "0.1.0"}
 }"#;
 

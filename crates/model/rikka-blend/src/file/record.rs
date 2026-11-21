@@ -58,14 +58,6 @@ impl<'a> Record<'a> {
         &self.layout.name
     }
 
-    pub(crate) fn bytes(&self) -> &'a [u8] {
-        self.bytes
-    }
-
-    pub(crate) fn owner(&self) -> u32 {
-        self.owner
-    }
-
     pub(crate) fn has(&self, name: &str) -> bool {
         self.layout.field(name).is_some()
     }

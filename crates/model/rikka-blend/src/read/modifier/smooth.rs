@@ -32,13 +32,6 @@ pub(super) fn read(modifier: &Record<'_>) -> Option<SmoothByAngle> {
     })
 }
 
-pub(crate) fn socket_identifier(group: &Record<'_>, name: &str) -> Option<String> {
-    interface(group)
-        .into_iter()
-        .find(|socket| socket.name == name)
-        .map(|socket| socket.identifier)
-}
-
 fn interface(group: &Record<'_>) -> Vec<Socket> {
     let mut sockets = Vec::new();
     if let Some(root) = group

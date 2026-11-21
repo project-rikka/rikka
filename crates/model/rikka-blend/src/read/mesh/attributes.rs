@@ -230,15 +230,6 @@ impl<'a> Attributes<'a> {
     pub(crate) fn first_legacy(&self, domain: Domain, kind: i64) -> Option<&Layer<'a>> {
         self.legacy(domain, kind).next()
     }
-
-    pub(crate) fn property_name(&self, index: i64) -> Option<&str> {
-        let index = usize::try_from(index).ok()?;
-        self.layers
-            .iter()
-            .filter(|layer| layer.domain != Domain::Tessface && layer.data.is_some())
-            .nth(index)
-            .map(|layer| layer.name.as_str())
-    }
 }
 
 fn custom_data<'a>(data: Record<'a>, domain: Domain, generic: bool, layers: &mut Vec<Layer<'a>>) {

@@ -17,7 +17,7 @@ fn catalog_lists_required_first() {
             (Offer::Required, "base"),
             (Offer::Selected, "browser"),
             (Offer::Selected, "paint"),
-            (Offer::Offered, "modeler"),
+            (Offer::Offered, "cut"),
         ]
     );
 }

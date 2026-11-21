@@ -2,7 +2,6 @@ use rikka_mesh_modifiers::{CorrectiveSmooth, RestSource, SmoothType};
 use rikka_model_core::glam::Vec3;
 
 use crate::file::{Record, f32s};
-use crate::write::Struct;
 
 const INVERT_GROUP: i64 = 1;
 const ONLY_SMOOTH: i64 = 1 << 1;
@@ -50,41 +49,4 @@ pub(super) fn read(modifier: &Record<'_>) -> CorrectiveSmooth {
 
 fn finite(value: Option<f32>, default: f32) -> f32 {
     value.filter(|value| value.is_finite()).unwrap_or(default)
-}
-
-pub(super) fn write(smooth: &CorrectiveSmooth, record: &mut Struct<'_>) {
-    record
-        .set_float("lambda", smooth.factor)
-        .set_float("scale", smooth.scale)
-        .set_int("repeat", i64::from(smooth.iterations))
-        .set_int(
-            "smooth_type",
-            match smooth.smooth_type {
-                SmoothType::Simple => 0,
-                SmoothType::LengthWeighted => 1,
-            },
-        )
-        .set_int(
-            "rest_source",
-            match smooth.rest_source {
-                RestSource::Original => 0,
-                RestSource::Bind => 1,
-            },
-        )
-        .set_int("bind_coords_num", smooth.bind_coords.len() as i64)
-        .set_flag("flag", ONLY_SMOOTH, smooth.use_only_smooth)
-        .set_flag("flag", PIN_BOUNDARY, smooth.use_pin_boundary)
-        .set_flag("flag", INVERT_GROUP, smooth.invert_vertex_group)
-        .set_text("defgrp_name", &smooth.vertex_group);
-}
-
-pub(crate) fn bind_bytes(smooth: &CorrectiveSmooth) -> Option<Vec<u8>> {
-    (!smooth.bind_coords.is_empty()).then(|| {
-        smooth
-            .bind_coords
-            .iter()
-            .flat_map(|point| point.to_array())
-            .flat_map(f32::to_le_bytes)
-            .collect()
-    })
 }

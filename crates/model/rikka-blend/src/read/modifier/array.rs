@@ -1,9 +1,8 @@
 use rikka_mesh_modifiers::{Array, FitType};
 use rikka_model_core::glam::{Vec2, Vec3};
 
-use super::{References, Targets};
+use super::References;
 use crate::file::Record;
-use crate::write::Struct;
 
 const FIT_COUNT: i64 = 0;
 const FIT_LENGTH: i64 = 1;
@@ -51,29 +50,4 @@ pub(super) fn read<'a>(modifier: &Record<'a>, refs: &dyn References<'a>) -> Pars
         },
         fit_curve: fit == FIT_CURVE,
     }
-}
-
-pub(super) fn write(array: &Array, record: &mut Struct<'_>, targets: &dyn Targets) {
-    record
-        .set_int(
-            "fit_type",
-            match array.fit_type {
-                FitType::FixedCount => FIT_COUNT,
-                FitType::FitLength => FIT_LENGTH,
-            },
-        )
-        .set_int("count", i64::from(array.count))
-        .set_float("length", array.fit_length)
-        .set_flag("offset_type", OFFSET_CONSTANT, array.use_constant_offset)
-        .set_vec3("offset", array.constant_offset_displace)
-        .set_flag("offset_type", OFFSET_RELATIVE, array.use_relative_offset)
-        .set_vec3("scale", array.relative_offset_displace)
-        .set_flag("offset_type", OFFSET_OBJECT, array.use_object_offset)
-        .set_pointer("offset_ob", targets.object(array.offset_object))
-        .set_flag("flags", MERGE, array.use_merge_vertices)
-        .set_flag("flags", MERGE_FINAL, array.use_merge_vertices_cap)
-        .set_float("merge_dist", array.merge_threshold)
-        .set_pointer("start_cap", targets.object(array.start_cap))
-        .set_pointer("end_cap", targets.object(array.end_cap))
-        .set_floats("uv_offset", &array.offset_uv.to_array());
 }

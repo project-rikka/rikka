@@ -1,7 +1,6 @@
 use rikka_mesh_modifiers::{AdaptiveSpace, BoundarySmooth, Subdivision, SubdivisionType, UvSmooth};
 
 use crate::file::Record;
-use crate::write::Struct;
 
 const SIMPLE: i64 = 1;
 const CONTROL_EDGES: i64 = 1 << 2;
@@ -61,49 +60,4 @@ pub(super) fn read(modifier: &Record<'_>) -> Subdivision {
             .unwrap_or(defaults.adaptive_object_edge_length)
             .clamp(0.0001, 1000.0),
     }
-}
-
-pub(super) fn write(subdivision: &Subdivision, record: &mut Struct<'_>) {
-    record
-        .set_int(
-            "subdivType",
-            match subdivision.subdivision_type {
-                SubdivisionType::Simple => SIMPLE,
-                SubdivisionType::CatmullClark => 0,
-            },
-        )
-        .set_int("levels", i64::from(subdivision.levels))
-        .set_int("renderLevels", i64::from(subdivision.render_levels))
-        .set_int("quality", i64::from(subdivision.quality))
-        .set_flag("flags", CONTROL_EDGES, subdivision.show_only_control_edges)
-        .set_flag("flags", USE_CREASE, subdivision.use_creases)
-        .set_flag("flags", USE_CUSTOM_NORMALS, subdivision.use_custom_normals)
-        .set_flag("flags", RECURSIVE, !subdivision.use_limit_surface)
-        .set_flag("flags", ADAPTIVE, subdivision.use_adaptive_subdivision)
-        .set_int(
-            "uv_smooth",
-            UV_SMOOTH
-                .iter()
-                .position(|mode| *mode == subdivision.uv_smooth)
-                .unwrap_or(4) as i64,
-        )
-        .set_int(
-            "boundary_smooth",
-            match subdivision.boundary_smooth {
-                BoundarySmooth::PreserveCorners => 1,
-                BoundarySmooth::All => 0,
-            },
-        )
-        .set_int(
-            "adaptive_space",
-            match subdivision.adaptive_space {
-                AdaptiveSpace::Object => 1,
-                AdaptiveSpace::Pixel => 0,
-            },
-        )
-        .set_float("adaptive_pixel_size", subdivision.adaptive_pixel_size)
-        .set_float(
-            "adaptive_object_edge_length",
-            subdivision.adaptive_object_edge_length,
-        );
 }

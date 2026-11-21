@@ -8,10 +8,7 @@ rikka_library(
         "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
         "//crates/model/rikka-vrm:assets/avatar.vrm",
     ],
-    visibility = [
-        "//apps/general/modeler:__subpackages__",
-        "//crates/model:__subpackages__",
-    ],
+    visibility = ["//crates/model:__subpackages__"],
     deps = [
         "//crates/model/rikka-gltf",
         "//crates/model/rikka-mesh-edit",
@@ -19,7 +16,6 @@ rikka_library(
         "//crates/model/rikka-model-core",
         "//crates/model/rikka-polymesh",
         "//crates/model/rikka-spatial",
-        "//crates/model/rikka-uv",
         "//crates/model/rikka-vrm",
         "@crates//:glam",
     ],

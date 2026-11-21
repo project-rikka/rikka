@@ -14,10 +14,7 @@ const SOURCE_TILED: i64 = 6;
 
 pub(crate) struct LoadedImage {
     pub(crate) name: String,
-    pub(crate) id_name: String,
     pub(crate) bytes: Option<Arc<[u8]>>,
-    pub(crate) path: Option<String>,
-    pub(crate) color_space: String,
 }
 
 pub(crate) fn load(
@@ -26,10 +23,6 @@ pub(crate) fn load(
     notes: &mut Notes,
 ) -> Result<Option<LoadedImage>> {
     let id_name = image.id_name();
-    let color_space = image
-        .record("colorspace_settings")
-        .and_then(|settings| settings.text("name"))
-        .unwrap_or_default();
     let source = image.int("source").unwrap_or(1);
     match source {
         SOURCE_VIEWER => {
@@ -42,10 +35,7 @@ pub(crate) fn load(
                     resources.charge(bytes.len() as u64)?;
                     Ok(Some(LoadedImage {
                         name: format!("{id_name}.png"),
-                        id_name,
                         bytes: Some(bytes.into()),
-                        path: None,
-                        color_space,
                     }))
                 }
                 Generated::Unsupported => {
@@ -72,16 +62,12 @@ pub(crate) fn load(
         .map(|name| name.to_string_lossy().into_owned())
         .filter(|name| !name.is_empty())
         .unwrap_or_else(|| id_name.clone());
-    let kept_path = (!stored.is_empty()).then_some(stored);
 
     if let Some(bytes) = packed(&image) {
         resources.charge(bytes.len() as u64)?;
         return Ok(Some(LoadedImage {
             name: file_name,
-            id_name,
             bytes: Some(bytes.into()),
-            path: kept_path,
-            color_space,
         }));
     }
     if path.is_empty() {
@@ -120,10 +106,7 @@ pub(crate) fn load(
     };
     Ok(Some(LoadedImage {
         name: name.clone(),
-        id_name,
         bytes,
-        path: kept_path,
-        color_space,
     }))
 }
 

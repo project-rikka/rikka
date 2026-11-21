@@ -11,7 +11,6 @@ windows_zip(
         "//:crates/physics/THIRD_PARTY.md": "licenses/rikka/third-party/physics.md",
         "//:crates/text/THIRD_PARTY.md": "licenses/rikka/third-party/text.md",
         "//crates/physics/rikka-physics-fluid:THIRD_PARTY.md": "licenses/rikka/third-party/physics-fluid.md",
-        "//apps/general/modeler:THIRD_PARTY.md": "licenses/rikka/third-party/modeler.md",
     },
     icon_font_licenses = {
         "FontAwesome-LICENSE.txt": "licenses/font-awesome/LICENSE.txt",
@@ -20,7 +19,6 @@ windows_zip(
     programs = [
         "//apps/general/animate:rikka-animate",
         "//apps/general/cut:rikka-cut",
-        "//apps/general/modeler:rikka-modeler",
         "//apps/general/paint:rikka-paint",
         "//apps/general/remote:rikka-remote-viewer",
     ],

@@ -3,9 +3,8 @@ use rikka_model_core::glam::{Mat4, Vec3};
 
 use crate::file::Record;
 use crate::read::scene::world_matrix;
-use crate::scene::dna::OB_LATTICE;
-use crate::write::Struct;
 
+const OB_LATTICE: i64 = 22;
 const INVERT_GROUP: i64 = 1;
 const INTERPOLATIONS: [LatticeInterpolation; 4] = [
     LatticeInterpolation::Linear,
@@ -89,18 +88,4 @@ fn grid(data: &Record<'_>, relative: Mat4) -> Option<LatticeGrid> {
     };
     grid.interpolation = [kind("typeu"), kind("typev"), kind("typew")];
     Some(grid)
-}
-
-pub(super) fn write(lattice: &Lattice, record: &mut Struct<'_>) {
-    record
-        .set_float("strength", lattice.strength)
-        .set_text("name", &lattice.vertex_group)
-        .set_flag("flag", INVERT_GROUP, lattice.invert_vertex_group);
-}
-
-pub(crate) fn interpolation_code(interpolation: LatticeInterpolation) -> i64 {
-    INTERPOLATIONS
-        .iter()
-        .position(|known| *known == interpolation)
-        .unwrap_or(2) as i64
 }

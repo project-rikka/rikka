@@ -13,7 +13,7 @@ fn registry_covers_every_format() {
     );
     assert_eq!(
         shipped.export_extensions(),
-        ["blend", "fbx", "glb", "gltf", "pmx", "stl", "vmd", "vrm"]
+        ["fbx", "glb", "gltf", "pmx", "stl", "vmd", "vrm"]
     );
 
     let writer = |name: &str| {

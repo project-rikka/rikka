@@ -2,9 +2,7 @@ use rikka_mesh_modifiers::Triangulate;
 use rikka_polymesh::{NgonMethod, QuadMethod};
 
 use crate::file::Record;
-use crate::write::Struct;
 
-const QUAD_BEAUTY: i64 = 0;
 const QUAD_FIXED: i64 = 1;
 const QUAD_ALTERNATE: i64 = 2;
 const QUAD_SHORT_EDGE: i64 = 3;
@@ -32,27 +30,4 @@ pub(super) fn read(modifier: &Record<'_>) -> Triangulate {
             .clamp(4, i64::from(i32::MAX)) as u32,
         keep_custom_normals: modifier.int("flag").unwrap_or(0) & KEEP_CUSTOM_NORMALS != 0,
     }
-}
-
-pub(super) fn write(triangulate: &Triangulate, record: &mut Struct<'_>) {
-    record
-        .set_int(
-            "quad_method",
-            match triangulate.quad_method {
-                QuadMethod::Beauty => QUAD_BEAUTY,
-                QuadMethod::Fixed => QUAD_FIXED,
-                QuadMethod::Alternate => QUAD_ALTERNATE,
-                QuadMethod::ShortEdge => QUAD_SHORT_EDGE,
-                QuadMethod::LongEdge => QUAD_LONG_EDGE,
-            },
-        )
-        .set_int(
-            "ngon_method",
-            match triangulate.ngon_method {
-                NgonMethod::Beauty => NGON_BEAUTY,
-                NgonMethod::Clip => NGON_CLIP,
-            },
-        )
-        .set_int("min_vertices", i64::from(triangulate.min_vertices))
-        .set_flag("flag", KEEP_CUSTOM_NORMALS, triangulate.keep_custom_normals);
 }

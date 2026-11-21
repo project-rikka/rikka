@@ -13,7 +13,7 @@ use rikka_model_core::{ByteReader, Endian, Error, Result};
 pub(crate) use compression::{Packing, packing, peek};
 pub(crate) use header::MAGIC;
 pub(crate) use record::{Identity, Record, Table, f32s, i16s, i32s};
-pub(crate) use sdna::{Field, Layout, Scalar, Sdna, static_name};
+pub(crate) use sdna::{Layout, Sdna};
 pub(crate) use source::Source;
 
 use header::{BHeadLayout, Header};
@@ -183,17 +183,6 @@ impl<'a> Blend<'a> {
 
     pub(crate) fn bytes_of(&self, block: &Block) -> &[u8] {
         &self.bytes[block.start..block.start + block.length]
-    }
-
-    pub(crate) fn blocks(&self) -> &[Block] {
-        &self.blocks
-    }
-
-    pub(crate) fn dna(&self) -> Option<&[u8]> {
-        self.blocks
-            .iter()
-            .find(|block| &block.code == b"DNA1")
-            .map(|block| self.bytes_of(block))
     }
 
     pub(crate) fn libraries(&self) -> Vec<LibraryFile> {

@@ -28,10 +28,7 @@ use rikka_polymesh::Polymesh;
 use rustc_hash::FxHashSet;
 
 use crate::file::Record;
-use crate::write::Struct;
 use context::{BlendContext, Objects};
-
-pub(crate) use smooth::socket_identifier;
 
 pub(crate) const REALTIME: i64 = 1;
 pub(crate) const RENDER: i64 = 1 << 1;
@@ -67,12 +64,6 @@ pub(crate) trait References<'a> {
     fn object(&self, record: Option<Record<'a>>) -> Option<ObjectRef>;
     fn texture(&self, record: Option<Record<'a>>) -> Option<TextureRef>;
     fn collection(&self, record: Option<Record<'a>>) -> Option<CollectionRef>;
-}
-
-pub(crate) trait Targets {
-    fn object(&self, reference: Option<ObjectRef>) -> u64;
-    fn texture(&self, reference: Option<TextureRef>) -> u64;
-    fn collection(&self, reference: Option<CollectionRef>) -> u64;
 }
 
 pub(crate) enum Description {
@@ -171,56 +162,6 @@ pub(crate) fn header(modifier: &Record<'_>) -> Modifier {
         base.and_then(|base| base.int("flag")).unwrap_or(0) & MODIFIER_PIN_LAST != 0;
     entry
 }
-
-pub(crate) fn layout(kind: &ModifierKind) -> (&'static str, i64) {
-    match kind {
-        ModifierKind::Mirror(_) => ("MirrorModifierData", MIRROR),
-        ModifierKind::Subdivision(_) => ("SubsurfModifierData", SUBSURF),
-        ModifierKind::Solidify(_) => ("SolidifyModifierData", SOLIDIFY),
-        ModifierKind::Array(_) => ("ArrayModifierData", ARRAY),
-        ModifierKind::Weld(_) => ("WeldModifierData", WELD),
-        ModifierKind::Triangulate(_) => ("TriangulateModifierData", TRIANGULATE),
-        ModifierKind::EdgeSplit(_) => ("EdgeSplitModifierData", EDGE_SPLIT),
-        ModifierKind::Displace(_) => ("DisplaceModifierData", DISPLACE),
-        ModifierKind::Shrinkwrap(_) => ("ShrinkwrapModifierData", SHRINKWRAP),
-        ModifierKind::DataTransfer(_) => ("DataTransferModifierData", DATA_TRANSFER),
-        ModifierKind::SmoothByAngle(_) => ("NodesModifierData", NODES),
-        ModifierKind::Armature(_) => ("ArmatureModifierData", ARMATURE),
-        ModifierKind::Bevel(_) => ("BevelModifierData", BEVEL),
-        ModifierKind::Boolean(_) => ("BooleanModifierData", BOOLEAN),
-        ModifierKind::Decimate(_) => ("DecimateModifierData", DECIMATE),
-        ModifierKind::WeightedNormal(_) => ("WeightedNormalModifierData", WEIGHTED_NORMAL),
-        ModifierKind::CorrectiveSmooth(_) => ("CorrectiveSmoothModifierData", CORRECTIVE_SMOOTH),
-        ModifierKind::Lattice(_) => ("LatticeModifierData", LATTICE),
-    }
-}
-
-pub(crate) fn write(kind: &ModifierKind, record: &mut Struct<'_>, targets: &dyn Targets) {
-    match kind {
-        ModifierKind::Mirror(value) => mirror::write(value, record, targets),
-        ModifierKind::Subdivision(value) => subdivision::write(value, record),
-        ModifierKind::Solidify(value) => solidify::write(value, record),
-        ModifierKind::Array(value) => array::write(value, record, targets),
-        ModifierKind::Weld(value) => weld::write(value, record),
-        ModifierKind::Triangulate(value) => triangulate::write(value, record),
-        ModifierKind::EdgeSplit(value) => edge_split::write(value, record),
-        ModifierKind::Displace(value) => displace::write(value, record, targets),
-        ModifierKind::Shrinkwrap(value) => shrinkwrap::write(value, record, targets),
-        ModifierKind::DataTransfer(value) => data_transfer::write(value, record, targets),
-        ModifierKind::Armature(value) => armature::write(value, record, targets),
-        ModifierKind::Bevel(value) => bevel::write(value, record),
-        ModifierKind::Boolean(value) => boolean::write(value, record, targets),
-        ModifierKind::Decimate(value) => decimate::write(value, record),
-        ModifierKind::WeightedNormal(value) => weighted_normal::write(value, record),
-        ModifierKind::CorrectiveSmooth(value) => corrective_smooth::write(value, record),
-        ModifierKind::Lattice(value) => lattice::write(value, record),
-        ModifierKind::SmoothByAngle(_) => {}
-    }
-}
-
-pub(crate) use bevel::write_profile;
-pub(crate) use corrective_smooth::bind_bytes;
-pub(crate) use lattice::interpolation_code;
 
 #[derive(Default)]
 pub(crate) struct Notes {

@@ -1,8 +1,7 @@
 use rikka_mesh_modifiers::{Displace, DisplaceDirection, DisplaceSpace, TextureCoordinates};
 
-use super::{References, Targets};
+use super::References;
 use crate::file::Record;
-use crate::write::Struct;
 
 const INVERT_GROUP: i64 = 1;
 const COORDINATES: [TextureCoordinates; 4] = [
@@ -43,40 +42,4 @@ pub(super) fn read<'a>(modifier: &Record<'a>, refs: &dyn References<'a>) -> Disp
         vertex_group: modifier.text("defgrp_name").unwrap_or_default(),
         invert_vertex_group: modifier.int("flag").unwrap_or(0) & INVERT_GROUP != 0,
     }
-}
-
-pub(super) fn write(displace: &Displace, record: &mut Struct<'_>, targets: &dyn Targets) {
-    let index = |position: Option<usize>| position.unwrap_or(0) as i64;
-    record
-        .set_pointer("texture", targets.texture(displace.texture))
-        .set_int(
-            "texmapping",
-            index(
-                COORDINATES
-                    .iter()
-                    .position(|mode| *mode == displace.texture_coords),
-            ),
-        )
-        .set_pointer("map_object", targets.object(displace.texture_coords_object))
-        .set_text("map_bone", &displace.texture_coords_bone)
-        .set_text("uvlayer_name", &displace.uv_layer)
-        .set_int(
-            "direction",
-            index(
-                DIRECTIONS
-                    .iter()
-                    .position(|mode| *mode == displace.direction),
-            ),
-        )
-        .set_int(
-            "space",
-            match displace.space {
-                DisplaceSpace::Local => 0,
-                DisplaceSpace::Global => 1,
-            },
-        )
-        .set_float("strength", displace.strength)
-        .set_float("midlevel", displace.mid_level)
-        .set_text("defgrp_name", &displace.vertex_group)
-        .set_flag("flag", INVERT_GROUP, displace.invert_vertex_group);
 }

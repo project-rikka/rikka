@@ -4,10 +4,10 @@ description: Top-level directories, the apps/system → public crates rule, laye
 tags: [overview, architecture]
 ---
 
-- Linux-only NixOS desktop: own Wayland compositor plus a Vulkan UI stack. Rust 2024, every crate `0.1.0`, no crate published to a registry. Licensed GPL-3.0-or-later (`LICENSE`); ported third-party code is credited in `THIRD_PARTY.md` beside its layer (Blender for `crates/model` and `apps/general/modeler`), and third-party test assets carry their own `LICENSE.md` or the author's readme.
+- Linux-only NixOS desktop: own Wayland compositor plus a Vulkan UI stack. Rust 2024, every crate `0.1.0`, no crate published to a registry. Licensed GPL-3.0-or-later (`LICENSE`); ported third-party code is credited in `THIRD_PARTY.md` beside its layer (Blender for `crates/model`), and third-party test assets carry their own `LICENSE.md` or the author's readme.
 - Top level: libraries live only in `crates/<layer>/rikka-<name>` (app-private ones in `apps/<group>/<app>/crates/`); executables only in `apps/` (user apps) and `system/`. There is no `libs/`.
 - `system/`: `rikka-compositor`, `rikka-shell`, `rikka-cli` (the `rikka` command), `rikka-nixctl` (privileged NixOS service), `rikka-cast` (ScreenCast portal), `rikka-keyring` (Secret Service daemon), `rikka-pam-helper` (one PAM conversation for `rikka-pam`), `rikka-boost` (GPU clock boost), `rikka-replay` (instant replay), `rikka-remote` (QUIC remote desktop server).
-- `apps/system/` (Linux only, bound to the Rikka session): ade, browser, calculator, discord, files, music, packages, proton, settings, task-manager, terminal, updates (system update logs), viewer. `apps/general/` (Linux and Windows): animate, cut, modeler (rikka-modeler, the modeling, UV, rigging and paint editor; modeler-app note), paint, remote (rikka-remote-viewer).
+- `apps/system/` (Linux only, bound to the Rikka session): ade, browser, calculator, discord, files, music, packages, proton, settings, task-manager, terminal, updates (system update logs), viewer. `apps/general/` (Linux and Windows): animate, cut, paint, remote (rikka-remote-viewer).
 - `sdk/` is the application SDK (`librikka.so.0`, IDL `sdk/rikka.ridl`, committed bindings in `sdk/bindings/<language>/` for C, C++, Go, C#, Java and Python); see the SDK note.
 - `website/` is the public Astro site for Cloudflare Pages; see the website note.
 - `engine/gecko/` is the Gecko web engine source (Firefox pin, patches, the `rikka` Gecko project; MPL-2.0), built by `xtask gecko` outside Bazel; see the gecko-engine note.

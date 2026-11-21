@@ -16,7 +16,6 @@ filegroup(
     srcs = [
         "//benchmarks/ipc:round_trips",
         "//benchmarks/layout",
-        "//benchmarks/modeling",
         "//benchmarks/physics:internals",
         "//benchmarks/physics:rigid",
         "//benchmarks/render:gpu",

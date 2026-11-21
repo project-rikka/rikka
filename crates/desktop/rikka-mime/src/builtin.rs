@@ -91,7 +91,6 @@ pub(crate) const GLOBS: &str = "\
 50:model/stl:*.stl
 50:model/obj:*.obj
 50:model/x.rikka-motion:*.rmotion
-50:application/x-rikka-model:*.rmodel
 50:application/x-blender:*.blend
 50:application/vnd.iccprofile:*.icc
 50:application/vnd.iccprofile:*.icm
@@ -236,7 +235,6 @@ const MAGIC: &[(u32, &str, &[Match])] = &[
     (60, "model/x.fbx", &[at(0, b"Kaydara FBX Binary")]),
     (60, "model/x.pmx", &[at(0, b"PMX ")]),
     (60, "model/x.vmd", &[at(0, b"Vocaloid Motion Data")]),
-    (60, "application/x-rikka-model", &[at(0, b"RKMODEL\0")]),
     (
         60,
         "model/x.rikka-motion",

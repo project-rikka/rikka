@@ -2,9 +2,8 @@ use rikka_mesh_modifiers::{
     Boolean, BooleanMaterialMode, BooleanOperand, BooleanOperation, BooleanSolver,
 };
 
-use super::{References, Targets};
+use super::References;
 use crate::file::Record;
-use crate::write::Struct;
 
 const SELF: i64 = 1;
 const OPERAND_OBJECT: i64 = 1 << 1;
@@ -49,37 +48,4 @@ pub(super) fn read<'a>(modifier: &Record<'a>, refs: &dyn References<'a>) -> Bool
             _ => BooleanMaterialMode::Index,
         },
     }
-}
-
-pub(super) fn write(boolean: &Boolean, record: &mut Struct<'_>, targets: &dyn Targets) {
-    let collection = boolean.operand_type == BooleanOperand::Collection;
-    record
-        .set_int(
-            "operation",
-            OPERATIONS
-                .iter()
-                .position(|operation| *operation == boolean.operation)
-                .unwrap_or(2) as i64,
-        )
-        .set_flag("flag", OPERAND_OBJECT, !collection)
-        .set_flag("flag", OPERAND_COLLECTION, collection)
-        .set_pointer("object", targets.object(boolean.object))
-        .set_pointer("collection", targets.collection(boolean.collection))
-        .set_int(
-            "solver",
-            SOLVERS
-                .iter()
-                .position(|solver| *solver == boolean.solver)
-                .unwrap_or(1) as i64,
-        )
-        .set_float("double_threshold", boolean.double_threshold)
-        .set_flag("flag", SELF, boolean.use_self)
-        .set_flag("flag", HOLE_TOLERANT, boolean.use_hole_tolerant)
-        .set_int(
-            "material_mode",
-            match boolean.material_mode {
-                BooleanMaterialMode::Index => 0,
-                BooleanMaterialMode::Transfer => 1,
-            },
-        );
 }

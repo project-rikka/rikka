@@ -5,7 +5,6 @@ use rikka_mesh_modifiers::{
 use rikka_model_core::glam::Vec2;
 
 use crate::file::Record;
-use crate::write::Struct;
 
 const INVERT_GROUP: i64 = 1 << 2;
 const LIMIT_ANGLE: i64 = 1 << 3;
@@ -52,10 +51,6 @@ fn pick<T: Copy>(table: &[T], value: Option<i64>, default: T) -> T {
         .and_then(|value| usize::try_from(value).ok())
         .and_then(|index| table.get(index).copied())
         .unwrap_or(default)
-}
-
-fn index<T: PartialEq>(table: &[T], value: &T) -> i64 {
-    table.iter().position(|entry| entry == value).unwrap_or(0) as i64
 }
 
 pub(super) fn read(modifier: &Record<'_>) -> Bevel {
@@ -157,99 +152,4 @@ fn read_profile(profile: &Record<'_>) -> Option<CustomProfile> {
         use_sample_straight_edges: flag & PROFILE_STRAIGHT_EDGES != 0,
         use_sample_even_lengths: flag & PROFILE_EVEN_LENGTHS != 0,
     })
-}
-
-pub(super) fn write(bevel: &Bevel, record: &mut Struct<'_>) {
-    let limits = match bevel.limit_method {
-        BevelLimitMethod::None => 0,
-        BevelLimitMethod::Angle => LIMIT_ANGLE,
-        BevelLimitMethod::Weight => LIMIT_WEIGHT,
-        BevelLimitMethod::VertexGroup => LIMIT_GROUP,
-    };
-    record
-        .set_float("value", bevel.width)
-        .set_int("res", i64::from(bevel.segments))
-        .set_int(
-            "affect_type",
-            match bevel.affect {
-                BevelAffect::Vertices => 0,
-                BevelAffect::Edges => 1,
-            },
-        )
-        .set_int("val_flags", index(&OFFSET_TYPES, &bevel.offset_type))
-        .set_int("lim_flags", limits)
-        .set_float("bevel_angle", bevel.angle_limit)
-        .set_text("edge_weight_name", &bevel.edge_weight)
-        .set_text("vertex_weight_name", &bevel.vertex_weight)
-        .set_text("defgrp_name", &bevel.vertex_group)
-        .set_flag("flags", INVERT_GROUP, bevel.invert_vertex_group)
-        .set_int(
-            "profile_type",
-            match bevel.profile_type {
-                BevelProfileType::Superellipse => 0,
-                BevelProfileType::Custom => 1,
-            },
-        )
-        .set_float("profile", bevel.profile)
-        .set_flag("flags", OVERLAP_OK, !bevel.use_clamp_overlap)
-        .set_flag("flags", EVEN_WIDTHS, !bevel.loop_slide)
-        .set_flag("flags", HARDEN_NORMALS, bevel.harden_normals)
-        .set_flag("edge_flags", MARK_SEAM, bevel.mark_seam)
-        .set_flag("edge_flags", MARK_SHARP, bevel.mark_sharp)
-        .set_int("mat", i64::from(bevel.material))
-        .set_int(
-            "face_str_mode",
-            index(&FACE_STRENGTHS, &bevel.face_strength_mode),
-        )
-        .set_int("miter_outer", index(&MITERS, &bevel.miter_outer))
-        .set_int("miter_inner", index(&MITERS, &bevel.miter_inner))
-        .set_float("spread", bevel.spread)
-        .set_int(
-            "vmesh_method",
-            match bevel.vmesh_method {
-                BevelVertexMesh::Adjacent => 0,
-                BevelVertexMesh::Cutoff => 1,
-            },
-        );
-}
-
-pub(crate) fn write_profile<'t>(
-    profile: &CustomProfile,
-    curve: &mut Struct<'t>,
-    point: &Struct<'t>,
-    curve_address: u64,
-) -> Vec<Struct<'t>> {
-    curve
-        .set_int("path_len", profile.points.len() as i64)
-        .set_int("preset", index(&PRESETS, &profile.preset))
-        .set_flag("flag", PROFILE_CLIP, profile.use_clip)
-        .set_flag(
-            "flag",
-            PROFILE_STRAIGHT_EDGES,
-            profile.use_sample_straight_edges,
-        )
-        .set_flag(
-            "flag",
-            PROFILE_EVEN_LENGTHS,
-            profile.use_sample_even_lengths,
-        )
-        .set_pointer("table", 0)
-        .set_pointer("segments", 0);
-    profile
-        .points
-        .iter()
-        .map(|entry| {
-            let mut written = point.clone();
-            written
-                .set_float("x", entry.location.x)
-                .set_float("y", entry.location.y)
-                .set_int("flag", 0)
-                .set_int("h1", index(&HANDLES, &entry.handle_left_type))
-                .set_int("h2", index(&HANDLES, &entry.handle_right_type))
-                .set_floats("h1_loc", &entry.handle_left.to_array())
-                .set_floats("h2_loc", &entry.handle_right.to_array())
-                .set_pointer("profile", curve_address);
-            written
-        })
-        .collect()
 }
