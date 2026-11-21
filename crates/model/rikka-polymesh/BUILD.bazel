@@ -9,6 +9,7 @@ rikka_library(
         "//crates/foundation/rikka-file-format",
         "//crates/foundation/rikka-parallel",
         "//crates/model/rikka-model-core",
+        "//crates/model/rikka-spatial",
         "@crates//:glam",
         "@crates//:rustc-hash",
         "@crates//:thiserror",

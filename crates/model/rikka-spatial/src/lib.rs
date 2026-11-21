@@ -2,6 +2,7 @@ mod aabb;
 mod bvh;
 mod closest;
 mod error;
+mod identical;
 mod kdtree;
 mod mesh;
 mod plane;
@@ -18,6 +19,7 @@ pub use crate::closest::{
     closest_point_on_triangle, closest_points_ray_segment, closest_points_segments,
 };
 pub use crate::error::{Error, Result};
+pub use crate::identical::weld_identical;
 pub use crate::kdtree::{Duplicates, PointNearest, PointTree};
 pub use crate::mesh::{
     SegmentBvh, SegmentNearest, SegmentRayNearest, SegmentScreenNearest, TriangleBvh, TriangleHit,
