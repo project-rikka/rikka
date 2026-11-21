@@ -60,7 +60,7 @@ pub use euler::EulerOrder;
 pub use export::{Export, Exported};
 pub use exporter::{ExportCtx, Exporter, ExporterInfo, Supports};
 pub use extension::{Extension, Extensions};
-pub use humanoid::{HumanBone, Humanoid};
+pub use humanoid::{HumanBone, Humanoid, Side};
 pub use import::Import;
 pub use importer::{Confidence, ImportCtx, Importer, ImporterInfo, Input};
 pub use instance::Instance;

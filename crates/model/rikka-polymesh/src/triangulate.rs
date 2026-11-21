@@ -51,6 +51,20 @@ impl Polymesh {
         triangulation
     }
 
+    #[must_use]
+    pub fn point_triangulation(&self) -> Triangulation {
+        let mut triangulation = self.triangulate();
+        for triangle in &mut triangulation.triangles {
+            *triangle = triangle.map(|corner| self.corner_verts[corner as usize]);
+        }
+        triangulation
+    }
+
+    #[must_use]
+    pub fn point_triangles(&self) -> Vec<[u32; 3]> {
+        self.point_triangulation().triangles
+    }
+
     pub fn triangulate_face(&self, face: usize, out: &mut Vec<[u32; 3]>) {
         let range = self.face(face);
         let corners = &self.corner_verts[range.clone()];

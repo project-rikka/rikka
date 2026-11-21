@@ -106,6 +106,36 @@ const REQUIRED: &[HumanBone] = &[
     HumanBone::RightHand,
 ];
 
+const LEFT: &str = "left";
+const RIGHT: &str = "right";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum Side {
+    Left,
+    Right,
+    Center,
+}
+
+impl Side {
+    #[must_use]
+    pub fn opposite(self) -> Side {
+        match self {
+            Side::Left => Side::Right,
+            Side::Right => Side::Left,
+            Side::Center => Side::Center,
+        }
+    }
+
+    #[must_use]
+    pub fn sign(self) -> f32 {
+        match self {
+            Side::Left => 1.0,
+            Side::Right => -1.0,
+            Side::Center => 0.0,
+        }
+    }
+}
+
 impl HumanBone {
     #[must_use]
     pub fn index(self) -> usize {
@@ -115,6 +145,83 @@ impl HumanBone {
     #[must_use]
     pub fn is_required(self) -> bool {
         REQUIRED.contains(&self)
+    }
+
+    #[must_use]
+    pub fn side(self) -> Side {
+        let name = self.name();
+        if name.starts_with(LEFT) {
+            Side::Left
+        } else if name.starts_with(RIGHT) {
+            Side::Right
+        } else {
+            Side::Center
+        }
+    }
+
+    #[must_use]
+    pub fn mirrored(self) -> HumanBone {
+        let (from, to) = match self.side() {
+            Side::Left => (LEFT, RIGHT),
+            Side::Right => (RIGHT, LEFT),
+            Side::Center => return self,
+        };
+        let rest = &self.name()[from.len()..];
+        HumanBone::ALL
+            .iter()
+            .copied()
+            .find(|bone| bone.name().strip_prefix(to) == Some(rest))
+            .unwrap_or(self)
+    }
+
+    #[must_use]
+    pub fn parent(self) -> Option<HumanBone> {
+        use HumanBone::*;
+        Some(match self {
+            Hips => return None,
+            Spine | LeftUpperLeg | RightUpperLeg => Hips,
+            Chest => Spine,
+            UpperChest => Chest,
+            Neck | LeftShoulder | RightShoulder => UpperChest,
+            Head => Neck,
+            LeftEye | RightEye | Jaw => Head,
+            LeftLowerLeg => LeftUpperLeg,
+            LeftFoot => LeftLowerLeg,
+            LeftToes => LeftFoot,
+            RightLowerLeg => RightUpperLeg,
+            RightFoot => RightLowerLeg,
+            RightToes => RightFoot,
+            LeftUpperArm => LeftShoulder,
+            LeftLowerArm => LeftUpperArm,
+            LeftHand => LeftLowerArm,
+            RightUpperArm => RightShoulder,
+            RightLowerArm => RightUpperArm,
+            RightHand => RightLowerArm,
+            LeftThumbMetacarpal | LeftIndexProximal | LeftMiddleProximal | LeftRingProximal
+            | LeftLittleProximal => LeftHand,
+            LeftThumbProximal => LeftThumbMetacarpal,
+            LeftThumbDistal => LeftThumbProximal,
+            LeftIndexIntermediate => LeftIndexProximal,
+            LeftIndexDistal => LeftIndexIntermediate,
+            LeftMiddleIntermediate => LeftMiddleProximal,
+            LeftMiddleDistal => LeftMiddleIntermediate,
+            LeftRingIntermediate => LeftRingProximal,
+            LeftRingDistal => LeftRingIntermediate,
+            LeftLittleIntermediate => LeftLittleProximal,
+            LeftLittleDistal => LeftLittleIntermediate,
+            RightThumbMetacarpal | RightIndexProximal | RightMiddleProximal | RightRingProximal
+            | RightLittleProximal => RightHand,
+            RightThumbProximal => RightThumbMetacarpal,
+            RightThumbDistal => RightThumbProximal,
+            RightIndexIntermediate => RightIndexProximal,
+            RightIndexDistal => RightIndexIntermediate,
+            RightMiddleIntermediate => RightMiddleProximal,
+            RightMiddleDistal => RightMiddleIntermediate,
+            RightRingIntermediate => RightRingProximal,
+            RightRingDistal => RightRingIntermediate,
+            RightLittleIntermediate => RightLittleProximal,
+            RightLittleDistal => RightLittleIntermediate,
+        })
     }
 }
 
