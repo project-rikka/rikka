@@ -90,187 +90,6 @@
 
 - [Cut timeline key lanes, graph editor and preset wedges](cut-keyframing-ui.md) — Cut timeline key lanes and value/speed graph (timeline/keys), animation-preset wedges, keyframe selection.
 
-## apps/general/modeler
-
-- [Modeler AI-first design (recipes, anchors, verification)](modeler-ai-first.md) — How the modeler stays easy for people and the assistant alike: operators, recipe extensions, anchors, checks.
-- [Modeler interaction cost rules and how to measure them](modeler-interaction-costs.md) — What each Edit Mode step may cost in rikka-modeler, which mechanism keeps it bounded, and how to time and profile it.
-
-## apps/general/modeler/crates
-
-- [Modeler shell crates (keymap, layout, ui widgets)](modeler-ui-shell.md) — rikka-modeler's modeler-keymap (keymap tables), modeler-layout (fixed panes, frame, input routing) and modeler-ui widge…
-
-## apps/general/modeler/crates/modeler-anatomy
-
-- [Modeler body-aware geometry (modeler-anatomy, modeler-anatomy-ops)](modeler-anatomy.md) — Figure from a rigged humanoid: anchors, regions, sections, paths, measurements, clearance, pose check, health, ops.
-
-## apps/general/modeler/crates/modeler-app
-
-- [Modeler application assembly (modeler-app, rikka-modeler)](modeler-app.md) — rikka-modeler's binary and modeler-app: registration order, window state, view layers, files, sheets, e2e tests.
-
-## apps/general/modeler/crates/modeler-armature-ops
-
-- [Modeler armature, pose and constraint operators (modeler-armature-ops)](modeler-armature-ops.md) — armature.*, pose.*, constraint.* and armature weight-paint operators, menus and Armature/Pose keymaps for rikka-modeler.
-
-## apps/general/modeler/crates/modeler-assembly
-
-- [Modeler assembly solver (modeler-assembly)](modeler-assembly.md) — Attach/stack/align/distribute/mirror relations solved on real surfaces with rikka-spatial; assembly.* operators.
-
-## apps/general/modeler/crates/modeler-assistant
-
-- [Modeler's tools for the desktop assistant](modeler-assistant.md) — modeler-assistant declares kit Modeler; modeler-app serving runs each call over operators, one undo step, digest.
-
-## apps/general/modeler/crates/modeler-authoring-ops
-
-- [Modeler VRM and PMX authoring operators (modeler-authoring-ops)](modeler-authoring-ops.md) — vrm.* and pmx.* operators the VRM/PMX panels call over the document blocks, specials menus, validation helpers.
-
-## apps/general/modeler/crates/modeler-authoring-panels
-
-- [Modeler VRM and PMX Properties tabs (modeler-authoring-panels)](modeler-authoring-panels.md) — Avatar tab (vrm_tab/pmx_tab) over the vrm.*/pmx.* operators: tab state, undo merging, lazy lists, pickers, findings.
-
-## apps/general/modeler/crates/modeler-auto-uv
-
-- [One-call automatic UVs and UV metrics (modeler-auto-uv)](modeler-auto-uv.md) — auto_unwrap pipeline (seams by angle/visibility, disk cuts, ABF, stretch splits, density, straighten, pack), measure, u…
-
-## apps/general/modeler/crates/modeler-avatar
-
-- [Modeler parametric avatar (modeler-avatar, modeler-avatar-panels)](modeler-avatar.md) — Parametric anime character: half-cage body, face paint, scalp hair, modeler.avatar recipe, avatar.* ops, Avatar tool.
-
-## apps/general/modeler/crates/modeler-chrome
-
-- [Modeler shared editor chrome (modeler-chrome)](modeler-chrome.md) — Property forms, operator menus, options-bar pieces, caption mode switcher, popups, dialogs, status bar, tool rail.
-
-## apps/general/modeler/crates/modeler-document
-
-- [Modeler document (modeler-document)](modeler-document.md) — The modeler's single document: scene, modes and edit sessions, undo history, tool settings, images, .rmodel.
-
-## apps/general/modeler/crates/modeler-file-ops
-
-- [Modeler File and Edit menu operators (modeler-file-ops)](modeler-file-ops.md) — wm.* file operators over modeler-io, unsaved-changes chain, WindowRequest outbox, Window/Screen keymaps, TOPBAR menus.
-
-## apps/general/modeler/crates/modeler-hard-surface
-
-- [Hard-surface finishing and view-free cuts (modeler-hard-surface)](modeler-hard-surface.md) — mesh.auto_sharp, object.hard_surface_finish/bevel_preset, mesh.cut_plane/knife_polyline/loop_cut_at; params-only, no vi…
-
-## apps/general/modeler/crates/modeler-image-editor
-
-- [Modeler UV / Image editor (modeler-image-editor)](modeler-image-editor.md) — UV/image dock: compact header, options bar, settings popovers, tiled image canvas, GPU UV overlay, input wiring.
-
-## apps/general/modeler/crates/modeler-io
-
-- [Modeler file I/O (modeler-io)](modeler-io.md) — Format table, VRM/PMX blocks in the document, open/import/append, save/recovery/recent, export with pre-flight.
-
-## apps/general/modeler/crates/modeler-mesh-ops
-
-- [Edit Mode mesh operators (modeler-mesh-ops)](modeler-mesh-ops.md) — rikka-modeler's mesh.* Edit Mode exec operators, menus and the "Mesh" keymap; patterns, owned ids and known gaps.
-
-## apps/general/modeler/crates/modeler-mesh-tools
-
-- [Interactive Edit Mode mesh tools (modeler-mesh-tools)](modeler-mesh-tools.md) — Modal mesh operators (bevel, inset, loop cut, knife, bisect, rip, poly build, placement), gizmos, Edit Mode toolbar.
-
-## apps/general/modeler/crates/modeler-object-ops
-
-- [Modeler Object Mode, data-block and list operators (modeler-object-ops)](modeler-object-ops.md) — modeler-object-ops registers object/collection/modifier/vertex-group/shape-key/material/outliner operators and menus.
-
-## apps/general/modeler/crates/modeler-operator
-
-- [Modeler operator system (modeler-operator)](modeler-operator.md) — How to write, register, invoke and test named operators, modals, macros, tools, menus and jobs for rikka-modeler.
-
-## apps/general/modeler/crates/modeler-organic-ops
-
-- [Modeler SDF shapes, quad remesh and cage fit (modeler-organic-ops, modeler-organic-panels)](modeler-organic.md) — sdf.* / mesh.quad_remesh / mesh.cage_fit operators, the modeler.sdf extension, menus and the SDF Shape Properties tab.
-
-## apps/general/modeler/crates/modeler-outliner
-
-- [Modeler Outliner editor (modeler-outliner)](modeler-outliner.md) — Outliner header/body for rikka-modeler: UI-free tree model, lazy rows, Outliner keymap dispatch with row context, drops.
-
-## apps/general/modeler/crates/modeler-paint
-
-- [Modeler paint engine (modeler-paint)](modeler-paint.md) — modeler-paint is the CPU paint engine: brushes, strokes, 2D/projection image paint, vertex and weight paint.
-
-## apps/general/modeler/crates/modeler-paint-tools
-
-- [Modeler paint operators and tools (modeler-paint-tools)](modeler-paint-tools.md) — Weight/Vertex/Texture/Image paint strokes, paint ops, masks, brushes, radial control, palettes, slots, keymaps.
-
-## apps/general/modeler/crates/modeler-parts
-
-- [Modeler procedural parts (modeler-parts, modeler-parts-panels)](modeler-parts.md) — part.* operators, 21 generators, modeler.parts recipes, Resolver seam to modeler-anatomy, attachment, Part tab.
-
-## apps/general/modeler/crates/modeler-pattern
-
-- [Modeler sewing-pattern garments (modeler-pattern, modeler-pattern-panels)](modeler-pattern.md) — Typed garment spec → panels → CDT → tube placement → XPBD drape → welded mesh; pattern.* operators, Garment tab.
-
-## apps/general/modeler/crates/modeler-pick
-
-- [Modeler picking engine (modeler-pick)](modeler-pick.md) — UI-free CPU select buffer with the reference occlusion rules: objects, mesh elements, bones, paint masks, snaps.
-
-## apps/general/modeler/crates/modeler-pmx
-
-- [Modeler PMX authoring block (modeler-pmx)](modeler-pmx.md) — PmxRig block (bones, morphs, frames, physics, soft bodies, PMX materials), vertex attributes, PMX 2.0/2.1 export.
-
-## apps/general/modeler/crates/modeler-properties
-
-- [Modeler Properties editor (modeler-properties)](modeler-properties.md) — Top-tab Properties editor: context-driven tabs, per-mode tab memory, extension tabs, flat sections, search, pin.
-
-## apps/general/modeler/crates/modeler-quality
-
-- [Modeler quality report and budget fitter (modeler-quality, modeler-quality-panels)](modeler-quality.md) — Rule table, profiles and budgets, Report/Finding/Fix, quality.check/fix/fit_budget, atlas bake, anatomy plug-in, Qualit…
-
-## apps/general/modeler/crates/modeler-render
-
-- [Modeler viewport drawing (modeler-render)](modeler-render.md) — modeler-render turns chunked Send+Sync snapshots into rikka-renderer-3d Frames: shading, overlays, bones, tools.
-
-## apps/general/modeler/crates/modeler-render/src/capture
-
-- [Modeler offscreen capture, contact sheets and heat maps](modeler-capture.md) — Session::capture renders labelled multi-view PNG contact sheets on the viewport thread; heat maps and emphasis.
-
-## apps/general/modeler/crates/modeler-rig
-
-- [Modeler auto-rig, secondary chains and deformation check (modeler-rig, -ops, -panels)](modeler-rig.md) — modeler-rig estimates humanoid skeletons, binds, finds secondary chains, checks deformation; rig.* operators and Rig ta…
-
-## apps/general/modeler/crates/modeler-session
-
-- [Modeler application state root (modeler-session)](modeler-session.md) — Session: document, operators, keymaps, panes and mode-driven frame, input pipeline, jobs, dialogs, render bridge, prefs.
-
-## apps/general/modeler/crates/modeler-skinning-ops
-
-- [Modeler easy weights and outfit fit (modeler-skinning-ops, modeler-skinning-panels)](modeler-skinning.md) — skin.* / garment.* operators, Weight and Outfit Brush tools, modeler.skinning state, Weights/Outfit Fit Properties tabs.
-
-## apps/general/modeler/crates/modeler-space
-
-- [Modeler editor space state (modeler-space)](modeler-space.md) — View3d/ImageSpace/OutlinerSpace/PropertiesSpace state, exact view navigation maths, Y-up axis views, persistence.
-
-## apps/general/modeler/crates/modeler-stack-panels
-
-- [Modeler Modifiers and Bone Constraints tabs (modeler-stack-panels)](modeler-stack-panels.md) — modifiers_tab/bone_constraints_tab for modeler-properties: stack panels, per-kind bodies, pickers, curve editor.
-
-## apps/general/modeler/crates/modeler-surface
-
-- [Modeler procedural surface layers and baking (modeler-surface, modeler-surface-panels)](modeler-surface.md) — Per-material layer stacks (content × mask × blend into a channel) baked into material textures; ops, panel, regions.
-
-## apps/general/modeler/crates/modeler-transform
-
-- [Modeler transform engine (modeler-transform)](modeler-transform.md) — Exact G/R/S engine: element model, TransformSession input/apply/replay, snapping trait, proportional, symmetry, units.
-
-## apps/general/modeler/crates/modeler-transform-ops
-
-- [Modeler transform operators (modeler-transform-ops)](modeler-transform-ops.md) — transform.* operators over TransformSession, per-context adapters, the public Adapter trait, gizmos, menus, keymaps.
-
-## apps/general/modeler/crates/modeler-uv-ops
-
-- [Modeler UV and Image editor operators (modeler-uv-ops)](modeler-uv-ops.md) — uv.*/image.*/sculpt.uv_* operators, UvMesh bridge, UV transform adapter, menus, tools, keymaps, live unwrap entry.
-
-## apps/general/modeler/crates/modeler-view-tools
-
-- [Modeler 3D View operators, selection, tools and keymaps (modeler-view-tools)](modeler-view-tools.md) — view3d.* navigation, display, selection, cursor, snap, ruler operators, pies, tools and 3D View keymaps.
-
-## apps/general/modeler/crates/modeler-viewport
-
-- [Modeler 3D Viewport editor (modeler-viewport)](modeler-viewport.md) — 3D View body, floating glass controls, options bar, caption menus, View Settings popover, region reports, gizmo.
-
-## apps/general/modeler/crates/modeler-vrm
-
-- [Modeler VRM authoring block (modeler-vrm)](modeler-vrm.md) — VrmAvatar block keyed by scene ids; 1.0 and 0.x export through Correspondence, auto humanoid, validation, T-pose.
-
 ## apps/general/paint
 
 - [Paint application](paint-app.md) — rikka-paint is the beginner-friendly image editor: tabbed documents, PSD-native model, tool rail, layers, GPU canvas.
@@ -807,23 +626,15 @@
 ## crates/model
 
 - [3D model data, import/export and runtime](model-import.md) — Public model crates (core data, codecs, humanoid, GPU, rikka-model): codec kit, limits, conversion, upload, poses.
-- [Model library performance rules and threading](model-performance.md) — Threading model, caches, complexity rules and the modeling benchmark/digest for the crates/model mesh libraries.
-
-## crates/model/rikka-armature
-
-- [Armature, pose, constraints, IK and skinning (rikka-armature)](armature-library.md) — rikka-armature is the public GPU/UI-free rig library: edit ops, pose, constraints, IK, deform, weights.
+- [Model library performance rules and threading](model-performance.md) — Threading model, caches and complexity rules for the crates/model mesh libraries.
 
 ## crates/model/rikka-blend
 
-- [.blend file reader and writer (rikka-blend)](blend-codec.md) — rikka-blend reads .blend into a Model or a Scene and writes Scenes as .blend files from a template.
+- [.blend file reader (rikka-blend)](blend-codec.md) — rikka-blend reads .blend files into a Model, evaluating Blender modifiers through rikka-mesh-modifiers.
 
 ## crates/model/rikka-fbx
 
 - [FBX codec](fbx-codec.md) — rikka-fbx reads binary and text FBX from 6100 on, bakes animation, and writes FBX 7400.
-
-## crates/model/rikka-garment-fit
-
-- [Outfit fitting algorithms (rikka-garment-fit)](garment-fit.md) — rikka-garment-fit: Body signed distance, push-out, follow, ARAP sheet fit, expand, skirt drape, pose-check shrink, bone…
 
 ## crates/model/rikka-gltf
 
@@ -841,14 +652,6 @@
 
 - [Mesh booleans and intersection (rikka-mesh-boolean)](mesh-boolean.md) — rikka-mesh-boolean's Exact/Fast boolean solvers, edit-mode Intersect operators, exact kernel and public 2D CDT.
 
-## crates/model/rikka-mesh-build
-
-- [Geometry-creating mesh operators (rikka-mesh-build)](mesh-build-operators.md) — rikka-mesh-build's exact extrude, inset, bridge, create/fill, spin/screw, poke, solidify, wireframe, hull, separate.
-
-## crates/model/rikka-mesh-cut
-
-- [Cut, split and slide mesh operators (rikka-mesh-cut)](mesh-cut-operators.md) — rikka-mesh-cut's exact subdivide, loop cut, slides, knife/knife project, bisect, connect, rip, edge split, symmetrize.
-
 ## crates/model/rikka-mesh-edit
 
 - [Editable mesh kernel (rikka-mesh-edit)](mesh-edit-kernel.md) — rikka-mesh-edit's EditMesh (editable half-edge mesh): ids, topology, interpolation, Euler ops, selection, walkers.
@@ -861,37 +664,13 @@
 
 - [Removal and merge operators (rikka-mesh-reduce)](mesh-reduce.md) — rikka-mesh-reduce's exact delete, dissolve, merge, weld, auto-merge, tris-to-quads, unsubdivide and decimate operators.
 
-## crates/model/rikka-mesh-shape
-
-- [Reshaping and relabelling operators (rikka-mesh-shape)](mesh-shape-operators.md) — rikka-mesh-shape's exact smoothing, normals, marks, loop data, sort, shape keys, vertex groups, mirror maps.
-
 ## crates/model/rikka-mmd
 
 - [PMX and VMD codec](mmd-codec.md) — rikka-mmd reads and writes PMX 2.0/2.1 and VMD, following the reference tool's quirks, and solves IK and append bones.
 
-## crates/model/rikka-model-scene
-
-- [Authoring scene (rikka-model-scene)](model-scene.md) — rikka-model-scene is the modeler's scene: ids, data blocks, evaluation, Model bridge, object ops.
-
 ## crates/model/rikka-polymesh
 
 - [Shared polygon mesh (rikka-polymesh)](polymesh.md) — rikka-polymesh is the array-based polygon mesh every modeling crate shares: layout, data ops, IO.
-
-## crates/model/rikka-remesh
-
-- [Quad remesher and cage fit (rikka-remesh)](quad-remesh.md) — rikka-remesh's pipeline (decimate, fields, singularity cancel, offset min-cost flow, extraction, cleanup, split) and ca…
-
-## crates/model/rikka-sdf
-
-- [SDF modeling and manifold dual contouring (rikka-sdf)](sdf-modeling.md) — rikka-sdf's serde recipe tree, SIMD batch evaluator with exact culling, sparse brick mesher with manifold DC.
-
-## crates/model/rikka-skinning
-
-- [Skin weight algorithms (rikka-skinning)](skinning-library.md) — rikka-skinning: welded Surface, voxel geodesic binding, robust transfer, weight brush, smoothing, mirror, volumes, test…
-
-## crates/model/rikka-sparse
-
-- [Sparse linear algebra (rikka-sparse)](sparse-solver.md) — rikka-sparse's f64 CSC/CSR matrices, AMD ordering, LDLᵀ/LLᵀ Cholesky, pivoting LU, PCG and the LinearSolver facade.
 
 ## crates/model/rikka-spatial
 
@@ -903,15 +682,7 @@
 
 ## crates/model/rikka-test-meshes
 
-- [Mesh robustness sweeps (rikka-test-meshes, modeler-test-sweep)](mesh-robustness-sweeps.md) — Shared awkward-mesh corpus, seeded operator/chain sweeps, reference-divergence rules for degenerate input, app sweeps.
-
-## crates/model/rikka-uv
-
-- [UV parameterization engine (rikka-uv)](uv-parameterization.md) — rikka-uv unwraps, projects, relaxes and edits corner UVs on plain arrays, matching the reference parametrizer.
-
-## crates/model/rikka-uv-pack
-
-- [UV island packer (rikka-uv-pack)](uv-pack.md) — rikka-uv-pack packs UV islands like the reference Pack Islands, plus box packing, hulls, min-area rects, Lightmap Pack.
+- [Mesh robustness sweeps (rikka-test-meshes)](mesh-robustness-sweeps.md) — Shared awkward-mesh corpus, seeded operator/chain sweeps and reference-divergence rules for degenerate input.
 
 ## crates/model/rikka-vrm
 
