@@ -251,6 +251,7 @@ impl World {
             return Figure {
                 head,
                 overrides,
+                shadow: self.figure_shadow,
                 ..Figure::default()
             };
         };

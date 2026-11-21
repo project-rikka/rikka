@@ -2,8 +2,8 @@ use std::sync::OnceLock;
 
 use rikka_renderer_3d::glam::Vec3;
 use rikka_renderer_3d::{
-    Denoise, Fog, Illumination, Lines, Occlusion, Particles, Reflections, ScreenShadows, Shadows,
-    Sky, TextureKind,
+    Denoise, Fog, Illumination, Lines, Occlusion, Particles, Reflections, ScreenShadows,
+    ShadowQuality, Shadows, Sky, TextureKind,
 };
 use rikka_shader_graph::{
     Behavior, Category, Hint, Hosts, Library, NodeSpec, PortSpec, Symbol, ValueType,
@@ -112,6 +112,8 @@ fn text(name: &'static str) -> PortSpec {
 fn file(name: &'static str, extensions: &'static [&'static str]) -> PortSpec {
     PortSpec::empty(name, ValueType::Texture).hint(Hint::File(extensions))
 }
+
+pub(crate) const FIGURE_SHADOW: ShadowQuality = ShadowQuality::High;
 
 pub(crate) fn shadows_default() -> Shadows {
     Shadows {
@@ -293,12 +295,13 @@ fn render_nodes() -> Vec<NodeSpec> {
             SHADOWS_NODE,
             "Shadows",
             Category::Render,
-            "How lights cast shadows and how strongly contact shadows darken creases. Unwired, these defaults apply: auto tier, 120 m, one sample, no contact shadows.",
+            "How lights cast shadows, how sharp each figure's own shadow map is and how strongly contact shadows darken creases. A figure with its own map leaves the world cascades of the leading light, so its self-shadowing and the shadow it lays on the floor stay sharp at any camera distance; figures none keeps figures in the cascades. Unwired, these defaults apply: auto tier, 120 m, one sample, high figure maps, no contact shadows.",
             SHADOWS,
             vec![
                 options("tier", shadows.tier),
                 soft("distance", shadows.distance, 10.0, 500.0),
                 whole("samples", shadows.samples),
+                options("figures", FIGURE_SHADOW),
                 ranged("contact", shadows.screen.strength, 0.0, 1.0),
                 soft("contact_length", shadows.screen.thickness, 0.005, 0.3),
             ],

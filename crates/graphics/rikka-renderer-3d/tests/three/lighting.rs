@@ -50,6 +50,45 @@ struct Model : IShadingModel {
 };
 "#;
 
+const SHADOW_MAP: &str = r#"
+import rikka;
+
+struct Surface : ISurface<RikkaNoData> {
+    [Default(1.0)] float gain;
+
+    [constref]
+    RikkaSurfaceData<RikkaNoData> evaluate(RikkaPixel pixel, RikkaContext context) {
+        RikkaNoData data;
+        data.unused = 0u;
+        return rikka_surface_data(pixel, data);
+    }
+};
+
+struct Model : IShadingModel {
+    typealias Data = RikkaNoData;
+    typealias State = float;
+
+    [constref]
+    State prepare(RikkaPixel pixel, RikkaSurfaceData<Data> surface, RikkaContext context) {
+        return 1.0;
+    }
+
+    [constref]
+    void direct(inout State state, RikkaLightSample light, inout RikkaShadowQuery shadow, RikkaContext context) {
+        state *= shadow.map();
+    }
+
+    [constref]
+    void indirect(inout State state, RikkaIndirect indirect, RikkaContext context) {
+    }
+
+    [constref]
+    float4 resolve(State state, RikkaPixel pixel, RikkaContext context) {
+        return float4(float3(state), 1.0);
+    }
+};
+"#;
+
 const EYE: Vec3 = Vec3::new(0.0, 0.0, 3.0);
 const FOV: f32 = 1.0;
 
@@ -448,6 +487,47 @@ fn transparent_casters_tint_their_shadows() {
     assert!(
         tinted < 0.9 * lit && tinted > 0.1 * lit,
         "glass dims but does not block: {tinted} of {lit}"
+    );
+}
+
+#[test]
+fn depth_writing_transparent_casters_block_the_shadow_map() {
+    let mut renderer = renderer();
+    let mut view = viewport(&mut renderer, 1);
+    let floor = quad(&mut renderer, 0.0, 1.5);
+    let pane = quad(&mut renderer, 0.0, 0.3);
+    let template = ShaderCompiler::new()
+        .and_then(|compiler| compiler.template("shadow_map", SHADOW_MAP))
+        .expect("the shadow map template compiles");
+    let receiver = renderer
+        .three()
+        .create_material(MaterialDesc::new(&template))
+        .expect("a receiver");
+    let cloth = renderer
+        .three()
+        .create_material(rikka_test_renderer_3d::standard(
+            Vec4::ONE,
+            MaterialState::transparent()
+                .depth(true, true)
+                .shadows(true, true),
+        ))
+        .expect("a depth-writing transparent material");
+    let mut frame = lit_frame();
+    frame
+        .light(
+            Light::directional(Vec3::new(1.0, 0.0, -1.0))
+                .intensity(2.0)
+                .shadow(ShadowQuality::High),
+        )
+        .draw(Draw::new(floor, receiver))
+        .draw(Draw::new(pane, cloth).transform(Mat4::from_translation(Vec3::new(-0.5, 0.0, 0.5))));
+    let pixels = read(&mut renderer, &mut view, &frame);
+    let lit = luminance(&pixels, screen(Vec3::new(0.9, 0.0, 0.0)));
+    let shadowed = luminance(&pixels, screen(Vec3::new(0.1, 0.0, 0.0)));
+    assert!(lit > 200.0, "the open floor sees the light: {lit}");
+    assert!(
+        shadowed < 0.05 * lit,
+        "a depth-writing transparent caster occludes like a solid one: {shadowed} of {lit}"
     );
 }
 

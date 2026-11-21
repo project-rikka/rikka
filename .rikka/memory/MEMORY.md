@@ -601,7 +601,7 @@
 
 ## crates/foundation/rikka-worker
 
-- [Foundation runtime crates (worker, sync, heap, log, format)](foundation-runtime.md) — rikka-worker threads, channels, eventfds, Observable; rikka-sync, rikka-heap, rikka-log, rikka-format, interfaces.
+- [Foundation runtime crates (worker, sync, heap, log, format)](foundation-runtime.md) — rikka-worker threads, channels, eventfds, Observable; rikka-sync, rikka-parallel, rikka-heap, log, format, interfaces.
 
 ## crates/foundation/rikka-xml
 

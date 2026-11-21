@@ -458,8 +458,9 @@ fn bucket_for(built: &mut BuiltFrame, drawn: &Drawn<'_>, mesh: &MeshEntry) -> u3
 }
 
 fn shadow_class_for(built: &mut BuiltFrame, desc: &MaterialDesc, indices: IndexWidth) -> u32 {
-    let masked = desc.state.pass == MaterialPass::Masked;
-    let tint = desc.state.pass == MaterialPass::Transparent && desc.state.casts_shadow;
+    let transparent = desc.state.pass == MaterialPass::Transparent;
+    let masked = desc.state.pass == MaterialPass::Masked || (transparent && desc.state.depth_write);
+    let tint = transparent && !desc.state.depth_write && desc.state.casts_shadow;
     let program = match (masked || tint || desc.program.deforms) && desc.state.casts_shadow {
         true => Some(
             match built
