@@ -1,4 +1,5 @@
 use rikka_mesh_edit::{EdgeId, EditMesh, FaceId, FaceSample, Flags, IdMap, IdSet, VertId};
+use rikka_parallel::Threads;
 
 use crate::arrangement::{ArrangementInput, InputFace, Mode, Settings, arrange};
 use crate::error::Result;
@@ -9,7 +10,7 @@ pub(crate) struct ExactEdit {
     pub(crate) shapes: usize,
     pub(crate) use_self: bool,
     pub(crate) separate_all: bool,
-    pub(crate) threads: usize,
+    pub(crate) threads: Threads,
 }
 
 pub(crate) struct EditOutcome {

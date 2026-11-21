@@ -4,8 +4,8 @@ use glam::Vec2;
 use rikka_polymesh::Polymesh;
 use rustc_hash::FxHashMap;
 
+use crate::PARALLEL;
 use crate::kinds::subdivision::UvSmooth;
-use crate::parallel;
 
 pub(super) const INFINITE: f32 = f32::INFINITY;
 const SHARPNESS_INFINITE: f32 = 10.0;
@@ -33,12 +33,12 @@ impl Cage {
 
     pub(super) fn corner_faces(&self) -> Vec<u32> {
         let mut owners = vec![0u32; self.corners.len()];
-        let face_ranges = parallel::ranges(self.face_count(), GRAIN);
+        let face_ranges = PARALLEL.grain(GRAIN).ranges(self.face_count());
         let corner_ranges: Vec<std::ops::Range<usize>> = face_ranges
             .iter()
             .map(|range| self.faces[range.start] as usize..self.faces[range.end] as usize)
             .collect();
-        parallel::split_mut(&mut owners, &corner_ranges, |index, piece| {
+        PARALLEL.split_mut(&mut owners, &corner_ranges, |index, piece| {
             let base = corner_ranges[index].start;
             for face in face_ranges[index].clone() {
                 let range = self.face(face);
@@ -64,7 +64,7 @@ impl Grouped {
         entry: impl Fn(usize) -> (u32, u32) + Sync,
     ) -> Grouped {
         let counts: Vec<AtomicU32> = (0..=groups).map(|_| AtomicU32::new(0)).collect();
-        parallel::map_chunks(len, GRAIN, |range| {
+        PARALLEL.grain(GRAIN).map_chunks(len, |range| {
             for index in range {
                 let (group, _) = entry(index);
                 if group != SKIP {
@@ -81,7 +81,7 @@ impl Grouped {
             .map(|&offset| AtomicU32::new(offset))
             .collect();
         let slots: Vec<AtomicU32> = (0..offsets[groups]).map(|_| AtomicU32::new(0)).collect();
-        parallel::map_chunks(len, GRAIN, |range| {
+        PARALLEL.grain(GRAIN).map_chunks(len, |range| {
             for index in range {
                 let (group, value) = entry(index);
                 if group != SKIP {
@@ -91,13 +91,13 @@ impl Grouped {
             }
         });
         let mut values: Vec<u32> = slots.into_iter().map(AtomicU32::into_inner).collect();
-        let group_ranges = parallel::ranges(groups, GRAIN);
+        let group_ranges = PARALLEL.grain(GRAIN).ranges(groups);
         let value_ranges: Vec<std::ops::Range<usize>> = group_ranges
             .iter()
             .map(|range| offsets[range.start] as usize..offsets[range.end] as usize)
             .collect();
         let offsets_ref = &offsets;
-        parallel::split_mut(&mut values, &value_ranges, |index, piece| {
+        PARALLEL.split_mut(&mut values, &value_ranges, |index, piece| {
             let base = value_ranges[index].start;
             for group in group_ranges[index].clone() {
                 let start = offsets_ref[group] as usize - base;

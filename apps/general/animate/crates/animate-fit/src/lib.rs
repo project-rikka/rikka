@@ -2,7 +2,6 @@ mod band;
 mod garment;
 mod intrusion;
 mod mover;
-mod parallel;
 mod physique;
 mod region;
 mod scene;

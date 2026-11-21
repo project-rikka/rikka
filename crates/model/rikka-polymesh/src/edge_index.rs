@@ -1,6 +1,6 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 
-use crate::parallel;
+use crate::PARALLEL;
 use crate::polymesh::Polymesh;
 use crate::validate::ordered;
 
@@ -31,7 +31,7 @@ impl Polymesh {
         let corners = self.corner_count();
         let owners = self.corner_faces();
         let mesh = &*self;
-        let keys = parallel::collect(corners - first, GRAIN, |offset| {
+        let keys = PARALLEL.grain(GRAIN).collect(corners - first, |offset| {
             mesh.corner_key(&owners, first + offset)
         });
         let candidates: Vec<u32> = (first..corners)
@@ -86,7 +86,7 @@ impl Polymesh {
         let resolved: Vec<AtomicU32> = (0..candidates.len())
             .map(|_| AtomicU32::new(NONE))
             .collect();
-        parallel::collect(buckets, GRAIN, |bucket| {
+        PARALLEL.grain(GRAIN).collect(buckets, |bucket| {
             let bucket = &entries[offsets[bucket] as usize..offsets[bucket + 1] as usize];
             for entry in bucket.iter().filter(|entry| entry.corner) {
                 let existing = bucket

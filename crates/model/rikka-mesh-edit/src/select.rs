@@ -1,7 +1,7 @@
+use crate::PARALLEL;
 use crate::core::Ring;
 use crate::ids::{EdgeId, Element, FaceId, LoopId, VertId};
 use crate::mesh::{EditMesh, Flags, SelectMode};
-use crate::parallel;
 
 impl EditMesh {
     #[must_use]
@@ -132,7 +132,7 @@ impl EditMesh {
     }
 
     fn edges_where(&self, test: impl Fn(EdgeId) -> bool + Sync) -> Vec<EdgeId> {
-        parallel::indices_where(self.edges.capacity(), |index| {
+        indices_where(self.edges.capacity(), |index| {
             self.edges.is_alive(index as u32) && test(EdgeId(index as u32))
         })
         .into_iter()
@@ -141,7 +141,7 @@ impl EditMesh {
     }
 
     fn faces_where(&self, test: impl Fn(FaceId) -> bool + Sync) -> Vec<FaceId> {
-        parallel::indices_where(self.faces.capacity(), |index| {
+        indices_where(self.faces.capacity(), |index| {
             self.faces.is_alive(index as u32) && test(FaceId(index as u32))
         })
         .into_iter()
@@ -690,4 +690,13 @@ impl EditMesh {
         self.select_mode_flush();
         true
     }
+}
+
+pub(crate) fn indices_where(len: usize, test: impl Fn(usize) -> bool + Sync) -> Vec<u32> {
+    PARALLEL.concat_chunks(len, |range| {
+        range
+            .filter(|&index| test(index))
+            .map(|index| index as u32)
+            .collect()
+    })
 }

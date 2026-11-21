@@ -1,7 +1,7 @@
 use rikka_polymesh::{AttributeValue, Domain, Polymesh, Values};
 
 use super::stencil::Stencil;
-use crate::parallel;
+use crate::PARALLEL;
 
 const GRAIN: usize = 1 << 14;
 
@@ -32,14 +32,16 @@ fn mixed<T: AttributeValue>(list: &[T], stencil: &Stencil) -> Vec<T> {
 fn halves<T: AttributeValue>(list: &[T], len: usize) -> Vec<T> {
     let mut output = vec![T::DEFAULT; len];
     let pairs = (list.len() * 2).min(len);
-    parallel::fill(&mut output[..pairs], GRAIN, |index, slot| {
-        *slot = list[index / 2]
-    });
+    PARALLEL
+        .grain(GRAIN)
+        .fill(&mut output[..pairs], |index, slot| *slot = list[index / 2]);
     output
 }
 
 fn repeated<T: AttributeValue>(list: &[T], owners: &[u32]) -> Vec<T> {
-    parallel::collect(owners.len(), GRAIN, |index| list[owners[index] as usize])
+    PARALLEL
+        .grain(GRAIN)
+        .collect(owners.len(), |index| list[owners[index] as usize])
 }
 
 pub(super) fn interpolate(mesh: &mut Polymesh, domain: Domain, stencil: &Stencil) {

@@ -1,6 +1,6 @@
 use glam::Vec3;
 
-use crate::parallel;
+use crate::gather::gather;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ShapeKey {
@@ -106,7 +106,7 @@ impl ShapeKeys {
 
     pub fn gather(&mut self, indices: &[u32]) {
         for key in &mut self.keys {
-            key.positions = parallel::gather(&key.positions, indices);
+            key.positions = gather(&key.positions, indices);
         }
     }
 

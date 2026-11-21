@@ -1,12 +1,14 @@
 use std::io;
 use std::path::Path;
 
+use rikka_parallel::Parallel;
 use rikka_text_font::FontFile;
 
 use crate::coverage::{CoverageBuilder, Page};
 use crate::discovery::{FileStamp, Mapping};
 use crate::face::{FaceRecord, extract};
-use crate::parallel::parallel_map;
+
+const SCAN: Parallel = Parallel::new("rikka-font-scan");
 
 pub(crate) type ScannedFace = (FaceRecord, Vec<(u16, Page)>);
 
@@ -16,7 +18,7 @@ pub(crate) struct ScannedFile {
 }
 
 pub(crate) fn scan_files(paths: &[&Path]) -> Vec<io::Result<ScannedFile>> {
-    let mapped = parallel_map(paths, || (), |(), path| Mapping::open(path));
+    let mapped = SCAN.map(paths, |path| Mapping::open(path));
     let sources: Vec<(&[u8], String)> = mapped
         .iter()
         .zip(paths)
@@ -46,7 +48,7 @@ pub(crate) fn scan_bytes(sources: &[(&[u8], String)]) -> Vec<Vec<ScannedFace>> {
         }
     }
     jobs.sort_by_key(|&(file, _)| std::cmp::Reverse(sources[file].0.len()));
-    let faces = parallel_map(&jobs, CoverageBuilder::new, |coverage, &(file, face)| {
+    let faces = SCAN.map_with(&jobs, CoverageBuilder::new, |coverage, &(file, face)| {
         let (bytes, stem) = &sources[file];
         let font = FontFile::new(bytes).ok()?.face(face).ok()?;
         Some(extract(&font, stem, coverage))

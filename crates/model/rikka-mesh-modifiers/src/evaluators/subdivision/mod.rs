@@ -18,11 +18,11 @@ use self::refine::{
 };
 use self::stencil::{Blendable, Stencil};
 use super::Scope;
+use crate::PARALLEL;
 use crate::kinds::subdivision::{BoundarySmooth, Subdivision, SubdivisionType};
 use crate::modifier::Purpose;
 use crate::note::NoteKind;
 use crate::origins;
-use crate::parallel;
 
 pub(crate) use self::cache::Cached;
 
@@ -104,9 +104,9 @@ impl Chain {
         }
         let current = current.unwrap_or_else(|| values.to_vec());
         match &self.order {
-            Some(order) => {
-                parallel::collect(order.len(), GRAIN, |index| current[order[index] as usize])
-            }
+            Some(order) => PARALLEL
+                .grain(GRAIN)
+                .collect(order.len(), |index| current[order[index] as usize]),
             None => current,
         }
     }
@@ -223,9 +223,9 @@ fn subdivide(subdivision: &Subdivision, mesh: &mut Polymesh, levels: u32) -> Cha
             .attributes
             .values_mut::<Vec3>(CUSTOM_NORMAL, Domain::Corner)
         {
-            parallel::fill(normals, GRAIN, |_, normal| {
-                *normal = normal.normalize_or_zero()
-            });
+            PARALLEL
+                .grain(GRAIN)
+                .fill(normals, |_, normal| *normal = normal.normalize_or_zero());
         }
         for layer in &mut uv_layers {
             let refined_uv = refine(&layer.cage.cage, layer.cage.linear, Extent::Full);
@@ -265,7 +265,7 @@ fn subdivide(subdivision: &Subdivision, mesh: &mut Polymesh, levels: u32) -> Cha
         let corners = &layer.cage.cage.corners;
         let values = &layer.cage.values;
         if let Some(target) = mesh.uv_map_mut(&layer.name) {
-            parallel::fill(target, GRAIN, |corner, uv: &mut Vec2| {
+            PARALLEL.grain(GRAIN).fill(target, |corner, uv: &mut Vec2| {
                 *uv = values[corners[corner] as usize];
             });
         }

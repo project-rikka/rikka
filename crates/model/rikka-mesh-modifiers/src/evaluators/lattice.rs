@@ -2,9 +2,9 @@ use glam::{Mat3, Mat4, Vec3};
 use rikka_polymesh::Polymesh;
 
 use super::vertex_group::Group;
+use crate::PARALLEL;
 use crate::kinds::lattice::{Lattice, LatticeGrid, LatticeInterpolation};
 use crate::note::SkipReason;
-use crate::parallel;
 
 const GRAIN: usize = 1 << 12;
 
@@ -124,19 +124,21 @@ pub(crate) fn evaluate(lattice: &Lattice, mesh: &mut Polymesh) -> Result<(), Ski
     let deform = Deform::new(&lattice.lattice);
     let mut positions = std::mem::take(&mut mesh.positions);
     let source = &*mesh;
-    parallel::fill(&mut positions, GRAIN, |point, position| {
-        let weight = match group {
-            Group::Weighted(_) => {
-                let weight = group.weight(source, point, lattice.invert_vertex_group);
-                if weight <= 0.0 {
-                    return;
+    PARALLEL
+        .grain(GRAIN)
+        .fill(&mut positions, |point, position| {
+            let weight = match group {
+                Group::Weighted(_) => {
+                    let weight = group.weight(source, point, lattice.invert_vertex_group);
+                    if weight <= 0.0 {
+                        return;
+                    }
+                    weight * lattice.strength
                 }
-                weight * lattice.strength
-            }
-            Group::Unset | Group::Unweighted => lattice.strength,
-        };
-        deform.apply(position, weight);
-    });
+                Group::Unset | Group::Unweighted => lattice.strength,
+            };
+            deform.apply(position, weight);
+        });
     mesh.positions = positions;
     Ok(())
 }

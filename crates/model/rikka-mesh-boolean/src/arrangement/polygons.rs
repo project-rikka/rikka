@@ -1,9 +1,9 @@
 use glam::DVec3;
 use rustc_hash::FxHashMap;
 
+use crate::PARALLEL;
 use crate::arrangement::{Arrangement, Context, OutputFace, OutputVertex, Triangle};
 use crate::merge::{MergeRules, merge_triangles};
-use crate::parallel::map_chunks;
 
 const FACES_PER_TASK: usize = 2048;
 const IN_LINE_TOLERANCE: f64 = 1.0e-4;
@@ -207,25 +207,23 @@ pub(crate) fn recover(context: &Context, triangles: &[Triangle], origins: &[u32]
     for (index, triangle) in triangles.iter().enumerate() {
         by_face[triangle.face as usize].push(index as u32);
     }
-    let mut faces: Vec<OutputFace> = map_chunks(
-        by_face.len(),
-        context.settings.threads,
-        FACES_PER_TASK,
-        |range| {
-            range
-                .flat_map(|face| {
-                    let tris: Vec<&Triangle> = by_face[face]
-                        .iter()
-                        .map(|&t| &triangles[t as usize])
-                        .collect();
-                    match tris.is_empty() {
-                        true => Vec::new(),
-                        false => merge_face(context, face as u32, &tris),
-                    }
-                })
-                .collect()
-        },
-    );
+    let parallel = PARALLEL
+        .grain(FACES_PER_TASK)
+        .threads(context.settings.threads);
+    let mut faces: Vec<OutputFace> = parallel.concat_chunks(by_face.len(), |range| {
+        range
+            .flat_map(|face| {
+                let tris: Vec<&Triangle> = by_face[face]
+                    .iter()
+                    .map(|&t| &triangles[t as usize])
+                    .collect();
+                match tris.is_empty() {
+                    true => Vec::new(),
+                    false => merge_face(context, face as u32, &tris),
+                }
+            })
+            .collect()
+    });
     dissolve_verts(context, &mut faces);
     let mut used = vec![false; context.table.len()];
     for face in &faces {

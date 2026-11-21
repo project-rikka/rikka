@@ -1,0 +1,18 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-parallel",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-sync",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-parallel",
+    ],
+)

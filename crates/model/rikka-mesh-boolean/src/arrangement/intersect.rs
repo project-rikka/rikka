@@ -6,12 +6,12 @@ use rikka_spatial::{Aabb, Bvh};
 use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 
+use crate::PARALLEL;
 use crate::arrangement::kernel::{FaceKernel, Support, VertexRef};
 use crate::arrangement::{Context, Triangle};
 use crate::cdt::EdgeOrigin;
 use crate::cdt::triangulation::{Triangulation, edge_key};
 use crate::exact::{Point, VertexTable};
-use crate::parallel::map_chunks;
 
 const PAIRS_PER_TASK: usize = 512;
 
@@ -53,17 +53,19 @@ struct JobOutput {
 
 pub(crate) fn intersect(context: &mut Context, triangles: &[Triangle]) -> Vec<Triangle> {
     let pairs = candidate_pairs(context, triangles);
-    let threads = context.settings.threads;
+    let parallel = PARALLEL.threads(context.settings.threads);
     let hits: Vec<Hit> = {
         let context = &*context;
-        map_chunks(pairs.len(), threads, PAIRS_PER_TASK, |range| {
-            range
-                .map(|index| {
-                    let (a, b) = pairs[index];
-                    intersect_pair(context, &triangles[a as usize], &triangles[b as usize])
-                })
-                .collect()
-        })
+        parallel
+            .grain(PAIRS_PER_TASK)
+            .concat_chunks(pairs.len(), |range| {
+                range
+                    .map(|index| {
+                        let (a, b) = pairs[index];
+                        intersect_pair(context, &triangles[a as usize], &triangles[b as usize])
+                    })
+                    .collect()
+            })
     };
     let mut constraints: Vec<Constraints> = (0..triangles.len())
         .map(|_| Constraints::default())
@@ -118,7 +120,7 @@ pub(crate) fn intersect(context: &mut Context, triangles: &[Triangle]) -> Vec<Tr
     let outputs: Vec<JobOutput> = {
         let table = &context.table;
         let constraints = &constraints;
-        map_chunks(jobs.len(), threads, 1, |range| {
+        parallel.concat_chunks(jobs.len(), |range| {
             range
                 .map(|index| match &jobs[index].1 {
                     Job::Single(t) => run_job(table, triangles, constraints, &[*t]),
@@ -197,7 +199,7 @@ fn triangle_bounds(context: &Context, triangle: &Triangle) -> Aabb {
 }
 
 fn candidate_pairs(context: &Context, triangles: &[Triangle]) -> Vec<(u32, u32)> {
-    let threads = NonZeroUsize::new(context.settings.threads).unwrap_or(NonZeroUsize::MIN);
+    let threads = NonZeroUsize::from(context.settings.threads);
     let use_self = context.settings.use_self;
     let mut pairs: Vec<(u32, u32)> = Vec::new();
     let canonical = |a: u32, b: u32| (a.min(b), a.max(b));

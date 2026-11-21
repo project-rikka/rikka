@@ -27,7 +27,6 @@ mod mesh;
 mod mirror;
 mod mods;
 mod normals;
-mod parallel;
 mod path;
 mod primitives;
 mod query;
@@ -85,3 +84,6 @@ pub use split::{EdgeSplit, FacePathSplit, FaceSplit};
 pub use tessellate::Tessellation;
 pub use walk::{Walk, WalkDelimit};
 pub use weld::WeldOptions;
+
+const PARALLEL: rikka_parallel::Parallel =
+    rikka_parallel::Parallel::new("rikka-mesh-edit").grain(1 << 14);

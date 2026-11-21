@@ -1,6 +1,6 @@
 use super::cage::{Around, Cage, NO_EDGE};
 use super::stencil::Stencil;
-use crate::parallel;
+use crate::PARALLEL;
 
 const GRAIN: usize = 1 << 13;
 
@@ -233,7 +233,7 @@ fn full_child(cage: &Cage) -> Cage {
     let inner = |corner: usize| (edge_count * 2 + corner) as u32;
     let mut corners = vec![0u32; corner_count * 4];
     let mut corner_edges = vec![0u32; corner_count * 4];
-    let ranges = parallel::ranges(face_count, GRAIN / 4);
+    let ranges = PARALLEL.grain(GRAIN / 4).ranges(face_count);
     let corner_ranges: Vec<std::ops::Range<usize>> = ranges
         .iter()
         .map(|range| cage.faces[range.start] as usize * 4..cage.faces[range.end] as usize * 4)
@@ -241,7 +241,7 @@ fn full_child(cage: &Cage) -> Cage {
     let face_ranges = &ranges;
     let fill = |values: &mut [u32],
                 pick: &(dyn Fn(usize, usize, usize, usize) -> [u32; 4] + Sync)| {
-        parallel::split_mut(values, &corner_ranges, |index, piece| {
+        PARALLEL.split_mut(values, &corner_ranges, |index, piece| {
             let base = corner_ranges[index].start;
             for face in face_ranges[index].clone() {
                 let start = cage.faces[face] as usize;
@@ -277,27 +277,32 @@ fn full_child(cage: &Cage) -> Cage {
     });
     let faces: Vec<u32> = (0..=corner_count as u32).map(|face| face * 4).collect();
     let corner_faces = cage.corner_faces();
-    let edges: Vec<[u32; 2]> = parallel::collect(edge_count * 2 + corner_count, GRAIN, |index| {
-        if index < edge_count * 2 {
-            let edge = index / 2;
-            let [a, b] = cage.edges[edge];
-            match index % 2 {
-                0 => [a, edge_point(edge as u32)],
-                _ => [edge_point(edge as u32), b],
-            }
-        } else {
-            let corner = index - edge_count * 2;
-            [
-                edge_point(cage.corner_edges[corner]),
-                face_point(corner_faces[corner] as usize),
-            ]
-        }
-    });
+    let edges: Vec<[u32; 2]> =
+        PARALLEL
+            .grain(GRAIN)
+            .collect(edge_count * 2 + corner_count, |index| {
+                if index < edge_count * 2 {
+                    let edge = index / 2;
+                    let [a, b] = cage.edges[edge];
+                    match index % 2 {
+                        0 => [a, edge_point(edge as u32)],
+                        _ => [edge_point(edge as u32), b],
+                    }
+                } else {
+                    let corner = index - edge_count * 2;
+                    [
+                        edge_point(cage.corner_edges[corner]),
+                        face_point(corner_faces[corner] as usize),
+                    ]
+                }
+            });
     let edge_sharpness: Vec<f32> =
-        parallel::collect(edges.len(), GRAIN, |index| match index < edge_count * 2 {
-            true => (cage.edge_sharpness[index / 2] - 1.0).max(0.0),
-            false => 0.0,
-        });
+        PARALLEL
+            .grain(GRAIN)
+            .collect(edges.len(), |index| match index < edge_count * 2 {
+                true => (cage.edge_sharpness[index / 2] - 1.0).max(0.0),
+                false => 0.0,
+            });
     let mut point_sharpness: Vec<f32> = cage
         .point_sharpness
         .iter()

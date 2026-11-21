@@ -2,18 +2,20 @@ use glam::{DVec2, DVec3};
 use rustc_hash::FxHashMap;
 use smallvec::SmallVec;
 
+use crate::PARALLEL;
 use crate::arrangement::{Context, Triangle};
 use crate::cdt::{Cdt, CdtOutput, EdgeOrigin};
 use crate::exact::projection;
-use crate::parallel::map_chunks;
 
 const FACES_PER_TASK: usize = 4096;
 
 type Triangles = SmallVec<[Triangle; 2]>;
 
 pub(crate) fn triangulate_faces(context: &Context) -> Vec<Triangle> {
-    let threads = context.settings.threads;
-    map_chunks(context.faces.len(), threads, FACES_PER_TASK, |range| {
+    let parallel = PARALLEL
+        .grain(FACES_PER_TASK)
+        .threads(context.settings.threads);
+    parallel.concat_chunks(context.faces.len(), |range| {
         range
             .flat_map(|face| triangulate_face(context, face as u32))
             .collect()

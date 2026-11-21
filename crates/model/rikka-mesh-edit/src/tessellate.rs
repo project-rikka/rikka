@@ -1,9 +1,9 @@
 use glam::Vec3;
 use rikka_model_core::polygon;
 
+use crate::PARALLEL;
 use crate::ids::{FaceId, LoopId, VertId};
 use crate::mesh::EditMesh;
-use crate::parallel;
 use crate::sets::IdSet;
 
 const NO_START: u32 = u32::MAX;
@@ -62,7 +62,7 @@ impl EditMesh {
     #[must_use]
     pub fn tessellate(&self) -> Tessellation {
         let faces: Vec<FaceId> = self.faces().collect();
-        let owned = parallel::concat(faces.len(), |range| {
+        let owned = PARALLEL.concat_chunks(faces.len(), |range| {
             let mut triangles = Vec::new();
             let mut owned = Vec::new();
             for &face in &faces[range] {

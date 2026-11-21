@@ -11,7 +11,6 @@ mod modifier;
 mod normals;
 mod note;
 mod origins;
-mod parallel;
 mod reference;
 mod space;
 mod target;
@@ -55,3 +54,5 @@ pub use note::{Note, NoteKind, SkipReason, TransferFailure};
 pub use origins::Origins;
 pub use reference::{CollectionRef, MaterialRef, ObjectRef, TextureRef};
 pub use target::Target;
+
+const PARALLEL: rikka_parallel::Parallel = rikka_parallel::Parallel::new("rikka-mesh-modifiers");
