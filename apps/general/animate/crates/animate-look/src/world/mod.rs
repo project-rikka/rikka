@@ -22,16 +22,16 @@ pub use scene::{
 };
 
 use rikka_renderer_3d::{
-    Denoise, Fog, Illumination, Lines, Occlusion, Particles, Reflections, ScreenShadows, Shadows,
-    Sky,
+    Denoise, Fog, Illumination, Lines, Occlusion, Particles, Reflections, ScreenShadows,
+    ShadowQuality, Shadows, Sky,
 };
 use rikka_shader_graph::Record;
 
 use crate::error::Error;
 use crate::world::nodes::{
-    BACKDROP, CAMERA, CHARACTERS, DENOISE, EMITTERS, ENVIRONMENT, FLOOR, FOG, ILLUMINATION, LIGHTS,
-    LINES, OCCLUSION, OVERRIDES, PANORAMA, PARTICLES, REFLECTIONS, RIGS, SAMPLING, SHADOWS, SKY,
-    STAGE_LIGHT, shadows_default,
+    BACKDROP, CAMERA, CHARACTERS, DENOISE, EMITTERS, ENVIRONMENT, FIGURE_SHADOW, FLOOR, FOG,
+    ILLUMINATION, LIGHTS, LINES, OCCLUSION, OVERRIDES, PANORAMA, PARTICLES, REFLECTIONS, RIGS,
+    SAMPLING, SHADOWS, SKY, STAGE_LIGHT, shadows_default,
 };
 use crate::world::read::Read;
 
@@ -42,6 +42,7 @@ pub struct World {
     pub lights: Vec<LightLook>,
     pub fog: Option<Fog>,
     pub shadows: Shadows,
+    pub figure_shadow: ShadowQuality,
     pub occlusion: Option<Occlusion>,
     pub reflections: Option<Reflections>,
     pub illumination: Option<Illumination>,
@@ -65,6 +66,7 @@ impl Default for World {
             lights: Vec::new(),
             fog: None,
             shadows: shadows_default(),
+            figure_shadow: FIGURE_SHADOW,
             occlusion: None,
             reflections: None,
             illumination: None,
@@ -106,6 +108,8 @@ impl World {
                 .collect::<Result<_, _>>()?,
             fog: optional(world, FOG, fog)?,
             shadows: optional(world, SHADOWS, shadows)?.unwrap_or(base.shadows),
+            figure_shadow: optional(world, SHADOWS, |read| read.choice("figures"))?
+                .unwrap_or(base.figure_shadow),
             occlusion: optional(world, OCCLUSION, occlusion)?,
             reflections: optional(world, REFLECTIONS, reflections)?,
             illumination: optional(world, ILLUMINATION, illumination)?,

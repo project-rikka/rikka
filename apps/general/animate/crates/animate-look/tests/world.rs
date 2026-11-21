@@ -123,6 +123,13 @@ fn default_look_is_the_bare_mmd_stage() {
     assert_eq!(world.backdrop, Some(Backdrop::Color(Vec3::ONE)));
     assert_eq!(world.stage_light, Some(StageLight::default()));
     assert_eq!(world.shadows.screen.strength, 0.0);
+    assert_eq!(
+        world
+            .drawn_figure("miku", None, &mut Lookup::default())
+            .shadow,
+        ShadowQuality::High,
+        "every figure casts through its own map"
+    );
     assert_eq!(world.floor.map(|floor| floor.kind), Some(FloorKind::Shadow));
     assert!(world.grid());
     assert_eq!(world.sampling.antialiasing, AntialiasingMode::Temporal);
