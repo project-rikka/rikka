@@ -121,15 +121,29 @@ pub(crate) fn collecting<R>(body: impl FnOnce() -> R) -> (R, Effects) {
     (result, effects)
 }
 
+struct Enclosing {
+    acted: bool,
+    plain: bool,
+    skip_view: bool,
+    chain: Vec<Rc<Scoped>>,
+}
+
 pub(crate) fn acting<R>(chain: &Chain, acts: Acts, body: impl FnOnce() -> R) -> R {
-    let outer = with_effects(|effects| {
-        effects.acted |= acts != Acts::Relaying;
-        effects.plain |= acts == Acts::Plainly;
-        std::mem::replace(&mut effects.chain, chain.to_vec())
+    let enclosing = with_effects(|effects| Enclosing {
+        acted: std::mem::replace(&mut effects.acted, acts != Acts::Relaying),
+        plain: std::mem::replace(&mut effects.plain, acts == Acts::Plainly),
+        skip_view: std::mem::take(&mut effects.skip_view),
+        chain: std::mem::replace(&mut effects.chain, chain.to_vec()),
     });
     let result = body();
-    if let Some(outer) = outer {
-        with_effects(|effects| effects.chain = outer);
+    if let Some(enclosing) = enclosing {
+        with_effects(|effects| {
+            let kept = !effects.skip_view;
+            effects.acted = enclosing.acted || (kept && effects.acted);
+            effects.plain = enclosing.plain || (kept && effects.plain);
+            effects.skip_view = enclosing.skip_view;
+            effects.chain = enclosing.chain;
+        });
     }
     result
 }

@@ -3,7 +3,7 @@ use std::time::Instant;
 use rikka_renderer::Scene;
 use rikka_theme::Theme;
 use rikka_types::Size;
-use rikka_ui::{Rendering, State, TypedUi, View, skip_view, text};
+use rikka_ui::{Handler, Rendering, State, TypedUi, View, skip_view, text};
 
 #[derive(Default, State)]
 struct Counter {
@@ -74,4 +74,18 @@ fn skip_view_keeps_earlier_change() {
     harness.ui.update(|counter| counter.same(1));
 
     assert!(harness.needs_frame(), "earlier change lost its rebuild");
+}
+
+#[test]
+fn skip_view_spares_later_handler_in_same_dispatch() {
+    let mut harness = Harness::new();
+    let same = Handler::new(Counter::same);
+    let set = Handler::new(Counter::set);
+
+    harness.ui.start(Handler::relaying(move |reach, ()| {
+        same.call(reach, (0,));
+        set.call(reach, (1,))
+    }));
+
+    assert!(harness.needs_frame(), "later change lost its rebuild");
 }
