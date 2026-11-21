@@ -1,3 +1,4 @@
+use rikka_parallel::Threads;
 use rikka_polymesh::{Domain, MATERIAL_INDEX};
 
 use crate::arrangement::{ArrangementInput, InputFace, Mode, Settings, arrange};
@@ -11,7 +12,7 @@ pub(crate) struct ExactOptions {
     pub(crate) operation: Operation,
     pub(crate) use_self: bool,
     pub(crate) hole_tolerant: bool,
-    pub(crate) threads: usize,
+    pub(crate) threads: Threads,
 }
 
 pub(crate) fn remap_material(table: Option<&[i32]>, material: i32) -> i32 {

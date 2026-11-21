@@ -6,6 +6,7 @@ rikka_library(
     visibility = ["//visibility:public"],
     deps = [
         "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-parallel",
         "//crates/model/rikka-mesh-bevel",
         "//crates/model/rikka-mesh-boolean",
         "//crates/model/rikka-mesh-edit",

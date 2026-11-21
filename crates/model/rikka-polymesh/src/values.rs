@@ -1,6 +1,6 @@
 use glam::{Vec2, Vec3, Vec4};
 
-use crate::parallel;
+use crate::gather::gather;
 const LUMINANCE: Vec3 = Vec3::new(0.212_672_9, 0.715_152_2, 0.072_175);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -230,7 +230,7 @@ impl Values {
 
     pub fn gather(&mut self, indices: &[u32]) {
         each!(self, list => {
-            *list = parallel::gather(list, indices);
+            *list = gather(list, indices);
         })
     }
 

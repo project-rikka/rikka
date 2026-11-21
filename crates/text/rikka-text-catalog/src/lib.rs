@@ -10,7 +10,6 @@ mod family;
 mod index;
 mod locale;
 mod matching;
-mod parallel;
 mod query;
 mod report;
 mod style;

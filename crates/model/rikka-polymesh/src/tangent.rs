@@ -3,8 +3,8 @@ use std::hash::BuildHasher;
 use glam::{Vec2, Vec3, Vec4};
 use rustc_hash::{FxBuildHasher, FxHashMap};
 
+use crate::PARALLEL;
 use crate::normals::acos_approx;
-use crate::parallel;
 
 const UNSET: u32 = u32::MAX;
 const WELD_GRAIN: usize = 1 << 14;
@@ -194,7 +194,7 @@ impl Mikk<'_> {
         let count = self.triangles.len() * 3;
         let this = &*self;
         let packed = |index: usize| this.triangles[index / 3].vertices[index % 3];
-        let shard_of = parallel::collect(count, WELD_GRAIN, |index| {
+        let shard_of = PARALLEL.grain(WELD_GRAIN).collect(count, |index| {
             (FxBuildHasher.hash_one(this.weld_key(packed(index))) >> (64 - WELD_SHARD_BITS)) as u16
         });
         let shards = 1usize << WELD_SHARD_BITS;
@@ -212,7 +212,7 @@ impl Mikk<'_> {
             members[*slot as usize] = index as u32;
             *slot += 1;
         }
-        let firsts = parallel::collect(shards, 1, |shard| {
+        let firsts = PARALLEL.grain(1).collect(shards, |shard| {
             let members = &members[offsets[shard] as usize..offsets[shard + 1] as usize];
             let mut seen: FxHashMap<WeldKey, u32> =
                 FxHashMap::with_capacity_and_hasher(members.len(), Default::default());

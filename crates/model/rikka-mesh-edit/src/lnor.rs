@@ -3,10 +3,10 @@ use std::f32::consts::TAU;
 use glam::Vec3;
 use rikka_polymesh::{CUSTOM_NORMAL, Domain, acos_approx};
 
+use crate::PARALLEL;
 use crate::ids::{EdgeId, ElementId, LoopId, VertId};
 use crate::journal::JournalMark;
 use crate::mesh::EditMesh;
-use crate::parallel;
 use crate::sets::IdSet;
 
 const UNSET: u32 = u32::MAX;
@@ -446,7 +446,7 @@ impl NormalSpaces {
     }
 
     fn refresh(&mut self, mesh: &EditMesh, fans: &[u32]) {
-        let spaces = parallel::concat(fans.len(), |range| {
+        let spaces = PARALLEL.concat_chunks(fans.len(), |range| {
             let mut scratch = FanScratch::default();
             range
                 .map(|index| self.compute_space(mesh, fans[index] as usize, &mut scratch))
@@ -458,7 +458,7 @@ impl NormalSpaces {
     }
 
     fn refresh_all(&mut self, mesh: &EditMesh) {
-        let spaces = parallel::concat(self.fans.len(), |range| {
+        let spaces = PARALLEL.concat_chunks(self.fans.len(), |range| {
             let mut scratch = FanScratch::default();
             range
                 .map(|fan| self.compute_space(mesh, fan, &mut scratch))
@@ -535,7 +535,7 @@ impl NormalSpaces {
         let Some(stored) = mesh.custom_normals() else {
             return data;
         };
-        let values = parallel::concat(self.fans.len(), |range| {
+        let values = PARALLEL.concat_chunks(self.fans.len(), |range| {
             let mut values: Vec<[i16; 2]> = Vec::new();
             for fan in range {
                 let space = &self.fans[fan].space;
@@ -604,7 +604,7 @@ impl NormalSpaces {
 
     fn changed_all(&self, mesh: &EditMesh, data: &[[i16; 2]]) -> Vec<(LoopId, Vec3)> {
         let current = mesh.custom_normals();
-        parallel::concat(self.fan_of.len(), |range| {
+        PARALLEL.concat_chunks(self.fan_of.len(), |range| {
             range
                 .filter_map(|index| {
                     let lp = LoopId::from_index(index);

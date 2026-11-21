@@ -1,5 +1,6 @@
 use std::num::NonZeroUsize;
 
+use rikka_parallel::Threads;
 use rikka_polymesh::Polymesh;
 
 use crate::error::{Error, Result};
@@ -7,7 +8,6 @@ use crate::exact_boolean::{self, ExactOptions};
 use crate::fast;
 use crate::operand::Operand;
 use crate::operation::{Operation, Solver};
-use crate::parallel::thread_count;
 
 pub const DEFAULT_THRESHOLD: f32 = 1.0e-6;
 
@@ -111,7 +111,7 @@ impl<'a> Boolean<'a> {
 
     pub fn compute(&self) -> Result<BooleanResult> {
         self.validate()?;
-        let threads = thread_count(self.threads);
+        let threads = self.threads.map_or_else(Threads::available, Threads::from);
         match self.solver {
             Solver::Exact => Ok(exact_boolean::boolean(
                 &self.operands,

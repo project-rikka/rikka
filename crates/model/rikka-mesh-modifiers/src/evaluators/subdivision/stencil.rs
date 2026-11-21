@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use glam::{Vec2, Vec3};
 
-use crate::parallel;
+use crate::PARALLEL;
 
 const GRAIN: usize = 1 << 13;
 
@@ -33,7 +33,7 @@ pub(crate) struct Stencil {
 
 impl Stencil {
     pub(crate) fn build(rows: usize, row: impl Fn(usize, &mut Vec<(u32, f32)>) + Sync) -> Stencil {
-        let chunks = parallel::map_chunks(rows, GRAIN, |range| {
+        let chunks = PARALLEL.grain(GRAIN).map_chunks(rows, |range| {
             let mut offsets = Vec::with_capacity(range.len() + 1);
             let mut entries = Vec::with_capacity(range.len() * 4);
             offsets.push(0);
@@ -80,7 +80,7 @@ impl Stencil {
             .map(|chunk| chunk.rows.start.min(rows)..chunk.rows.end.min(rows))
             .collect();
         let chunks = &self.chunks;
-        parallel::split_mut(&mut output[..rows], &ranges, |index, piece| {
+        PARALLEL.split_mut(&mut output[..rows], &ranges, |index, piece| {
             let chunk = &chunks[index];
             for (local, slot) in piece.iter_mut().enumerate() {
                 let start = chunk.offsets[local] as usize;

@@ -1,6 +1,7 @@
 use std::num::NonZeroUsize;
 
 use rikka_mesh_edit::{EdgeId, EditMesh, ElementKind, FaceId, IdMap, SelectAction, SelectMode};
+use rikka_parallel::Threads;
 
 use crate::arrangement::Mode;
 use crate::boolean::DEFAULT_THRESHOLD;
@@ -9,7 +10,6 @@ use crate::error::{Error, Result};
 use crate::fast::intersect::{IntersectOptions, intersect};
 use crate::fast::separate::separate_faces;
 use crate::operation::{Operation, Solver};
-use crate::parallel::thread_count;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub enum IntersectSource {
@@ -172,7 +172,7 @@ impl IntersectKnife {
                         shapes: if use_self { 1 } else { 2 },
                         use_self,
                         separate_all,
-                        threads: thread_count(self.threads),
+                        threads: self.threads.map_or_else(Threads::available, Threads::from),
                     },
                 )?;
                 (outcome.changed, outcome.tagged_edges)
@@ -269,7 +269,7 @@ impl IntersectBoolean {
                         shapes: 2,
                         use_self: self.self_intersection,
                         separate_all: false,
-                        threads: thread_count(self.threads),
+                        threads: self.threads.map_or_else(Threads::available, Threads::from),
                     },
                 )?;
                 (outcome.changed, outcome.tagged_edges)

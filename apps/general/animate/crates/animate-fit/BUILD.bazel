@@ -8,6 +8,7 @@ rikka_library(
     deps = [
         "//apps/general/animate/crates/animate-body",
         "//apps/general/animate/crates/animate-solve",
+        "//crates/foundation/rikka-parallel",
         "//crates/model/rikka-model-core",
         "//crates/physics/rikka-physics-tailor",
     ],

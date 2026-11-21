@@ -1,4 +1,4 @@
-use crate::parallel;
+use crate::PARALLEL;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VertexGroup {
@@ -122,7 +122,7 @@ impl VertexGroups {
     pub fn gather(&mut self, indices: &[u32]) {
         if self.has_weights() {
             let weights = &self.weights;
-            self.weights = parallel::collect(indices.len(), 1 << 13, |index| {
+            self.weights = PARALLEL.grain(1 << 13).collect(indices.len(), |index| {
                 weights[indices[index] as usize].clone()
             });
         }

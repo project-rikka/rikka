@@ -6,6 +6,7 @@ rikka_library(
         "//visibility:public",
     ],
     deps = [
+        "//crates/foundation/rikka-parallel",
         "//crates/foundation/rikka-types",
         "//crates/graphics/rikka-gpu",
         "//crates/graphics/rikka-image",

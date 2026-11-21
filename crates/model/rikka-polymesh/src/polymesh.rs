@@ -4,9 +4,9 @@ use glam::{Vec2, Vec3, Vec4};
 
 use crate::attributes::{Attribute, Attributes};
 use crate::domain::{Domain, DomainSizes};
+use crate::gather::gather;
 use crate::layers::Layers;
 use crate::names::uv_pin_name;
-use crate::parallel;
 use crate::shape_keys::ShapeKeys;
 use crate::values::Values;
 use crate::vertex_groups::VertexGroups;
@@ -164,15 +164,15 @@ impl Polymesh {
     }
 
     pub fn gather(&mut self, domain: Domain, indices: &[u32]) {
-        let pick = |list: &[u32]| -> Vec<u32> { parallel::gather(list, indices) };
+        let pick = |list: &[u32]| -> Vec<u32> { gather(list, indices) };
         match domain {
             Domain::Point => {
-                self.positions = parallel::gather(&self.positions, indices);
+                self.positions = gather(&self.positions, indices);
                 self.vertex_groups.gather(indices);
                 self.shape_keys.gather(indices);
             }
             Domain::Edge => {
-                self.edges = parallel::gather(&self.edges, indices);
+                self.edges = gather(&self.edges, indices);
             }
             Domain::Face => {}
             Domain::Corner => {

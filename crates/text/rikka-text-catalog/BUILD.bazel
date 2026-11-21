@@ -12,6 +12,7 @@ rikka_library(
         "//crates/foundation/rikka-dirs",
         "//crates/foundation/rikka-file-format",
         "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-parallel",
         "//crates/foundation/rikka-sync",
         "//crates/foundation/rikka-xml",
         "//crates/text/rikka-text-font",

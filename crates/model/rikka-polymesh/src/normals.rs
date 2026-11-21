@@ -3,8 +3,8 @@ use std::f32::consts::{FRAC_PI_2, PI, TAU};
 use glam::Vec3;
 use rikka_model_core::polygon;
 
+use crate::PARALLEL;
 use crate::names::SHARP_EDGE;
-use crate::parallel;
 use crate::polymesh::Polymesh;
 use crate::topology::GroupedIndices;
 
@@ -229,7 +229,9 @@ impl Polymesh {
 
     #[must_use]
     pub fn face_normals(&self) -> Vec<Vec3> {
-        parallel::collect(self.face_count(), GRAIN, |face| self.face_normal(face))
+        PARALLEL
+            .grain(GRAIN)
+            .collect(self.face_count(), |face| self.face_normal(face))
     }
 
     #[must_use]
@@ -242,7 +244,7 @@ impl Polymesh {
         faces: &[Vec3],
         point_faces: &GroupedIndices,
     ) -> Vec<Vec3> {
-        parallel::collect(self.point_count(), GRAIN, |point| {
+        PARALLEL.grain(GRAIN).collect(self.point_count(), |point| {
             let around = point_faces.get(point);
             let position = self.positions[point];
             if around.is_empty() {
@@ -313,9 +315,11 @@ impl Polymesh {
         }
         if sharp_face_count == 0 && sharp_edge_count == 0 {
             let points = self.point_normals_from(&faces, &self.point_faces());
-            return parallel::collect(self.corner_count(), GRAIN, |corner| {
-                points[self.corner_verts[corner] as usize]
-            });
+            return PARALLEL
+                .grain(GRAIN)
+                .collect(self.corner_count(), |corner| {
+                    points[self.corner_verts[corner] as usize]
+                });
         }
         let sharpness = Sharpness {
             edges: sharp_edges,
@@ -536,9 +540,11 @@ impl Polymesh {
     ) -> Vec<Vec3> {
         let point_faces = self.point_faces();
         let want_fans = fans.is_some();
-        let parts = parallel::map_chunks(self.point_count(), GRAIN, |range| {
-            self.split_range(range, &point_faces, faces, sharpness, custom, want_fans)
-        });
+        let parts = PARALLEL
+            .grain(GRAIN)
+            .map_chunks(self.point_count(), |range| {
+                self.split_range(range, &point_faces, faces, sharpness, custom, want_fans)
+            });
         let mut normals = vec![Vec3::ZERO; self.corner_count()];
         let mut fans = fans;
         for (written, found) in parts {

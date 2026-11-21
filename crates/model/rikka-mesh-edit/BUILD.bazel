@@ -5,6 +5,7 @@ rikka_library(
     cranelift = False,
     visibility = ["//visibility:public"],
     deps = [
+        "//crates/foundation/rikka-parallel",
         "//crates/model/rikka-model-core",
         "//crates/model/rikka-polymesh",
         "//crates/model/rikka-spatial",

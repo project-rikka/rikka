@@ -1,10 +1,10 @@
 use glam::{DVec3, Vec3};
 use rikka_spatial::{Culling, Ray, TriangleBvh};
 
+use crate::PARALLEL;
 use crate::arrangement::cells::Patches;
 use crate::arrangement::{Context, Triangle};
 use crate::operation::Operation;
-use crate::parallel::map_chunks;
 
 const OFFSET: f64 = 1.0e-5;
 const RAYS: [[f32; 3]; 6] = {
@@ -109,11 +109,12 @@ pub(crate) fn classify(
         corners,
         bvh,
     };
-    let threads = context.settings.threads;
+    let parallel = PARALLEL.threads(context.settings.threads);
     match patches {
         None => {
-            let decisions: Vec<(bool, bool)> =
-                map_chunks(triangles.len(), threads, TRIANGLES_PER_TASK, |range| {
+            let decisions: Vec<(bool, bool)> = parallel
+                .grain(TRIANGLES_PER_TASK)
+                .concat_chunks(triangles.len(), |range| {
                     range.map(|test| scene.decide(test, operation)).collect()
                 });
             triangles
@@ -128,7 +129,7 @@ pub(crate) fn classify(
         }
         Some(patches) => {
             let decisions: Vec<(bool, bool)> =
-                map_chunks(patches.list.len(), threads, 1, |range| {
+                parallel.concat_chunks(patches.list.len(), |range| {
                     range
                         .map(|patch| {
                             let tris = &patches.list[patch].tris;

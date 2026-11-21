@@ -8,8 +8,8 @@ use rustc_hash::FxHashMap;
 use crate::ids::{EdgeId, Element, FaceId, LoopId, VertId};
 use crate::math::angle_normalized;
 use crate::mesh::{EditMesh, Flags, SelectMode};
-use crate::parallel;
 use crate::random::Rng;
+use crate::select::indices_where;
 use crate::sets::{IdMap, IdSet};
 use crate::walk::{Walk, WalkDelimit};
 
@@ -154,13 +154,13 @@ impl EditMesh {
         match action {
             SelectAction::Select => {
                 let unselected = |flags: Flags| !flags.intersects(Flags::SELECT | Flags::HIDDEN);
-                let verts = parallel::indices_where(self.verts.capacity(), |index| {
+                let verts = indices_where(self.verts.capacity(), |index| {
                     self.verts.is_alive(index as u32) && unselected(self.verts.records[index].flags)
                 });
-                let edges = parallel::indices_where(self.edges.capacity(), |index| {
+                let edges = indices_where(self.edges.capacity(), |index| {
                     self.edges.is_alive(index as u32) && unselected(self.edges.records[index].flags)
                 });
-                let faces = parallel::indices_where(self.faces.capacity(), |index| {
+                let faces = indices_where(self.faces.capacity(), |index| {
                     self.faces.is_alive(index as u32) && unselected(self.faces.records[index].flags)
                 });
                 for index in verts {
@@ -202,13 +202,13 @@ impl EditMesh {
 
     pub fn deselect_all(&mut self) {
         let selected = |flags: Flags| flags.contains(Flags::SELECT);
-        let verts = parallel::indices_where(self.verts.capacity(), |index| {
+        let verts = indices_where(self.verts.capacity(), |index| {
             selected(self.verts.records[index].flags)
         });
-        let edges = parallel::indices_where(self.edges.capacity(), |index| {
+        let edges = indices_where(self.edges.capacity(), |index| {
             selected(self.edges.records[index].flags)
         });
-        let faces = parallel::indices_where(self.faces.capacity(), |index| {
+        let faces = indices_where(self.faces.capacity(), |index| {
             selected(self.faces.records[index].flags)
         });
         for index in verts {

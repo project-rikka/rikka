@@ -1,8 +1,7 @@
-use std::sync::atomic::{AtomicUsize, Ordering};
-
 use rikka_gpu::{Pixels, TextureFormat};
 use rikka_image::Image as Raster;
 use rikka_model_core::{ImageId, Model};
+use rikka_parallel::Parallel;
 use rikka_renderer::{Renderer, TextureId as GpuTexture};
 use rustc_hash::FxHashMap;
 
@@ -148,41 +147,13 @@ fn decode_all(
     images: &[ImageId],
     options: &UploadOptions,
 ) -> FxHashMap<ImageId, Raster> {
-    let cores = std::thread::available_parallelism().map_or(1, |cores| cores.get());
-    let workers = cores.min(images.len());
-    if workers <= 1 {
-        return images
-            .iter()
-            .filter_map(|&image| Some((image, decode(model, image, options)?)))
-            .collect();
-    }
-
-    let next = AtomicUsize::new(0);
-    let work = || {
-        let mut decoded = Vec::new();
-        while let Some(&image) = images.get(next.fetch_add(1, Ordering::Relaxed)) {
-            decoded.extend(decode(model, image, options).map(|raster| (image, raster)));
-        }
-        decoded
-    };
-    std::thread::scope(|scope| {
-        let decoders: Vec<_> = (0..workers)
-            .map(|worker| {
-                std::thread::Builder::new()
-                    .name(format!("rikka-model-decode-{worker}"))
-                    .spawn_scoped(scope, work)
-                    .expect("failed to spawn model texture decoder")
-            })
-            .collect();
-        decoders
-            .into_iter()
-            .flat_map(|decoder| {
-                decoder
-                    .join()
-                    .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
-            })
-            .collect()
-    })
+    Parallel::new("rikka-model-decode")
+        .map(images, |&image| {
+            Some((image, decode(model, image, options)?))
+        })
+        .into_iter()
+        .flatten()
+        .collect()
 }
 
 fn decode(model: &Model, image: ImageId, options: &UploadOptions) -> Option<Raster> {

@@ -3,10 +3,10 @@ use rikka_polymesh::Polymesh;
 
 use super::Scope;
 use super::vertex_group::Group;
+use crate::PARALLEL;
 use crate::kinds::displace::{Displace, DisplaceDirection, DisplaceSpace, TextureCoordinates};
 use crate::normals::shading_point_normals;
 use crate::note::SkipReason;
-use crate::parallel;
 use crate::space::inverse;
 
 const DELTA_LIMIT: f32 = 10000.0;
@@ -37,48 +37,50 @@ pub(crate) fn evaluate(
     let fixed = 1.0 - displace.mid_level;
     let mut positions = std::mem::take(&mut mesh.positions);
     let source = &*mesh;
-    parallel::fill(&mut positions, GRAIN, |point, position| {
-        let mut strength = displace.strength;
-        if let Group::Weighted(_) = group {
-            let weight = group.weight(source, point, displace.invert_vertex_group);
-            if weight == 0.0 {
-                return;
+    PARALLEL
+        .grain(GRAIN)
+        .fill(&mut positions, |point, position| {
+            let mut strength = displace.strength;
+            if let Group::Weighted(_) = group {
+                let weight = group.weight(source, point, displace.invert_vertex_group);
+                if weight == 0.0 {
+                    return;
+                }
+                strength *= weight;
             }
-            strength *= weight;
-        }
-        let sample = match (texture, &coordinates) {
-            (Some(texture), Some(coordinates)) => Some(texture.sample(coordinates[point])),
-            _ => None,
-        };
-        let delta = (sample.map_or(fixed, |sample| sample.intensity - displace.mid_level)
-            * strength)
-            .clamp(-DELTA_LIMIT, DELTA_LIMIT);
-        let axis = |index: usize| match global {
-            true => transposed.col(index),
-            false => Vec3::AXES[index],
-        };
-        let shift = match displace.direction {
-            DisplaceDirection::X => axis(0) * delta,
-            DisplaceDirection::Y => axis(1) * delta,
-            DisplaceDirection::Z => axis(2) * delta,
-            DisplaceDirection::RgbToXyz => {
-                let color = sample.map_or(Vec3::ZERO, |sample| sample.color.truncate());
-                let local = color - Vec3::splat(displace.mid_level);
-                let local = match global {
-                    true => transposed * local,
-                    false => local,
-                };
-                local * strength
-            }
-            DisplaceDirection::Normal | DisplaceDirection::CustomNormal => {
-                normals
-                    .as_ref()
-                    .map_or(Vec3::ZERO, |normals| normals[point])
-                    * delta
-            }
-        };
-        *position += shift;
-    });
+            let sample = match (texture, &coordinates) {
+                (Some(texture), Some(coordinates)) => Some(texture.sample(coordinates[point])),
+                _ => None,
+            };
+            let delta = (sample.map_or(fixed, |sample| sample.intensity - displace.mid_level)
+                * strength)
+                .clamp(-DELTA_LIMIT, DELTA_LIMIT);
+            let axis = |index: usize| match global {
+                true => transposed.col(index),
+                false => Vec3::AXES[index],
+            };
+            let shift = match displace.direction {
+                DisplaceDirection::X => axis(0) * delta,
+                DisplaceDirection::Y => axis(1) * delta,
+                DisplaceDirection::Z => axis(2) * delta,
+                DisplaceDirection::RgbToXyz => {
+                    let color = sample.map_or(Vec3::ZERO, |sample| sample.color.truncate());
+                    let local = color - Vec3::splat(displace.mid_level);
+                    let local = match global {
+                        true => transposed * local,
+                        false => local,
+                    };
+                    local * strength
+                }
+                DisplaceDirection::Normal | DisplaceDirection::CustomNormal => {
+                    normals
+                        .as_ref()
+                        .map_or(Vec3::ZERO, |normals| normals[point])
+                        * delta
+                }
+            };
+            *position += shift;
+        });
     mesh.positions = positions;
     Ok(())
 }

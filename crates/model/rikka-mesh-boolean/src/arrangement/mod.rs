@@ -8,6 +8,7 @@ mod topology;
 mod triangulate;
 
 use glam::{DVec3, Vec3};
+use rikka_parallel::Threads;
 use rustc_hash::FxHashMap;
 
 use crate::exact::{Point, Space, VertexTable};
@@ -38,7 +39,7 @@ pub(crate) struct Settings {
     pub(crate) mode: Mode,
     pub(crate) use_self: bool,
     pub(crate) hole_tolerant: bool,
-    pub(crate) threads: usize,
+    pub(crate) threads: Threads,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

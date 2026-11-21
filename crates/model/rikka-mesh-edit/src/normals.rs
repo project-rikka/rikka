@@ -1,10 +1,10 @@
 use glam::Vec3;
 use rikka_polymesh::acos_approx;
 
+use crate::PARALLEL;
 use crate::ids::{FaceId, NONE, VertId};
 use crate::math::{newell_from, normal_quad, normal_tri, normalize};
 use crate::mesh::EditMesh;
-use crate::parallel;
 use crate::sets::IdSet;
 
 const WHOLE_MESH_SHARE: usize = 4;
@@ -120,14 +120,14 @@ impl EditMesh {
     }
 
     pub fn update_normals(&mut self) {
-        let face_normals = parallel::collect(self.faces.capacity(), |face| {
+        let face_normals = PARALLEL.collect(self.faces.capacity(), |face| {
             match self.faces.is_alive(face as u32) {
                 true => self.calc_face_normal(FaceId(face as u32)),
                 false => Vec3::ZERO,
             }
         });
         self.face_normals = face_normals;
-        let vert_normals = parallel::collect(self.verts.capacity(), |vert| {
+        let vert_normals = PARALLEL.collect(self.verts.capacity(), |vert| {
             match self.verts.is_alive(vert as u32) {
                 true => self.calc_vert_normal(VertId(vert as u32)),
                 false => Vec3::ZERO,
@@ -155,7 +155,7 @@ impl EditMesh {
         }
         let faces: Vec<FaceId> = faces.iter().collect();
         let face_normals =
-            parallel::collect(faces.len(), |index| self.calc_face_normal(faces[index]));
+            PARALLEL.collect(faces.len(), |index| self.calc_face_normal(faces[index]));
         for (&face, normal) in faces.iter().zip(face_normals) {
             self.face_normals[face.index()] = normal;
             for lp in self.face_loops(face) {
@@ -164,7 +164,7 @@ impl EditMesh {
         }
         let verts: Vec<VertId> = verts.iter().collect();
         let vert_normals =
-            parallel::collect(verts.len(), |index| self.calc_vert_normal(verts[index]));
+            PARALLEL.collect(verts.len(), |index| self.calc_vert_normal(verts[index]));
         for (&vert, normal) in verts.iter().zip(vert_normals) {
             self.vert_normals[vert.index()] = normal;
         }
