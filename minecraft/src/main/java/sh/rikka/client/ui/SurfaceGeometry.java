@@ -11,6 +11,14 @@ record SurfaceGeometry(float width, float height, float scale, float guiScale) {
 		if (!(scale > 0.0F)) {
 			throw new IllegalStateException("failed to read the display scale: " + SDLError.SDL_GetError());
 		}
+		return scaled(window, target, scale);
+	}
+
+	static SurfaceGeometry ofGui(Window window, VulkanImage target, float unitsPerGuiPixel) {
+		return scaled(window, target, window.getGuiScale() / unitsPerGuiPixel);
+	}
+
+	private static SurfaceGeometry scaled(Window window, VulkanImage target, float scale) {
 		return new SurfaceGeometry(target.width() / scale, target.height() / scale, scale, window.getGuiScale());
 	}
 

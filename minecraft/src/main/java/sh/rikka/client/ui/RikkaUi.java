@@ -37,8 +37,7 @@ public final class RikkaUi {
 		if (!ui.hud.isShowing()) {
 			return;
 		}
-		VulkanImage image = RikkaVulkan.image(target);
-		ui.hud.draw(image, SurfaceGeometry.of(minecraft.getWindow(), image));
+		ui.hud.draw(RikkaVulkan.image(target), minecraft.getWindow());
 	}
 
 	public static void drawScreen(RenderTarget target) {

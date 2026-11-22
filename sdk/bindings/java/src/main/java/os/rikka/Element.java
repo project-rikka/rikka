@@ -266,7 +266,9 @@ public final class Element {
     }
 
     /**
-     * Paints a colour behind the current element.
+     * Paints a colour behind the current element. A box paints it within its rounded corners,
+     * in place of the theme's surface colour of {@link Element#surface} or {@link
+     * Element#glass}.
      *
      * @param color the color
      * @return this element

@@ -4008,7 +4008,8 @@ public readonly unsafe struct Element
     }
 
     /// <summary>
-    /// Paints a colour behind the current element.
+    /// Paints a colour behind the current element. A box paints it within its rounded corners, in place of
+    /// the theme's surface colour of <see cref="Element.Surface"/> or <see cref="Element.Glass"/>.
     /// </summary>
     /// <param name="color">The color.</param>
     public Element Background(Color color)

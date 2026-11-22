@@ -2479,7 +2479,8 @@ RK_API void rk_scale(rk_view *view, float factor);
 RK_API void rk_opacity(rk_view *view, float opacity);
 
 /**
- * Paints a colour behind the current element.
+ * Paints a colour behind the current element. A box paints it within its rounded corners, in
+ * place of the theme's surface colour of rk_surface() or rk_glass().
  */
 RK_API void rk_background(rk_view *view, rk_color color);
 

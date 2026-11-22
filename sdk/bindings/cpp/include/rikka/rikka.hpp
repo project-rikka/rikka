@@ -2900,7 +2900,9 @@ public:
     Element& opacity(float opacity);
 
     /**
-     * Paints a colour behind the current element.
+     * Paints a colour behind the current element. A box paints it within its rounded corners,
+     * in place of the theme's surface colour of rikka::Element::surface() or
+     * rikka::Element::glass().
      */
     Element& background(const Color& color);
 

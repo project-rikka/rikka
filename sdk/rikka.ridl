@@ -1285,7 +1285,8 @@ scoped class view {
     /// Fades the current element, from 0 to 1.
     modifier opacity(opacity: f32);
 
-    /// Paints a colour behind the current element.
+    /// Paints a colour behind the current element. A box paints it within its rounded corners, in
+    /// place of the theme's surface colour of [view.surface] or [view.glass].
     modifier background(color: color);
 
     /// Names the current element in a tooltip.

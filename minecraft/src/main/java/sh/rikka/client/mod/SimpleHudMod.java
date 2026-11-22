@@ -15,15 +15,16 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public abstract class SimpleHudMod extends HudMod {
 	public static final String UNAVAILABLE = "—";
-	public static final float HEIGHT = 24.0F;
+	public static final float HEIGHT = 25.0F;
 
-	private static final float PADDING = 8.0F;
+	private static final float PADDING = 7.0F;
 	private static final float GAP = 6.0F;
-	private static final float ICON_SIZE = 16.0F;
+	private static final float ICON_SIZE = 15.0F;
 	private static final float TEXT_SIZE = 13.0F;
 	private static final float CHARACTER_WIDTH = 8.0F;
-	private static final float CORNER_RADIUS = 8.0F;
+	private static final float CORNER_RADIUS = 9.0F;
 	private static final int DEFAULT_COLOR = 0xFFFFFFFF;
+	private static final Color BACKDROP = new Color(0.0F, 0.0F, 0.0F, 0.4F);
 
 	private final String icon;
 	private final int maxCharacters;
@@ -68,7 +69,7 @@ public abstract class SimpleHudMod extends HudMod {
 	protected final void view(View view) {
 		String text = label();
 		@Nullable String icon = this.showIcon.get() ? icon() : null;
-		@Nullable Color tint = this.customColor.get() ? rikkaColor(this.color.argb()) : null;
+		Color tint = rikkaColor(this.customColor.get() ? this.color.argb() : DEFAULT_COLOR);
 		view.row(() -> panel(view, text, icon, tint))
 			.fillWidth()
 			.fillHeight()
@@ -76,7 +77,7 @@ public abstract class SimpleHudMod extends HudMod {
 			.alignItems(Align.CENTER);
 	}
 
-	private void panel(View view, String text, @Nullable String icon, @Nullable Color tint) {
+	private void panel(View view, String text, @Nullable String icon, Color tint) {
 		Element panel = view.box(() -> view.row(() -> content(view, text, icon, tint))
 				.fillHeight()
 				.gap(GAP)
@@ -85,21 +86,15 @@ public abstract class SimpleHudMod extends HudMod {
 			.paddingEdges(0.0F, PADDING, 0.0F, PADDING)
 			.cornerRadius(CORNER_RADIUS);
 		if (this.showBackground.get()) {
-			panel.glass();
+			panel.glass().background(BACKDROP);
 		}
 	}
 
-	private static void content(View view, String text, @Nullable String icon, @Nullable Color tint) {
+	private static void content(View view, String text, @Nullable String icon, Color tint) {
 		if (icon != null) {
-			Element glyph = view.icon(icon).iconSize(ICON_SIZE).iconFilled();
-			if (tint != null) {
-				glyph.tint(tint);
-			}
+			view.icon(icon).iconSize(ICON_SIZE).tint(tint);
 		}
-		Element label = view.text(text).textSize(TEXT_SIZE).textNoWrap();
-		if (tint != null) {
-			label.tint(tint);
-		}
+		view.text(text).textSize(TEXT_SIZE).textNoWrap().tint(tint);
 	}
 
 	private static Justification justification(Anchor anchor) {

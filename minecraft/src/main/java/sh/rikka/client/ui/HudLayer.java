@@ -1,5 +1,6 @@
 package sh.rikka.client.ui;
 
+import com.mojang.blaze3d.platform.Window;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 import os.rikka.EmbeddedSurface;
@@ -14,6 +15,8 @@ import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mod.ModToggleEvent;
 
 final class HudLayer {
+	private static final float UNITS_PER_GUI_PIXEL = 13.0F / 9.0F;
+
 	private final ModManager mods;
 	private final EmbeddedSurface surface;
 	private @Nullable SurfaceGeometry geometry;
@@ -32,7 +35,8 @@ final class HudLayer {
 		return false;
 	}
 
-	void draw(VulkanImage target, SurfaceGeometry geometry) {
+	void draw(VulkanImage target, Window window) {
+		SurfaceGeometry geometry = SurfaceGeometry.ofGui(window, target, UNITS_PER_GUI_PIXEL);
 		if (!geometry.equals(this.geometry)) {
 			this.geometry = geometry;
 			this.surface.resize(geometry.width(), geometry.height(), geometry.scale());

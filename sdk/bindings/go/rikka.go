@@ -3374,7 +3374,8 @@ func (e Element) Opacity(opacity float32) Element {
 	return e
 }
 
-// Background paints a colour behind the current element.
+// Background paints a colour behind the current element. A box paints it within its rounded
+// corners, in place of the theme's surface colour of [Element.Surface] or [Element.Glass].
 func (e Element) Background(color Color) Element {
 	C.rk_background(e.current(), color.native())
 	return e

@@ -13,6 +13,7 @@ struct Frost {
 #[derive(Debug, Default)]
 pub(crate) struct Panes {
     shapes: Vec<RoundedRect>,
+    scale: f32,
     frost: Option<Frost>,
     nodes: Vec<NodeId>,
 }
@@ -30,7 +31,7 @@ impl Panes {
             radius: radius * lens.map_or(1.0, Lens::frost) * scale,
             lens: lens.map(|lens| lens.scaled(scale)),
         });
-        if self.frost == frost && self.shapes == shapes {
+        if self.frost == frost && self.scale == scale && self.shapes == shapes {
             return;
         }
         for node in self.nodes.drain(..) {
@@ -38,12 +39,14 @@ impl Panes {
         }
         self.shapes.clear();
         self.shapes.extend_from_slice(shapes);
+        self.scale = scale;
         self.frost = frost;
         let Some(frost) = frost else {
             return;
         };
         self.nodes.extend(shapes.iter().map(|shape| {
-            let pane = Node::rounded_rect(shape.rect, shape.radii)
+            let placed = shape.scale(scale);
+            let pane = Node::rounded_rect(placed.rect, placed.radii)
                 .fill(Color::TRANSPARENT)
                 .backdrop(Blur::with_radius(frost.radius))
                 .z(PANE_Z);

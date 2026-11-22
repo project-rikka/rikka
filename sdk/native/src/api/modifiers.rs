@@ -95,7 +95,14 @@ pub(crate) fn opacity(view: &mut View, value: f32) {
 }
 
 pub(crate) fn background(view: &mut View, value: ffi::Color) {
-    view.current_element().common.background = Some(color(value));
+    let painted = color(value);
+    let node = view.current_element();
+    match &mut node.kind {
+        Kind::Box { container, .. } => {
+            container.edit(move |container| container.background(painted));
+        }
+        _ => node.common.background = Some(painted),
+    }
 }
 
 pub(crate) fn tooltip(view: &mut View, text: &str) {

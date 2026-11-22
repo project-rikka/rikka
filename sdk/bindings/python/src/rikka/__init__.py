@@ -2900,7 +2900,10 @@ class Element:
         return self
 
     def background(self: _ElementT, color: Color) -> _ElementT:
-        """Paints a colour behind the current element."""
+        """Paints a colour behind the current element. A box paints it within its rounded corners,
+        in place of the theme's surface colour of :meth:`Element.surface` or
+        :meth:`Element.glass`.
+        """
         _native.rk_background(self._view._current(self._serial), _to_color(color))
         return self
 

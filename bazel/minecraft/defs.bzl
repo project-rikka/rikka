@@ -3,6 +3,7 @@
 load("@minecraft//:versions.bzl", "FABRIC_LOADER", "MINECRAFT")
 load("@nix//:paths.bzl", "NIX")
 load("//bazel/java:defs.bzl", "RikkaJavaInfo")
+load("//bazel/shipped:defs.bzl", "SHIPPED_ENV")
 
 FabricModInfo = provider(
     doc = "A Fabric mod jar.",
@@ -199,7 +200,10 @@ def _minecraft_client_impl(ctx):
         is_executable = True,
     )
     runfiles = ctx.runfiles(files = classpath + libraries + [index, ctx.file._log4j] + ctx.files._asset_objects)
-    return [DefaultInfo(executable = launcher, runfiles = runfiles)]
+    return [
+        DefaultInfo(executable = launcher, runfiles = runfiles),
+        RunEnvironmentInfo(environment = SHIPPED_ENV),
+    ]
 
 minecraft_client = rule(
     implementation = _minecraft_client_impl,
