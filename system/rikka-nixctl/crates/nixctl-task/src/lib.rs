@@ -3,6 +3,7 @@ mod directory;
 mod error;
 mod files;
 mod flake_lock;
+mod owner;
 mod site;
 mod task;
 

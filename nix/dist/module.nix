@@ -49,6 +49,19 @@ let
   autologin = "rikka-autologin";
 
   console = "getty@tty1.service";
+
+  overNixosDefault = lib.mkOverride 900;
+
+  absolutePath = lib.types.strMatching "(/(\\.?[^./][^/]*|\\.\\.[^/]+))+";
+
+  otherDisplayManagers = lib.attrNames (
+    lib.filterAttrs (
+      name: service:
+      name != autologin
+      && service.enable
+      && (name == "display-manager" || lib.elem "display-manager.service" service.aliases)
+    ) config.systemd.services
+  );
 in
 {
   options.rikka = {
@@ -64,15 +77,54 @@ in
       example = "alice";
       description = "Starts Rikka on tty1 as this user at boot, without a greeter.";
     };
+
+    configuration = {
+      flake = lib.mkOption {
+        type = lib.types.nullOr absolutePath;
+        default = "/etc/nixos";
+        example = "/home/alice/nixos";
+        description = ''
+          The flake this system is built from. Rikka's Settings, Packages and system updates
+          edit the modules in {option}`rikka.configuration.modules` and rebuild this flake as
+          root. `null` turns those features off.
+        '';
+      };
+
+      modules = lib.mkOption {
+        type = lib.types.nullOr absolutePath;
+        default = if cfg.configuration.flake == null then null else "${cfg.configuration.flake}/rikka";
+        defaultText = lib.literalExpression ''
+          if config.rikka.configuration.flake == null then null else "''${config.rikka.configuration.flake}/rikka"
+        '';
+        example = "/home/alice/nixos/hosts/laptop/rikka";
+        description = ''
+          The directory inside the flake holding the modules Rikka writes, which this
+          configuration imports. `nix flake init -t github:project-rikka/packages#modules`
+          run inside it creates them.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
-        assertions = map (id: {
-          assertion = false;
-          message = "Rikka ${id} ${components.${id}.version} needs the Rikka desktop ${components.${id}.requires} or newer, but this distribution has ${components.base.version}.";
-        }) outdated;
+        assertions =
+          map (id: {
+            assertion = false;
+            message = "Rikka ${id} ${components.${id}.version} needs the Rikka desktop ${components.${id}.requires} or newer, but this distribution has ${components.base.version}.";
+          }) outdated
+          ++ [
+            {
+              assertion =
+                cfg.configuration.flake == null
+                || (
+                  cfg.configuration.modules != null
+                  && lib.hasPrefix "${cfg.configuration.flake}/" cfg.configuration.modules
+                );
+              message = "rikka.configuration.modules (${toString cfg.configuration.modules}) must be inside rikka.configuration.flake (${cfg.configuration.flake}).";
+            }
+          ];
 
         environment.systemPackages = [
           (lib.hiPrio pamHelper)
@@ -104,6 +156,12 @@ in
               ;
             installed = lib.elem id chosen;
           }) components;
+        };
+
+        environment.etc."rikka/configuration.json" = lib.mkIf (cfg.configuration.flake != null) {
+          text = builtins.toJSON {
+            inherit (cfg.configuration) flake modules;
+          };
         };
 
         systemd.packages = installed ++ [ pkgs.xdg-user-dirs ];
@@ -146,7 +204,9 @@ in
         services.udisks2.enable = lib.mkDefault true;
         services.accounts-daemon.enable = lib.mkDefault true;
         services.upower.enable = lib.mkDefault true;
-        services.power-profiles-daemon.enable = lib.mkDefault true;
+        services.power-profiles-daemon.enable = lib.mkDefault (
+          !config.services.tlp.enable && !config.services.auto-cpufreq.enable
+        );
         services.geoclue2 = {
           enable = lib.mkDefault true;
           appConfig.rikka-shell = {
@@ -172,7 +232,19 @@ in
       }
 
       (lib.mkIf (cfg.autologin.user != null) {
+        assertions = [
+          {
+            assertion = config.users.mutableUsers || lib.hasAttr cfg.autologin.user config.users.users;
+            message = "rikka.autologin.user names ${cfg.autologin.user}, who is not in users.users, and users.mutableUsers is off.";
+          }
+          {
+            assertion = otherDisplayManagers == [ ];
+            message = "rikka.autologin.user starts Rikka on tty1 in place of a display manager, but systemd.services.${lib.head otherDisplayManagers} runs another one. Turn that display manager off, or unset rikka.autologin.user and choose the Rikka session in it.";
+          }
+        ];
+
         services.displayManager.enable = true;
+        services.xserver.displayManager.lightdm.enable = overNixosDefault false;
 
         security.pam.services.${autologin}.startSession = true;
 

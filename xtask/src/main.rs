@@ -13,6 +13,7 @@ mod ffmpeg_layout;
 mod gecko;
 mod host;
 mod ltc;
+mod mirror;
 mod public_suffix;
 mod release;
 mod run;

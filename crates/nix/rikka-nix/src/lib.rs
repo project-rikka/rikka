@@ -27,5 +27,5 @@ pub use rikka_nix_log::Tally;
 pub use rikka_nix_protocol::{
     Action, ChangeState, Operation, Phase, Request, Run, RunId, RunState, Status,
 };
-pub use rikka_nixos_layout::{DIRECTORY, FLAKE, Module, Modules, Packages};
+pub use rikka_nixos_layout::{Location, Module, Modules, Packages};
 pub use tail::{Gap, Tail};

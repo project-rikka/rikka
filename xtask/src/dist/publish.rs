@@ -5,9 +5,12 @@ use serde_json::{Value, json};
 
 use crate::dist::release::{Fragment, Packed, RELEASE, Release, Source, read_json, write_json};
 use crate::host;
+use crate::mirror::mirror;
 use crate::tree;
 
 pub(crate) const FLAKE_SOURCES: &str = "nix/dist";
+
+const TEMPLATES: &str = "templates";
 
 pub(crate) const LOCK: &str = "flake.lock";
 
@@ -82,10 +85,12 @@ pub(crate) fn merge(
 
 pub(crate) fn write_flake(workspace: &Path, release: &Release, into: &Path) -> Result<()> {
     release.write(into)?;
-    for source in tree::listed(&workspace.join(FLAKE_SOURCES))? {
+    let sources = workspace.join(FLAKE_SOURCES);
+    for source in tree::listed(&sources)? {
         let name = source.file_name().context("listed files have names")?;
         host::copy(&source, &into.join(name))?;
     }
+    mirror(&sources.join(TEMPLATES), &into.join(TEMPLATES), &[])?;
     write_lock(workspace, &into.join(LOCK))
 }
 

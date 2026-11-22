@@ -3,8 +3,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use futures_channel::mpsc::UnboundedSender;
-use nixctl_task::Directory;
-use rikka_nix::{DIRECTORY, Document, Module};
+use nixctl_task::{Directory, Site};
+use rikka_nix::{Document, Module};
 use rikka_nix_journal::{Journal, Transcript};
 use rikka_nix_protocol::{
     Action, ModuleFile, Operation, PageRecord, Request, RunId, RunRecord, StatusRecord,
@@ -25,6 +25,7 @@ pub(crate) enum Error {
     Denied(String),
     Stale(String),
     Invalid(String),
+    Unmanaged(String),
     Failed(String),
 }
 
@@ -44,6 +45,7 @@ impl Shared {
 #[derive(Debug)]
 pub(crate) struct Accepted {
     pub(crate) request: Request,
+    pub(crate) site: Site,
     pub(crate) run: RunId,
     pub(crate) transcript: Transcript,
     pub(crate) guard: RunGuard,
@@ -162,9 +164,10 @@ impl Nix {
         if self.running.load(Ordering::Acquire) {
             return Err(busy());
         }
+        let site = Site::system().map_err(|error| Error::Unmanaged(error.to_string()))?;
         self.authorize(header, connection).await?;
         let guard = RunGuard::try_acquire(&self.running).ok_or_else(busy)?;
-        admit(&request)?;
+        admit(&request, &site)?;
         let (run, transcript) = self
             .journal
             .lock()
@@ -176,6 +179,7 @@ impl Nix {
         self.requests
             .unbounded_send(Accepted {
                 request,
+                site,
                 run: run.id,
                 transcript,
                 guard,
@@ -234,7 +238,7 @@ fn named(files: Vec<(String, String, String)>) -> Result<Vec<ModuleFile>, Error>
     Ok(named)
 }
 
-fn admit(request: &Request) -> Result<(), Error> {
+fn admit(request: &Request, site: &Site) -> Result<(), Error> {
     let Request::Apply { files, .. } = request else {
         return Ok(());
     };
@@ -242,8 +246,12 @@ fn admit(request: &Request) -> Result<(), Error> {
         Document::parse(file.contents.as_str())
             .map_err(|error| Error::Invalid(format!("{}: {error}", file.module.file_name())))?;
     }
-    let directory = Directory::open(DIRECTORY)
-        .map_err(|error| Error::Failed(format!("failed to read {DIRECTORY}: {error}")))?;
+    let directory = Directory::open(&site.modules).map_err(|error| {
+        Error::Failed(format!(
+            "failed to read {}: {error}",
+            site.modules.display()
+        ))
+    })?;
     match directory.stale(files) {
         Some(module) => Err(Error::Stale(format!(
             "{} changed since it was read",

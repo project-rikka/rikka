@@ -7,9 +7,11 @@ rikka_library(
         "//system/rikka-nixctl:__subpackages__",
     ],
     deps = [
+        "//crates/foundation/rikka-dirs",
         "//crates/foundation/rikka-fs",
         "//crates/nix/rikka-nix",
         "//crates/nix/rikka-nix-protocol",
+        "@crates//:libc",
         "@crates//:thiserror",
     ],
 )

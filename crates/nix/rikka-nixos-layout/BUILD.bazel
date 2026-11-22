@@ -11,12 +11,15 @@ rikka_library(
     ],
     deps = [
         "//crates/nix/rikka-nix-edit",
+        "@crates//:serde",
+        "@crates//:serde_json",
         "@crates//:thiserror",
     ],
 )
 
 rikka_test(
     name = "main",
+    data = ["//:nixos_template"],
     deps = [
         ":rikka-nixos-layout",
         "//crates/nix/rikka-nix-edit",

@@ -32,7 +32,7 @@ pub use password::{Strength, hash_password};
 pub use plan::{PartitionPlan, PartitionRole, PartitionSpec};
 pub use release::{FALLBACK_RELEASE, stable_release};
 pub use rikka::{BASE_PACKAGES, fcitx5_addons};
-pub use rikka_nixos_layout::{DIRECTORY, FLAKE};
+pub use rikka_nixos_layout::Location;
 pub use search::subsequence;
 pub use secret::{Secret, byte_index};
 pub use step::Step;

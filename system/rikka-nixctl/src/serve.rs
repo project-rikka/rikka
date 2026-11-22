@@ -78,11 +78,12 @@ async fn serve_requests(
 async fn execute(accepted: Accepted, emitter: &SignalEmitter<'_>, journal: &Shared) {
     let Accepted {
         request,
+        site,
         run,
         transcript,
         guard,
     } = accepted;
-    let state = record(run, request, transcript, emitter, journal).await;
+    let state = record(run, request, site, transcript, emitter, journal).await;
     finish(run, state, emitter, journal).await;
     drop(guard);
 }
@@ -90,6 +91,7 @@ async fn execute(accepted: Accepted, emitter: &SignalEmitter<'_>, journal: &Shar
 async fn record(
     run: RunId,
     request: Request,
+    site: Site,
     transcript: Transcript,
     emitter: &SignalEmitter<'_>,
     journal: &Shared,
@@ -100,7 +102,7 @@ async fn record(
         .name("rikka-nixctl-task".to_owned())
         .spawn(move || {
             let mut recorder = Recorder::new(transcript, notes_sender);
-            let ending = nixctl_task::execute(request, &Site::system(), &mut recorder);
+            let ending = nixctl_task::execute(request, &site, &mut recorder);
             if ended.send(recorder.conclude(ending)).is_err() {
                 eprintln!("run state receiver closed");
             }

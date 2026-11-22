@@ -29,10 +29,37 @@
 
       nixosModules.default = import ./module.nix { inherit release packages; };
 
+      templates = {
+        default = {
+          path = ./templates/configuration;
+          description = "A NixOS flake with the Rikka desktop and the modules Rikka writes";
+          welcomeText = ''
+            # Rikka
+
+            `flake.nix` builds `./configuration.nix` with Rikka, and `rikka/` holds the
+            modules Rikka's Settings and Packages write. Set `rikka.enable = true;` in
+            `configuration.nix`, then run `sudo nixos-rebuild switch --flake /etc/nixos`.
+          '';
+        };
+
+        modules = {
+          path = ./templates/configuration/rikka;
+          description = "The modules Rikka's Settings and Packages write, for an existing flake";
+          welcomeText = ''
+            # Rikka's modules
+
+            Import this directory from your NixOS configuration. When it is not
+            `/etc/nixos/rikka`, set `rikka.configuration.flake` and
+            `rikka.configuration.modules` to where your flake and this directory are.
+          '';
+        };
+      };
+
       checks.${system}.module =
         (nixpkgs.lib.nixosSystem {
           modules = [
             self.nixosModules.default
+            ./templates/configuration/rikka
             {
               nixpkgs.hostPlatform = system;
               boot.loader.systemd-boot.enable = true;

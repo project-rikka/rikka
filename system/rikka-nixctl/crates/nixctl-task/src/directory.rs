@@ -7,23 +7,32 @@ use rikka_nix::Module;
 use rikka_nix_protocol::ModuleFile;
 
 use crate::files::{read_if_exists, remove_if_exists};
+use crate::owner::Owner;
 
 const DIRECTORY_MODE: u32 = 0o755;
 
 #[derive(Debug)]
 pub struct Directory {
     root: PathBuf,
+    owner: Owner,
     original: BTreeMap<Module, Option<String>>,
 }
 
 impl Directory {
     pub fn open(root: impl Into<PathBuf>) -> io::Result<Self> {
         let root = root.into();
-        let original = Module::EVERY
-            .into_iter()
-            .map(|module| Ok((module, read_if_exists(&root.join(module.file_name()))?)))
-            .collect::<io::Result<_>>()?;
-        Ok(Self { root, original })
+        let owner = Owner::of(&root)?;
+        let original = owner.act(|| {
+            Module::EVERY
+                .into_iter()
+                .map(|module| Ok((module, read_if_exists(&root.join(module.file_name()))?)))
+                .collect::<io::Result<_>>()
+        })?;
+        Ok(Self {
+            root,
+            owner,
+            original,
+        })
     }
 
     #[must_use]
@@ -38,31 +47,34 @@ impl Directory {
     }
 
     pub fn write(&self, files: &[ModuleFile]) -> io::Result<()> {
-        std::fs::create_dir_all(&self.root)?;
-        std::fs::set_permissions(&self.root, std::fs::Permissions::from_mode(DIRECTORY_MODE))?;
+        self.owner.act(|| {
+            std::fs::set_permissions(&self.root, std::fs::Permissions::from_mode(DIRECTORY_MODE))?;
 
-        rikka_fs::replace(self.path(Module::Root), Module::Root.blank().source())?;
-        for module in Module::ALL {
-            match files.iter().find(|written| written.module == module) {
-                Some(written) => rikka_fs::replace(self.path(module), &written.contents)?,
-                None if self.original(module).is_none() => {
-                    rikka_fs::replace(self.path(module), module.blank().source())?;
+            rikka_fs::replace(self.path(Module::Root), Module::Root.blank().source())?;
+            for module in Module::ALL {
+                match files.iter().find(|written| written.module == module) {
+                    Some(written) => rikka_fs::replace(self.path(module), &written.contents)?,
+                    None if self.original(module).is_none() => {
+                        rikka_fs::replace(self.path(module), module.blank().source())?;
+                    }
+                    None => {}
                 }
-                None => {}
             }
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     pub fn restore(&self) -> io::Result<()> {
-        for (module, original) in &self.original {
-            let path = self.path(*module);
-            match original {
-                Some(contents) => rikka_fs::replace(&path, contents)?,
-                None => remove_if_exists(&path)?,
+        self.owner.act(|| {
+            for (module, original) in &self.original {
+                let path = self.path(*module);
+                match original {
+                    Some(contents) => rikka_fs::replace(&path, contents)?,
+                    None => remove_if_exists(&path)?,
+                }
             }
-        }
-        Ok(())
+            Ok(())
+        })
     }
 
     fn original(&self, module: Module) -> Option<&str> {

@@ -1,5 +1,7 @@
+use std::path::Path;
+
 use installer_core::{
-    Answers, ByteSize, DIRECTORY, FLAKE, Filesystem, PartitionPlan, PartitionRole, PartitionSpec,
+    Answers, ByteSize, Filesystem, Location, PartitionPlan, PartitionRole, PartitionSpec,
     SECRETS_DIR, SECRETS_MODE, Swap, TARGET_ROOT, generate,
 };
 
@@ -309,8 +311,9 @@ impl Run<'_> {
         let files = generate(self.answers)?;
 
         self.mkdir(&format!("{TARGET_ROOT}{SECRETS_DIR}"), SECRETS_MODE)?;
-        self.mkdir(&format!("{TARGET_ROOT}{FLAKE}"), 0o755)?;
-        self.mkdir(&format!("{TARGET_ROOT}{DIRECTORY}"), 0o755)?;
+        let location = Location::standard();
+        self.mkdir(&on_target(location.flake()), 0o755)?;
+        self.mkdir(&on_target(location.modules()), 0o755)?;
 
         for file in files {
             let path = format!("{TARGET_ROOT}{}", file.path);
@@ -328,7 +331,7 @@ impl Run<'_> {
     }
 
     fn lock_flake(&mut self) -> Result<()> {
-        let directory = format!("{TARGET_ROOT}{FLAKE}");
+        let directory = on_target(Location::standard().flake());
         self.log("Locking flake inputs".to_owned());
         self.run(Command::nix().args(["flake", "lock", &directory]))
     }
@@ -336,7 +339,11 @@ impl Run<'_> {
     fn nixos_install(&mut self) -> Result<()> {
         self.lock_flake()?;
 
-        let flake = format!("{TARGET_ROOT}{FLAKE}#{}", self.answers.hostname);
+        let flake = format!(
+            "{}#{}",
+            on_target(Location::standard().flake()),
+            self.answers.hostname
+        );
         let command = Command::new("nixos-install").args([
             "--root",
             TARGET_ROOT,
@@ -387,4 +394,8 @@ impl Run<'_> {
         self.log(format!("mkdir -m {mode:o} {path}"));
         self.host.mkdir(path, mode)
     }
+}
+
+fn on_target(path: &Path) -> String {
+    format!("{TARGET_ROOT}{}", path.display())
 }

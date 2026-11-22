@@ -17,7 +17,10 @@ import InstallCommand from "./InstallCommand.astro";
     <p class="lead">{site.description}</p>
     <div class="setup">
       <InstallCommand command={site.install} />
-      <p class="note">Run from a NixOS live USB.</p>
+      <p class="note">
+        Run from a NixOS live USB. Already on NixOS?
+        <a href={site.existingNixos}>Add Rikka to your configuration</a>.
+      </p>
     </div>
     <div class="actions">
       <a class="button" href={site.repository}>

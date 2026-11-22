@@ -9,7 +9,6 @@ fn modules_named_by_layout() {
     assert_eq!(Module::from_name("default"), None);
     assert_eq!(Module::from_name("../../../etc/shadow"), None);
     assert_eq!(Module::from_name(""), None);
-    assert_eq!(Module::Packages.path(), "/etc/nixos/rikka/packages.nix");
 }
 
 #[test]

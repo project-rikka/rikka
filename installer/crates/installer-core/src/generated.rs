@@ -1,7 +1,7 @@
-use rikka_nixos_layout::Module;
+use rikka_nixos_layout::{Location, Module};
 
 use crate::{
-    FLAKE, answers::Answers, configuration, error::Result, flake, password::hash_password,
+    answers::Answers, configuration, error::Result, flake, password::hash_password,
     rikka::RenderModule,
 };
 
@@ -16,15 +16,20 @@ pub struct GeneratedFile {
 pub const SECRETS_MODE: u32 = 0o700;
 
 pub fn generate(answers: &Answers) -> Result<Vec<GeneratedFile>> {
+    let location = Location::standard();
     let mut files = vec![
         GeneratedFile {
-            path: format!("{FLAKE}/flake.nix"),
+            path: location.flake_file().display().to_string(),
             contents: flake::render(answers)?,
             mode: 0o644,
             secret: false,
         },
         GeneratedFile {
-            path: format!("{FLAKE}/configuration.nix"),
+            path: location
+                .flake()
+                .join("configuration.nix")
+                .display()
+                .to_string(),
             contents: configuration::render(answers)?,
             mode: 0o644,
             secret: false,
@@ -33,7 +38,7 @@ pub fn generate(answers: &Answers) -> Result<Vec<GeneratedFile>> {
 
     for module in Module::EVERY {
         files.push(GeneratedFile {
-            path: module.path(),
+            path: location.module(module).display().to_string(),
             contents: module.render(answers)?,
             mode: 0o644,
             secret: false,

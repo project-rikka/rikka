@@ -1,15 +1,10 @@
-use std::path::{Path, PathBuf};
-
 use rikka_nix_edit::Document;
+use rikka_nixos_layout::Location;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Channel {
     Unstable,
     Release(String),
-}
-
-fn flake() -> PathBuf {
-    Path::new(rikka_nixos_layout::FLAKE).join("flake.nix")
 }
 
 const VERSION: &str = "/run/current-system/nixos-version";
@@ -24,8 +19,9 @@ pub fn running_version() -> Option<String> {
 impl Channel {
     #[must_use]
     pub fn detect() -> Self {
-        std::fs::read_to_string(flake())
+        Location::system()
             .ok()
+            .and_then(|location| std::fs::read_to_string(location.flake_file()).ok())
             .and_then(|flake| Self::from_flake(&flake))
             .or_else(|| running_version().and_then(|version| Self::from_version(&version)))
             .unwrap_or(Self::Unstable)

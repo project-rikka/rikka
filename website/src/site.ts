@@ -6,6 +6,8 @@ export const site = {
   repository: "https://github.com/project-rikka/rikka",
   discord: "https://discord.gg/m39vzmyg5J",
   install: "curl -fsSL https://install.rikka.sh | sudo sh",
+  existingNixos:
+    "https://github.com/project-rikka/rikka/blob/main/docs/en/installation.md#add-rikka-to-an-existing-nixos",
 } as const;
 
 export const mascot = {

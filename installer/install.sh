@@ -7,6 +7,10 @@
 # Uses a released binary when there is one and builds from source with the live
 # medium's nix when there is not. If neither works it says which and stops.
 #
+# The installer erases a disk, so this only runs from a live medium. A NixOS that
+# is already installed adds Rikka to its own configuration instead; see $GUIDE.
+# RIKKA_FORCE=1 runs it from an installed system anyway.
+#
 # POSIX sh: the live medium has bash, but this is the first thing that runs on
 # somebody else's machine, so it aims at the narrowest shell there is.
 #
@@ -15,6 +19,7 @@ set -eu
 REPO=${RIKKA_REPO:-project-rikka/rikka}
 REF=${RIKKA_REF:-main}
 RELEASES=${RIKKA_RELEASES:-https://github.com/project-rikka/packages/releases/download/binaries}
+GUIDE=https://github.com/project-rikka/rikka/blob/main/docs/en/installation.md#add-rikka-to-an-existing-nixos
 SYSTEM=x86_64-linux
 
 die() {
@@ -45,6 +50,14 @@ fetch() {
 
 require_x86_64() {
     [ "$(uname -m)" = x86_64 ] || die "unsupported CPU: $(uname -m). Rikka runs on x86_64 only."
+}
+
+require_live_medium() {
+    [ "${RIKKA_FORCE:-}" = 1 ] && return 0
+    case $(stat -f -c %T / 2>/dev/null) in
+    tmpfs | ramfs | overlayfs | squashfs) return 0 ;;
+    esac
+    die "this system runs from its own disk; the installer is for a NixOS live medium and erases a disk. To add Rikka to this NixOS, follow $GUIDE"
 }
 
 # The released binary. Not used unless its SHA-256 matches.
@@ -101,6 +114,7 @@ build_from_source() {
 
 main() {
     require_x86_64
+    require_live_medium
 
     # The trap catches an early exit. It deliberately does not fire on the way out:
     # `exec` replaces this shell, and the binary it hands over to is inside $work.

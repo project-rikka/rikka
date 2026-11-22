@@ -94,6 +94,12 @@ fn update(action: Action, site: &Site, report: &mut dyn Report) -> Ending {
         .args(["flake", "update", "--flake"])
         .arg(&site.flake)
         .args(LOG_FORMAT);
+    if let Err(source) = lock.owner().run_as(&mut command) {
+        return untouched(Error::Spawn {
+            program: "nix".to_owned(),
+            source,
+        });
+    }
     let outcome = run_reported(command, report).and_then(|()| {
         report.step(Step::Rebuilding);
         rebuild(action, site, report)

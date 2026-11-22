@@ -1,5 +1,4 @@
 mod mach;
-mod mirror;
 mod patches;
 mod tree;
 mod upstream;
@@ -11,12 +10,12 @@ use anyhow::{Context, Result, bail};
 
 use self::mach::Mach;
 pub(crate) use self::mach::Profile;
-use self::mirror::{copy_changed, mirror};
 use self::patches::Patches;
 use self::tree::Tree;
 use self::upstream::Upstream;
 use crate::dist::{self, SYSTEM};
 use crate::host;
+use crate::mirror::{copy_changed, mirror};
 
 pub(crate) const ENGINE: &str = "engine/gecko";
 

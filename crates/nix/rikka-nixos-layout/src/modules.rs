@@ -1,11 +1,12 @@
 use std::collections::BTreeMap;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use rikka_nix_edit::Document;
 
 use crate::error::{Error, Result};
-use crate::module::{DIRECTORY, FLAKE, Module};
+use crate::location::Location;
+use crate::module::Module;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Modules {
@@ -24,10 +25,7 @@ impl Modules {
     }
 
     pub fn system() -> Result<Self> {
-        if !Path::new(FLAKE).is_dir() {
-            return Err(Error::NotNixos(PathBuf::from(FLAKE)));
-        }
-        Self::read(DIRECTORY)
+        Self::read(Location::system()?.modules())
     }
 
     pub fn read(directory: impl AsRef<Path>) -> Result<Self> {
