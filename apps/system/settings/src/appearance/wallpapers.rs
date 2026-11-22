@@ -206,7 +206,12 @@ fn tile(listed: &WallpaperEntry, showing: Option<&str>) -> impl View {
     container(
         column! {
             frame;
-            text(listed.name.as_str()).caption().muted().no_wrap();
+            text(listed.name.as_str())
+                .caption()
+                .muted()
+                .no_wrap()
+                .align(TextAlign::Center)
+                .width(TILE_WIDTH);
         }
         .gap(Space::TIGHT)
         .align_items(Align::Center),
@@ -217,6 +222,7 @@ fn tile(listed: &WallpaperEntry, showing: Option<&str>) -> impl View {
             .set(session_appearance::WALLPAPER, &id);
     })
     .radius(TILE_RADIUS + TILE_FRAME)
+    .tooltip(listed.name.as_str())
 }
 
 fn picture(preview: &Preview) -> Element {
