@@ -185,14 +185,16 @@ won't modify any files. You do not need a `rikka/` directory in that case.
 
 Rikka's packages are prebuilt and linked against the nixpkgs revision pinned by
 `github:project-rikka/packages`. They always use those libraries, regardless of
-which nixpkgs your system uses.
+which nixpkgs your system uses. That includes Mesa: on AMD, Intel and other
+Mesa-driven GPUs Rikka draws with its own copy, and only NVIDIA's proprietary
+driver comes from your system.
 
 - **NixOS unstable:** set `nixpkgs.follows = "rikka/nixpkgs";`. Your system then
-  uses the exact libraries Rikka was built against, including Mesa. Both update
-  together, avoiding unnecessary rebuilds.
+  uses the exact libraries Rikka was built against, so both share one Mesa. Both
+  update together, avoiding unnecessary rebuilds.
 - **A stable release:** keep your own `nixpkgs.url`, such as
-  `github:NixOS/nixpkgs/nixos-26.05`. Rikka keeps its own libraries, while your
-  system gets graphics drivers from your release.
+  `github:NixOS/nixpkgs/nixos-26.05`. Rikka keeps its own libraries and Mesa,
+  while the rest of your system gets graphics drivers from your release.
 - **Never** set `rikka.inputs.nixpkgs.follows = "nixpkgs";`. That relinks Rikka's
   prebuilt binaries against different libraries, which can break them.
 

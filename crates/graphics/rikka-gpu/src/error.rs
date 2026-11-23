@@ -11,6 +11,13 @@ pub enum Error {
     #[error("failed to load the Vulkan loader")]
     Loading(#[source] Cause),
 
+    #[error("failed to load Vulkan driver {}", path.display())]
+    DriverLoading {
+        path: std::path::PathBuf,
+        #[source]
+        source: Cause,
+    },
+
     #[error("Vulkan call failed: {0}")]
     Driver(Cause),
 

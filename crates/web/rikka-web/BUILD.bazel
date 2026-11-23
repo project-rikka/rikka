@@ -12,6 +12,7 @@ rikka_library(
         "//crates/foundation/rikka-shipped",
         "//crates/foundation/rikka-sync",
         "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu-drivers",
         "//crates/graphics/rikka-picture",
         "//crates/ui/rikka-nested",
         "//crates/ui/rikka-ui",

@@ -1,11 +1,11 @@
 use std::ffi::OsString;
 use std::process::Command;
 
+use rikka_gpu_drivers::VULKAN_SELECT_ENV;
 use rikka_session::environment::BUS_ADDRESS_ENV;
 use rikka_session::profile::PROFILE_ENV;
 
 use crate::context::SessionRef;
-use crate::drivers::VULKAN_SELECT_ENV;
 use crate::programs;
 use crate::settings::SessionSettings;
 

@@ -15,6 +15,11 @@ impl Shipped {
             .find(|path| path.is_file())
     }
 
+    #[must_use]
+    pub fn folder(&self) -> Option<PathBuf> {
+        self.folders().find(|folder| folder.is_dir())
+    }
+
     fn folders(&self) -> impl Iterator<Item = PathBuf> {
         let named = env::var_os(self.variable)
             .map(|paths| env::split_paths(&paths).collect::<Vec<_>>())

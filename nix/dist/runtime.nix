@@ -1,4 +1,6 @@
 {
+  lib,
+  addDriverRunpath,
   alsa-lib,
   ffmpeg_9-full,
   fontconfig,
@@ -8,6 +10,7 @@
   libopus,
   libx11,
   libxkbcommon,
+  mesa,
   pam,
   pipewire,
   seatd,
@@ -18,12 +21,19 @@
   zxing-cpp,
 }:
 
+let
+  gbm = libgbm.overrideAttrs (previous: {
+    mesonFlags = lib.filter (flag: !lib.hasPrefix "-Dgbm-backends-path=" flag) previous.mesonFlags ++ [
+      (lib.mesonOption "gbm-backends-path" "${mesa}/lib/gbm:${addDriverRunpath.driverLink}/lib/gbm")
+    ];
+  });
+in
 {
   linked = [
     alsa-lib
     fontconfig
     libdrm
-    libgbm
+    gbm
     libinput
     libopus
     libx11

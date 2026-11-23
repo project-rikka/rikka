@@ -50,6 +50,7 @@ rikka_library(
         "//crates/foundation/rikka-wayland-client",
         "//crates/graphics/rikka-colorimetry",
         "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-gpu-drivers",
         "//crates/graphics/rikka-renderer",
         "//crates/graphics/rikka-symbols",
         "//crates/graphics/rikka-text",
@@ -65,7 +66,6 @@ rikka_library(
         "@crates//:jiff",
         "@crates//:rustix",
         "@crates//:serde",
-        "@crates//:serde_json",
         "@crates//:slotmap",
         "@crates//:thiserror",
         "@crates//:tracing",
@@ -83,6 +83,7 @@ rikka_binary(
     deps = [
         ":lib",
         "//crates/foundation/rikka-heap",
+        "//crates/graphics/rikka-gpu-drivers",
         "@crates//:tracing",
     ],
 )

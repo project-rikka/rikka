@@ -116,6 +116,7 @@ let
     icon_listings = env.shipped.RIKKA_ICON_LISTINGS;
     grammars = env.shipped.RIKKA_GRAMMARS;
     gecko = builtins.unsafeDiscardStringContext env.shipped.RIKKA_GECKO;
+    mesa = builtins.unsafeDiscardStringContext env.shipped.RIKKA_MESA;
   };
 
   toolchain = stdenv.mkDerivation {

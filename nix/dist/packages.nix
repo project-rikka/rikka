@@ -23,6 +23,7 @@ let
   flake = {
     gecko = "${pkgs.callPackage ./gecko.nix { }}/lib/rikka-gecko";
     icon-fonts = "${pkgs.callPackage ./icon-fonts.nix { }}/share/rikka/fonts";
+    mesa = "${pkgs.mesa}";
   };
 
   linked = name: flake.${name} or "${assets.${name}}";

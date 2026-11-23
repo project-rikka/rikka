@@ -2,6 +2,8 @@ use std::ffi::{CStr, CString, c_char, c_void};
 
 use ash::{ext, vk};
 
+#[cfg(unix)]
+use crate::core::direct_drivers::DirectDrivers;
 use crate::error::{Error, Result};
 
 const VALIDATION_LAYER: &CStr = c"VK_LAYER_KHRONOS_validation";
@@ -12,6 +14,8 @@ const VALIDATION_CHECKS: [&CStr; 4] = [
     c"validate_best_practices_amd",
     c"validate_best_practices_nvidia",
 ];
+
+const DIRECT_DRIVER_LOADING_SINCE: u32 = vk::make_api_version(0, 1, 3, 236);
 
 static ENABLED: vk::Bool32 = vk::TRUE;
 
@@ -35,6 +39,8 @@ pub struct VulkanInstance {
     instance: ash::Instance,
     debug: Option<DebugMessenger>,
     extensions: Vec<CString>,
+    #[cfg(unix)]
+    _drivers: Option<DirectDrivers>,
 }
 
 struct DebugMessenger {
@@ -68,8 +74,18 @@ impl VulkanInstance {
             );
         }
 
+        #[cfg(unix)]
+        let drivers = DirectDrivers::load()?;
+        #[cfg(unix)]
+        let direct = drivers.is_some();
+        #[cfg(windows)]
+        let direct = false;
+
         let mut extensions: Vec<*const c_char> = Vec::new();
-        let available = Self::available(&entry)?;
+        let available = match direct {
+            true => Self::loader_provided(instance_version)?,
+            false => Self::available(&entry)?,
+        };
         let offers = |name: &CStr| available.iter().any(|offered| offered.as_c_str() == name);
         let debug_utils = offers(ext::debug_utils::NAME);
         if debug_utils {
@@ -88,6 +104,9 @@ impl VulkanInstance {
                     .iter()
                     .map(|name| name.as_ptr()),
             );
+        }
+        if direct {
+            extensions.push(vk::LUNARG_DIRECT_DRIVER_LOADING_NAME.as_ptr());
         }
 
         let mut layers: Vec<*const c_char> = Vec::new();
@@ -108,6 +127,16 @@ impl VulkanInstance {
             .enabled_extension_names(&extensions);
         if layer_settings {
             create_info = create_info.push_next(&mut settings_info);
+        }
+        #[cfg(unix)]
+        let mut driver_list = drivers.as_ref().map(|drivers| {
+            vk::DirectDriverLoadingListLUNARG::default()
+                .mode(vk::DirectDriverLoadingModeLUNARG::EXCLUSIVE)
+                .drivers(drivers.infos())
+        });
+        #[cfg(unix)]
+        if let Some(driver_list) = driver_list.as_mut() {
+            create_info = create_info.push_next(driver_list);
         }
 
         let instance = unsafe { entry.create_instance(&create_info, None)? };
@@ -134,6 +163,8 @@ impl VulkanInstance {
             instance,
             debug,
             extensions,
+            #[cfg(unix)]
+            _drivers: drivers,
         })
     }
 
@@ -155,6 +186,23 @@ impl VulkanInstance {
             .filter_map(|extension| extension.extension_name_as_c_str().ok())
             .map(CStr::to_owned)
             .collect())
+    }
+
+    fn loader_provided(loader_version: u32) -> Result<Vec<CString>> {
+        if loader_version < DIRECT_DRIVER_LOADING_SINCE {
+            return Err(Error::Unsupported(format!(
+                "Vulkan loader {}.{}.{} lacks VK_LUNARG_direct_driver_loading",
+                vk::api_version_major(loader_version),
+                vk::api_version_minor(loader_version),
+                vk::api_version_patch(loader_version),
+            )));
+        }
+        Ok([
+            ext::debug_utils::NAME,
+            vk::LUNARG_DIRECT_DRIVER_LOADING_NAME,
+        ]
+        .map(CStr::to_owned)
+        .into())
     }
 
     fn validation_layer_available(entry: &ash::Entry) -> Result<bool> {

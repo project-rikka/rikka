@@ -6,6 +6,8 @@ pub mod compute;
 pub mod convert;
 pub mod device;
 #[cfg(unix)]
+mod direct_drivers;
+#[cfg(unix)]
 pub mod dmabuf_support;
 mod exit;
 pub(crate) mod fault;

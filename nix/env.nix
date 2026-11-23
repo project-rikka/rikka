@@ -12,6 +12,7 @@
   rustPlatform,
   wayland-scanner,
   rikka-gecko,
+  mesa,
   shader-slang,
   dbus,
   git,
@@ -89,6 +90,7 @@ rec {
     RIKKA_ICON_LISTINGS = "${iconFonts}/share/rikka/listings";
     RIKKA_GRAMMARS = "${grammars}/lib/rikka/grammars";
     RIKKA_GECKO = "${rikka-gecko}/lib/rikka-gecko";
+    RIKKA_MESA = "${mesa}";
   };
 
   runtimeTools = [

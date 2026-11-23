@@ -142,6 +142,14 @@ pub(crate) const SHARED: &[Shared] = &[
         into: "share/rikka/fonts",
         distributed: Distributed::Flake,
     },
+    Shared {
+        name: "mesa",
+        library: "//crates/graphics/rikka-gpu-drivers",
+        variable: "RIKKA_MESA",
+        found_by: "RIKKA_MESA_PATH",
+        into: "lib/rikka-mesa",
+        distributed: Distributed::Flake,
+    },
 ];
 
 pub(crate) const MATERIAL_LISTING: Supplied = Supplied {

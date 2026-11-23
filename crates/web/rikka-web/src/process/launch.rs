@@ -4,6 +4,7 @@ use std::os::unix::net::UnixStream;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 
+use rikka_gpu_drivers::Drivers;
 use rustix::io::{FdFlags, fcntl_setfd};
 
 use crate::error::{Error, Result};
@@ -44,6 +45,14 @@ pub(crate) fn launch(program: &Path, profile: &Path, display: &Path) -> Result<L
         .stdin(Stdio::null());
     for variable in WITHHELD {
         command.env_remove(variable);
+    }
+    if let Some(drivers) = Drivers::shipped() {
+        for (name, value) in drivers.environment() {
+            match value {
+                Some(value) => command.env(name, value),
+                None => command.env_remove(name),
+            };
+        }
     }
     let child = {
         let _spawning = SPAWNING.lock();

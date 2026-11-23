@@ -39,7 +39,10 @@ rikka_library(
         "@crates//:thiserror",
         "@crates//:tracing",
     ] + select({
-        "@platforms//os:linux": [],
+        "@platforms//os:linux": [
+            "//crates/graphics/rikka-gpu-drivers",
+            "@crates//:libloading",
+        ],
         "@platforms//os:windows": ["@crates//:windows"],
     }),
 )

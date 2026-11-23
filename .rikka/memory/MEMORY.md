@@ -450,6 +450,10 @@
 - [GPU queues, submits and pipeline compilation (rikka-gpu)](gpu-queues.md) — Queue families on declared need, transfer lane, global priority, submits, background pipelines, pass timing.
 - [GPU textures, uploads and the bindless table (rikka-gpu)](gpu-textures.md) — Uploads, DRM-layout rows, planar dmabufs, the bindless table, image access, mip growth, texture formats.
 
+## crates/graphics/rikka-gpu-drivers
+
+- [Graphics driver selection and Rikka's own Mesa (rikka-gpu-drivers)](gpu-drivers.md) — rikka-gpu-drivers picks drivers per render node: pinned Mesa for Rikka processes, narrowed system drivers for others.
+
 ## crates/graphics/rikka-image
 
 - [Picture decoding and encoding (rikka-image, rikka-image-ffmpeg)](image-codecs.md) — rikka_image::read/write doors, own codecs, FFmpeg-backed AVIF/HEIF/JPEG XL/TIFF/EXR/J2K, limits, ICC, the loader.

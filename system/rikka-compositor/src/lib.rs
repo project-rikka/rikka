@@ -8,7 +8,6 @@ mod color;
 mod context;
 mod crash;
 mod cursor;
-mod drivers;
 mod error;
 mod glass;
 mod input;
@@ -32,7 +31,6 @@ mod windows;
 mod x11;
 
 pub use backend::Extent;
-pub use drivers::narrow as narrow_graphics_drivers;
 pub use error::{Error, Result};
 pub use input::Injected;
 pub use launch::Launch;

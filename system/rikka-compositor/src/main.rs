@@ -87,7 +87,7 @@ fn main() -> ExitCode {
         Screens::Kms => {}
     }
 
-    unsafe { rikka_compositor::narrow_graphics_drivers() };
+    unsafe { rikka_gpu_drivers::narrow_system() };
 
     match run(launch, &logging) {
         Ok(()) => ExitCode::SUCCESS,
