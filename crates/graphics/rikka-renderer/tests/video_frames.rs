@@ -1,8 +1,11 @@
-use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use ash::vk;
 use rikka_gpu::{
-    ExternalVideoFrame, LentFrame, VideoDeviceHandles, VideoFrameImage, VideoPlane, ycbcr_matrix,
+    ExternalVideoFrame, FrameClaim, LentFrame, VideoDeviceHandles, VideoFrameImage, VideoPlane,
+    ycbcr_matrix,
 };
 use rikka_renderer::{Node, OffscreenTarget, Scene, TextureId};
 use rikka_test_renderer::TestRenderer;
@@ -18,9 +21,56 @@ struct Plane {
 }
 
 const DECODED: u64 = 1;
-const RELEASED: u64 = 2;
+const PATIENCE: Duration = Duration::from_secs(5);
+const RETURN_POLL: Duration = Duration::from_millis(5);
 const CONVERTER_COMPILE_POLLS: usize = 200;
 const CONVERTER_COMPILE_POLL: Duration = Duration::from_millis(10);
+
+struct FrameState {
+    value: u64,
+    layout: vk::ImageLayout,
+}
+
+struct DecodedFrame {
+    semaphore: vk::Semaphore,
+    images: [vk::Image; 2],
+    state: Arc<Mutex<FrameState>>,
+    returned: Arc<AtomicBool>,
+}
+
+impl LentFrame for DecodedFrame {
+    fn claim(&mut self) -> FrameClaim {
+        let mut state = self.state.lock().expect("frame state");
+        let claimed = FrameClaim {
+            images: self
+                .images
+                .iter()
+                .map(|&image| VideoFrameImage {
+                    image,
+                    layout: state.layout,
+                    source_queue_family: None,
+                })
+                .collect(),
+            waits: vec![(self.semaphore, state.value)],
+            signals: vec![(self.semaphore, state.value + 1)],
+        };
+        state.value += 1;
+        state.layout = vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL;
+        claimed
+    }
+}
+
+impl Drop for DecodedFrame {
+    fn drop(&mut self) {
+        self.returned.store(true, Ordering::Release);
+    }
+}
+
+struct Lent {
+    semaphore: vk::Semaphore,
+    state: Arc<Mutex<FrameState>>,
+    returned: Arc<AtomicBool>,
+}
 
 struct Decoder {
     handles: VideoDeviceHandles,
@@ -28,6 +78,7 @@ struct Decoder {
     queue: vk::Queue,
     pool: vk::CommandPool,
     semaphores: Vec<vk::Semaphore>,
+    lent: Vec<Lent>,
     planes: Vec<Plane>,
     memory: vk::PhysicalDeviceMemoryProperties,
 }
@@ -58,6 +109,7 @@ impl Decoder {
             queue,
             pool,
             semaphores: Vec::new(),
+            lent: Vec::new(),
             planes: Vec::new(),
             memory,
         })
@@ -193,11 +245,16 @@ impl Decoder {
         }
 
         let semaphore = *self.semaphores.last().expect("just created");
-        let written = |image| VideoFrameImage {
-            image,
+        let state = Arc::new(Mutex::new(FrameState {
+            value: DECODED,
             layout: vk::ImageLayout::TRANSFER_DST_OPTIMAL,
-            source_queue_family: None,
-        };
+        }));
+        let returned = Arc::new(AtomicBool::new(false));
+        self.lent.push(Lent {
+            semaphore,
+            state: Arc::clone(&state),
+            returned: Arc::clone(&returned),
+        });
         ExternalVideoFrame {
             planes: vec![
                 VideoPlane {
@@ -214,22 +271,24 @@ impl Decoder {
             chroma_packed: true,
             uv_scale: [1.0, 1.0],
             color_matrix: ycbcr_matrix(0.2126, 0.0722, 8, 1.0, true),
-            lease: self.handles.lease(LentFrame {
-                images: vec![written(luma), written(chroma)],
-                waits: vec![(semaphore, DECODED)],
-                signals: vec![(semaphore, RELEASED)],
-                keepalive: Box::new(()),
+            lease: self.handles.lease(DecodedFrame {
+                semaphore,
+                images: [luma, chroma],
+                state,
+                returned,
             }),
         }
     }
 
-    fn newest_semaphore(&self) -> vk::Semaphore {
-        *self.semaphores.last().expect("a frame was decoded")
+    fn newest(&self) -> usize {
+        self.lent.len() - 1
     }
 
-    fn released(&self, semaphore: vk::Semaphore, within: Duration) -> bool {
-        let semaphores = [semaphore];
-        let values = [RELEASED];
+    fn usable(&self, frame: usize, within: Duration) -> bool {
+        let lent = &self.lent[frame];
+        let value = lent.state.lock().expect("frame state").value;
+        let semaphores = [lent.semaphore];
+        let values = [value];
         let wait = vk::SemaphoreWaitInfo::default()
             .semaphores(&semaphores)
             .values(&values);
@@ -239,12 +298,24 @@ impl Decoder {
                 .is_ok()
         }
     }
+
+    fn returned(&self, frame: usize, within: Duration) -> bool {
+        let returned = &self.lent[frame].returned;
+        let until = Instant::now() + within;
+        while !returned.load(Ordering::Acquire) {
+            if Instant::now() >= until {
+                return false;
+            }
+            std::thread::sleep(RETURN_POLL);
+        }
+        self.usable(frame, within)
+    }
 }
 
 impl Drop for Decoder {
     fn drop(&mut self) {
-        for &semaphore in &self.semaphores {
-            let _ = self.released(semaphore, Duration::from_secs(5));
+        for frame in 0..self.lent.len() {
+            let _ = self.usable(frame, PATIENCE);
         }
         unsafe {
             for plane in self.planes.drain(..) {
@@ -315,7 +386,7 @@ fn decoded_frame_converts_into_texture() {
         return;
     };
     let frame = decoder.decode();
-    let released = decoder.newest_semaphore();
+    let decoded = decoder.newest();
     unsafe {
         renderer
             .textures()
@@ -334,18 +405,45 @@ fn decoded_frame_converts_into_texture() {
         expected_colour()
     );
     assert!(
-        decoder.released(released, Duration::from_secs(5)),
+        decoder.usable(decoded, PATIENCE),
         "the decoder never got its frame back"
     );
 }
 
 #[test]
-fn replaced_frame_is_released_without_waiting_for_a_draw() {
+fn frame_waiting_for_a_draw_owes_its_decoder_nothing() {
+    let Some((mut renderer, mut decoder, mut scene, mut target, texture)) = setup() else {
+        return;
+    };
+    let frame = decoder.decode();
+    let decoded = decoder.newest();
+    unsafe {
+        renderer
+            .textures()
+            .submit_video_frame(texture, frame)
+            .expect("the frame is accepted")
+    };
+    assert!(
+        decoder.usable(decoded, PATIENCE),
+        "a frame the renderer has not drawn yet holds its decoder back"
+    );
+    assert!(shows(
+        &mut renderer,
+        &mut scene,
+        &mut target,
+        texture,
+        expected_colour()
+    ));
+    assert!(decoder.usable(decoded, PATIENCE));
+}
+
+#[test]
+fn replaced_frame_returns_without_waiting_for_a_draw() {
     let Some((mut renderer, mut decoder, mut scene, mut target, texture)) = setup() else {
         return;
     };
     let first = decoder.decode();
-    let first_released = decoder.newest_semaphore();
+    let replaced = decoder.newest();
     let second = decoder.decode();
     unsafe {
         let textures = renderer.textures();
@@ -357,7 +455,7 @@ fn replaced_frame_is_released_without_waiting_for_a_draw() {
             .expect("the second frame replaces it");
     }
     assert!(
-        decoder.released(first_released, Duration::from_secs(5)),
+        decoder.returned(replaced, PATIENCE),
         "the replaced frame waited for a draw before it was handed back"
     );
     assert!(shows(
@@ -370,15 +468,15 @@ fn replaced_frame_is_released_without_waiting_for_a_draw() {
 }
 
 #[test]
-fn frame_dropped_before_the_renderer_takes_it_is_released() {
+fn frame_dropped_before_the_renderer_takes_it_returns() {
     let Some((_renderer, mut decoder, _scene, _target, _texture)) = setup() else {
         return;
     };
     let frame = decoder.decode();
-    let released = decoder.newest_semaphore();
+    let decoded = decoder.newest();
     drop(frame);
     assert!(
-        decoder.released(released, Duration::from_secs(5)),
+        decoder.returned(decoded, PATIENCE),
         "a dropped frame was never handed back to its decoder"
     );
 }

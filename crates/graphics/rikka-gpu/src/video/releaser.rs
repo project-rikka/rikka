@@ -9,7 +9,7 @@ use crate::core::image::record_barriers;
 use crate::core::recorder::Recorder;
 use crate::error::Result;
 use crate::video::imports::VideoSemaphores;
-use crate::video::lease::LentFrame;
+use crate::video::lease::FrameClaim;
 
 pub(crate) struct VideoReleaser {
     device: Arc<RenderDevice>,
@@ -32,14 +32,14 @@ impl VideoReleaser {
         }
     }
 
-    pub(crate) fn release(&self, lent: LentFrame) {
-        if let Err(error) = self.submit(&lent) {
+    pub(crate) fn release(&self, claim: &FrameClaim) {
+        if let Err(error) = self.submit(claim) {
             tracing::error!("cannot hand an unshown video frame back on the GPU: {error}");
-            self.release_from_host(&lent);
+            self.release_from_host(claim);
         }
     }
 
-    fn submit(&self, lent: &LentFrame) -> Result<()> {
+    fn submit(&self, claim: &FrameClaim) -> Result<()> {
         let mut guard = self.releasing.lock();
         if guard.is_none() {
             *guard = Some(Releasing::start(&self.device)?);
@@ -50,7 +50,8 @@ impl VideoReleaser {
         let family = self.device.queue_family();
         releasing.handovers.clear();
         releasing.handovers.extend(
-            lent.images
+            claim
+                .images
                 .iter()
                 .filter_map(|image| image.handover(family)),
         );
@@ -73,7 +74,7 @@ impl VideoReleaser {
         }
         let value = releasing.next;
         releasing.semaphores.clear();
-        releasing.semaphores.settle(lent);
+        releasing.semaphores.settle(claim);
         releasing.semaphores.signals.push(
             vk::SemaphoreSubmitInfo::default()
                 .semaphore(releasing.timeline.handle())
@@ -97,9 +98,9 @@ impl VideoReleaser {
         Ok(())
     }
 
-    fn release_from_host(&self, lent: &LentFrame) {
+    fn release_from_host(&self, claim: &FrameClaim) {
         let device = self.device.handle();
-        for &(semaphore, value) in &lent.waits {
+        for &(semaphore, value) in &claim.waits {
             let semaphores = [semaphore];
             let values = [value];
             let wait_info = vk::SemaphoreWaitInfo::default()
@@ -109,7 +110,7 @@ impl VideoReleaser {
                 tracing::error!("failed to wait for an unshown video frame: {err}");
             }
         }
-        for &(semaphore, value) in &lent.signals {
+        for &(semaphore, value) in &claim.signals {
             let signal_info = vk::SemaphoreSignalInfo::default()
                 .semaphore(semaphore)
                 .value(value);

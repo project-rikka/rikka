@@ -6,62 +6,70 @@ use ash::vk;
 use crate::video::frame::VideoFrameImage;
 use crate::video::releaser::VideoReleaser;
 
-pub struct LentFrame {
+pub trait LentFrame: Send + 'static {
+    fn claim(&mut self) -> FrameClaim;
+}
+
+#[derive(Debug)]
+pub struct FrameClaim {
     pub images: Vec<VideoFrameImage>,
     pub waits: Vec<(vk::Semaphore, u64)>,
     pub signals: Vec<(vk::Semaphore, u64)>,
-    pub keepalive: Box<dyn Any + Send>,
 }
 
 pub struct VideoLease {
     releaser: Arc<VideoReleaser>,
-    lent: Option<LentFrame>,
+    frame: Option<Box<dyn LentFrame>>,
+    claim: Option<FrameClaim>,
 }
 
 impl VideoLease {
-    pub(crate) fn new(releaser: Arc<VideoReleaser>, lent: LentFrame) -> Self {
+    pub(crate) fn new(releaser: Arc<VideoReleaser>, frame: Box<dyn LentFrame>) -> Self {
         Self {
             releaser,
-            lent: Some(lent),
+            frame: Some(frame),
+            claim: None,
         }
     }
 
-    pub(crate) fn lent(&self) -> &LentFrame {
-        self.lent
-            .as_ref()
-            .expect("a lease holds its frame until it settles")
+    pub(crate) fn claim(&mut self) -> &FrameClaim {
+        let frame = self
+            .frame
+            .as_mut()
+            .expect("a lease holds its frame until it settles");
+        self.claim.get_or_insert_with(|| frame.claim())
+    }
+
+    pub(crate) fn claimed(&self) -> Option<&FrameClaim> {
+        self.claim.as_ref()
+    }
+
+    pub(crate) fn unclaim(&mut self) {
+        if let Some(claim) = self.claim.take() {
+            self.releaser.release(&claim);
+        }
     }
 
     pub(crate) fn settle(mut self) -> Box<dyn Any + Send> {
-        self.lent
-            .take()
-            .expect("a lease holds its frame until it settles")
-            .keepalive
+        self.claim = None;
+        Box::new(
+            self.frame
+                .take()
+                .expect("a lease holds its frame until it settles"),
+        )
     }
 }
 
 impl Drop for VideoLease {
     fn drop(&mut self) {
-        if let Some(lent) = self.lent.take() {
-            self.releaser.release(lent);
-        }
-    }
-}
-
-impl std::fmt::Debug for LentFrame {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("LentFrame")
-            .field("images", &self.images)
-            .field("waits", &self.waits)
-            .field("signals", &self.signals)
-            .finish_non_exhaustive()
+        self.unclaim();
     }
 }
 
 impl std::fmt::Debug for VideoLease {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VideoLease")
-            .field("lent", &self.lent)
+            .field("claim", &self.claim)
             .finish_non_exhaustive()
     }
 }

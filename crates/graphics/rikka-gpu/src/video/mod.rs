@@ -9,4 +9,4 @@ pub use handles::video_handles;
 pub use handles::{QueueLock, VideoDeviceFeatures, VideoDeviceHandles, VideoQueueFamily};
 pub use imports::VideoImports;
 pub use imports::VideoSemaphores;
-pub use lease::{LentFrame, VideoLease};
+pub use lease::{FrameClaim, LentFrame, VideoLease};

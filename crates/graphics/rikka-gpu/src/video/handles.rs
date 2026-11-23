@@ -73,8 +73,8 @@ impl VideoDeviceHandles {
     }
 
     #[must_use]
-    pub fn lease(&self, lent: LentFrame) -> VideoLease {
-        VideoLease::new(self.releaser.clone(), lent)
+    pub fn lease(&self, frame: impl LentFrame) -> VideoLease {
+        VideoLease::new(self.releaser.clone(), Box::new(frame))
     }
 }
 

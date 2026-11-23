@@ -1,5 +1,7 @@
 use ash::vk;
-use rikka_gpu::{ExternalVideoFrame, LentFrame, VideoDeviceHandles, VideoFrameImage, VideoPlane};
+use rikka_gpu::{
+    ExternalVideoFrame, FrameClaim, LentFrame, VideoDeviceHandles, VideoFrameImage, VideoPlane,
+};
 
 use crate::color;
 use crate::error::{Error, Result};
@@ -67,13 +69,6 @@ const PLANE_ASPECTS: [vk::ImageAspectFlags; 3] = [
     vk::ImageAspectFlags::PLANE_2,
 ];
 
-struct FrameAccess {
-    planes: Vec<VideoPlane>,
-    images: Vec<VideoFrameImage>,
-    waits: Vec<(vk::Semaphore, u64)>,
-    signals: Vec<(vk::Semaphore, u64)>,
-}
-
 #[derive(Clone, Copy, Debug)]
 struct ImageState {
     layout: vk::ImageLayout,
@@ -81,11 +76,18 @@ struct ImageState {
     queue_family: u32,
 }
 
-fn locked<T>(
-    frames: &AVHWFramesContext,
-    frame: &Frame,
-    act: impl FnOnce(&mut AVVkFrame) -> Result<T>,
-) -> Result<T> {
+fn frames_context(frame: &Frame) -> Result<&AVHWFramesContext> {
+    let frames_ref = frame.hw_frames_ctx();
+    if frames_ref.is_null() {
+        return Err(Error::Unsupported(
+            "hardware frame without frames context".into(),
+        ));
+    }
+    Ok(unsafe { &*(*frames_ref).data.cast::<AVHWFramesContext>() })
+}
+
+fn locked<T>(frame: &Frame, act: impl FnOnce(&mut AVVkFrame) -> T) -> Result<T> {
+    let frames = frames_context(frame)?;
     let vk_frames = frames.hwctx.cast::<AVVulkanFramesContext>();
     let vk_frame = frame.data()[0].cast::<AVVkFrame>();
     if vk_frame.is_null() {
@@ -101,7 +103,7 @@ fn locked<T>(
     unsafe { lock(frames_context, vk_frame) };
     let done = act(unsafe { &mut *vk_frame });
     unsafe { unlock(frames_context, vk_frame) };
-    done
+    Ok(done)
 }
 
 fn image_count(frame: &AVVkFrame) -> usize {
@@ -112,11 +114,11 @@ fn image_count(frame: &AVVkFrame) -> usize {
         .count()
 }
 
-fn frame_access(frame: &AVVkFrame, formats: &[vk::Format]) -> Result<FrameAccess> {
+fn planes(frame: &AVVkFrame, formats: &[vk::Format]) -> Result<Vec<VideoPlane>> {
     let image_count = image_count(frame);
     let plane_count = formats.len();
-    let planes: Vec<VideoPlane> = if image_count == 1 && plane_count > 1 {
-        formats
+    if image_count == 1 && plane_count > 1 {
+        return Ok(formats
             .iter()
             .zip(PLANE_ASPECTS)
             .map(|(&format, aspect)| VideoPlane {
@@ -124,9 +126,10 @@ fn frame_access(frame: &AVVkFrame, formats: &[vk::Format]) -> Result<FrameAccess
                 aspect,
                 view_format: format,
             })
-            .collect()
-    } else if image_count == plane_count {
-        formats
+            .collect());
+    }
+    if image_count == plane_count {
+        return Ok(formats
             .iter()
             .zip(frame.img)
             .map(|(&format, image)| VideoPlane {
@@ -134,36 +137,35 @@ fn frame_access(frame: &AVVkFrame, formats: &[vk::Format]) -> Result<FrameAccess
                 aspect: vk::ImageAspectFlags::COLOR,
                 view_format: format,
             })
-            .collect()
-    } else {
-        return Err(Error::Unsupported(format!(
-            "unexpected Vulkan frame shape: {image_count} images for {plane_count} planes"
-        )));
-    };
-    let images = (0..image_count)
-        .map(|index| VideoFrameImage {
-            image: frame.img[index],
-            layout: frame.layout[index],
-            source_queue_family: (frame.queue_family[index] != vk::QUEUE_FAMILY_IGNORED)
-                .then_some(frame.queue_family[index]),
-        })
-        .collect();
-    let waits = (0..image_count)
-        .map(|index| (frame.sem[index], frame.sem_value[index]))
-        .collect();
-    let signals = (0..image_count)
-        .map(|index| (frame.sem[index], frame.sem_value[index] + 1))
-        .collect();
-    Ok(FrameAccess {
-        planes,
-        images,
-        waits,
-        signals,
-    })
+            .collect());
+    }
+    Err(Error::Unsupported(format!(
+        "unexpected Vulkan frame shape: {image_count} images for {plane_count} planes"
+    )))
 }
 
-fn set_image_state(frame: &mut AVVkFrame, to: ImageState) {
-    for index in 0..image_count(frame) {
+fn claim(frame: &mut AVVkFrame, to: ImageState) -> FrameClaim {
+    let images = 0..image_count(frame);
+    let claimed = FrameClaim {
+        images: images
+            .clone()
+            .map(|index| VideoFrameImage {
+                image: frame.img[index],
+                layout: frame.layout[index],
+                source_queue_family: (frame.queue_family[index] != vk::QUEUE_FAMILY_IGNORED)
+                    .then_some(frame.queue_family[index]),
+            })
+            .collect(),
+        waits: images
+            .clone()
+            .map(|index| (frame.sem[index], frame.sem_value[index]))
+            .collect(),
+        signals: images
+            .clone()
+            .map(|index| (frame.sem[index], frame.sem_value[index] + 1))
+            .collect(),
+    };
+    for index in images {
         frame.sem_value[index] += 1;
         frame.layout[index] = to.layout;
         frame.access[index] = to.access;
@@ -171,17 +173,24 @@ fn set_image_state(frame: &mut AVVkFrame, to: ImageState) {
             frame.queue_family[index] = to.queue_family;
         }
     }
+    claimed
+}
+
+struct DecodedFrame {
+    frame: Frame,
+    sampled: ImageState,
+}
+
+impl LentFrame for DecodedFrame {
+    fn claim(&mut self) -> FrameClaim {
+        let sampled = self.sampled;
+        locked(&self.frame, |vk_frame| claim(vk_frame, sampled))
+            .expect("the frame was checked when it was lent")
+    }
 }
 
 pub fn to_external(frame: Frame, handles: &VideoDeviceHandles) -> Result<ExternalVideoFrame> {
-    let frames_ref = frame.hw_frames_ctx();
-    if frames_ref.is_null() {
-        return Err(Error::Unsupported(
-            "hardware frame without frames context".into(),
-        ));
-    }
-    let frames_ctx = unsafe { &*(*frames_ref).data.cast::<AVHWFramesContext>() };
-
+    let frames_ctx = frames_context(&frame)?;
     let sw_format = frames_ctx.sw_format;
     let Some(spec) = plane_spec(sw_format) else {
         return Err(Error::Unsupported(format!(
@@ -189,26 +198,7 @@ pub fn to_external(frame: Frame, handles: &VideoDeviceHandles) -> Result<Externa
             rikka_ffmpeg::pixel_format_name(sw_format)
         )));
     };
-    let plane_count = spec.formats.len();
-
-    let FrameAccess {
-        planes,
-        images,
-        waits,
-        signals,
-    } = locked(frames_ctx, &frame, |vk_frame| {
-        let lent = frame_access(vk_frame, spec.formats)?;
-        set_image_state(
-            vk_frame,
-            ImageState {
-                layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
-                access: vk::AccessFlags2::SHADER_READ,
-                queue_family: handles.graphics_queue_family,
-            },
-        );
-        Ok(lent)
-    })?;
-
+    let planes = locked(&frame, |vk_frame| planes(vk_frame, spec.formats))??;
     let coded_width = frames_ctx.width.max(1) as f32;
     let coded_height = frames_ctx.height.max(1) as f32;
     let color_matrix = color::ycbcr_matrix(
@@ -218,28 +208,22 @@ pub fn to_external(frame: Frame, handles: &VideoDeviceHandles) -> Result<Externa
         spec.storage_scale,
         frame.height(),
     );
-
+    let uv_scale = [
+        frame.width() as f32 / coded_width,
+        frame.height() as f32 / coded_height,
+    ];
     Ok(ExternalVideoFrame {
-        chroma_packed: plane_count == 2,
-        uv_scale: [
-            frame.width() as f32 / coded_width,
-            frame.height() as f32 / coded_height,
-        ],
+        chroma_packed: spec.formats.len() == 2,
+        uv_scale,
         color_matrix,
         planes,
-        lease: handles.lease(LentFrame {
-            images,
-            waits,
-            signals,
-            keepalive: Box::new(frame),
+        lease: handles.lease(DecodedFrame {
+            frame,
+            sampled: ImageState {
+                layout: vk::ImageLayout::SHADER_READ_ONLY_OPTIMAL,
+                access: vk::AccessFlags2::SHADER_READ,
+                queue_family: handles.graphics_queue_family,
+            },
         }),
     })
-}
-
-impl std::fmt::Debug for FrameAccess {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        formatter
-            .debug_struct("FrameAccess")
-            .finish_non_exhaustive()
-    }
 }

@@ -11,7 +11,7 @@ use crate::core::image::GpuImage;
 use crate::error::{Error, Result};
 use crate::texture::{TextureId, TexturePool};
 use crate::video::frame::{ExternalVideoFrame, WAIT_STAGE};
-use crate::video::lease::LentFrame;
+use crate::video::lease::FrameClaim;
 
 struct VideoJob {
     texture: TextureId,
@@ -38,11 +38,11 @@ impl VideoSemaphores {
         self.signals.clear();
     }
 
-    pub(crate) fn settle(&mut self, lent: &LentFrame) {
-        for &(semaphore, value) in &lent.waits {
+    pub(crate) fn settle(&mut self, claim: &FrameClaim) {
+        for &(semaphore, value) in &claim.waits {
             name(&mut self.waits, semaphore, value, WAIT_STAGE);
         }
-        for &(semaphore, value) in &lent.signals {
+        for &(semaphore, value) in &claim.signals {
             name(
                 &mut self.signals,
                 semaphore,
@@ -83,10 +83,9 @@ impl VideoImports {
     }
 
     pub(crate) fn well_formed(frame: &ExternalVideoFrame) -> Result<()> {
-        let images = frame.lease.lent().images.len();
-        if frame.planes.is_empty() || frame.planes.len() > 3 || images == 0 {
+        if frame.planes.is_empty() || frame.planes.len() > 3 {
             return Err(Error::Invalid(format!(
-                "video frame with {} planes and {images} images",
+                "video frame with {} planes",
                 frame.planes.len(),
             )));
         }
@@ -121,7 +120,7 @@ impl VideoImports {
         let family = ctx.device.queue_family();
         let mut handovers = std::mem::take(&mut self.handovers);
         let mut jobs = std::mem::take(&mut self.pending).into_iter();
-        while let Some(job) = jobs.next() {
+        while let Some(mut job) = jobs.next() {
             let Some(target) = textures.image_mut(job.texture) else {
                 continue;
             };
@@ -129,7 +128,7 @@ impl VideoImports {
             handovers.extend(
                 job.frame
                     .lease
-                    .lent()
+                    .claim()
                     .images
                     .iter()
                     .filter_map(|image| image.handover(family)),
@@ -146,7 +145,8 @@ impl VideoImports {
         ctx.end_pass();
 
         for job in &self.recorded {
-            semaphores.settle(job.frame.lease.lent());
+            let claim = job.frame.lease.claimed();
+            semaphores.settle(claim.expect("recorded frames are claimed"));
         }
         Ok(semaphores)
     }
@@ -156,14 +156,16 @@ impl VideoImports {
     }
 
     pub fn revert(&mut self) {
-        for job in std::mem::take(&mut self.recorded) {
-            if !self
+        for mut job in std::mem::take(&mut self.recorded) {
+            if self
                 .pending
                 .iter()
                 .any(|pending| pending.texture == job.texture)
             {
-                self.pending.push(job);
+                continue;
             }
+            job.frame.lease.unclaim();
+            self.pending.push(job);
         }
     }
 
