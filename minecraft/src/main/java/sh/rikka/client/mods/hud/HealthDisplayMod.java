@@ -8,7 +8,7 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public final class HealthDisplayMod extends SimpleHudMod {
 	public HealthDisplayMod(ScreenPosition defaultPosition) {
-		super("health_display", defaultPosition, "favorite", 14);
+		super("health_display", defaultPosition, "favorite");
 	}
 
 	@Override

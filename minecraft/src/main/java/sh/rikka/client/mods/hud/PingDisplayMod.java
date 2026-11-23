@@ -14,7 +14,7 @@ public final class PingDisplayMod extends SimpleHudMod {
 	private final LatencyProbe probe = new LatencyProbe();
 
 	public PingDisplayMod(ScreenPosition defaultPosition) {
-		super("ping_display", defaultPosition, "signal_cellular_alt", 8);
+		super("ping_display", defaultPosition, "signal_cellular_alt");
 	}
 
 	@Override

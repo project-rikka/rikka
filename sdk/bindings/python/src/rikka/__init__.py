@@ -99,6 +99,7 @@ __all__ = [
     "last_error",
     "open_file",
     "open_url",
+    "text_width",
     "version",
 ]
 
@@ -3740,6 +3741,16 @@ def open_file(path: str) -> None:
         Error: With the failing status.
     """
     _check(_native.rk_open_file(_runtime.text(path)))
+
+
+def text_width(text: str, size: float) -> float:
+    """How wide one line of text is when :meth:`View.text` draws it with :meth:`Element.text_size`
+    and no other text styling, in logical pixels.
+
+    Args:
+        size: The text size in logical pixels; above 0.
+    """
+    return _native.rk_text_width(_runtime.text(text), size)
 
 
 @_native.ViewFn

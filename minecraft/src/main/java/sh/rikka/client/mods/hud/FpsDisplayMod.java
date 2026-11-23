@@ -6,7 +6,7 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public final class FpsDisplayMod extends SimpleHudMod {
 	public FpsDisplayMod(ScreenPosition defaultPosition) {
-		super("fps_display", defaultPosition, "monitor", 9);
+		super("fps_display", defaultPosition, "monitor");
 	}
 
 	@Override

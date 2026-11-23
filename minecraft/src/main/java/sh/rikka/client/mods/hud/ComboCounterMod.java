@@ -14,7 +14,7 @@ public final class ComboCounterMod extends SimpleHudMod {
 	private long lastHitAt;
 
 	public ComboCounterMod(ScreenPosition defaultPosition) {
-		super("combo_counter", defaultPosition, "local_fire_department", 12);
+		super("combo_counter", defaultPosition, "local_fire_department");
 	}
 
 	@Override

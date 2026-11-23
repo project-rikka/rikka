@@ -7,7 +7,7 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public final class NameDisplayMod extends SimpleHudMod {
 	public NameDisplayMod(ScreenPosition defaultPosition) {
-		super("name_display", defaultPosition, "person", 16);
+		super("name_display", defaultPosition, "person");
 	}
 
 	@Override

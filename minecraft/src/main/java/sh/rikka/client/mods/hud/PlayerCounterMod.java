@@ -11,7 +11,7 @@ public final class PlayerCounterMod extends SimpleHudMod {
 	private final EnumSetting<PlayerScope> scope = choice("scope", PlayerScope.ONLINE);
 
 	public PlayerCounterMod(ScreenPosition defaultPosition) {
-		super("player_counter", defaultPosition, "group", 14);
+		super("player_counter", defaultPosition, "group");
 	}
 
 	@Override

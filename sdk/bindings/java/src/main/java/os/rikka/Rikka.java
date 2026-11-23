@@ -156,4 +156,20 @@ public final class Rikka {
             throw Native.rethrow(failure);
         }
     }
+
+    /**
+     * How wide one line of text is when {@link View#text} draws it with {@link
+     * Element#textSize} and no other text styling, in logical pixels.
+     *
+     * @param text the text
+     * @param size The text size in logical pixels; above 0.
+     */
+    public static float textWidth(String text, float size) {
+        Objects.requireNonNull(text, "text");
+        try (Arena arena = Arena.ofConfined()) {
+            return (float) Native.RK_TEXT_WIDTH.invokeExact(Native.str(arena, text), size);
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+    }
 }

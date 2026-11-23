@@ -8,7 +8,7 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public final class DayCounterMod extends SimpleHudMod {
 	public DayCounterMod(ScreenPosition defaultPosition) {
-		super("day_counter", defaultPosition, "today", 12);
+		super("day_counter", defaultPosition, "today");
 	}
 
 	@Override

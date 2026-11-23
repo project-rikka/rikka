@@ -5,9 +5,8 @@ import org.jspecify.annotations.Nullable;
 import os.rikka.Align;
 import os.rikka.Color;
 import os.rikka.Element;
-import os.rikka.Justification;
+import os.rikka.Rikka;
 import os.rikka.View;
-import sh.rikka.client.setting.Anchor;
 import sh.rikka.client.setting.BoolSetting;
 import sh.rikka.client.setting.ColorSetting;
 import sh.rikka.client.setting.ScreenPosition;
@@ -21,21 +20,18 @@ public abstract class SimpleHudMod extends HudMod {
 	private static final float GAP = 6.0F;
 	private static final float ICON_SIZE = 15.0F;
 	private static final float TEXT_SIZE = 13.0F;
-	private static final float CHARACTER_WIDTH = 8.0F;
 	private static final float CORNER_RADIUS = 9.0F;
 	private static final int DEFAULT_COLOR = 0xFFFFFFFF;
 	private static final Color BACKDROP = new Color(0.0F, 0.0F, 0.0F, 0.4F);
 
-	private final int maxCharacters;
 	private final BoolSetting showIcon;
 	private final BoolSetting showBackground;
 	private final BoolSetting customColor;
 	private final ColorSetting color;
 
 	@SuppressWarnings("this-escape")
-	protected SimpleHudMod(String id, ScreenPosition defaultPosition, String icon, int maxCharacters) {
+	protected SimpleHudMod(String id, ScreenPosition defaultPosition, String icon) {
 		super(id, defaultPosition, icon);
-		this.maxCharacters = maxCharacters;
 		this.showIcon = bool("icon", true);
 		this.showBackground = bool("background", true);
 		this.customColor = bool("custom_color", false);
@@ -55,7 +51,7 @@ public abstract class SimpleHudMod extends HudMod {
 	@Override
 	public final float width() {
 		float iconWidth = this.showIcon.get() ? ICON_SIZE + GAP : 0.0F;
-		return PADDING * 2.0F + iconWidth + this.maxCharacters * CHARACTER_WIDTH;
+		return PADDING * 2.0F + iconWidth + (float) Math.ceil(Rikka.textWidth(label(), TEXT_SIZE));
 	}
 
 	@Override
@@ -71,7 +67,6 @@ public abstract class SimpleHudMod extends HudMod {
 		view.row(() -> panel(view, text, icon, tint))
 			.fillWidth()
 			.fillHeight()
-			.justify(justification(position().get().anchor()))
 			.alignItems(Align.CENTER);
 	}
 
@@ -81,6 +76,7 @@ public abstract class SimpleHudMod extends HudMod {
 				.gap(GAP)
 				.alignItems(Align.CENTER))
 			.height(HEIGHT)
+			.shrink(0.0F)
 			.paddingEdges(0.0F, PADDING, 0.0F, PADDING)
 			.cornerRadius(CORNER_RADIUS);
 		if (this.showBackground.get()) {
@@ -93,13 +89,5 @@ public abstract class SimpleHudMod extends HudMod {
 			view.icon(icon).iconSize(ICON_SIZE).tint(tint);
 		}
 		view.text(text).textSize(TEXT_SIZE).textNoWrap().tint(tint);
-	}
-
-	private static Justification justification(Anchor anchor) {
-		return switch (anchor) {
-			case TOP_LEFT, CENTER_LEFT, BOTTOM_LEFT -> Justification.START;
-			case TOP_CENTER, CENTER, BOTTOM_CENTER -> Justification.CENTER;
-			case TOP_RIGHT, CENTER_RIGHT, BOTTOM_RIGHT -> Justification.END;
-		};
 	}
 }

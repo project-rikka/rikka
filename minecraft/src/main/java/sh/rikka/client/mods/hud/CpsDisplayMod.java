@@ -19,7 +19,7 @@ public final class CpsDisplayMod extends SimpleHudMod {
 	private final LongArrayFIFOQueue rightClicks = new LongArrayFIFOQueue();
 
 	public CpsDisplayMod(ScreenPosition defaultPosition) {
-		super("cps_display", defaultPosition, "mouse", 12);
+		super("cps_display", defaultPosition, "mouse");
 	}
 
 	@Override

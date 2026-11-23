@@ -11,7 +11,7 @@ public final class MemoryUsageMod extends SimpleHudMod {
 	private final EnumSetting<MemoryFormat> format = choice("format", MemoryFormat.PERCENT);
 
 	public MemoryUsageMod(ScreenPosition defaultPosition) {
-		super("memory_usage", defaultPosition, "memory", 18);
+		super("memory_usage", defaultPosition, "memory");
 	}
 
 	@Override

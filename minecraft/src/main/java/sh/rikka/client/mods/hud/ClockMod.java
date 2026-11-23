@@ -16,7 +16,7 @@ public final class ClockMod extends SimpleHudMod {
 	private @Nullable Formatter formatter;
 
 	public ClockMod(ScreenPosition defaultPosition) {
-		super("clock", defaultPosition, "schedule", 12);
+		super("clock", defaultPosition, "schedule");
 	}
 
 	@Override

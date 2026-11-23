@@ -7,7 +7,7 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public final class ServerAddressMod extends SimpleHudMod {
 	public ServerAddressMod(ScreenPosition defaultPosition) {
-		super("server_address", defaultPosition, "dns", 24);
+		super("server_address", defaultPosition, "dns");
 	}
 
 	@Override

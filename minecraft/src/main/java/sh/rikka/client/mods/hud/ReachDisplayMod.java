@@ -17,7 +17,7 @@ public final class ReachDisplayMod extends SimpleHudMod {
 	private @Nullable Hit lastHit;
 
 	public ReachDisplayMod(ScreenPosition defaultPosition) {
-		super("reach_display", defaultPosition, "social_distance", 14);
+		super("reach_display", defaultPosition, "social_distance");
 	}
 
 	@Override

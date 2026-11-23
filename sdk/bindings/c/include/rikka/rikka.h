@@ -975,6 +975,14 @@ RK_API RK_NODISCARD rk_status rk_open_url(rk_str url);
 RK_API RK_NODISCARD rk_status rk_open_file(rk_str path);
 
 /**
+ * How wide one line of text is when rk_text() draws it with rk_text_size() and no other text
+ * styling, in logical pixels.
+ *
+ * @param size The text size in logical pixels; above 0.
+ */
+RK_API float rk_text_width(rk_str text, float size);
+
+/**
  * Makes an application.
  *
  * @param id The reverse-DNS application id, such as org.example.notes; it names the desktop

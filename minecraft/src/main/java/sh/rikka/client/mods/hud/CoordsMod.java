@@ -12,7 +12,7 @@ public final class CoordsMod extends SimpleHudMod {
 	private final BoolSetting direction = bool("direction", true);
 
 	public CoordsMod(ScreenPosition defaultPosition) {
-		super("coords", defaultPosition, "explore", 30);
+		super("coords", defaultPosition, "explore");
 	}
 
 	@Override

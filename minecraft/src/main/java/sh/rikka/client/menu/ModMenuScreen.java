@@ -20,7 +20,6 @@ import sh.rikka.client.menu.settings.SettingControls;
 import sh.rikka.client.menu.settings.SettingRows;
 import sh.rikka.client.mod.HudMod;
 import sh.rikka.client.ui.RikkaScreen;
-import sh.rikka.client.ui.SurfaceScale;
 import sh.rikka.client.ui.style.Colors;
 
 public final class ModMenuScreen extends RikkaScreen {
@@ -43,7 +42,7 @@ public final class ModMenuScreen extends RikkaScreen {
 	private Page shown;
 
 	public ModMenuScreen(MenuState state) {
-		super(Component.translatable(RikkaClient.MOD_ID + ".menu.title"), SurfaceScale.DISPLAY);
+		super(Component.translatable(RikkaClient.MOD_ID + ".menu.title"));
 		this.state = state;
 		this.shown = state.page();
 	}

@@ -15,7 +15,7 @@ public final class SpeedometerMod extends SimpleHudMod {
 	private final BoolSetting vertical = bool("vertical", false);
 
 	public SpeedometerMod(ScreenPosition defaultPosition) {
-		super("speedometer", defaultPosition, "speed", 12);
+		super("speedometer", defaultPosition, "speed");
 	}
 
 	@Override

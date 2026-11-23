@@ -1,6 +1,6 @@
 package sh.rikka.client.ui;
 
-public enum SurfaceScale {
+enum SurfaceScale {
 	DISPLAY,
 	HUD
 }

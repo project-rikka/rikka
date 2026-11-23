@@ -30,7 +30,6 @@ import sh.rikka.client.mod.HudMod;
 import sh.rikka.client.mod.Mod;
 import sh.rikka.client.setting.DoubleSetting;
 import sh.rikka.client.ui.RikkaScreen;
-import sh.rikka.client.ui.SurfaceScale;
 import sh.rikka.client.ui.style.Colors;
 
 public final class HudEditorScreen extends RikkaScreen {
@@ -56,7 +55,7 @@ public final class HudEditorScreen extends RikkaScreen {
 	private Snapping.Snap guides = Snapping.Snap.free(0.0F, 0.0F);
 
 	private HudEditorScreen(MenuState menu, Optional<HudMod> focus, boolean returnsToMenu) {
-		super(Component.translatable(RikkaClient.MOD_ID + ".menu.hud.title"), SurfaceScale.HUD);
+		super(Component.translatable(RikkaClient.MOD_ID + ".menu.hud.title"));
 		this.menu = menu;
 		this.selected = focus;
 		this.returnsToMenu = returnsToMenu;
@@ -78,17 +77,18 @@ public final class HudEditorScreen extends RikkaScreen {
 		if (view.isLeaving()) {
 			return;
 		}
+		float unit = hudUnit();
 		float width = surfaceWidth();
 		float height = surfaceHeight();
 		Color accent = view.paletteColor(ColorRole.ACCENT);
 		Color text = view.paletteColor(ColorRole.TEXT);
-		for (HudBox box : boxes(width, height)) {
-			frame(view, box, accent, text);
+		for (HudBox box : boxes(hudWidth(), hudHeight())) {
+			frame(view, box, unit, accent, text);
 		}
 		if (this.grab != null) {
 			this.guides.guideX().ifPresent(x -> view.box(() -> {
 				})
-				.position(x - GUIDE_WIDTH / 2.0F, 0.0F)
+				.position(x * unit - GUIDE_WIDTH / 2.0F, 0.0F)
 				.width(GUIDE_WIDTH)
 				.height(height)
 				.background(accent)
@@ -96,7 +96,7 @@ public final class HudEditorScreen extends RikkaScreen {
 				.transition(TransitionStyle.FADE));
 			this.guides.guideY().ifPresent(y -> view.box(() -> {
 				})
-				.position(0.0F, y - GUIDE_WIDTH / 2.0F)
+				.position(0.0F, y * unit - GUIDE_WIDTH / 2.0F)
 				.width(width)
 				.height(GUIDE_WIDTH)
 				.background(accent)
@@ -114,16 +114,16 @@ public final class HudEditorScreen extends RikkaScreen {
 			.transition(TransitionStyle.SLIDE_FROM_BOTTOM);
 	}
 
-	private void frame(View view, HudBox box, Color accent, Color text) {
+	private void frame(View view, HudBox box, float unit, Color accent, Color text) {
 		boolean isSelected = this.selected.equals(Optional.of(box.mod()));
 		boolean isHovered = this.hovered.equals(Optional.of(box.mod()));
 		float fill = isSelected ? SELECTED_FILL : isHovered ? HOVERED_FILL : RESTING_FILL;
 		boolean active = isSelected || isHovered;
 		view.box(() -> {
 			})
-			.position(box.left(), box.top())
-			.width(box.width())
-			.height(box.height())
+			.position(box.left() * unit, box.top() * unit)
+			.width(box.width() * unit)
+			.height(box.height() * unit)
 			.background(Colors.withAlpha(accent, fill))
 			.border(active ? ACTIVE_BORDER : FRAME_BORDER, active ? accent : Colors.withAlpha(text, RESTING_OUTLINE))
 			.cornerRadius(Rikka.CORNER_DETAIL)
@@ -194,7 +194,7 @@ public final class HudEditorScreen extends RikkaScreen {
 	}
 
 	private Optional<HudBox> hit(float x, float y) {
-		List<HudBox> boxes = boxes(surfaceWidth(), surfaceHeight());
+		List<HudBox> boxes = boxes(hudWidth(), hudHeight());
 		for (int index = boxes.size() - 1; index >= 0; index--) {
 			if (boxes.get(index).contains(x, y)) {
 				return Optional.of(boxes.get(index));
@@ -210,11 +210,13 @@ public final class HudEditorScreen extends RikkaScreen {
 
 	@Override
 	protected boolean pressed(float x, float y, MouseButtonEvent event) {
-		Optional<HudBox> target = hit(x, y);
+		float hudX = x / hudUnit();
+		float hudY = y / hudUnit();
+		Optional<HudBox> target = hit(hudX, hudY);
 		switch (event.button()) {
 			case InputConstants.MOUSE_BUTTON_LEFT -> {
 				this.selected = target.map(HudBox::mod);
-				this.grab = target.map(box -> new Grab(box.mod(), x - box.left(), y - box.top())).orElse(null);
+				this.grab = target.map(box -> new Grab(box.mod(), hudX - box.left(), hudY - box.top())).orElse(null);
 				this.guides = Snapping.Snap.free(0.0F, 0.0F);
 			}
 			case InputConstants.MOUSE_BUTTON_RIGHT -> target.ifPresent(box -> openSettings(box.mod()));
@@ -228,20 +230,22 @@ public final class HudEditorScreen extends RikkaScreen {
 
 	@Override
 	protected void moved(float x, float y, boolean used) {
+		float hudX = x / hudUnit();
+		float hudY = y / hudUnit();
 		Grab held = this.grab;
 		if (held == null) {
-			Optional<HudMod> under = used ? Optional.empty() : hit(x, y).map(HudBox::mod);
+			Optional<HudMod> under = used ? Optional.empty() : hit(hudX, hudY).map(HudBox::mod);
 			if (!under.equals(this.hovered)) {
 				this.hovered = under;
 				refresh();
 			}
 			return;
 		}
-		float width = surfaceWidth();
-		float height = surfaceHeight();
+		float width = hudWidth();
+		float height = hudHeight();
 		HudBox box = HudBox.of(held.mod(), width, height);
-		float left = x - held.offsetX();
-		float top = y - held.offsetY();
+		float left = hudX - held.offsetX();
+		float top = hudY - held.offsetY();
 		this.guides = shiftHeld()
 			? Snapping.clamp(box, left, top, width, height)
 			: Snapping.snap(box, left, top, others(box.mod(), width, height), width, height);
@@ -261,7 +265,7 @@ public final class HudEditorScreen extends RikkaScreen {
 
 	@Override
 	protected boolean scrolled(float x, float y, double amount) {
-		Optional<HudMod> target = hit(x, y).map(HudBox::mod).or(() -> this.selected);
+		Optional<HudMod> target = hit(x / hudUnit(), y / hudUnit()).map(HudBox::mod).or(() -> this.selected);
 		if (target.isEmpty()) {
 			return false;
 		}
@@ -295,8 +299,8 @@ public final class HudEditorScreen extends RikkaScreen {
 	}
 
 	private void nudge(HudMod mod, float dx, float dy) {
-		float width = surfaceWidth();
-		float height = surfaceHeight();
+		float width = hudWidth();
+		float height = hudHeight();
 		HudBox box = HudBox.of(mod, width, height);
 		Snapping.Snap moved = Snapping.clamp(box, box.left() + dx, box.top() + dy, width, height);
 		mod.position().set(Snapping.position(box, moved.left(), moved.top(), width, height));
@@ -307,8 +311,21 @@ public final class HudEditorScreen extends RikkaScreen {
 		return boxes(width, height).stream().filter(box -> box.mod() != moving).toList();
 	}
 
+	private float hudWidth() {
+		return surfaceWidth() / hudUnit();
+	}
+
+	private float hudHeight() {
+		return surfaceHeight() / hudUnit();
+	}
+
 	private static boolean shiftHeld() {
 		return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT) || InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
+	}
+
+	@Override
+	public void tick() {
+		refresh();
 	}
 
 	@Override

@@ -4198,3 +4198,11 @@ func OpenURL(url string) error {
 func OpenFile(path string) error {
 	return checkStatus(C.rk_open_file(cStr(path)))
 }
+
+// TextWidth how wide one line of text is when [View.Text] draws it with [Element.TextSize] and
+// no other text styling, in logical pixels.
+//
+//   - size: The text size in logical pixels; above 0.
+func TextWidth(text string, size float32) float32 {
+	return float32(C.rk_text_width(cStr(text), C.float(size)))
+}

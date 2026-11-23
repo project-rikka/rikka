@@ -5506,6 +5506,16 @@ inline void open_file(std::string_view path) {
     detail::check(rk_open_file(detail::str(path)));
 }
 
+/**
+ * How wide one line of text is when rikka::View::text() draws it with
+ * rikka::Element::text_size() and no other text styling, in logical pixels.
+ *
+ * @param size The text size in logical pixels; above 0.
+ */
+inline float text_width(std::string_view text, float size) {
+    return rk_text_width(detail::str(text), size);
+}
+
 }  // namespace rikka
 
 #endif  // RIKKA_HPP

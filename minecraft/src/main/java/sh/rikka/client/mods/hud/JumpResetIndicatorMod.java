@@ -19,7 +19,7 @@ public final class JumpResetIndicatorMod extends SimpleHudMod {
 	private @Nullable Moment jump;
 
 	public JumpResetIndicatorMod(ScreenPosition defaultPosition) {
-		super("jump_reset_indicator", defaultPosition, "keyboard_double_arrow_up", 16);
+		super("jump_reset_indicator", defaultPosition, "keyboard_double_arrow_up");
 	}
 
 	@Override

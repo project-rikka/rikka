@@ -27,6 +27,10 @@ record SurfaceGeometry(float width, float height, float scale, float guiScale) {
 		return new SurfaceGeometry(target.width() / scale, target.height() / scale, scale, window.getGuiScale());
 	}
 
+	float hudUnit() {
+		return this.guiScale / HUD_UNITS_PER_GUI_PIXEL / this.scale;
+	}
+
 	float fromGui(double coordinate) {
 		return (float) (coordinate * this.guiScale / this.scale);
 	}

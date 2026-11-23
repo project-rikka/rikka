@@ -7,7 +7,7 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public final class GameModeDisplayMod extends SimpleHudMod {
 	public GameModeDisplayMod(ScreenPosition defaultPosition) {
-		super("game_mode_display", defaultPosition, "sports_esports", 12);
+		super("game_mode_display", defaultPosition, "sports_esports");
 	}
 
 	@Override

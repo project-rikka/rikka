@@ -22,7 +22,7 @@ public final class StopwatchMod extends SimpleHudMod {
 	private boolean running;
 
 	public StopwatchMod(ScreenPosition defaultPosition) {
-		super("stopwatch", defaultPosition, "timer", 11);
+		super("stopwatch", defaultPosition, "timer");
 	}
 
 	@Override

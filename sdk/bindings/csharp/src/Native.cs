@@ -67,6 +67,9 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_open_file")]
     internal static partial uint rk_open_file(Str path);
 
+    [LibraryImport(Library, EntryPoint = "rk_text_width")]
+    internal static partial float rk_text_width(Str text, float size);
+
     [LibraryImport(Library, EntryPoint = "rk_app_new")]
     internal static partial nint rk_app_new(Str id);
 

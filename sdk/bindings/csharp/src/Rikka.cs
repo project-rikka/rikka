@@ -154,6 +154,21 @@ public static unsafe class Sdk
             Native.Check(Native.rk_open_file(new Str(pathBytes, (nuint)pathUtf8.Length)));
         }
     }
+
+    /// <summary>
+    /// How wide one line of text is when <see cref="View.Text"/> draws it with <see cref="Element.TextSize"/>
+    /// and no other text styling, in logical pixels.
+    /// </summary>
+    /// <param name="text">The text.</param>
+    /// <param name="size">The text size in logical pixels; above 0.</param>
+    public static float TextWidth(string text, float size)
+    {
+        Span<byte> textUtf8 = Interop.Utf8(text, stackalloc byte[Interop.StackLimit], nameof(text));
+        fixed (byte* textBytes = textUtf8)
+        {
+            return Native.rk_text_width(new Str(textBytes, (nuint)textUtf8.Length), size);
+        }
+    }
 }
 
 /// <summary>

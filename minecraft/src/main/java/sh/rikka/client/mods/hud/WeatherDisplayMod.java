@@ -9,7 +9,7 @@ import sh.rikka.client.setting.ScreenPosition;
 
 public final class WeatherDisplayMod extends SimpleHudMod {
 	public WeatherDisplayMod(ScreenPosition defaultPosition) {
-		super("weather_display", defaultPosition, Weather.NONE.icon(), 14);
+		super("weather_display", defaultPosition, Weather.NONE.icon());
 	}
 
 	@Override

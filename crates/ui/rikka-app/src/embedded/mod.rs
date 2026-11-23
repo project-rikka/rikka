@@ -10,7 +10,7 @@ use rikka_gpu::ExternalDevice;
 use rikka_i18n::I18nBuilder;
 use rikka_renderer::{ExternalImage, Renderer};
 use rikka_theme::Theme;
-use rikka_types::{CursorShape, Rect, Size};
+use rikka_types::{Color, CursorShape, Rect, Size};
 use rikka_ui::{Command, Event, State, Ui, WindowRequest};
 use rikka_ui_host::{Composer, VideoPlayback};
 use rustc_hash::FxHashMap;
@@ -129,6 +129,7 @@ impl Embedding {
         let (ui, handlers) = surface.into_ui(Sender::new(route, alive.watch()), theme);
         let mut ui: Ui = ui.into();
         ui.arrive();
+        ui.set_background(Some(Color::TRANSPARENT));
         self.defer(Deferred::Open {
             id,
             ui: Box::new(ui),

@@ -501,6 +501,11 @@ fn open_url(url: string) throws status;
 @thread_safe
 fn open_file(path: string) throws status;
 
+/// How wide one line of text is when [view.text] draws it with [view.text_size] and no other
+/// text styling, in logical pixels.
+/// @param size The text size in logical pixels; above 0.
+fn text_width(text: string, size: f32) -> f32;
+
 /// An application: its identity and first windows.
 @builder
 owned class app {

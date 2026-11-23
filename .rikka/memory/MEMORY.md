@@ -981,7 +981,7 @@
 
 ## minecraft/src/main/java/sh/rikka/client/menu
 
-- [Rikka Client ModMenu and HUD editor](minecraft-menu.md) — sh.rikka.client.menu (OneConfig-style ModMenu over a scrim) and sh.rikka.client.hud (drag/snap HUD editor).
+- [Rikka Client ModMenu and HUD editor](minecraft-menu.md) — sh.rikka.client.menu (sidebar-and-cards ModMenu over a scrim) and sh.rikka.client.hud (drag/snap HUD editor).
 
 ## nix/dist
 

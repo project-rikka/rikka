@@ -22,16 +22,14 @@ import os.rikka.View;
 import os.rikka.VulkanImage;
 
 public abstract class RikkaScreen extends Screen {
-	private final SurfaceScale scale;
 	private @Nullable EmbeddedSurface surface;
 	private @Nullable SurfaceGeometry geometry;
 	private boolean editing;
 	private boolean leaving;
 	private @Nullable Screen next;
 
-	protected RikkaScreen(Component title, SurfaceScale scale) {
+	protected RikkaScreen(Component title) {
 		super(title);
-		this.scale = scale;
 	}
 
 	protected abstract void view(View view);
@@ -67,6 +65,10 @@ public abstract class RikkaScreen extends Screen {
 
 	protected final float surfaceHeight() {
 		return measured().height();
+	}
+
+	protected final float hudUnit() {
+		return measured().hudUnit();
 	}
 
 	protected final boolean isLeaving() {
@@ -125,7 +127,7 @@ public abstract class RikkaScreen extends Screen {
 		if (shown == null) {
 			return;
 		}
-		SurfaceGeometry measured = SurfaceGeometry.of(window, target, this.scale);
+		SurfaceGeometry measured = SurfaceGeometry.of(window, target, SurfaceScale.DISPLAY);
 		if (!measured.equals(this.geometry)) {
 			this.geometry = measured;
 			shown.resize(measured.width(), measured.height(), measured.scale());

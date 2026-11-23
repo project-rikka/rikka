@@ -59,6 +59,7 @@ final class Native {
     static final MethodHandle RK_LAST_ERROR = downcall("rk_last_error", FunctionDescriptor.of(STR));
     static final MethodHandle RK_OPEN_URL = downcall("rk_open_url", FunctionDescriptor.of(JAVA_INT, STR));
     static final MethodHandle RK_OPEN_FILE = downcall("rk_open_file", FunctionDescriptor.of(JAVA_INT, STR));
+    static final MethodHandle RK_TEXT_WIDTH = downcall("rk_text_width", FunctionDescriptor.of(JAVA_FLOAT, STR, JAVA_FLOAT));
     static final MethodHandle RK_APP_NEW = downcall("rk_app_new", FunctionDescriptor.of(ADDRESS, STR));
     static final MethodHandle RK_APP_SET_SINGLE_INSTANCE = downcall("rk_app_set_single_instance", FunctionDescriptor.ofVoid(ADDRESS, JAVA_BOOLEAN));
     static final MethodHandle RK_APP_ADD_WINDOW = downcall("rk_app_add_window", FunctionDescriptor.ofVoid(ADDRESS, ADDRESS));
