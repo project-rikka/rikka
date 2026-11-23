@@ -41,7 +41,7 @@ pub use crate::gpu::{Gpu, GpuBuilder};
 pub use crate::reclaim::Reclaimer;
 pub use crate::texture::{Pixels, Rows, Staged, TexelRect, TextureFormat, TextureId, Uploads};
 pub use crate::video::{
-    ExternalVideoFrame, LentFrame, QueueLock, VideoDeviceFeatures, VideoDeviceHandles,
+    ExternalVideoFrame, FrameClaim, LentFrame, QueueLock, VideoDeviceFeatures, VideoDeviceHandles,
     VideoFrameImage, VideoLease, VideoPlane, VideoQueueFamily,
 };
 #[cfg(windows)]
