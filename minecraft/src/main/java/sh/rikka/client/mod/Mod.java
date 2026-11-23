@@ -41,6 +41,10 @@ public abstract class Mod {
 	private @Nullable EventBus bus;
 
 	protected Mod(String id, Category category, String icon) {
+		this(id, category, icon, DefaultBind.NONE);
+	}
+
+	protected Mod(String id, Category category, String icon, DefaultBind defaultBind) {
 		if (!Settings.isValidId(id)) {
 			throw new IllegalArgumentException("invalid mod id: " + id);
 		}
@@ -49,8 +53,8 @@ public abstract class Mod {
 		this.icon = icon;
 		this.settings = new Settings(TRANSLATION_PREFIX + id + ".setting");
 		this.controls = new Settings(RikkaClient.MOD_ID + ".setting");
-		this.bind = this.controls.keybind("bind");
-		this.bindMode = this.controls.choice("bind_mode", BindMode.TOGGLE);
+		this.bind = this.controls.keybind("bind", defaultBind.key());
+		this.bindMode = this.controls.choice("bind_mode", defaultBind.mode());
 		this.controls.lock();
 	}
 

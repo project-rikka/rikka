@@ -983,6 +983,10 @@
 
 - [Rikka Client ModMenu and HUD editor](minecraft-menu.md) — sh.rikka.client.menu (sidebar-and-cards ModMenu over a scrim) and sh.rikka.client.hud (drag/snap HUD editor).
 
+## minecraft/src/main/java/sh/rikka/client/mods
+
+- [Rikka Client camera, mechanic and visual mods](minecraft-gameplay-mods.md) — mods/camera (FreeLook, TapLook, Zoom), mods/mechanic (SnapTap, HitDelayFix, NoJumpDelay), mods/visual and their hooks.
+
 ## minecraft/src/main/java/sh/rikka/client/mods/animation
 
 - [Rikka Client Old Animations mod (1.7 visuals)](minecraft-old-animations.md) — mods/animation: one visual-only Mod, its mixin hooks, and the exact-matrix method that maps 1.7 item chains onto modern…

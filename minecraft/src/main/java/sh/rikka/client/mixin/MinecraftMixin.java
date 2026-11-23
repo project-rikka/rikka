@@ -1,5 +1,6 @@
 package sh.rikka.client.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -22,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import sh.rikka.client.RikkaClient;
 import sh.rikka.client.events.ClientHooks;
 import sh.rikka.client.mods.animation.AnimationHooks;
+import sh.rikka.client.mods.mechanic.MechanicHooks;
 import sh.rikka.client.resource.ClientModPackSource;
 
 @Mixin(Minecraft.class)
@@ -94,5 +96,13 @@ abstract class MinecraftMixin {
 	)
 	private InteractionResult rikka$useItem(MultiPlayerGameMode gameMode, Player player, InteractionHand hand, Operation<InteractionResult> original) {
 		return AnimationHooks.interacted(original.call(gameMode, player, hand));
+	}
+
+	@ModifyExpressionValue(
+		method = "startAttack",
+		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/MultiPlayerGameMode;hasMissTime()Z")
+	)
+	private boolean rikka$hasMissTime(boolean vanilla) {
+		return MechanicHooks.hasMissTime(vanilla);
 	}
 }

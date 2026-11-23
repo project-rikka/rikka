@@ -3,6 +3,9 @@ package sh.rikka.client.mods;
 import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mod.SimpleHudMod;
 import sh.rikka.client.mods.animation.OldAnimationsMod;
+import sh.rikka.client.mods.camera.FreeLookMod;
+import sh.rikka.client.mods.camera.TapLookMod;
+import sh.rikka.client.mods.camera.ZoomMod;
 import sh.rikka.client.mods.hud.ClockMod;
 import sh.rikka.client.mods.hud.ComboCounterMod;
 import sh.rikka.client.mods.hud.CoordsMod;
@@ -21,6 +24,14 @@ import sh.rikka.client.mods.hud.ServerAddressMod;
 import sh.rikka.client.mods.hud.SpeedometerMod;
 import sh.rikka.client.mods.hud.StopwatchMod;
 import sh.rikka.client.mods.hud.WeatherDisplayMod;
+import sh.rikka.client.mods.mechanic.HitDelayFixMod;
+import sh.rikka.client.mods.mechanic.NoJumpDelayMod;
+import sh.rikka.client.mods.mechanic.SnapTapMod;
+import sh.rikka.client.mods.visual.BloodParticleMod;
+import sh.rikka.client.mods.visual.ForceMainHandMod;
+import sh.rikka.client.mods.visual.FullbrightMod;
+import sh.rikka.client.mods.visual.ParticlesMod;
+import sh.rikka.client.mods.visual.ProjectileTrailMod;
 import sh.rikka.client.setting.Anchor;
 import sh.rikka.client.setting.ScreenPosition;
 
@@ -33,6 +44,17 @@ public final class BuiltinMods {
 
 	public static void register(ModManager mods) {
 		mods.register(new OldAnimationsMod());
+		mods.register(new ForceMainHandMod());
+		mods.register(new FullbrightMod());
+		mods.register(new ParticlesMod());
+		mods.register(new BloodParticleMod());
+		mods.register(new ProjectileTrailMod());
+		mods.register(new FreeLookMod());
+		mods.register(new TapLookMod());
+		mods.register(new ZoomMod());
+		mods.register(new HitDelayFixMod());
+		mods.register(new NoJumpDelayMod());
+		mods.register(new SnapTapMod());
 		mods.register(new FpsDisplayMod(left(0)));
 		mods.register(new PingDisplayMod(left(1)));
 		mods.register(new CpsDisplayMod(left(2)));
