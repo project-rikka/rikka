@@ -2,6 +2,7 @@ package sh.rikka.client.mods;
 
 import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mod.SimpleHudMod;
+import sh.rikka.client.mods.animation.OldAnimationsMod;
 import sh.rikka.client.mods.hud.ClockMod;
 import sh.rikka.client.mods.hud.ComboCounterMod;
 import sh.rikka.client.mods.hud.CoordsMod;
@@ -31,6 +32,7 @@ public final class BuiltinMods {
 	}
 
 	public static void register(ModManager mods) {
+		mods.register(new OldAnimationsMod());
 		mods.register(new FpsDisplayMod(left(0)));
 		mods.register(new PingDisplayMod(left(1)));
 		mods.register(new CpsDisplayMod(left(2)));

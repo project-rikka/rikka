@@ -983,6 +983,10 @@
 
 - [Rikka Client ModMenu and HUD editor](minecraft-menu.md) — sh.rikka.client.menu (sidebar-and-cards ModMenu over a scrim) and sh.rikka.client.hud (drag/snap HUD editor).
 
+## minecraft/src/main/java/sh/rikka/client/mods/animation
+
+- [Rikka Client Old Animations mod (1.7 visuals)](minecraft-old-animations.md) — mods/animation: one visual-only Mod, its mixin hooks, and the exact-matrix method that maps 1.7 item chains onto modern…
+
 ## nix/dist
 
 - [Binary distribution (project-rikka/packages, nix/dist, release workflow)](distribution.md) — How Rikka ships prebuilt: portable builds, xtask release, the generated packages flake and its NixOS module.
