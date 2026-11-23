@@ -333,6 +333,21 @@ public final class Element {
     }
 
     /**
+     * Carries the current element smoothly to wherever layout moves it, as when its siblings
+     * come and go, instead of jumping there.
+     *
+     * @return this element
+     */
+    public Element glide() {
+        try {
+            Native.RK_GLIDE.invokeExact(view.current(serial));
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+        return this;
+    }
+
+    /**
      * Places the current popover or popup menu against the element with a key.
      *
      * @param target The target's {@link Element#key}.
@@ -1375,8 +1390,8 @@ public final class Element {
     }
 
     /**
-     * Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
-     * declaring it to close it.
+     * Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner;
+     * stop declaring it to close it.
      *
      * @param callback Reacts to an event. The window's view runs again afterwards unless {@link
      * Context#skipView} is called.

@@ -74,6 +74,26 @@ inline constexpr float space_loose = RK_SPACE_LOOSE;
  * Spacing token: 32 px.
  */
 inline constexpr float space_wide = RK_SPACE_WIDE;
+/**
+ * Corner token: windows, 16 px.
+ */
+inline constexpr float corner_window = RK_CORNER_WINDOW;
+/**
+ * Corner token: cards, menus, popovers and sheets, 14 px.
+ */
+inline constexpr float corner_panel = RK_CORNER_PANEL;
+/**
+ * Corner token: controls, 10 px.
+ */
+inline constexpr float corner_control = RK_CORNER_CONTROL;
+/**
+ * Corner token: rows, chips and thumbnails, 8 px.
+ */
+inline constexpr float corner_item = RK_CORNER_ITEM;
+/**
+ * Corner token: small details, 4 px.
+ */
+inline constexpr float corner_detail = RK_CORNER_DETAIL;
 
 /**
  * A straight-alpha sRGB colour with components from 0 to 1.
@@ -324,6 +344,28 @@ enum class ColorRole : std::uint32_t {
     on_success = RK_COLOR_ROLE_ON_SUCCESS,
     outline = RK_COLOR_ROLE_OUTLINE,
     overlay = RK_COLOR_ROLE_OVERLAY,
+};
+
+/**
+ * What lies behind a theme's surfaces.
+ */
+enum class ThemeBackground : std::uint32_t {
+    /**
+     * The desktop's choice.
+     */
+    desktop = RK_THEME_BACKGROUND_DESKTOP,
+    /**
+     * Opaque surfaces.
+     */
+    solid = RK_THEME_BACKGROUND_SOLID,
+    /**
+     * Translucent surfaces over a blur of what lies beneath.
+     */
+    glass = RK_THEME_BACKGROUND_GLASS,
+    /**
+     * Glass whose edges also refract what lies beneath.
+     */
+    liquid = RK_THEME_BACKGROUND_LIQUID,
 };
 
 /**
@@ -623,6 +665,7 @@ class Sound;
 class Video;
 class TextDocument;
 class VulkanDevice;
+class ThemeCatalog;
 class Embedding;
 class EmbeddedSurfaceBuilder;
 class EmbeddedSurface;
@@ -1849,6 +1892,96 @@ private:
 };
 
 /**
+ * The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
+ * and the system's and the person's, Rikka's own first.
+ *
+ * Copies share one reference-counted object, usable from any thread.
+ */
+class ThemeCatalog {
+public:
+    ThemeCatalog(const ThemeCatalog& other) noexcept : raw_(rk_theme_catalog_ref(other.raw_)) {}
+
+    ThemeCatalog(ThemeCatalog&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    ThemeCatalog& operator=(ThemeCatalog other) noexcept {
+        swap(other);
+        return *this;
+    }
+
+    ~ThemeCatalog() {
+        rk_theme_catalog_unref(raw_);
+    }
+
+    /**
+     * Takes over one reference to a handle from the C API.
+     */
+    [[nodiscard]] static ThemeCatalog adopt(rk_theme_catalog* raw) noexcept {
+        return ThemeCatalog(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API; this object keeps its reference.
+     */
+    [[nodiscard]] rk_theme_catalog* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives this object's reference to the caller, leaving it empty.
+     */
+    [[nodiscard]] rk_theme_catalog* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(ThemeCatalog& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * Reads the installed themes.
+     */
+    explicit ThemeCatalog();
+
+    /**
+     * How many themes there are.
+     */
+    [[nodiscard]] std::size_t count() const;
+
+    /**
+     * The name that identifies a theme in rikka::Embedding::set_theme().
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    [[nodiscard]] std::string slug(std::size_t index);
+
+    /**
+     * A theme's display name.
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    [[nodiscard]] std::string name(std::size_t index);
+
+    /**
+     * Whether a theme is dark.
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    bool is_dark(std::size_t index);
+
+    /**
+     * A colour of a theme over a solid background, for previewing it.
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    Color color(std::size_t index, ColorRole role);
+
+private:
+    ThemeCatalog(detail::Adopt, rk_theme_catalog* raw) noexcept : raw_(raw) {}
+
+    rk_theme_catalog* raw_ = nullptr;
+};
+
+/**
  * Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
  * renders on the thread that submits to the device's queue.
  *
@@ -1914,6 +2047,19 @@ public:
      */
     [[nodiscard]] EmbeddedSurface open(EmbeddedSurfaceBuilder surface);
 
+    /**
+     * Draws every surface in another theme than the desktop's.
+     *
+     * @param slug A rikka::ThemeCatalog::slug(); empty follows the desktop's theme. An unknown
+     * slug draws the default theme.
+     */
+    void set_theme(std::string_view slug);
+
+    /**
+     * Draws every surface over another background than the desktop's.
+     */
+    void set_background(ThemeBackground background);
+
 private:
     Embedding(detail::Adopt, rk_embedding* raw) noexcept : raw_(raw) {}
 
@@ -1967,8 +2113,8 @@ public:
     }
 
     /**
-     * Describes a surface whose content view declares. It follows the desktop's theme and
-     * language.
+     * Describes a surface whose content view declares. It wears the embedding's theme and the
+     * desktop's language, and its transitions play from its first view on.
      *
      * @param view Declares the surface's content.
      */
@@ -2005,6 +2151,21 @@ public:
     template <class F>
         requires std::invocable<F&, Context&>
     EmbeddedSurfaceBuilder&& on_close_request(F&& callback) &&;
+
+    /**
+     * Runs once a leaving surface's exit transitions have played out, so the program can drop
+     * it; see rikka::EmbeddedSurface::leave().
+     *
+     * @param callback Reacts to an event. The window's view runs again afterwards unless
+     * rikka::Context::skip_view() is called.
+     */
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder& on_left(F&& callback) &;
+
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder&& on_left(F&& callback) &&;
 
 private:
     EmbeddedSurfaceBuilder(detail::Adopt, rk_embedded_surface_builder* raw) noexcept : raw_(raw) {}
@@ -2170,6 +2331,18 @@ public:
      */
     [[nodiscard]] Rect caret() const;
 
+    /**
+     * Plays the surface's exit: its view sees rikka::View::is_leaving() and drops what leaves,
+     * whose transitions play out; then rikka::EmbeddedSurfaceBuilder::on_left() runs.
+     */
+    void leave();
+
+    /**
+     * Brings a leaving surface back: its view declares everything again, and what was leaving
+     * turns back from where it is.
+     */
+    void rejoin();
+
 private:
     EmbeddedSurface(detail::Adopt, rk_embedded_surface* raw) noexcept : raw_(raw) {}
 
@@ -2331,6 +2504,12 @@ public:
      * Whether the view is drawn in a dark theme.
      */
     [[nodiscard]] bool is_dark() const;
+
+    /**
+     * Whether the view's embedded surface is leaving through rikka::EmbeddedSurface::leave():
+     * declare only what stays, so the rest plays its exit transitions.
+     */
+    [[nodiscard]] bool is_leaving() const;
 
     /**
      * A column: children stack top to bottom.
@@ -2679,6 +2858,14 @@ public:
     Element vertical_divider();
 
     /**
+     * Declares a backdrop over its parent, the whole view at the top level, that blurs what
+     * lies beneath without darkening it and swallows presses, for modal content declared after
+     * it; rikka::Element::on_dismiss() reacts to a press on it. It fades in and out unless
+     * given another rikka::Element::transition().
+     */
+    Element scrim();
+
+    /**
      * Declares a labelled button.
      */
     Element button(std::string_view label);
@@ -2921,6 +3108,12 @@ public:
      * Animates the current element in and out as it is declared and dropped.
      */
     Element& transition(TransitionStyle style);
+
+    /**
+     * Carries the current element smoothly to wherever layout moves it, as when its siblings
+     * come and go, instead of jumping there.
+     */
+    Element& glide();
 
     /**
      * Places the current popover or popup menu against the element with a key.
@@ -3319,8 +3512,8 @@ public:
     Element& on_blur(F&& callback);
 
     /**
-     * Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
-     * declaring it to close it.
+     * Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner;
+     * stop declaring it to close it.
      *
      * @param callback Reacts to an event. The window's view runs again afterwards unless
      * rikka::Context::skip_view() is called.
@@ -4043,6 +4236,30 @@ inline VulkanDevice&& VulkanDevice::features(std::uint64_t features) && {
     return std::move(this->features(features));
 }
 
+inline ThemeCatalog::ThemeCatalog() {
+    raw_ = rk_theme_catalog_new();
+}
+
+inline std::size_t ThemeCatalog::count() const {
+    return rk_theme_catalog_count(raw_);
+}
+
+inline std::string ThemeCatalog::slug(std::size_t index) {
+    return detail::take(rk_theme_catalog_slug(raw_, index));
+}
+
+inline std::string ThemeCatalog::name(std::size_t index) {
+    return detail::take(rk_theme_catalog_name(raw_, index));
+}
+
+inline bool ThemeCatalog::is_dark(std::size_t index) {
+    return rk_theme_catalog_is_dark(raw_, index);
+}
+
+inline Color ThemeCatalog::color(std::size_t index, ColorRole role) {
+    return detail::convert(rk_theme_catalog_color(raw_, index, static_cast<rk_color_role>(role)));
+}
+
 inline Embedding::Embedding(VulkanDevice device) {
     raw_ = rk_embedding_new(device.release());
 }
@@ -4053,6 +4270,14 @@ inline std::string Embedding::error_message() const {
 
 inline EmbeddedSurface Embedding::open(EmbeddedSurfaceBuilder surface) {
     return EmbeddedSurface::adopt(rk_embedding_open(raw_, surface.release()));
+}
+
+inline void Embedding::set_theme(std::string_view slug) {
+    rk_embedding_set_theme(raw_, detail::str(slug));
+}
+
+inline void Embedding::set_background(ThemeBackground background) {
+    rk_embedding_set_background(raw_, static_cast<rk_theme_background>(background));
 }
 
 template <class F>
@@ -4091,6 +4316,21 @@ template <class F>
     requires std::invocable<F&, Context&>
 inline EmbeddedSurfaceBuilder&& EmbeddedSurfaceBuilder::on_close_request(F&& callback) && {
     return std::move(this->on_close_request(std::forward<F>(callback)));
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder& EmbeddedSurfaceBuilder::on_left(F&& callback) & {
+    using Pack = std::tuple<std::decay_t<F>>;
+    auto userdata = std::make_unique<Pack>(std::forward<F>(callback));
+    rk_embedded_surface_builder_on_left(raw_, detail::action_fn<Pack, 0>, userdata.release(), detail::destroy<Pack>);
+    return *this;
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder&& EmbeddedSurfaceBuilder::on_left(F&& callback) && {
+    return std::move(this->on_left(std::forward<F>(callback)));
 }
 
 inline Window EmbeddedSurface::window() const {
@@ -4151,6 +4391,14 @@ inline CursorShape EmbeddedSurface::cursor() const {
 
 inline Rect EmbeddedSurface::caret() const {
     return detail::convert(rk_embedded_surface_caret(raw_));
+}
+
+inline void EmbeddedSurface::leave() {
+    rk_embedded_surface_leave(raw_);
+}
+
+inline void EmbeddedSurface::rejoin() {
+    rk_embedded_surface_rejoin(raw_);
 }
 
 inline Window Context::window() const {
@@ -4235,6 +4483,10 @@ inline Color View::palette_color(ColorRole role) {
 
 inline bool View::is_dark() const {
     return rk_view_is_dark(raw_);
+}
+
+inline bool View::is_leaving() const {
+    return rk_view_is_leaving(raw_);
 }
 
 template <class Body>
@@ -4561,6 +4813,11 @@ inline Element View::vertical_divider() {
     return Element(raw_);
 }
 
+inline Element View::scrim() {
+    rk_scrim(raw_);
+    return Element(raw_);
+}
+
 inline Element View::button(std::string_view label) {
     rk_button(raw_, detail::str(label));
     return Element(raw_);
@@ -4764,6 +5021,11 @@ inline Element& Element::key(std::string_view key) {
 
 inline Element& Element::transition(TransitionStyle style) {
     rk_transition(raw_, static_cast<rk_transition_style>(style));
+    return *this;
+}
+
+inline Element& Element::glide() {
+    rk_glide(raw_);
     return *this;
 }
 

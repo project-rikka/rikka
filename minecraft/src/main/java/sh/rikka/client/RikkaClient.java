@@ -6,10 +6,12 @@ import net.minecraft.client.Minecraft;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sh.rikka.client.config.Preferences;
 import sh.rikka.client.config.ProfileManager;
 import sh.rikka.client.event.Event;
 import sh.rikka.client.event.EventBus;
 import sh.rikka.client.events.CombatTracker;
+import sh.rikka.client.menu.MenuKeys;
 import sh.rikka.client.mod.Mod;
 import sh.rikka.client.mod.ModKeybinds;
 import sh.rikka.client.mod.ModManager;
@@ -29,10 +31,12 @@ public final class RikkaClient implements ClientModInitializer {
 		ModManager mods = new ModManager(EVENTS);
 		BuiltinMods.register(mods);
 		mods.lock();
-		ProfileManager profiles = ProfileManager.open(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID), mods, EVENTS);
+		Preferences preferences = new Preferences();
+		ProfileManager profiles = ProfileManager.open(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID), mods, preferences, EVENTS);
 		EVENTS.subscribe(new ModKeybinds(mods));
 		EVENTS.subscribe(new CombatTracker(EVENTS));
-		services = new Services(mods, profiles);
+		EVENTS.subscribe(new MenuKeys(preferences));
+		services = new Services(mods, preferences, profiles);
 		LOGGER.info("{} initialized with profile {}", NAME, profiles.active());
 	}
 
@@ -42,6 +46,10 @@ public final class RikkaClient implements ClientModInitializer {
 
 	public static ModManager mods() {
 		return requireServices().mods();
+	}
+
+	public static Preferences preferences() {
+		return requireServices().preferences();
 	}
 
 	public static ProfileManager profiles() {
@@ -77,6 +85,6 @@ public final class RikkaClient implements ClientModInitializer {
 		}
 	}
 
-	private record Services(ModManager mods, ProfileManager profiles) {
+	private record Services(ModManager mods, Preferences preferences, ProfileManager profiles) {
 	}
 }

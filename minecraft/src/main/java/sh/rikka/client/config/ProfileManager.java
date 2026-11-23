@@ -22,25 +22,33 @@ import sh.rikka.client.setting.Settings;
 
 public final class ProfileManager implements AutoCloseable {
 	public static final String DEFAULT_PROFILE = "default";
+	public static final int MAX_NAME_LENGTH = 32;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProfileManager.class);
 	private static final Duration SAVE_DELAY = Duration.ofMillis(500);
 	private static final String SAVER_THREAD = "rikka-client-profiles";
+	private static final String PREFERENCES = "preferences";
 
 	private final ProfileStore store;
 	private final List<Mod> mods;
+	private final Settings preferences;
+	private final JsonObject preferencesDocument;
 	private final ScheduledThreadPoolExecutor saver;
 	private final AtomicBoolean saveScheduled = new AtomicBoolean();
+	private final AtomicBoolean profileDirty = new AtomicBoolean();
+	private final AtomicBoolean preferencesDirty = new AtomicBoolean();
 	private volatile boolean applying;
 	private volatile boolean closed;
 	private String active;
 	private JsonObject document;
 
-	private ProfileManager(ProfileStore store, List<Mod> mods, String active, JsonObject document) {
+	private ProfileManager(ProfileStore store, List<Mod> mods, Settings preferences, JsonObject preferencesDocument, String active) throws IOException {
 		this.store = store;
 		this.mods = mods;
+		this.preferences = preferences;
+		this.preferencesDocument = preferencesDocument;
 		this.active = active;
-		this.document = document;
+		this.document = store.read(active);
 		this.saver = new ScheduledThreadPoolExecutor(1, task -> {
 			Thread thread = new Thread(task, SAVER_THREAD);
 			thread.setDaemon(true);
@@ -49,7 +57,7 @@ public final class ProfileManager implements AutoCloseable {
 		this.saver.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
 	}
 
-	public static ProfileManager open(Path directory, ModManager mods, EventBus bus) {
+	public static ProfileManager open(Path directory, ModManager mods, Preferences preferences, EventBus bus) {
 		if (!mods.isLocked()) {
 			throw new IllegalStateException("register and lock every mod before opening profiles");
 		}
@@ -62,14 +70,17 @@ public final class ProfileManager implements AutoCloseable {
 				LOGGER.warn("ignoring invalid active profile name {}", name);
 				return DEFAULT_PROFILE;
 			}).orElse(DEFAULT_PROFILE);
-			ProfileManager profiles = new ProfileManager(store, mods.all(), active, store.read(active));
+			JsonObject preferencesDocument = store.readPreferences();
+			ProfileCodec.decode(preferences.settings(), preferencesDocument, PREFERENCES);
+			ProfileManager profiles = new ProfileManager(store, mods.all(), preferences.settings(), preferencesDocument, active);
 			profiles.apply();
 			profiles.writeCurrent();
-			store.writeActive(active);
+			store.writeState(active, profiles.encodedPreferences());
 			for (Mod mod : mods.all()) {
-				profiles.track(mod.controls());
-				profiles.track(mod.settings());
+				profiles.track(mod.controls(), profiles.profileDirty);
+				profiles.track(mod.settings(), profiles.profileDirty);
 			}
+			profiles.track(preferences.settings(), profiles.preferencesDirty);
 			bus.subscribe(profiles);
 			return profiles;
 		} catch (IOException failure) {
@@ -104,7 +115,7 @@ public final class ProfileManager implements AutoCloseable {
 		try {
 			writeCurrent();
 			JsonObject next = this.store.read(name);
-			this.store.writeActive(name);
+			this.store.writeState(name, encodedPreferences());
 			this.active = name;
 			this.document = next;
 		} catch (IOException failure) {
@@ -149,20 +160,21 @@ public final class ProfileManager implements AutoCloseable {
 	@EventHandler
 	private void onModToggle(ModToggleEvent event) {
 		if (ProfileCodec.persistsEnabled(event.mod())) {
-			markDirty();
+			markDirty(this.profileDirty);
 		}
 	}
 
-	private void track(Settings settings) {
+	private void track(Settings settings, AtomicBoolean dirty) {
 		for (Setting<?, ?> setting : settings.all()) {
-			setting.onChange(value -> markDirty());
+			setting.onChange(value -> markDirty(dirty));
 		}
 	}
 
-	private void markDirty() {
+	private void markDirty(AtomicBoolean dirty) {
 		if (this.applying || this.closed) {
 			return;
 		}
+		dirty.set(true);
 		if (this.saveScheduled.compareAndSet(false, true)) {
 			this.saver.schedule(this::scheduledSave, SAVE_DELAY.toMillis(), TimeUnit.MILLISECONDS);
 		}
@@ -179,15 +191,31 @@ public final class ProfileManager implements AutoCloseable {
 
 	private synchronized void save() {
 		try {
-			writeCurrent();
+			if (this.profileDirty.getAndSet(false)) {
+				writeCurrent();
+			}
 		} catch (IOException failure) {
+			this.profileDirty.set(true);
 			LOGGER.error("failed to save profile {}", this.active, failure);
+		}
+		try {
+			if (this.preferencesDirty.getAndSet(false)) {
+				this.store.writeState(this.active, encodedPreferences());
+			}
+		} catch (IOException failure) {
+			this.preferencesDirty.set(true);
+			LOGGER.error("failed to save preferences", failure);
 		}
 	}
 
 	private void writeCurrent() throws IOException {
 		this.document = ProfileCodec.encode(this.document, this.mods);
 		this.store.write(this.active, this.document);
+	}
+
+	private JsonObject encodedPreferences() {
+		ProfileCodec.encode(this.preferences, this.preferencesDocument);
+		return this.preferencesDocument;
 	}
 
 	private void apply() {

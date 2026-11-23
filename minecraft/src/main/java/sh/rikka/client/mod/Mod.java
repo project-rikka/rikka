@@ -32,6 +32,7 @@ public abstract class Mod {
 
 	private final String id;
 	private final Category category;
+	private final String icon;
 	private final Settings settings;
 	private final Settings controls;
 	private final KeybindSetting bind;
@@ -39,12 +40,13 @@ public abstract class Mod {
 	private volatile boolean enabled;
 	private @Nullable EventBus bus;
 
-	protected Mod(String id, Category category) {
+	protected Mod(String id, Category category, String icon) {
 		if (!Settings.isValidId(id)) {
 			throw new IllegalArgumentException("invalid mod id: " + id);
 		}
 		this.id = id;
 		this.category = category;
+		this.icon = icon;
 		this.settings = new Settings(TRANSLATION_PREFIX + id + ".setting");
 		this.controls = new Settings(RikkaClient.MOD_ID + ".setting");
 		this.bind = this.controls.keybind("bind");
@@ -58,6 +60,10 @@ public abstract class Mod {
 
 	public final Category category() {
 		return this.category;
+	}
+
+	public final String icon() {
+		return this.icon;
 	}
 
 	public final String translationKey() {

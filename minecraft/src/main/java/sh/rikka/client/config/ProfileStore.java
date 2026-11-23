@@ -28,8 +28,8 @@ final class ProfileStore {
 	private static final String PROFILES = "profiles";
 	private static final String STATE = "client.json";
 	private static final String ACTIVE_PROFILE = "profile";
+	private static final String PREFERENCES = "preferences";
 	private static final Pattern NAME = Pattern.compile("[\\p{L}\\p{N}_-]+( [\\p{L}\\p{N}_-]+)*");
-	private static final int MAX_NAME_LENGTH = 32;
 
 	private final Path profiles;
 	private final Path state;
@@ -40,7 +40,7 @@ final class ProfileStore {
 	}
 
 	static boolean isValidName(String name) {
-		return name.length() <= MAX_NAME_LENGTH && NAME.matcher(name).matches();
+		return name.length() <= ProfileManager.MAX_NAME_LENGTH && NAME.matcher(name).matches();
 	}
 
 	List<String> list() throws IOException {
@@ -80,9 +80,16 @@ final class ProfileStore {
 		);
 	}
 
-	void writeActive(String name) throws IOException {
+	JsonObject readPreferences() throws IOException {
+		return readObject(this.state)
+			.map(document -> document.get(PREFERENCES) instanceof JsonObject preferences ? preferences : new JsonObject())
+			.orElseGet(JsonObject::new);
+	}
+
+	void writeState(String active, JsonObject preferences) throws IOException {
 		JsonObject document = readObject(this.state).orElseGet(JsonObject::new);
-		document.addProperty(ACTIVE_PROFILE, name);
+		document.addProperty(ACTIVE_PROFILE, active);
+		document.add(PREFERENCES, preferences.deepCopy());
 		writeAtomically(this.state, GSON.toJson(document));
 	}
 

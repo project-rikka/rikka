@@ -11,6 +11,7 @@ mod items;
 mod modifiers;
 mod open;
 mod sound;
+mod theme;
 mod video;
 mod window;
 
@@ -27,6 +28,7 @@ pub(crate) use items::*;
 pub(crate) use modifiers::*;
 pub(crate) use open::*;
 pub(crate) use sound::*;
+pub(crate) use theme::*;
 pub(crate) use video::*;
 pub(crate) use window::*;
 

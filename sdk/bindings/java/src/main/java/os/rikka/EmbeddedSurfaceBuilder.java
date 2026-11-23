@@ -21,8 +21,8 @@ public final class EmbeddedSurfaceBuilder implements AutoCloseable {
     }
 
     /**
-     * Describes a surface whose content view declares. It follows the desktop's theme and
-     * language.
+     * Describes a surface whose content view declares. It wears the embedding's theme and the
+     * desktop's language, and its transitions play from its first view on.
      *
      * @param view Declares the surface's content.
      */
@@ -74,6 +74,27 @@ public final class EmbeddedSurfaceBuilder implements AutoCloseable {
             MemorySegment self = handle.raw();
             MemorySegment userdata = Handle.retain(callback);
             Native.RK_EMBEDDED_SURFACE_BUILDER_ON_CLOSE_REQUEST.invokeExact(self, Trampolines.ACTION_FN_0, userdata, Trampolines.DESTROY);
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+        return this;
+    }
+
+    /**
+     * Runs once a leaving surface's exit transitions have played out, so the program can drop
+     * it; see {@link EmbeddedSurface#leave}.
+     *
+     * @param callback Reacts to an event. The window's view runs again afterwards unless {@link
+     * Context#skipView} is called.
+     */
+    public EmbeddedSurfaceBuilder onLeft(ActionCallback callback) {
+        Objects.requireNonNull(callback, "callback");
+        try {
+            MemorySegment self = handle.raw();
+            MemorySegment userdata = Handle.retain(callback);
+            Native.RK_EMBEDDED_SURFACE_BUILDER_ON_LEFT.invokeExact(self, Trampolines.ACTION_FN_0, userdata, Trampolines.DESTROY);
         } catch (Throwable failure) {
             throw Native.rethrow(failure);
         } finally {

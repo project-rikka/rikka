@@ -65,6 +65,31 @@ public static unsafe class Sdk
     public const float SpaceWide = 32.0f;
 
     /// <summary>
+    /// Corner token: windows, 16 px.
+    /// </summary>
+    public const float CornerWindow = 16.0f;
+
+    /// <summary>
+    /// Corner token: cards, menus, popovers and sheets, 14 px.
+    /// </summary>
+    public const float CornerPanel = 14.0f;
+
+    /// <summary>
+    /// Corner token: controls, 10 px.
+    /// </summary>
+    public const float CornerControl = 10.0f;
+
+    /// <summary>
+    /// Corner token: rows, chips and thumbnails, 8 px.
+    /// </summary>
+    public const float CornerItem = 8.0f;
+
+    /// <summary>
+    /// Corner token: small details, 4 px.
+    /// </summary>
+    public const float CornerDetail = 4.0f;
+
+    /// <summary>
     /// <para>
     /// The version of the loaded library, packed as major &lt;&lt; 22 | minor &lt;&lt; 12 | patch.
     /// </para>
@@ -367,6 +392,30 @@ public enum ColorRole : uint
     OnSuccess = 14,
     Outline = 15,
     Overlay = 16,
+}
+
+/// <summary>
+/// What lies behind a theme's surfaces.
+/// </summary>
+
+public enum ThemeBackground : uint
+{
+    /// <summary>
+    /// The desktop's choice.
+    /// </summary>
+    Desktop = 0,
+    /// <summary>
+    /// Opaque surfaces.
+    /// </summary>
+    Solid = 1,
+    /// <summary>
+    /// Translucent surfaces over a blur of what lies beneath.
+    /// </summary>
+    Glass = 2,
+    /// <summary>
+    /// Glass whose edges also refract what lies beneath.
+    /// </summary>
+    Liquid = 3,
 }
 
 /// <summary>
@@ -2358,6 +2407,108 @@ public sealed unsafe class VulkanDevice : IDisposable
 
 /// <summary>
 /// <para>
+/// The themes installed on the desktop: the built-in ones, those generated from the wallpaper, and the
+/// system's and the person's, Rikka's own first.
+/// </para>
+/// <para>
+/// It holds one reference to a native object usable from any thread; disposing it or the finalizer drops the
+/// reference.
+/// </para>
+/// </summary>
+
+public sealed unsafe class ThemeCatalog : IDisposable, IEquatable<ThemeCatalog>
+{
+    internal readonly NativeHandle handle;
+
+    private ThemeCatalog(NativeHandle handle) => this.handle = handle;
+
+    internal static ThemeCatalog Adopt(nint raw) => new(Handle(raw));
+
+    private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_theme_catalog_unref, false, nameof(ThemeCatalog));
+
+    /// <summary>
+    /// Reads the installed themes.
+    /// </summary>
+    public ThemeCatalog()
+    {
+        handle = Handle(Native.rk_theme_catalog_new());
+    }
+
+    /// <summary>
+    /// How many themes there are.
+    /// </summary>
+    public int Count
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return checked((int)Native.rk_theme_catalog_count(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// The name that identifies a theme in <see cref="Embedding.SetTheme"/>.
+    /// </summary>
+    /// <param name="index">Below <see cref="ThemeCatalog.Count"/>.</param>
+    public string Slug(int index)
+    {
+        using var self = handle.Lease();
+        return Interop.Take(Native.rk_theme_catalog_slug(self.Raw, (nint)index));
+    }
+
+    /// <summary>
+    /// A theme's display name.
+    /// </summary>
+    /// <param name="index">Below <see cref="ThemeCatalog.Count"/>.</param>
+    public string Name(int index)
+    {
+        using var self = handle.Lease();
+        return Interop.Take(Native.rk_theme_catalog_name(self.Raw, (nint)index));
+    }
+
+    /// <summary>
+    /// Whether a theme is dark.
+    /// </summary>
+    /// <param name="index">Below <see cref="ThemeCatalog.Count"/>.</param>
+    public bool IsDark(int index)
+    {
+        using var self = handle.Lease();
+        return Native.rk_theme_catalog_is_dark(self.Raw, (nint)index) != 0;
+    }
+
+    /// <summary>
+    /// A colour of a theme over a solid background, for previewing it.
+    /// </summary>
+    /// <param name="index">Below <see cref="ThemeCatalog.Count"/>.</param>
+    /// <param name="role">The role.</param>
+    public Color Color(int index, ColorRole role)
+    {
+        using var self = handle.Lease();
+        return Native.rk_theme_catalog_color(self.Raw, (nint)index, (uint)role).ToPublic();
+    }
+
+    /// <summary>
+    /// Releases the native object now; a disposed or handed-over object refuses further use.
+    /// </summary>
+    public void Dispose() => handle.Dispose();
+
+    /// <summary>
+    /// Whether both hold the same native object.
+    /// </summary>
+    /// <param name="other">The object to compare with.</param>
+    /// <returns>Whether they are the same object.</returns>
+    public bool Equals(ThemeCatalog? other) =>
+        other is not null && other.handle.DangerousGetHandle() == handle.DangerousGetHandle();
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as ThemeCatalog);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => handle.DangerousGetHandle().GetHashCode();
+}
+
+/// <summary>
+/// <para>
 /// Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their renders on the
 /// thread that submits to the device's queue.
 /// </para>
@@ -2413,6 +2564,33 @@ public sealed unsafe class Embedding : IDisposable, IEquatable<Embedding>
     }
 
     /// <summary>
+    /// Draws every surface in another theme than the desktop's.
+    /// </summary>
+    /// <param name="slug">
+    /// A <see cref="ThemeCatalog.Slug"/>; empty follows the desktop's theme. An unknown slug draws the
+    /// default theme.
+    /// </param>
+    public void SetTheme(string slug)
+    {
+        using var self = handle.Lease();
+        Span<byte> slugUtf8 = Interop.Utf8(slug, stackalloc byte[Interop.StackLimit], nameof(slug));
+        fixed (byte* slugBytes = slugUtf8)
+        {
+            Native.rk_embedding_set_theme(self.Raw, new Str(slugBytes, (nuint)slugUtf8.Length));
+        }
+    }
+
+    /// <summary>
+    /// Draws every surface over another background than the desktop's.
+    /// </summary>
+    /// <param name="background">The background.</param>
+    public void SetBackground(ThemeBackground background)
+    {
+        using var self = handle.Lease();
+        Native.rk_embedding_set_background(self.Raw, (uint)background);
+    }
+
+    /// <summary>
     /// Releases the native object now; a disposed or handed-over object refuses further use.
     /// </summary>
     public void Dispose() => handle.Dispose();
@@ -2453,7 +2631,8 @@ public sealed unsafe class EmbeddedSurfaceBuilder : IDisposable
     private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_embedded_surface_builder_free, false, nameof(EmbeddedSurfaceBuilder));
 
     /// <summary>
-    /// Describes a surface whose content view declares. It follows the desktop's theme and language.
+    /// Describes a surface whose content view declares. It wears the embedding's theme and the desktop's
+    /// language, and its transitions play from its first view on.
     /// </summary>
     /// <param name="view">Declares the surface's content.</param>
     public EmbeddedSurfaceBuilder(ViewCallback view)
@@ -2494,6 +2673,23 @@ public sealed unsafe class EmbeddedSurfaceBuilder : IDisposable
         using var self = handle.Lease();
         nint userdata = Closures.Retain(callback);
         Native.rk_embedded_surface_builder_on_close_request(self.Raw, &Trampolines.ActionFn0, userdata, &Closures.Destroy);
+        return this;
+    }
+
+    /// <summary>
+    /// Runs once a leaving surface's exit transitions have played out, so the program can drop it; see <see
+    /// cref="EmbeddedSurface.Leave"/>.
+    /// </summary>
+    /// <param name="callback">
+    /// Reacts to an event. The window's view runs again afterwards unless <see cref="Context.SkipView"/> is
+    /// called.
+    /// </param>
+    public EmbeddedSurfaceBuilder OnLeft(ActionCallback callback)
+    {
+        ArgumentNullException.ThrowIfNull(callback);
+        using var self = handle.Lease();
+        nint userdata = Closures.Retain(callback);
+        Native.rk_embedded_surface_builder_on_left(self.Raw, &Trampolines.ActionFn0, userdata, &Closures.Destroy);
         return this;
     }
 
@@ -2727,6 +2923,26 @@ public sealed unsafe class EmbeddedSurface : IDisposable, IEquatable<EmbeddedSur
             using var self = handle.Lease();
             return Native.rk_embedded_surface_caret(self.Raw).ToPublic();
         }
+    }
+
+    /// <summary>
+    /// Plays the surface's exit: its view sees <see cref="View.IsLeaving"/> and drops what leaves, whose
+    /// transitions play out; then <see cref="EmbeddedSurfaceBuilder.OnLeft"/> runs.
+    /// </summary>
+    public void Leave()
+    {
+        using var self = handle.Lease();
+        Native.rk_embedded_surface_leave(self.Raw);
+    }
+
+    /// <summary>
+    /// Brings a leaving surface back: its view declares everything again, and what was leaving turns back
+    /// from where it is.
+    /// </summary>
+    public void Rejoin()
+    {
+        using var self = handle.Lease();
+        Native.rk_embedded_surface_rejoin(self.Raw);
     }
 
     /// <summary>
@@ -3028,6 +3244,18 @@ public sealed unsafe class View
         get
         {
             return Native.rk_view_is_dark(Raw) != 0;
+        }
+    }
+
+    /// <summary>
+    /// Whether the view's embedded surface is leaving through <see cref="EmbeddedSurface.Leave"/>: declare
+    /// only what stays, so the rest plays its exit transitions.
+    /// </summary>
+    public bool IsLeaving
+    {
+        get
+        {
+            return Native.rk_view_is_leaving(Raw) != 0;
         }
     }
 
@@ -3597,6 +3825,18 @@ public sealed unsafe class View
     }
 
     /// <summary>
+    /// Declares a backdrop over its parent, the whole view at the top level, that blurs what lies beneath
+    /// without darkening it and swallows presses, for modal content declared after it; <see
+    /// cref="Element.OnDismiss"/> reacts to a press on it. It fades in and out unless given another <see
+    /// cref="Element.Transition"/>.
+    /// </summary>
+    public Element Scrim()
+    {
+        Native.rk_scrim(Raw);
+        return Declared();
+    }
+
+    /// <summary>
     /// Declares a labelled button.
     /// </summary>
     /// <param name="label">The label.</param>
@@ -4054,6 +4294,16 @@ public readonly unsafe struct Element
     public Element Transition(TransitionStyle style)
     {
         Native.rk_transition(Raw, (uint)style);
+        return this;
+    }
+
+    /// <summary>
+    /// Carries the current element smoothly to wherever layout moves it, as when its siblings come and go,
+    /// instead of jumping there.
+    /// </summary>
+    public Element Glide()
+    {
+        Native.rk_glide(Raw);
         return this;
     }
 
@@ -4790,8 +5040,8 @@ public readonly unsafe struct Element
     }
 
     /// <summary>
-    /// Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop declaring it to
-    /// close it.
+    /// Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner; stop
+    /// declaring it to close it.
     /// </summary>
     /// <param name="callback">
     /// Reacts to an event. The window's view runs again afterwards unless <see cref="Context.SkipView"/> is

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use rikka_app::embedded::Background;
 use rikka_ui::Event;
 
 use crate::embedding::{
@@ -62,6 +63,19 @@ pub(crate) fn embedding_open(
     embedding.open(surface)
 }
 
+pub(crate) fn embedding_set_theme(embedding: &Embedding, slug: &str) {
+    embedding.set_theme(slug);
+}
+
+pub(crate) fn embedding_set_background(embedding: &Embedding, background: ffi::ThemeBackground) {
+    embedding.set_background(match background {
+        ffi::ThemeBackground::Desktop => None,
+        ffi::ThemeBackground::Solid => Some(Background::Solid),
+        ffi::ThemeBackground::Glass => Some(Background::Glass),
+        ffi::ThemeBackground::Liquid => Some(Background::Liquid),
+    });
+}
+
 pub(crate) fn embedded_surface_builder_new(view: Callback<ffi::ViewFn>) -> EmbeddedSurfaceBuilder {
     EmbeddedSurfaceBuilder::new(view)
 }
@@ -78,6 +92,21 @@ pub(crate) fn embedded_surface_builder_on_close_request(
     callback: Callback<ffi::ActionFn>,
 ) {
     builder.on_close_request(callback);
+}
+
+pub(crate) fn embedded_surface_builder_on_left(
+    builder: &mut EmbeddedSurfaceBuilder,
+    callback: Callback<ffi::ActionFn>,
+) {
+    builder.on_left(callback);
+}
+
+pub(crate) fn embedded_surface_leave(surface: &EmbeddedSurface) {
+    surface.leave();
+}
+
+pub(crate) fn embedded_surface_rejoin(surface: &EmbeddedSurface) {
+    surface.rejoin();
 }
 
 pub(crate) fn embedded_surface_window(surface: &EmbeddedSurface) -> Arc<Window> {

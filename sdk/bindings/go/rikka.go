@@ -67,6 +67,21 @@ const SpaceLoose float32 = 24.0
 // SpaceWide: Spacing token: 32 px.
 const SpaceWide float32 = 32.0
 
+// CornerWindow: Corner token: windows, 16 px.
+const CornerWindow float32 = 16.0
+
+// CornerPanel: Corner token: cards, menus, popovers and sheets, 14 px.
+const CornerPanel float32 = 14.0
+
+// CornerControl: Corner token: controls, 10 px.
+const CornerControl float32 = 10.0
+
+// CornerItem: Corner token: rows, chips and thumbnails, 8 px.
+const CornerItem float32 = 8.0
+
+// CornerDetail: Corner token: small details, 4 px.
+const CornerDetail float32 = 4.0
+
 // Color is a straight-alpha sRGB colour with components from 0 to 1.
 type Color struct {
 	R float32
@@ -525,6 +540,35 @@ func (value ColorRole) String() string {
 		return "ColorRoleOverlay"
 	}
 	return fmt.Sprintf("ColorRole(%#x)", uint32(value))
+}
+
+// ThemeBackground describes what lies behind a theme's surfaces.
+type ThemeBackground uint32
+
+const (
+	// The desktop's choice.
+	ThemeBackgroundDesktop ThemeBackground = 0
+	// Opaque surfaces.
+	ThemeBackgroundSolid ThemeBackground = 1
+	// Translucent surfaces over a blur of what lies beneath.
+	ThemeBackgroundGlass ThemeBackground = 2
+	// Glass whose edges also refract what lies beneath.
+	ThemeBackgroundLiquid ThemeBackground = 3
+)
+
+// String names the constant value holds.
+func (value ThemeBackground) String() string {
+	switch value {
+	case ThemeBackgroundDesktop:
+		return "ThemeBackgroundDesktop"
+	case ThemeBackgroundSolid:
+		return "ThemeBackgroundSolid"
+	case ThemeBackgroundGlass:
+		return "ThemeBackgroundGlass"
+	case ThemeBackgroundLiquid:
+		return "ThemeBackgroundLiquid"
+	}
+	return fmt.Sprintf("ThemeBackground(%#x)", uint32(value))
 }
 
 // AnchorEdge describes where an anchored element sits relative to its target.
@@ -2192,6 +2236,80 @@ func (v *VulkanDevice) Features(features uint64) *VulkanDevice {
 	return v
 }
 
+// ThemeCatalog is the themes installed on the desktop: the built-in ones, those generated from
+// the wallpaper, and the system's and the person's, Rikka's own first.
+//
+// It holds one reference to a native object usable from any goroutine; the garbage collector
+// drops the reference.
+type ThemeCatalog struct {
+	raw     *C.rk_theme_catalog
+	cleanup runtime.Cleanup
+}
+
+func newThemeCatalog(raw *C.rk_theme_catalog) *ThemeCatalog {
+	if raw == nil {
+		panic(unmade("ThemeCatalog"))
+	}
+	value := &ThemeCatalog{raw: raw}
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_theme_catalog) { C.rk_theme_catalog_unref(raw) }, raw)
+	return value
+}
+
+func (x *ThemeCatalog) handle() *C.rk_theme_catalog {
+	if x == nil || x.raw == nil {
+		panic(consumed("ThemeCatalog"))
+	}
+	return x.raw
+}
+
+// NewThemeCatalog reads the installed themes.
+func NewThemeCatalog() *ThemeCatalog {
+	return newThemeCatalog(C.rk_theme_catalog_new())
+}
+
+// Count how many themes there are.
+func (t *ThemeCatalog) Count() int {
+	result := int(C.rk_theme_catalog_count(t.handle()))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// Slug returns the name that identifies a theme in [Embedding.SetTheme].
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) Slug(index int) string {
+	result := takeString(C.rk_theme_catalog_slug(t.handle(), C.size_t(index)))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// Name returns a theme's display name.
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) Name(index int) string {
+	result := takeString(C.rk_theme_catalog_name(t.handle(), C.size_t(index)))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// IsDark reports whether a theme is dark.
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) IsDark(index int) bool {
+	result := bool(C.rk_theme_catalog_is_dark(t.handle(), C.size_t(index)))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// Color returns a colour of a theme over a solid background, for previewing it.
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) Color(index int, role ColorRole) Color {
+	result := goColor(C.rk_theme_catalog_color(t.handle(), C.size_t(index), C.rk_color_role(role)))
+	runtime.KeepAlive(t)
+	return result
+}
+
 // Embedding describes draws embedded surfaces with a program's Vulkan device. Create it, its
 // surfaces and their renders on the thread that submits to the device's queue.
 //
@@ -2248,6 +2366,21 @@ func (e *Embedding) Open(surface *EmbeddedSurfaceBuilder) *EmbeddedSurface {
 	return result
 }
 
+// SetTheme draws every surface in another theme than the desktop's.
+//
+//   - slug: A [ThemeCatalog.Slug]; empty follows the desktop's theme. An unknown slug draws the
+//     default theme.
+func (e *Embedding) SetTheme(slug string) {
+	C.rk_embedding_set_theme(e.handle(), cStr(slug))
+	runtime.KeepAlive(e)
+}
+
+// SetBackground draws every surface over another background than the desktop's.
+func (e *Embedding) SetBackground(background ThemeBackground) {
+	C.rk_embedding_set_background(e.handle(), C.rk_theme_background(background))
+	runtime.KeepAlive(e)
+}
+
 // EmbeddedSurfaceBuilder is the description of an embedded surface.
 //
 // It owns its native object until it is handed over; the garbage collector frees an object
@@ -2280,8 +2413,9 @@ func (x *EmbeddedSurfaceBuilder) take() *C.rk_embedded_surface_builder {
 	return raw
 }
 
-// NewEmbeddedSurfaceBuilder describes a surface whose content view declares. It follows the
-// desktop's theme and language.
+// NewEmbeddedSurfaceBuilder describes a surface whose content view declares. It wears the
+// embedding's theme and the desktop's language, and its transitions play from its first view
+// on.
 //
 //   - view: Declares the surface's content.
 func NewEmbeddedSurfaceBuilder(view func(view *View)) *EmbeddedSurfaceBuilder {
@@ -2318,6 +2452,21 @@ func (e *EmbeddedSurfaceBuilder) OnCloseRequest(callback func(context *Context))
 	}
 	userdata := retain(callback)
 	C.rk_embedded_surface_builder_on_close_request(e.handle(), C.rk_action_fn(C.rikkaActionFn0), userdata, C.rk_destroy_fn(C.rikkaDestroy))
+	runtime.KeepAlive(e)
+	return e
+}
+
+// OnLeft runs once a leaving surface's exit transitions have played out, so the program can
+// drop it; see [EmbeddedSurface.Leave].
+//
+//   - callback: Reacts to an event. The window's view runs again afterwards unless
+//     [Context.SkipView] is called.
+func (e *EmbeddedSurfaceBuilder) OnLeft(callback func(context *Context)) *EmbeddedSurfaceBuilder {
+	if callback == nil {
+		panic("rikka: callback is nil")
+	}
+	userdata := retain(callback)
+	C.rk_embedded_surface_builder_on_left(e.handle(), C.rk_action_fn(C.rikkaActionFn0), userdata, C.rk_destroy_fn(C.rikkaDestroy))
 	runtime.KeepAlive(e)
 	return e
 }
@@ -2493,6 +2642,20 @@ func (e *EmbeddedSurface) Caret() Rect {
 	result := goRect(C.rk_embedded_surface_caret(e.handle()))
 	runtime.KeepAlive(e)
 	return result
+}
+
+// Leave plays the surface's exit: its view sees [View.IsLeaving] and drops what leaves, whose
+// transitions play out; then [EmbeddedSurfaceBuilder.OnLeft] runs.
+func (e *EmbeddedSurface) Leave() {
+	C.rk_embedded_surface_leave(e.handle())
+	runtime.KeepAlive(e)
+}
+
+// Rejoin brings a leaving surface back: its view declares everything again, and what was
+// leaving turns back from where it is.
+func (e *EmbeddedSurface) Rejoin() {
+	C.rk_embedded_surface_rejoin(e.handle())
+	runtime.KeepAlive(e)
 }
 
 // Context is the context of a callback reacting to the person or the system.
@@ -2673,6 +2836,12 @@ func (v *View) PaletteColor(role ColorRole) Color {
 // IsDark reports whether the view is drawn in a dark theme.
 func (v *View) IsDark() bool {
 	return bool(C.rk_view_is_dark(v.handle()))
+}
+
+// IsLeaving reports whether the view's embedded surface is leaving through
+// [EmbeddedSurface.Leave]: declare only what stays, so the rest plays its exit transitions.
+func (v *View) IsLeaving() bool {
+	return bool(C.rk_view_is_leaving(v.handle()))
 }
 
 // Column declares a column: children stack top to bottom.
@@ -3105,6 +3274,15 @@ func (v *View) VerticalDivider() Element {
 	return v.declared()
 }
 
+// Scrim declares a backdrop over its parent, the whole view at the top level, that blurs what
+// lies beneath without darkening it and swallows presses, for modal content declared after it;
+// [Element.OnDismiss] reacts to a press on it. It fades in and out unless given another
+// [Element.Transition].
+func (v *View) Scrim() Element {
+	C.rk_scrim(v.handle())
+	return v.declared()
+}
+
 // Button declares a labelled button.
 func (v *View) Button(label string) Element {
 	C.rk_button(v.handle(), cStr(label))
@@ -3397,6 +3575,13 @@ func (e Element) Key(key string) Element {
 // Transition animates the current element in and out as it is declared and dropped.
 func (e Element) Transition(style TransitionStyle) Element {
 	C.rk_transition(e.current(), C.rk_transition_style(style))
+	return e
+}
+
+// Glide carries the current element smoothly to wherever layout moves it, as when its siblings
+// come and go, instead of jumping there.
+func (e Element) Glide() Element {
+	C.rk_glide(e.current())
 	return e
 }
 
@@ -3885,8 +4070,8 @@ func (e Element) OnBlur(callback func(context *Context)) Element {
 	return e
 }
 
-// OnDismiss reacts to the person dismissing the current sheet, popover, popup menu or banner;
-// stop declaring it to close it.
+// OnDismiss reacts to the person dismissing the current sheet, popover, popup menu, scrim or
+// banner; stop declaring it to close it.
 //
 //   - callback: Reacts to an event. The window's view runs again afterwards unless
 //     [Context.SkipView] is called.

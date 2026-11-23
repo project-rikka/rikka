@@ -59,11 +59,11 @@ pub(crate) enum LoopEvent {
 }
 
 #[cfg(unix)]
-impl From<SessionChange> for LoopEvent {
-    fn from(change: SessionChange) -> Self {
+impl LoopEvent {
+    pub(crate) fn from_session(change: SessionChange) -> Option<Self> {
         match change {
-            SessionChange::Theme(theme) => LoopEvent::Theme(theme),
-            SessionChange::Language => LoopEvent::Language,
+            SessionChange::Appearance { theme, .. } => theme.map(LoopEvent::Theme),
+            SessionChange::Language => Some(LoopEvent::Language),
         }
     }
 }

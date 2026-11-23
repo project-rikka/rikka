@@ -113,6 +113,10 @@ pub(crate) fn key(view: &mut View, key: &str) {
     view.current_element().common.key = Some(key_of(key));
 }
 
+pub(crate) fn glide(view: &mut View) {
+    view.current_element().common.glides = true;
+}
+
 pub(crate) fn transition(view: &mut View, style: ffi::TransitionStyle) {
     let chosen: Transition = match style {
         ffi::TransitionStyle::Fade => fade(),

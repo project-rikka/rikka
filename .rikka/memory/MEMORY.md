@@ -979,6 +979,10 @@
 
 - [Rikka Client mod framework (events, mods, settings, profiles)](minecraft-client-framework.md) — sh.rikka.client packages: EventBus, ClientHooks, Mod/HudMod/ModManager, rikka-ui layers and screens, settings, profiles.
 
+## minecraft/src/main/java/sh/rikka/client/menu
+
+- [Rikka Client ModMenu and HUD editor](minecraft-menu.md) — sh.rikka.client.menu (OneConfig-style ModMenu over a scrim) and sh.rikka.client.hud (drag/snap HUD editor).
+
 ## nix/dist
 
 - [Binary distribution (project-rikka/packages, nix/dist, release workflow)](distribution.md) — How Rikka ships prebuilt: portable builds, xtask release, the generated packages flake and its NixOS module.

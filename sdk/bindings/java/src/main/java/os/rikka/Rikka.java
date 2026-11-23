@@ -66,6 +66,31 @@ public final class Rikka {
      */
     public static final float SPACE_WIDE = 32.0f;
 
+    /**
+     * Corner token: windows, 16 px.
+     */
+    public static final float CORNER_WINDOW = 16.0f;
+
+    /**
+     * Corner token: cards, menus, popovers and sheets, 14 px.
+     */
+    public static final float CORNER_PANEL = 14.0f;
+
+    /**
+     * Corner token: controls, 10 px.
+     */
+    public static final float CORNER_CONTROL = 10.0f;
+
+    /**
+     * Corner token: rows, chips and thumbnails, 8 px.
+     */
+    public static final float CORNER_ITEM = 8.0f;
+
+    /**
+     * Corner token: small details, 4 px.
+     */
+    public static final float CORNER_DETAIL = 4.0f;
+
     private Rikka() {}
 
     /**

@@ -9,6 +9,7 @@ pub(crate) mod dialog;
 pub(crate) mod dismissible;
 pub(crate) mod drop_zone;
 pub(crate) mod flex;
+pub(crate) mod gliding;
 pub(crate) mod lazy;
 pub(crate) mod live;
 pub(crate) mod page;

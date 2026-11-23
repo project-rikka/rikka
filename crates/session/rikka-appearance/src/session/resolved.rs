@@ -29,6 +29,11 @@ impl ResolvedAppearance {
         self.appearance.theme()
     }
 
+    #[must_use]
+    pub fn appearance(&self) -> &Appearance {
+        &self.appearance
+    }
+
     pub fn refresh(&mut self, settings: &Settings) -> Option<Theme> {
         self.appearance.update(settings.store())
     }

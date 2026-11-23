@@ -1,3 +1,4 @@
+use rikka_theme::Palette;
 use rikka_ui::{Align, Color, Inset, Justify, Length, MaterialSymbol, TextColor, TextRole, Weight};
 
 use crate::abi::violation;
@@ -74,6 +75,28 @@ pub(crate) fn raw_color(color: Color) -> ffi::Color {
         b: color.b,
         a: color.a,
     }
+}
+
+pub(crate) fn palette_color(palette: &Palette, role: ffi::ColorRole) -> ffi::Color {
+    raw_color(match role {
+        ffi::ColorRole::Background => palette.background,
+        ffi::ColorRole::Surface => palette.surface,
+        ffi::ColorRole::SurfaceVariant => palette.surface_variant,
+        ffi::ColorRole::Text => palette.text,
+        ffi::ColorRole::TextMuted => palette.text_muted,
+        ffi::ColorRole::Accent => palette.accent,
+        ffi::ColorRole::OnAccent => palette.on_accent,
+        ffi::ColorRole::Selection => palette.selection,
+        ffi::ColorRole::OnSelection => palette.on_selection,
+        ffi::ColorRole::Danger => palette.danger,
+        ffi::ColorRole::OnDanger => palette.on_danger,
+        ffi::ColorRole::Warning => palette.warning,
+        ffi::ColorRole::OnWarning => palette.on_warning,
+        ffi::ColorRole::Success => palette.success,
+        ffi::ColorRole::OnSuccess => palette.on_success,
+        ffi::ColorRole::Outline => palette.outline,
+        ffi::ColorRole::Overlay => palette.overlay,
+    })
 }
 
 pub(crate) fn align(align: ffi::Align) -> Align {

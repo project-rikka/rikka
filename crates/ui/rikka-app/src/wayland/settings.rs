@@ -9,7 +9,10 @@ use rikka_settings::{Schema, Store};
 use rikka_theme::Theme;
 
 pub(crate) enum SessionChange {
-    Theme(Box<Theme>),
+    Appearance {
+        appearance: Box<Appearance>,
+        theme: Option<Box<Theme>>,
+    },
     Language,
 }
 
@@ -53,8 +56,8 @@ fn watch(deliver: &impl Fn(SessionChange) -> bool, appearance: Option<Appearance
         .then(|| LocaleWatch::open(connection.client()))
         .flatten();
 
-    if let Some(theme) = theme_watch.as_mut().and_then(ThemeWatch::current_theme)
-        && !deliver(SessionChange::Theme(Box::new(theme)))
+    if let Some(change) = theme_watch.as_mut().and_then(ThemeWatch::current)
+        && !deliver(change)
     {
         return;
     }
@@ -70,8 +73,8 @@ fn watch(deliver: &impl Fn(SessionChange) -> bool, appearance: Option<Appearance
         let language = locale_watch
             .as_mut()
             .is_some_and(|watch| watch.handle(&notice));
-        if let Some(theme) = theme
-            && !deliver(SessionChange::Theme(Box::new(theme)))
+        if let Some(change) = theme
+            && !deliver(change)
         {
             return;
         }
@@ -94,12 +97,27 @@ impl ThemeWatch {
         })
     }
 
-    fn current_theme(&mut self) -> Option<rikka_theme::Theme> {
-        self.resolved.refresh(&self.settings)
+    fn current(&mut self) -> Option<SessionChange> {
+        let before = self.resolved.appearance().clone();
+        let theme = self.resolved.refresh(&self.settings);
+        self.changed(theme, &before)
     }
 
-    fn handle(&mut self, notice: &Delivery) -> Option<rikka_theme::Theme> {
-        self.resolved.apply_delivery(&mut self.settings, notice)
+    fn handle(&mut self, notice: &Delivery) -> Option<SessionChange> {
+        let before = self.resolved.appearance().clone();
+        let theme = self.resolved.apply_delivery(&mut self.settings, notice);
+        self.changed(theme, &before)
+    }
+
+    fn changed(&self, theme: Option<Theme>, before: &Appearance) -> Option<SessionChange> {
+        let appearance = self.resolved.appearance();
+        if theme.is_none() && appearance == before {
+            return None;
+        }
+        Some(SessionChange::Appearance {
+            appearance: Box::new(appearance.clone()),
+            theme: theme.map(Box::new),
+        })
     }
 }
 

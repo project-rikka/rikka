@@ -24,6 +24,7 @@ pub use blocks::dialog::{Dialog, dialog};
 pub use blocks::dismissible::{Dismissible, dismissible};
 pub use blocks::drop_zone::{DropZone, drop_zone};
 pub use blocks::flex::{Flex, column_of, grid_of, row_of};
+pub use blocks::gliding::{Gliding, gliding};
 pub use blocks::lazy::{Lazy, lazy};
 pub use blocks::live::{Live, live, live_observed};
 pub use blocks::page::{Field, card, field, page, section};

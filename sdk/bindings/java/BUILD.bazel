@@ -50,6 +50,8 @@ TYPES = [
     "TextDocument",
     "TextRole",
     "TextTone",
+    "ThemeBackground",
+    "ThemeCatalog",
     "Trampolines",
     "TransitionStyle",
     "UnsavedAnswer",

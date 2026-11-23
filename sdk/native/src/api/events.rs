@@ -125,7 +125,8 @@ pub(crate) fn on_dismiss(view: &mut View, callback: Callback<ffi::ActionFn>) {
     match &mut node.kind {
         Kind::Sheet { dismiss, .. }
         | Kind::Popover { dismiss, .. }
-        | Kind::PopupMenu { dismiss } => *dismiss = Some(handler),
+        | Kind::PopupMenu { dismiss }
+        | Kind::Scrim { dismiss } => *dismiss = Some(handler),
         Kind::Banner(banner) => {
             banner.edit(move |banner| banner.on_dismiss(command_label(Command::Close), handler));
         }

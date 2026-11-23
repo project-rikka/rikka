@@ -75,6 +75,26 @@ extern "C" {
  * Spacing token: 32 px.
  */
 #define RK_SPACE_WIDE 32.0f
+/**
+ * Corner token: windows, 16 px.
+ */
+#define RK_CORNER_WINDOW 16.0f
+/**
+ * Corner token: cards, menus, popovers and sheets, 14 px.
+ */
+#define RK_CORNER_PANEL 14.0f
+/**
+ * Corner token: controls, 10 px.
+ */
+#define RK_CORNER_CONTROL 10.0f
+/**
+ * Corner token: rows, chips and thumbnails, 8 px.
+ */
+#define RK_CORNER_ITEM 8.0f
+/**
+ * Corner token: small details, 4 px.
+ */
+#define RK_CORNER_DETAIL 4.0f
 
 /**
  * A borrowed UTF-8 string: `length` bytes at `data`, not necessarily NUL-terminated.
@@ -372,6 +392,29 @@ typedef enum rk_color_role {
     RK_COLOR_ROLE_OVERLAY = 16,
     RK_COLOR_ROLE_FORCE32 = 0x7FFFFFFF
 } rk_color_role;
+
+/**
+ * What lies behind a theme's surfaces.
+ */
+typedef enum rk_theme_background {
+    /**
+     * The desktop's choice.
+     */
+    RK_THEME_BACKGROUND_DESKTOP = 0,
+    /**
+     * Opaque surfaces.
+     */
+    RK_THEME_BACKGROUND_SOLID = 1,
+    /**
+     * Translucent surfaces over a blur of what lies beneath.
+     */
+    RK_THEME_BACKGROUND_GLASS = 2,
+    /**
+     * Glass whose edges also refract what lies beneath.
+     */
+    RK_THEME_BACKGROUND_LIQUID = 3,
+    RK_THEME_BACKGROUND_FORCE32 = 0x7FFFFFFF
+} rk_theme_background;
 
 /**
  * Where an anchored element sits relative to its target.
@@ -703,6 +746,15 @@ typedef struct rk_text_document rk_text_document;
  * was.
  */
 typedef struct rk_vulkan_device rk_vulkan_device;
+
+/**
+ * The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
+ * and the system's and the person's, Rikka's own first.
+ *
+ * Reference-counted with rk_theme_catalog_ref() and rk_theme_catalog_unref(); usable from any
+ * thread.
+ */
+typedef struct rk_theme_catalog rk_theme_catalog;
 
 /**
  * Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
@@ -1657,6 +1709,64 @@ RK_API void rk_vulkan_device_set_features(rk_vulkan_device *device, uint64_t fea
 RK_API void rk_vulkan_device_free(rk_vulkan_device *device);
 
 /**
+ * Reads the installed themes.
+ *
+ * @return The caller owns the result; release it with rk_theme_catalog_unref().
+ */
+RK_API RK_NODISCARD rk_theme_catalog *rk_theme_catalog_new(void);
+
+/**
+ * How many themes there are.
+ */
+RK_API size_t rk_theme_catalog_count(rk_theme_catalog *catalog);
+
+/**
+ * The name that identifies a theme in rk_embedding_set_theme().
+ *
+ * @param index Below rk_theme_catalog_count().
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_theme_catalog_slug(rk_theme_catalog *catalog, size_t index);
+
+/**
+ * A theme's display name.
+ *
+ * @param index Below rk_theme_catalog_count().
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_theme_catalog_name(rk_theme_catalog *catalog, size_t index);
+
+/**
+ * Whether a theme is dark.
+ *
+ * @param index Below rk_theme_catalog_count().
+ */
+RK_API bool rk_theme_catalog_is_dark(rk_theme_catalog *catalog, size_t index);
+
+/**
+ * A colour of a theme over a solid background, for previewing it.
+ *
+ * @param index Below rk_theme_catalog_count().
+ */
+RK_API rk_color rk_theme_catalog_color(rk_theme_catalog *catalog, size_t index, rk_color_role role);
+
+/**
+ * Adds a reference to a theme catalog. Passing NULL returns NULL.
+ *
+ * Thread-safe.
+ *
+ * @return `catalog` itself.
+ */
+RK_API rk_theme_catalog *rk_theme_catalog_ref(rk_theme_catalog *catalog);
+
+/**
+ * Drops a reference to a theme catalog; the last one destroys it. Passing NULL does nothing.
+ *
+ * Thread-safe.
+ */
+RK_API void rk_theme_catalog_unref(rk_theme_catalog *catalog);
+
+/**
  * Prepares to draw with a device. Check rk_embedding_error_message() before opening surfaces.
  *
  * @param device Ownership passes to the SDK.
@@ -1680,6 +1790,19 @@ RK_API RK_NODISCARD rk_string rk_embedding_error_message(rk_embedding *embedding
 RK_API RK_NODISCARD rk_embedded_surface *rk_embedding_open(rk_embedding *embedding, rk_embedded_surface_builder *surface);
 
 /**
+ * Draws every surface in another theme than the desktop's.
+ *
+ * @param slug A rk_theme_catalog_slug(); empty follows the desktop's theme. An unknown slug
+ * draws the default theme.
+ */
+RK_API void rk_embedding_set_theme(rk_embedding *embedding, rk_str slug);
+
+/**
+ * Draws every surface over another background than the desktop's.
+ */
+RK_API void rk_embedding_set_background(rk_embedding *embedding, rk_theme_background background);
+
+/**
  * Adds a reference to an embedding. Passing NULL returns NULL.
  *
  * @return `embedding` itself.
@@ -1692,7 +1815,8 @@ RK_API rk_embedding *rk_embedding_ref(rk_embedding *embedding);
 RK_API void rk_embedding_unref(rk_embedding *embedding);
 
 /**
- * Describes a surface whose content view declares. It follows the desktop's theme and language.
+ * Describes a surface whose content view declares. It wears the embedding's theme and the
+ * desktop's language, and its transitions play from its first view on.
  *
  * @param view Declares the surface's content.
  * @param userdata Passed to `view`.
@@ -1722,6 +1846,17 @@ RK_API void rk_embedded_surface_builder_on_start(rk_embedded_surface_builder *bu
  * @param destroy Called with `userdata` once the SDK no longer needs it; may be NULL.
  */
 RK_API void rk_embedded_surface_builder_on_close_request(rk_embedded_surface_builder *builder, rk_action_fn callback, void *userdata, rk_destroy_fn destroy);
+
+/**
+ * Runs once a leaving surface's exit transitions have played out, so the program can drop it;
+ * see rk_embedded_surface_leave().
+ *
+ * @param callback Reacts to an event. The window's view runs again afterwards unless
+ * rk_context_skip_view() is called.
+ * @param userdata Passed to `callback`.
+ * @param destroy Called with `userdata` once the SDK no longer needs it; may be NULL.
+ */
+RK_API void rk_embedded_surface_builder_on_left(rk_embedded_surface_builder *builder, rk_action_fn callback, void *userdata, rk_destroy_fn destroy);
 
 /**
  * Destroys an embedded surface builder that was never handed over. Passing NULL does nothing.
@@ -1838,6 +1973,18 @@ RK_API rk_cursor_shape rk_embedded_surface_cursor(rk_embedded_surface *surface);
  * candidates; 0 by 0 at the origin while no text has focus.
  */
 RK_API rk_rect rk_embedded_surface_caret(rk_embedded_surface *surface);
+
+/**
+ * Plays the surface's exit: its view sees rk_view_is_leaving() and drops what leaves, whose
+ * transitions play out; then rk_embedded_surface_builder_on_left() runs.
+ */
+RK_API void rk_embedded_surface_leave(rk_embedded_surface *surface);
+
+/**
+ * Brings a leaving surface back: its view declares everything again, and what was leaving turns
+ * back from where it is.
+ */
+RK_API void rk_embedded_surface_rejoin(rk_embedded_surface *surface);
 
 /**
  * Adds a reference to an embedded surface. Passing NULL returns NULL.
@@ -1967,6 +2114,12 @@ RK_API rk_color rk_view_palette_color(rk_view *view, rk_color_role role);
  * Whether the view is drawn in a dark theme.
  */
 RK_API bool rk_view_is_dark(rk_view *view);
+
+/**
+ * Whether the view's embedded surface is leaving through rk_embedded_surface_leave(): declare
+ * only what stays, so the rest plays its exit transitions.
+ */
+RK_API bool rk_view_is_leaving(rk_view *view);
 
 /**
  * A column: children stack top to bottom.
@@ -2270,6 +2423,14 @@ RK_API void rk_divider(rk_view *view);
 RK_API void rk_vertical_divider(rk_view *view);
 
 /**
+ * Declares a backdrop over its parent, the whole view at the top level, that blurs what lies
+ * beneath without darkening it and swallows presses, for modal content declared after it;
+ * rk_on_dismiss() reacts to a press on it. It fades in and out unless given another
+ * rk_transition().
+ */
+RK_API void rk_scrim(rk_view *view);
+
+/**
  * Declares a labelled button.
  */
 RK_API void rk_button(rk_view *view, rk_str label);
@@ -2499,6 +2660,12 @@ RK_API void rk_key(rk_view *view, rk_str key);
  * Animates the current element in and out as it is declared and dropped.
  */
 RK_API void rk_transition(rk_view *view, rk_transition_style style);
+
+/**
+ * Carries the current element smoothly to wherever layout moves it, as when its siblings come
+ * and go, instead of jumping there.
+ */
+RK_API void rk_glide(rk_view *view);
 
 /**
  * Places the current popover or popup menu against the element with a key.
@@ -2896,7 +3063,7 @@ RK_API void rk_on_submit(rk_view *view, rk_action_fn callback, void *userdata, r
 RK_API void rk_on_blur(rk_view *view, rk_action_fn callback, void *userdata, rk_destroy_fn destroy);
 
 /**
- * Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
+ * Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner; stop
  * declaring it to close it.
  *
  * @param callback Reacts to an event. The window's view runs again afterwards unless

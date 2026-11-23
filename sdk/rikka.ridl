@@ -23,6 +23,16 @@ const space_roomy: f32 = 16.0;
 const space_loose: f32 = 24.0;
 /// Spacing token: 32 px.
 const space_wide: f32 = 32.0;
+/// Corner token: windows, 16 px.
+const corner_window: f32 = 16.0;
+/// Corner token: cards, menus, popovers and sheets, 14 px.
+const corner_panel: f32 = 14.0;
+/// Corner token: controls, 10 px.
+const corner_control: f32 = 10.0;
+/// Corner token: rows, chips and thumbnails, 8 px.
+const corner_item: f32 = 8.0;
+/// Corner token: small details, 4 px.
+const corner_detail: f32 = 4.0;
 
 /// A straight-alpha sRGB colour with components from 0 to 1.
 struct color {
@@ -171,6 +181,18 @@ enum color_role {
     on_success,
     outline,
     overlay,
+}
+
+/// What lies behind a theme's surfaces.
+enum theme_background {
+    /// The desktop's choice.
+    desktop,
+    /// Opaque surfaces.
+    solid,
+    /// Translucent surfaces over a blur of what lies beneath.
+    glass,
+    /// Glass whose edges also refract what lies beneath.
+    liquid,
 }
 
 /// Where an anchored element sits relative to its target.
@@ -853,6 +875,32 @@ owned class vulkan_device {
     fn set_features(features: u64);
 }
 
+/// The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
+/// and the system's and the person's, Rikka's own first.
+shared class theme_catalog {
+    /// Reads the installed themes.
+    constructor();
+
+    /// How many themes there are.
+    readonly property count: usize;
+
+    /// The name that identifies a theme in [embedding.set_theme].
+    /// @param index Below [theme_catalog.count].
+    fn slug(index: usize) -> string;
+
+    /// A theme's display name.
+    /// @param index Below [theme_catalog.count].
+    fn name(index: usize) -> string;
+
+    /// Whether a theme is dark.
+    /// @param index Below [theme_catalog.count].
+    fn is_dark(index: usize) -> bool;
+
+    /// A colour of a theme over a solid background, for previewing it.
+    /// @param index Below [theme_catalog.count].
+    fn color(index: usize, role: color_role) -> color;
+}
+
 /// Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
 /// renders on the thread that submits to the device's queue.
 local class embedding {
@@ -864,13 +912,21 @@ local class embedding {
 
     /// Makes a surface that this embedding draws. The embedding must be able to draw.
     fn open(surface: owned embedded_surface_builder) -> embedded_surface;
+
+    /// Draws every surface in another theme than the desktop's.
+    /// @param slug A [theme_catalog.slug]; empty follows the desktop's theme. An unknown slug
+    /// draws the default theme.
+    fn set_theme(slug: string);
+
+    /// Draws every surface over another background than the desktop's.
+    fn set_background(background: theme_background);
 }
 
 /// The description of an embedded surface.
 @builder
 owned class embedded_surface_builder {
-    /// Describes a surface whose content view declares. It follows the desktop's theme and
-    /// language.
+    /// Describes a surface whose content view declares. It wears the embedding's theme and the
+    /// desktop's language, and its transitions play from its first view on.
     /// @param view Declares the surface's content.
     constructor(view: view_fn);
 
@@ -881,6 +937,10 @@ owned class embedded_surface_builder {
     /// [window_request.ask_to_close] or the close command; the program decides whether to drop the
     /// surface.
     fn on_close_request(callback: action_fn);
+
+    /// Runs once a leaving surface's exit transitions have played out, so the program can drop
+    /// it; see [embedded_surface.leave].
+    fn on_left(callback: action_fn);
 }
 
 /// A view drawn over a program's own frames: a heads-up display or a menu inside a game, for
@@ -954,6 +1014,14 @@ local class embedded_surface {
     /// Where the caret of the focused text field or editor is, for placing an input method's
     /// candidates; 0 by 0 at the origin while no text has focus.
     readonly property caret: rect;
+
+    /// Plays the surface's exit: its view sees [view.is_leaving] and drops what leaves, whose
+    /// transitions play out; then [embedded_surface_builder.on_left] runs.
+    fn leave();
+
+    /// Brings a leaving surface back: its view declares everything again, and what was leaving
+    /// turns back from where it is.
+    fn rejoin();
 }
 
 /// The context of a callback reacting to the person or the system.
@@ -1014,6 +1082,10 @@ scoped class view {
 
     /// Whether the view is drawn in a dark theme.
     readonly property is_dark: bool;
+
+    /// Whether the view's embedded surface is leaving through [embedded_surface.leave]: declare
+    /// only what stays, so the rest plays its exit transitions.
+    readonly property is_leaving: bool;
 
     /// A column: children stack top to bottom.
     container column();
@@ -1167,6 +1239,12 @@ scoped class view {
     /// Declares a vertical hairline.
     element vertical_divider();
 
+    /// Declares a backdrop over its parent, the whole view at the top level, that blurs what lies
+    /// beneath without darkening it and swallows presses, for modal content declared after it;
+    /// [view.on_dismiss] reacts to a press on it. It fades in and out unless given another
+    /// [view.transition].
+    element scrim();
+
     /// Declares a labelled button.
     element button(label: string);
 
@@ -1298,6 +1376,10 @@ scoped class view {
 
     /// Animates the current element in and out as it is declared and dropped.
     modifier transition(style: transition_style);
+
+    /// Carries the current element smoothly to wherever layout moves it, as when its siblings
+    /// come and go, instead of jumping there.
+    modifier glide();
 
     /// Places the current popover or popup menu against the element with a key.
     /// @param target The target's [view.key].
@@ -1517,8 +1599,8 @@ scoped class view {
     /// Reacts to focus leaving the current text field or editor.
     modifier on_blur(callback: action_fn);
 
-    /// Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
-    /// declaring it to close it.
+    /// Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner;
+    /// stop declaring it to close it.
     modifier on_dismiss(callback: action_fn);
 
     /// Reacts to a tab's close button in the current tabs.

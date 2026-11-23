@@ -367,6 +367,30 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_vulkan_device_free")]
     internal static partial void rk_vulkan_device_free(nint device);
 
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_new")]
+    internal static partial nint rk_theme_catalog_new();
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_count")]
+    internal static partial nint rk_theme_catalog_count(nint catalog);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_slug")]
+    internal static partial OwnedString rk_theme_catalog_slug(nint catalog, nint index);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_name")]
+    internal static partial OwnedString rk_theme_catalog_name(nint catalog, nint index);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_is_dark")]
+    internal static partial byte rk_theme_catalog_is_dark(nint catalog, nint index);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_color")]
+    internal static partial Native.Color rk_theme_catalog_color(nint catalog, nint index, uint role);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_ref")]
+    internal static partial nint rk_theme_catalog_ref(nint catalog);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_unref")]
+    internal static partial void rk_theme_catalog_unref(nint catalog);
+
     [LibraryImport(Library, EntryPoint = "rk_embedding_new")]
     internal static partial nint rk_embedding_new(nint device);
 
@@ -375,6 +399,12 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_embedding_open")]
     internal static partial nint rk_embedding_open(nint embedding, nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_set_theme")]
+    internal static partial void rk_embedding_set_theme(nint embedding, Str slug);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_set_background")]
+    internal static partial void rk_embedding_set_background(nint embedding, uint background);
 
     [LibraryImport(Library, EntryPoint = "rk_embedding_ref")]
     internal static partial nint rk_embedding_ref(nint embedding);
@@ -390,6 +420,9 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_on_close_request")]
     internal static partial void rk_embedded_surface_builder_on_close_request(nint builder, delegate* unmanaged[Cdecl]<nint, nint, void> callback, nint userdata, delegate* unmanaged[Cdecl]<nint, void> destroy);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_on_left")]
+    internal static partial void rk_embedded_surface_builder_on_left(nint builder, delegate* unmanaged[Cdecl]<nint, nint, void> callback, nint userdata, delegate* unmanaged[Cdecl]<nint, void> destroy);
 
     [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_free")]
     internal static partial void rk_embedded_surface_builder_free(nint builder);
@@ -438,6 +471,12 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_embedded_surface_caret")]
     internal static partial Native.Rect rk_embedded_surface_caret(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_leave")]
+    internal static partial void rk_embedded_surface_leave(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_rejoin")]
+    internal static partial void rk_embedded_surface_rejoin(nint surface);
 
     [LibraryImport(Library, EntryPoint = "rk_embedded_surface_ref")]
     internal static partial nint rk_embedded_surface_ref(nint surface);
@@ -489,6 +528,9 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_view_is_dark")]
     internal static partial byte rk_view_is_dark(nint view);
+
+    [LibraryImport(Library, EntryPoint = "rk_view_is_leaving")]
+    internal static partial byte rk_view_is_leaving(nint view);
 
     [LibraryImport(Library, EntryPoint = "rk_column_begin")]
     internal static partial void rk_column_begin(nint view);
@@ -622,6 +664,9 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_vertical_divider")]
     internal static partial void rk_vertical_divider(nint view);
 
+    [LibraryImport(Library, EntryPoint = "rk_scrim")]
+    internal static partial void rk_scrim(nint view);
+
     [LibraryImport(Library, EntryPoint = "rk_button")]
     internal static partial void rk_button(nint view, Str label);
 
@@ -735,6 +780,9 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_transition")]
     internal static partial void rk_transition(nint view, uint style);
+
+    [LibraryImport(Library, EntryPoint = "rk_glide")]
+    internal static partial void rk_glide(nint view);
 
     [LibraryImport(Library, EntryPoint = "rk_anchor")]
     internal static partial void rk_anchor(nint view, Str target, uint edge, float x, float y);

@@ -19,9 +19,9 @@ public final class WeatherDisplayMod extends SimpleHudMod {
 	}
 
 	@Override
-	protected String icon() {
+	protected String shownIcon() {
 		@Nullable Weather weather = current();
-		return weather == null ? super.icon() : weather.icon();
+		return weather == null ? icon() : weather.icon();
 	}
 
 	private static @Nullable Weather current() {

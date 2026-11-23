@@ -43,7 +43,9 @@ pub(crate) fn run(launch: Launch) -> Result<()> {
     } = launch;
     let following = proxy.clone();
     settings::follow(
-        move |change| following.send_event(LoopEvent::from(change)).is_ok(),
+        move |change| {
+            LoopEvent::from_session(change).is_none_or(|event| following.send_event(event).is_ok())
+        },
         appearance,
         language,
     );

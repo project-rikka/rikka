@@ -1,7 +1,6 @@
 package sh.rikka.client.mod;
 
 import net.minecraft.client.resources.language.I18n;
-import net.minecraft.util.ARGB;
 import org.jspecify.annotations.Nullable;
 import os.rikka.Align;
 import os.rikka.Color;
@@ -12,6 +11,7 @@ import sh.rikka.client.setting.Anchor;
 import sh.rikka.client.setting.BoolSetting;
 import sh.rikka.client.setting.ColorSetting;
 import sh.rikka.client.setting.ScreenPosition;
+import sh.rikka.client.ui.style.Colors;
 
 public abstract class SimpleHudMod extends HudMod {
 	public static final String UNAVAILABLE = "—";
@@ -26,7 +26,6 @@ public abstract class SimpleHudMod extends HudMod {
 	private static final int DEFAULT_COLOR = 0xFFFFFFFF;
 	private static final Color BACKDROP = new Color(0.0F, 0.0F, 0.0F, 0.4F);
 
-	private final String icon;
 	private final int maxCharacters;
 	private final BoolSetting showIcon;
 	private final BoolSetting showBackground;
@@ -35,8 +34,7 @@ public abstract class SimpleHudMod extends HudMod {
 
 	@SuppressWarnings("this-escape")
 	protected SimpleHudMod(String id, ScreenPosition defaultPosition, String icon, int maxCharacters) {
-		super(id, defaultPosition);
-		this.icon = icon;
+		super(id, defaultPosition, icon);
 		this.maxCharacters = maxCharacters;
 		this.showIcon = bool("icon", true);
 		this.showBackground = bool("background", true);
@@ -46,8 +44,8 @@ public abstract class SimpleHudMod extends HudMod {
 
 	protected abstract String label();
 
-	protected String icon() {
-		return this.icon;
+	protected String shownIcon() {
+		return icon();
 	}
 
 	protected final String translate(String suffix, Object... arguments) {
@@ -68,8 +66,8 @@ public abstract class SimpleHudMod extends HudMod {
 	@Override
 	protected final void view(View view) {
 		String text = label();
-		@Nullable String icon = this.showIcon.get() ? icon() : null;
-		Color tint = rikkaColor(this.customColor.get() ? this.color.argb() : DEFAULT_COLOR);
+		@Nullable String icon = this.showIcon.get() ? shownIcon() : null;
+		Color tint = Colors.of(this.customColor.get() ? this.color.argb() : DEFAULT_COLOR);
 		view.row(() -> panel(view, text, icon, tint))
 			.fillWidth()
 			.fillHeight()
@@ -103,9 +101,5 @@ public abstract class SimpleHudMod extends HudMod {
 			case TOP_CENTER, CENTER, BOTTOM_CENTER -> Justification.CENTER;
 			case TOP_RIGHT, CENTER_RIGHT, BOTTOM_RIGHT -> Justification.END;
 		};
-	}
-
-	private static Color rikkaColor(int argb) {
-		return new Color(ARGB.redFloat(argb), ARGB.greenFloat(argb), ARGB.blueFloat(argb), ARGB.alphaFloat(argb));
 	}
 }

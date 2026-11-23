@@ -13,10 +13,9 @@ import sh.rikka.client.mod.HudMod;
 import sh.rikka.client.mod.Mod;
 import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mod.ModToggleEvent;
+import sh.rikka.client.setting.Setting;
 
 final class HudLayer {
-	private static final float UNITS_PER_GUI_PIXEL = 13.0F / 9.0F;
-
 	private final ModManager mods;
 	private final EmbeddedSurface surface;
 	private @Nullable SurfaceGeometry geometry;
@@ -24,6 +23,13 @@ final class HudLayer {
 	HudLayer(Function<EmbeddedSurfaceBuilder, EmbeddedSurface> open, ModManager mods) {
 		this.mods = mods;
 		this.surface = open.apply(new EmbeddedSurfaceBuilder(this::declare));
+		for (Mod mod : mods.all()) {
+			if (mod instanceof HudMod) {
+				for (Setting<?, ?> setting : mod.settings().all()) {
+					setting.onChange(value -> invalidate());
+				}
+			}
+		}
 	}
 
 	boolean isShowing() {
@@ -36,7 +42,7 @@ final class HudLayer {
 	}
 
 	void draw(VulkanImage target, Window window) {
-		SurfaceGeometry geometry = SurfaceGeometry.ofGui(window, target, UNITS_PER_GUI_PIXEL);
+		SurfaceGeometry geometry = SurfaceGeometry.of(window, target, SurfaceScale.HUD);
 		if (!geometry.equals(this.geometry)) {
 			this.geometry = geometry;
 			this.surface.resize(geometry.width(), geometry.height(), geometry.scale());
@@ -44,15 +50,19 @@ final class HudLayer {
 		this.surface.render(target);
 	}
 
+	void invalidate() {
+		this.surface.getWindow().invalidate();
+	}
+
 	@EventHandler
 	private void onTick(TickEvent.Post event) {
-		this.surface.getWindow().invalidate();
+		invalidate();
 	}
 
 	@EventHandler
 	private void onToggle(ModToggleEvent event) {
 		if (event.mod() instanceof HudMod) {
-			this.surface.getWindow().invalidate();
+			invalidate();
 		}
 	}
 

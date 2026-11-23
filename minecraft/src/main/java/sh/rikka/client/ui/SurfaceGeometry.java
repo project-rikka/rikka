@@ -6,16 +6,21 @@ import org.lwjgl.sdl.SDLVideo;
 import os.rikka.VulkanImage;
 
 record SurfaceGeometry(float width, float height, float scale, float guiScale) {
-	static SurfaceGeometry of(Window window, VulkanImage target) {
+	private static final float HUD_UNITS_PER_GUI_PIXEL = 13.0F / 9.0F;
+
+	static SurfaceGeometry of(Window window, VulkanImage target, SurfaceScale scale) {
+		return switch (scale) {
+			case DISPLAY -> scaled(window, target, displayScale(window));
+			case HUD -> scaled(window, target, window.getGuiScale() / HUD_UNITS_PER_GUI_PIXEL);
+		};
+	}
+
+	private static float displayScale(Window window) {
 		float scale = SDLVideo.SDL_GetWindowDisplayScale(window.handle());
 		if (!(scale > 0.0F)) {
 			throw new IllegalStateException("failed to read the display scale: " + SDLError.SDL_GetError());
 		}
-		return scaled(window, target, scale);
-	}
-
-	static SurfaceGeometry ofGui(Window window, VulkanImage target, float unitsPerGuiPixel) {
-		return scaled(window, target, window.getGuiScale() / unitsPerGuiPixel);
+		return scale;
 	}
 
 	private static SurfaceGeometry scaled(Window window, VulkanImage target, float scale) {

@@ -1,5 +1,6 @@
 package sh.rikka.client.ui;
 
+import com.mojang.blaze3d.platform.Window;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -21,17 +22,36 @@ import os.rikka.View;
 import os.rikka.VulkanImage;
 
 public abstract class RikkaScreen extends Screen {
+	private final SurfaceScale scale;
 	private @Nullable EmbeddedSurface surface;
 	private @Nullable SurfaceGeometry geometry;
 	private boolean editing;
+	private boolean leaving;
+	private @Nullable Screen next;
 
-	protected RikkaScreen(Component title) {
+	protected RikkaScreen(Component title, SurfaceScale scale) {
 		super(title);
+		this.scale = scale;
 	}
 
 	protected abstract void view(View view);
 
 	protected void opened(Context context) {
+	}
+
+	protected boolean pressed(float x, float y, MouseButtonEvent event) {
+		return false;
+	}
+
+	protected void moved(float x, float y, boolean used) {
+	}
+
+	protected boolean released(float x, float y, MouseButtonEvent event) {
+		return false;
+	}
+
+	protected boolean scrolled(float x, float y, double amount) {
+		return false;
 	}
 
 	protected final void refresh() {
@@ -41,13 +61,49 @@ public abstract class RikkaScreen extends Screen {
 		}
 	}
 
+	protected final float surfaceWidth() {
+		return measured().width();
+	}
+
+	protected final float surfaceHeight() {
+		return measured().height();
+	}
+
+	protected final boolean isLeaving() {
+		return this.leaving;
+	}
+
+	protected final void leaveTo(@Nullable Screen next) {
+		EmbeddedSurface shown = this.surface;
+		if (shown == null) {
+			this.minecraft.gui.setScreen(next);
+			return;
+		}
+		if (this.leaving) {
+			return;
+		}
+		this.leaving = true;
+		this.next = next;
+		this.minecraft.textInputManager().stopTextInput(this);
+		this.editing = false;
+		shown.leave();
+	}
+
+	@Override
+	public void onClose() {
+		leaveTo(null);
+	}
+
 	@Override
 	public void added() {
 		super.added();
+		this.leaving = false;
+		this.next = null;
 		this.surface = RikkaUi.openSurface(
 			new EmbeddedSurfaceBuilder(this::view)
 				.onStart(this::opened)
 				.onCloseRequest(context -> this.onClose())
+				.onLeft(context -> this.minecraft.schedule(this::left))
 		);
 	}
 
@@ -64,21 +120,41 @@ public abstract class RikkaScreen extends Screen {
 		}
 	}
 
-	final void draw(VulkanImage target, SurfaceGeometry geometry) {
+	final void draw(VulkanImage target, Window window) {
 		EmbeddedSurface shown = this.surface;
 		if (shown == null) {
 			return;
 		}
-		if (!geometry.equals(this.geometry)) {
-			this.geometry = geometry;
-			shown.resize(geometry.width(), geometry.height(), geometry.scale());
+		SurfaceGeometry measured = SurfaceGeometry.of(window, target, this.scale);
+		if (!measured.equals(this.geometry)) {
+			this.geometry = measured;
+			shown.resize(measured.width(), measured.height(), measured.scale());
+			shown.getWindow().invalidate();
 		}
 		shown.render(target);
 	}
 
+	private void left() {
+		if (this.leaving && this.minecraft.gui.screen() == this) {
+			this.minecraft.gui.setScreen(this.next);
+		}
+	}
+
+	private SurfaceGeometry measured() {
+		SurfaceGeometry placed = this.geometry;
+		if (placed == null) {
+			throw new IllegalStateException(getClass().getSimpleName() + " is not drawn yet");
+		}
+		return placed;
+	}
+
+	private @Nullable EmbeddedSurface interactive() {
+		return this.leaving || this.geometry == null ? null : this.surface;
+	}
+
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		SurfaceGeometry placed = this.geometry;
 		if (shown == null || placed == null) {
 			return;
@@ -96,64 +172,64 @@ public abstract class RikkaScreen extends Screen {
 
 	@Override
 	public void mouseMoved(double x, double y) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		SurfaceGeometry placed = this.geometry;
-		if (shown != null && placed != null) {
-			shown.pointerMove(placed.fromGui(x), placed.fromGui(y));
+		if (shown == null || placed == null) {
+			return;
 		}
+		float surfaceX = placed.fromGui(x);
+		float surfaceY = placed.fromGui(y);
+		boolean used = shown.pointerMove(surfaceX, surfaceY);
+		moved(surfaceX, surfaceY, used);
 	}
 
 	@Override
 	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		SurfaceGeometry placed = this.geometry;
-		Optional<PointerButton> button = RikkaInput.button(event.button());
-		if (shown == null || placed == null || button.isEmpty()) {
-			return false;
+		if (shown == null || placed == null) {
+			return this.leaving;
 		}
-		return shown.pointerPress(
-			placed.fromGui(event.x()),
-			placed.fromGui(event.y()),
-			button.get(),
-			RikkaInput.modifiers(event.modifiers())
-		);
+		float x = placed.fromGui(event.x());
+		float y = placed.fromGui(event.y());
+		Optional<PointerButton> button = RikkaInput.button(event.button());
+		boolean used = button.isPresent() && shown.pointerPress(x, y, button.get(), RikkaInput.modifiers(event.modifiers()));
+		return used || pressed(x, y, event);
 	}
 
 	@Override
 	public boolean mouseReleased(MouseButtonEvent event) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		SurfaceGeometry placed = this.geometry;
-		Optional<PointerButton> button = RikkaInput.button(event.button());
-		if (shown == null || placed == null || button.isEmpty()) {
-			return false;
+		if (shown == null || placed == null) {
+			return this.leaving;
 		}
-		return shown.pointerRelease(
-			placed.fromGui(event.x()),
-			placed.fromGui(event.y()),
-			button.get(),
-			RikkaInput.modifiers(event.modifiers())
-		);
+		float x = placed.fromGui(event.x());
+		float y = placed.fromGui(event.y());
+		Optional<PointerButton> button = RikkaInput.button(event.button());
+		boolean used = button.isPresent() && shown.pointerRelease(x, y, button.get(), RikkaInput.modifiers(event.modifiers()));
+		return released(x, y, event) || used;
 	}
 
 	@Override
 	public boolean mouseScrolled(double x, double y, double scrollX, double scrollY) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		SurfaceGeometry placed = this.geometry;
 		if (shown == null || placed == null) {
-			return false;
+			return this.leaving;
 		}
-		return shown.scroll(
-			placed.fromGui(x),
-			placed.fromGui(y),
-			(float) scrollX,
-			(float) scrollY,
-			RikkaInput.heldModifiers()
-		);
+		float surfaceX = placed.fromGui(x);
+		float surfaceY = placed.fromGui(y);
+		boolean used = shown.scroll(surfaceX, surfaceY, (float) scrollX, (float) scrollY, RikkaInput.heldModifiers());
+		return used || scrolled(surfaceX, surfaceY, scrollY);
 	}
 
 	@Override
 	public boolean keyPressed(KeyEvent event) {
-		EmbeddedSurface shown = this.surface;
+		if (this.leaving) {
+			return true;
+		}
+		EmbeddedSurface shown = interactive();
 		if (shown != null) {
 			if (this.editing && RikkaInput.typesText(event)) {
 				return true;
@@ -168,7 +244,7 @@ public abstract class RikkaScreen extends Screen {
 
 	@Override
 	public boolean keyReleased(KeyEvent event) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		if (shown == null || (this.editing && RikkaInput.typesText(event))) {
 			return false;
 		}
@@ -178,13 +254,13 @@ public abstract class RikkaScreen extends Screen {
 
 	@Override
 	public boolean charTyped(CharacterEvent event) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		return shown != null && shown.typeText(event.codepointAsString());
 	}
 
 	@Override
 	public boolean preeditUpdated(@Nullable PreeditEvent event) {
-		EmbeddedSurface shown = this.surface;
+		EmbeddedSurface shown = interactive();
 		if (shown == null) {
 			return false;
 		}

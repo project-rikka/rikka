@@ -75,6 +75,39 @@ public final class Embedding implements AutoCloseable {
     }
 
     /**
+     * Draws every surface in another theme than the desktop's.
+     *
+     * @param slug A {@link ThemeCatalog#slug}; empty follows the desktop's theme. An unknown
+     * slug draws the default theme.
+     */
+    public void setTheme(String slug) {
+        Objects.requireNonNull(slug, "slug");
+        try (Arena arena = Arena.ofConfined()) {
+            Native.RK_EMBEDDING_SET_THEME.invokeExact(handle.raw(), Native.str(arena, slug));
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    /**
+     * Draws every surface over another background than the desktop's.
+     *
+     * @param background the background
+     */
+    public void setBackground(ThemeBackground background) {
+        Objects.requireNonNull(background, "background");
+        try {
+            Native.RK_EMBEDDING_SET_BACKGROUND.invokeExact(handle.raw(), background.value());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    /**
      * Releases the native object now; a closed or handed-over object refuses further use.
      */
     @Override

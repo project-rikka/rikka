@@ -1,3 +1,4 @@
+mod look;
 mod mail;
 mod surface;
 
@@ -10,7 +11,7 @@ use rikka_i18n::I18nBuilder;
 use rikka_renderer::{ExternalImage, Renderer};
 use rikka_theme::Theme;
 use rikka_types::{CursorShape, Rect, Size};
-use rikka_ui::{Command, Event, Handler, State, Ui, WindowRequest};
+use rikka_ui::{Command, Event, State, Ui, WindowRequest};
 use rikka_ui_host::{Composer, VideoPlayback};
 use rustc_hash::FxHashMap;
 
@@ -20,9 +21,12 @@ use crate::sender::{Route, Sender, WindowAlive};
 use crate::wayland::settings::{self, SessionChange};
 
 pub(crate) use mail::{Mail, Post};
+pub use rikka_settings::session::appearance::Background;
 pub use surface::Embedded;
 
+use look::Look;
 use mail::Mailbox;
+use surface::Handlers;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SurfaceId(u64);
@@ -35,8 +39,9 @@ impl SurfaceId {
 }
 
 struct Hooks {
-    close: Option<Handler>,
+    handlers: Handlers,
     alive: WindowAlive,
+    departed: bool,
 }
 
 enum Deferred {
@@ -51,6 +56,9 @@ enum Deferred {
         size: Size,
         scale: f32,
     },
+    Leave(SurfaceId),
+    Rejoin(SurfaceId),
+    Wear(Box<Theme>),
 }
 
 struct Live {
@@ -63,7 +71,7 @@ pub struct Embedding {
     deferred: RefCell<Vec<Deferred>>,
     post: Post,
     mailbox: Mailbox,
-    theme: RefCell<Theme>,
+    look: RefCell<Look>,
     next: Cell<u64>,
 }
 
@@ -74,13 +82,13 @@ impl Embedding {
         settings::apply_session_locale();
         let renderer = Renderer::new(&rikka_gpu::Gpu::builder().external(device).build()?)?;
         let (post, mailbox) = mail::mailbox();
-        let worn = Appearance::current();
-        let theme = worn.theme();
-        preload::fonts(&theme);
+        let session = Appearance::current();
+        let look = Look::new(session.clone());
+        preload::fonts(look.worn());
         let following = post.clone();
         settings::follow(
             move |change| following.send(Mail::Session(change)),
-            Some(worn),
+            Some(session),
             true,
         );
         match Clipboard::connect() {
@@ -95,7 +103,7 @@ impl Embedding {
             deferred: RefCell::new(Vec::new()),
             post,
             mailbox,
-            theme: RefCell::new(theme),
+            look: RefCell::new(look),
             next: Cell::new(1),
         })
     }
@@ -117,12 +125,18 @@ impl Embedding {
             post: self.post.clone(),
             surface: id,
         };
-        let theme = self.theme.borrow().clone();
-        let (ui, close) = surface.into_ui(Sender::new(route, alive.watch()), theme);
+        let theme = self.look.borrow().worn().clone();
+        let (ui, handlers) = surface.into_ui(Sender::new(route, alive.watch()), theme);
+        let mut ui: Ui = ui.into();
+        ui.arrive();
         self.defer(Deferred::Open {
             id,
-            ui: Box::new(ui.into()),
-            hooks: Hooks { close, alive },
+            ui: Box::new(ui),
+            hooks: Hooks {
+                handlers,
+                alive,
+                departed: false,
+            },
         });
         id
     }
@@ -133,6 +147,28 @@ impl Embedding {
 
     pub fn resize(&self, id: SurfaceId, size: Size, scale: f32) {
         self.defer(Deferred::Resize { id, size, scale });
+    }
+
+    pub fn leave(&self, id: SurfaceId) {
+        self.defer(Deferred::Leave(id));
+    }
+
+    pub fn rejoin(&self, id: SurfaceId) {
+        self.defer(Deferred::Rejoin(id));
+    }
+
+    pub fn set_theme(&self, slug: Option<String>) {
+        let worn = self.look.borrow_mut().set_theme(slug);
+        if let Some(theme) = worn {
+            self.defer(Deferred::Wear(Box::new(theme)));
+        }
+    }
+
+    pub fn set_background(&self, background: Option<Background>) {
+        let worn = self.look.borrow_mut().set_background(background);
+        if let Some(theme) = worn {
+            self.defer(Deferred::Wear(Box::new(theme)));
+        }
     }
 
     pub fn handle_event(&self, id: SurfaceId, event: Event) -> bool {
@@ -169,6 +205,7 @@ impl Embedding {
             live.serve(id);
             let drawn = unsafe { live.composer.draw(&id, image) };
             live.serve(id);
+            live.follow_exit(id);
             drawn
         };
         self.settle();
@@ -216,6 +253,20 @@ impl Embedding {
                         composed.ui.request_redraw();
                     }
                 }
+                Deferred::Leave(id) => {
+                    if let Some(composed) = live.composer.get_mut(&id) {
+                        composed.ui.leave();
+                    }
+                }
+                Deferred::Rejoin(id) => {
+                    if let Some(composed) = live.composer.get_mut(&id) {
+                        composed.ui.rejoin();
+                    }
+                    if let Some(hooks) = live.hooks.get_mut(&id) {
+                        hooks.departed = false;
+                    }
+                }
+                Deferred::Wear(theme) => wear(live, &theme),
             }
         }
     }
@@ -224,20 +275,24 @@ impl Embedding {
         while let Some(mail) = self.mailbox.take() {
             match mail {
                 Mail::Message { surface, inbound } => live.composer.deliver(&surface, inbound),
-                Mail::Session(SessionChange::Theme(theme)) => self.retheme(live, *theme),
+                Mail::Session(SessionChange::Appearance { appearance, theme }) => {
+                    let worn = self
+                        .look
+                        .borrow_mut()
+                        .follow(*appearance, theme.map(|theme| *theme));
+                    if let Some(theme) = worn {
+                        wear(live, &theme);
+                    }
+                }
                 Mail::Session(SessionChange::Language) => {}
             }
         }
     }
+}
 
-    fn retheme(&self, live: &mut Live, theme: Theme) {
-        if *self.theme.borrow() == theme {
-            return;
-        }
-        for (_, composed) in live.composer.iter_mut() {
-            composed.ui.set_theme(theme.clone());
-        }
-        *self.theme.borrow_mut() = theme;
+fn wear(live: &mut Live, theme: &Theme) {
+    for (_, composed) in live.composer.iter_mut() {
+        composed.ui.set_theme(theme.clone());
     }
 }
 
@@ -260,9 +315,24 @@ impl Live {
         if !asked {
             return;
         }
-        match &hooks.close {
+        match &hooks.handlers.close {
             Some(close) => ui.start(close.clone()),
             None => tracing::debug!("embedded surface asked to close without a close handler"),
+        }
+    }
+
+    fn follow_exit(&mut self, id: SurfaceId) {
+        let (Some(composed), Some(hooks)) = (self.composer.get_mut(&id), self.hooks.get_mut(&id))
+        else {
+            return;
+        };
+        let ui: &mut Ui = &mut composed.ui;
+        if hooks.departed || !ui.is_leaving() || ui.needs_render() {
+            return;
+        }
+        hooks.departed = true;
+        if let Some(left) = &hooks.handlers.left {
+            ui.start(left.clone());
         }
     }
 }

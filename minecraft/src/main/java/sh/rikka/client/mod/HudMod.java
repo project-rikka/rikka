@@ -14,8 +14,8 @@ public abstract class HudMod extends Mod {
 	private final DoubleSetting scale;
 
 	@SuppressWarnings("this-escape")
-	protected HudMod(String id, ScreenPosition defaultPosition) {
-		super(id, Category.HUD);
+	protected HudMod(String id, ScreenPosition defaultPosition, String icon) {
+		super(id, Category.HUD, icon);
 		this.position = position("position", defaultPosition);
 		this.scale = number("scale", 1.0, MIN_SCALE, MAX_SCALE).step(SCALE_STEP);
 	}
@@ -34,15 +34,20 @@ public abstract class HudMod extends Mod {
 
 	protected abstract void view(View view);
 
-	public final void place(View view, float screenWidth, float screenHeight) {
+	public final HudBounds bounds(float screenWidth, float screenHeight) {
 		float scale = this.scale.getFloat();
-		float width = width();
-		float height = height();
+		float width = width() * scale;
+		float height = height() * scale;
 		ScreenPosition placement = this.position.get();
+		return new HudBounds(placement.left(screenWidth, width), placement.top(screenHeight, height), width, height);
+	}
+
+	public final void place(View view, float screenWidth, float screenHeight) {
+		HudBounds bounds = bounds(screenWidth, screenHeight);
 		view.column(() -> view(view))
-			.position(placement.left(screenWidth, width * scale), placement.top(screenHeight, height * scale))
-			.width(width)
-			.height(height)
-			.scale(scale);
+			.position(bounds.left(), bounds.top())
+			.width(width())
+			.height(height())
+			.scale(this.scale.getFloat());
 	}
 }

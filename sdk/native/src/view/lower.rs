@@ -2,8 +2,8 @@ use rikka_ui::{
     Align, Anchor, Element, Handler, IconGlyph, Label, Length, Space, Style, Styled, View, fade,
 };
 use rikka_widgets::{
-    Sheet, card, column_of, container, context_area, field, list, menu, page, page_stack, popover,
-    row_of, rule, rule_upright, scaled, scrim, scrollable, section, sheet, spacer, split,
+    Sheet, card, column_of, container, context_area, field, gliding, list, menu, page, page_stack,
+    popover, row_of, rule, rule_upright, scaled, scrim, scrollable, section, sheet, spacer, split,
 };
 
 use crate::abi::violation;
@@ -48,6 +48,15 @@ fn lower(node: Node, out: &mut Vec<Element>) {
             sheeted(panel, dismiss, common, out);
         }
         Kind::Unsaved(prompt) => sheeted(*prompt, None, common, out),
+        Kind::Scrim { dismiss } => {
+            let mut veil = scrim();
+            if let Some(dismiss) = dismiss {
+                veil = veil.on_dismiss(dismiss);
+            }
+            let mut common = common;
+            common.transition.get_or_insert_with(fade);
+            out.push(decorate(veil.build(), common));
+        }
         kind => {
             let anchored = matches!(kind, Kind::Popover { .. } | Kind::PopupMenu { .. });
             if anchored && common.anchor.is_none() {
@@ -246,6 +255,7 @@ fn element(kind: Kind, children: Vec<Node>) -> Element {
         Kind::Root(_)
         | Kind::Sheet { .. }
         | Kind::Unsaved(_)
+        | Kind::Scrim { .. }
         | Kind::ContextMenu { .. }
         | Kind::Menu { .. }
         | Kind::Submenu(_)
@@ -294,6 +304,7 @@ fn decorate(mut element: Element, common: Common) -> Element {
         tooltip,
         opacity,
         scale,
+        glides,
         background,
         transition,
         anchor,
@@ -334,6 +345,10 @@ fn decorate(mut element: Element, common: Common) -> Element {
     if let Some(factor) = scale {
         wrapping(&mut element);
         element = scaled(element, factor);
+    }
+    if glides {
+        wrapping(&mut element);
+        element = gliding(element);
     }
     if style != Style::default() {
         merge(element.style_mut(), &style);

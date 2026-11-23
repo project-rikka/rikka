@@ -20,6 +20,7 @@ pub(crate) struct EmbeddedSurfaceBuilder {
     view: Callback<ffi::ViewFn>,
     start: Option<Handler>,
     close: Option<Handler>,
+    left: Option<Handler>,
 }
 
 impl EmbeddedSurfaceBuilder {
@@ -28,6 +29,7 @@ impl EmbeddedSurfaceBuilder {
             view,
             start: None,
             close: None,
+            left: None,
         }
     }
 
@@ -39,8 +41,17 @@ impl EmbeddedSurfaceBuilder {
         self.close = Some(action(callback));
     }
 
+    pub(crate) fn on_left(&mut self, callback: Callback<ffi::ActionFn>) {
+        self.left = Some(action(callback));
+    }
+
     pub(crate) fn open(self, embedding: &Rc<Embedding>) -> EmbeddedSurface {
-        let Self { view, start, close } = self;
+        let Self {
+            view,
+            start,
+            close,
+            left,
+        } = self;
         let window = Rc::new(OnceCell::new());
         let opened = Rc::clone(&window);
         let mut surface = Embedded::new(
@@ -56,6 +67,9 @@ impl EmbeddedSurfaceBuilder {
         }
         if let Some(close) = close {
             surface = surface.on_close_request(close);
+        }
+        if let Some(left) = left {
+            surface = surface.on_left(left);
         }
         let id = embedding.open(surface);
         let window = window
@@ -95,6 +109,14 @@ impl EmbeddedSurface {
         }
         self.embedding
             .resize(self.id, Size::new(width, height), scale);
+    }
+
+    pub(crate) fn leave(&self) {
+        self.embedding.leave(self.id);
+    }
+
+    pub(crate) fn rejoin(&self) {
+        self.embedding.rejoin(self.id);
     }
 
     pub(crate) fn render(&self, target: ffi::VulkanImage) -> ffi::Status {

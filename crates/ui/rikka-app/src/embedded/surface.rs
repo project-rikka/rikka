@@ -14,7 +14,13 @@ pub struct Embedded<S: State> {
     make: MakeFn<S>,
     view: ViewFor<S>,
     start: Option<Handler>,
-    close: Option<Handler>,
+    handlers: Handlers,
+}
+
+#[derive(Default)]
+pub(crate) struct Handlers {
+    pub(crate) close: Option<Handler>,
+    pub(crate) left: Option<Handler>,
 }
 
 impl<S: State> Embedded<S> {
@@ -23,7 +29,7 @@ impl<S: State> Embedded<S> {
             make: Box::new(move |sender| factory.make(sender)),
             view: Box::new(move |state| view.build(state)),
             start: None,
-            close: None,
+            handlers: Handlers::default(),
         }
     }
 
@@ -33,22 +39,27 @@ impl<S: State> Embedded<S> {
     }
 
     pub fn on_close_request<M>(mut self, close: impl IntoHandler<(), (), M>) -> Self {
-        self.close = Some(close.into_handler());
+        self.handlers.close = Some(close.into_handler());
         self
     }
 
-    pub(crate) fn into_ui(self, sender: Sender<S>, theme: Theme) -> (TypedUi<S>, Option<Handler>) {
+    pub fn on_left<M>(mut self, left: impl IntoHandler<(), (), M>) -> Self {
+        self.handlers.left = Some(left.into_handler());
+        self
+    }
+
+    pub(crate) fn into_ui(self, sender: Sender<S>, theme: Theme) -> (TypedUi<S>, Handlers) {
         let Embedded {
             make,
             view,
             start,
-            close,
+            handlers,
         } = self;
         let mut ui = TypedUi::new(make(sender), move |state: &S| view(state), theme);
         if let Some(start) = start {
             ui.start(start);
         }
-        (ui, close)
+        (ui, handlers)
     }
 }
 

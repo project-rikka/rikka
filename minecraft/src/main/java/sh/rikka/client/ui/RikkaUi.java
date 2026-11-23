@@ -11,8 +11,9 @@ import org.jspecify.annotations.Nullable;
 import os.rikka.EmbeddedSurface;
 import os.rikka.EmbeddedSurfaceBuilder;
 import os.rikka.Embedding;
-import os.rikka.VulkanImage;
+import os.rikka.ThemeBackground;
 import sh.rikka.client.RikkaClient;
+import sh.rikka.client.config.Preferences;
 import sh.rikka.client.mixin.FrontendGpuDeviceAccessor;
 
 public final class RikkaUi {
@@ -24,6 +25,10 @@ public final class RikkaUi {
 
 	private RikkaUi(Embedding embedding) {
 		this.embedding = embedding;
+		Preferences preferences = RikkaClient.preferences();
+		wear(preferences);
+		preferences.theme().onChange(slug -> wearPreferences());
+		preferences.background().onChange(background -> wearPreferences());
 		this.hud = new HudLayer(this::open, RikkaClient.mods());
 		RikkaClient.events().subscribe(this.hud);
 	}
@@ -42,11 +47,9 @@ public final class RikkaUi {
 
 	public static void drawScreen(RenderTarget target) {
 		Minecraft minecraft = Minecraft.getInstance();
-		if (!(minecraft.gui.screen() instanceof RikkaScreen screen)) {
-			return;
+		if (minecraft.gui.screen() instanceof RikkaScreen screen) {
+			screen.draw(RikkaVulkan.image(target), minecraft.getWindow());
 		}
-		VulkanImage image = RikkaVulkan.image(target);
-		screen.draw(image, SurfaceGeometry.of(minecraft.getWindow(), image));
 	}
 
 	static EmbeddedSurface openSurface(EmbeddedSurfaceBuilder surface) {
@@ -92,6 +95,23 @@ public final class RikkaUi {
 		current = ui;
 		RikkaClient.LOGGER.info("Rikka UI draws on Minecraft's Vulkan device");
 		return ui;
+	}
+
+	private static void wearPreferences() {
+		RikkaUi ui = current;
+		if (ui != null) {
+			ui.wear(RikkaClient.preferences());
+		}
+	}
+
+	private void wear(Preferences preferences) {
+		this.embedding.setTheme(preferences.theme().get());
+		this.embedding.setBackground(switch (preferences.background().get()) {
+			case DESKTOP -> ThemeBackground.DESKTOP;
+			case SOLID -> ThemeBackground.SOLID;
+			case GLASS -> ThemeBackground.GLASS;
+			case LIQUID -> ThemeBackground.LIQUID;
+		});
 	}
 
 	private EmbeddedSurface open(EmbeddedSurfaceBuilder surface) {

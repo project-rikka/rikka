@@ -82,6 +82,11 @@ impl Appearance {
         self
     }
 
+    pub fn with_background(mut self, background: Background) -> Appearance {
+        self.background = background;
+        self
+    }
+
     fn changes_theme_of(&self, previous: &Appearance) -> bool {
         self.slug != previous.slug
             || self.background != previous.background

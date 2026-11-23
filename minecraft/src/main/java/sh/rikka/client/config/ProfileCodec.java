@@ -50,13 +50,13 @@ final class ProfileCodec {
 		return !mod.bindMode().is(BindMode.HOLD);
 	}
 
-	private static void encode(Settings settings, JsonObject target) {
+	static void encode(Settings settings, JsonObject target) {
 		for (Setting<?, ?> setting : settings.all()) {
 			target.add(setting.id(), encode(setting));
 		}
 	}
 
-	private static void decode(Settings settings, JsonObject source, String path) {
+	static void decode(Settings settings, JsonObject source, String path) {
 		for (Setting<?, ?> setting : settings.all()) {
 			decode(setting, source.get(setting.id()), path + "." + setting.id());
 		}

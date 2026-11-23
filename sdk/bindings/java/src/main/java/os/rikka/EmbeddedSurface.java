@@ -290,6 +290,34 @@ public final class EmbeddedSurface implements AutoCloseable {
     }
 
     /**
+     * Plays the surface's exit: its view sees {@link View#isLeaving} and drops what leaves,
+     * whose transitions play out; then {@link EmbeddedSurfaceBuilder#onLeft} runs.
+     */
+    public void leave() {
+        try {
+            Native.RK_EMBEDDED_SURFACE_LEAVE.invokeExact(handle.raw());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    /**
+     * Brings a leaving surface back: its view declares everything again, and what was leaving
+     * turns back from where it is.
+     */
+    public void rejoin() {
+        try {
+            Native.RK_EMBEDDED_SURFACE_REJOIN.invokeExact(handle.raw());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    /**
      * Releases the native object now; a closed or handed-over object refuses further use.
      */
     @Override

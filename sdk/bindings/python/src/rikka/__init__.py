@@ -27,6 +27,11 @@ __all__ = [
     "Axis",
     "BoolCallback",
     "ButtonVariant",
+    "CORNER_CONTROL",
+    "CORNER_DETAIL",
+    "CORNER_ITEM",
+    "CORNER_PANEL",
+    "CORNER_WINDOW",
     "CheckState",
     "Color",
     "ColorRole",
@@ -75,6 +80,8 @@ __all__ = [
     "TextDocument",
     "TextRole",
     "TextTone",
+    "ThemeBackground",
+    "ThemeCatalog",
     "TransitionStyle",
     "UnsavedAnswer",
     "UnsavedCallback",
@@ -121,6 +128,21 @@ SPACE_LOOSE: Final[float] = 24.0
 
 #: Spacing token: 32 px.
 SPACE_WIDE: Final[float] = 32.0
+
+#: Corner token: windows, 16 px.
+CORNER_WINDOW: Final[float] = 16.0
+
+#: Corner token: cards, menus, popovers and sheets, 14 px.
+CORNER_PANEL: Final[float] = 14.0
+
+#: Corner token: controls, 10 px.
+CORNER_CONTROL: Final[float] = 10.0
+
+#: Corner token: rows, chips and thumbnails, 8 px.
+CORNER_ITEM: Final[float] = 8.0
+
+#: Corner token: small details, 4 px.
+CORNER_DETAIL: Final[float] = 4.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -340,6 +362,19 @@ class ColorRole(enum.IntEnum):
     ON_SUCCESS = 14
     OUTLINE = 15
     OVERLAY = 16
+
+
+class ThemeBackground(enum.IntEnum):
+    """What lies behind a theme's surfaces."""
+
+    #: The desktop's choice.
+    DESKTOP = 0
+    #: Opaque surfaces.
+    SOLID = 1
+    #: Translucent surfaces over a blur of what lies beneath.
+    GLASS = 2
+    #: Glass whose edges also refract what lies beneath.
+    LIQUID = 3
 
 
 class AnchorEdge(enum.IntEnum):
@@ -1620,6 +1655,58 @@ class VulkanDevice(_runtime.Handle):
         _native.rk_vulkan_device_set_features(self._handle, features)
 
 
+class ThemeCatalog(_runtime.Counted):
+    """The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
+    and the system's and the person's, Rikka's own first.
+
+    It holds one reference to a native object usable from any thread.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_theme_catalog_unref
+
+    def __init__(self) -> None:
+        """Reads the installed themes."""
+        self._attach(_native.rk_theme_catalog_new())
+
+    @property
+    def count(self) -> int:
+        """How many themes there are."""
+        return _native.rk_theme_catalog_count(self._handle)
+
+    def slug(self, index: int) -> str:
+        """The name that identifies a theme in :meth:`Embedding.set_theme`.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _native.take_string(_native.rk_theme_catalog_slug(self._handle, index))
+
+    def name(self, index: int) -> str:
+        """A theme's display name.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _native.take_string(_native.rk_theme_catalog_name(self._handle, index))
+
+    def is_dark(self, index: int) -> bool:
+        """Whether a theme is dark.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _native.rk_theme_catalog_is_dark(self._handle, index)
+
+    def color(self, index: int, role: ColorRole) -> Color:
+        """A colour of a theme over a solid background, for previewing it.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _from_color(_native.rk_theme_catalog_color(self._handle, index, ColorRole(role)))
+
+
 class Embedding(_runtime.Counted):
     """Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
     renders on the thread that submits to the device's queue.
@@ -1658,6 +1745,19 @@ class Embedding(_runtime.Counted):
         surface_raw = surface._take()
         return EmbeddedSurface._adopt(_native.rk_embedding_open(self_arg, surface_raw))
 
+    def set_theme(self, slug: str) -> None:
+        """Draws every surface in another theme than the desktop's.
+
+        Args:
+            slug: A :meth:`ThemeCatalog.slug`; empty follows the desktop's theme. An unknown slug
+                draws the default theme.
+        """
+        _native.rk_embedding_set_theme(self._handle, _runtime.text(slug))
+
+    def set_background(self, background: ThemeBackground) -> None:
+        """Draws every surface over another background than the desktop's."""
+        _native.rk_embedding_set_background(self._handle, ThemeBackground(background))
+
 
 class EmbeddedSurfaceBuilder(_runtime.Handle):
     """The description of an embedded surface.
@@ -1669,8 +1769,8 @@ class EmbeddedSurfaceBuilder(_runtime.Handle):
     _release = _native.rk_embedded_surface_builder_free
 
     def __init__(self, view: ViewCallback) -> None:
-        """Describes a surface whose content view declares. It follows the desktop's theme and
-        language.
+        """Describes a surface whose content view declares. It wears the embedding's theme and the
+        desktop's language, and its transitions play from its first view on.
 
         Args:
             view: Declares the surface's content.
@@ -1710,6 +1810,20 @@ class EmbeddedSurfaceBuilder(_runtime.Handle):
             userdata,
             _destroy,
         )
+        return callback
+
+    def on_left(self, callback: ActionCallback) -> ActionCallback:
+        """Runs once a leaving surface's exit transitions have played out, so the program can drop
+        it; see :meth:`EmbeddedSurface.leave`.
+
+        Args:
+            callback: Reacts to an event. The window's view runs again afterwards unless
+                :meth:`Context.skip_view` is called.
+        """
+        _runtime.expect_callable(callback)
+        self_arg = self._handle
+        userdata = _runtime.register(callback)
+        _native.rk_embedded_surface_builder_on_left(self_arg, _action_fn_0, userdata, _destroy)
         return callback
 
 
@@ -1905,6 +2019,18 @@ class EmbeddedSurface(_runtime.Counted):
         candidates; 0 by 0 at the origin while no text has focus.
         """
         return _from_rect(_native.rk_embedded_surface_caret(self._handle))
+
+    def leave(self) -> None:
+        """Plays the surface's exit: its view sees :attr:`View.is_leaving` and drops what leaves,
+        whose transitions play out; then :meth:`EmbeddedSurfaceBuilder.on_left` runs.
+        """
+        _native.rk_embedded_surface_leave(self._handle)
+
+    def rejoin(self) -> None:
+        """Brings a leaving surface back: its view declares everything again, and what was leaving
+        turns back from where it is.
+        """
+        _native.rk_embedded_surface_rejoin(self._handle)
 
 
 class Context(_runtime.Lent):
@@ -2183,6 +2309,13 @@ class View(_runtime.Declaring):
     def is_dark(self) -> bool:
         """Whether the view is drawn in a dark theme."""
         return _native.rk_view_is_dark(self._handle)
+
+    @property
+    def is_leaving(self) -> bool:
+        """Whether the view's embedded surface is leaving through :meth:`EmbeddedSurface.leave`:
+        declare only what stays, so the rest plays its exit transitions.
+        """
+        return _native.rk_view_is_leaving(self._handle)
 
     def column(self) -> Container:
         """A column: children stack top to bottom.
@@ -2548,6 +2681,15 @@ class View(_runtime.Declaring):
     def vertical_divider(self) -> Element:
         """Declares a vertical hairline."""
         _native.rk_vertical_divider(self._handle)
+        return Element(self)
+
+    def scrim(self) -> Element:
+        """Declares a backdrop over its parent, the whole view at the top level, that blurs what
+        lies beneath without darkening it and swallows presses, for modal content declared after
+        it; :meth:`Element.on_dismiss` reacts to a press on it. It fades in and out unless given
+        another :meth:`Element.transition`.
+        """
+        _native.rk_scrim(self._handle)
         return Element(self)
 
     def button(self, label: str) -> Element:
@@ -2922,6 +3064,13 @@ class Element:
     def transition(self: _ElementT, style: TransitionStyle) -> _ElementT:
         """Animates the current element in and out as it is declared and dropped."""
         _native.rk_transition(self._view._current(self._serial), TransitionStyle(style))
+        return self
+
+    def glide(self: _ElementT) -> _ElementT:
+        """Carries the current element smoothly to wherever layout moves it, as when its siblings
+        come and go, instead of jumping there.
+        """
+        _native.rk_glide(self._view._current(self._serial))
         return self
 
     def anchor(self: _ElementT, target: str, edge: AnchorEdge, x: float, y: float) -> _ElementT:
@@ -3383,8 +3532,8 @@ class Element:
         return self
 
     def on_dismiss(self: _ElementT, callback: ActionCallback) -> _ElementT:
-        """Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
-        declaring it to close it.
+        """Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner;
+        stop declaring it to close it.
 
         Args:
             callback: Reacts to an event. The window's view runs again afterwards unless

@@ -3,7 +3,7 @@ mod surface;
 
 use std::rc::Rc;
 
-use rikka_app::embedded;
+use rikka_app::embedded::{self, Background};
 use rikka_i18n::I18n;
 use rikka_ui_video::VideoStore;
 
@@ -33,8 +33,21 @@ impl Embedding {
     }
 
     pub(crate) fn open(&self, surface: EmbeddedSurfaceBuilder) -> EmbeddedSurface {
+        surface.open(self.drawing())
+    }
+
+    pub(crate) fn set_theme(&self, slug: &str) {
+        self.drawing()
+            .set_theme((!slug.is_empty()).then(|| slug.to_owned()));
+    }
+
+    pub(crate) fn set_background(&self, background: Option<Background>) {
+        self.drawing().set_background(background);
+    }
+
+    fn drawing(&self) -> &Rc<embedded::Embedding> {
         match &self.drawing {
-            Ok(embedding) => surface.open(embedding),
+            Ok(embedding) => embedding,
             Err(failure) => violation(format!("the embedding cannot draw: {failure}")),
         }
     }
