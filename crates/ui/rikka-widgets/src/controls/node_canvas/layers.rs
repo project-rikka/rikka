@@ -19,6 +19,15 @@ fn place(rect: Rect, zoom: f32) -> Rect {
     )
 }
 
+fn enclosing(points: impl IntoIterator<Item = Point>) -> Option<Rect> {
+    let mut points = points.into_iter();
+    let first = points.next()?;
+    let (low, high) = points.fold((first, first), |(low, high), point| {
+        (low.min(point), high.max(point))
+    });
+    Some(Rect::new(low.x, low.y, high.x - low.x, high.y - low.y))
+}
+
 pub(super) fn polyline(ctx: &mut PaintCtx<'_>, points: &[Point], width: f32, color: Color) {
     for pair in points.windows(2) {
         ctx.draw_segment(pair[0], pair[1], width, color);
@@ -36,14 +45,12 @@ pub(super) struct Wires {
 
 impl Wires {
     pub(super) fn area(geometry: &Geometry, zoom: f32) -> Rect {
-        geometry
-            .link_points()
-            .flat_map(|(_, points)| points.iter().copied())
-            .fold(None::<Rect>, |area, point| {
-                let dot = Rect::new(point.x, point.y, 0.0, 0.0);
-                Some(area.map_or(dot, |area| area.union(&dot)))
-            })
-            .map_or(Rect::ZERO, |area| place(area, zoom).inflate(LIT_LINK * 2.0))
+        enclosing(
+            geometry
+                .link_points()
+                .flat_map(|(_, points)| points.iter().copied()),
+        )
+        .map_or(Rect::ZERO, |area| place(area, zoom).inflate(LIT_LINK * 2.0))
     }
 }
 
@@ -127,16 +134,8 @@ pub(super) enum Sketch {
 impl Sketch {
     pub(super) fn area(&self, zoom: f32) -> Rect {
         match *self {
-            Sketch::Link { from, to, .. } => {
-                let points = link_curve(from, to);
-                points
-                    .iter()
-                    .fold(Rect::new(from.x, from.y, 0.0, 0.0), |area, point| {
-                        area.union(&Rect::new(point.x, point.y, 0.0, 0.0))
-                    })
-                    .scale(zoom)
-                    .inflate(LIT_LINK * 2.0)
-            }
+            Sketch::Link { from, to, .. } => enclosing(link_curve(from, to))
+                .map_or(Rect::ZERO, |area| place(area, zoom).inflate(LIT_LINK * 2.0)),
             Sketch::Marquee(rect) => place(rect, zoom).inflate(2.0),
         }
     }

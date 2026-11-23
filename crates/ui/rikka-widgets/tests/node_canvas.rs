@@ -8,9 +8,11 @@ use rikka_types::{
 use rikka_ui::{Element, Event, ScrollPhase, ScrollSource, State, Styled, TypedUi, View};
 use rikka_widgets::node_canvas::{
     CanvasEdit, CanvasFrame, CanvasLink, CanvasNode, CanvasPort, CanvasView, Extend, FrameKey,
-    Geometry, Hit, Item, NodeGraph, NodeKey, PortAddr, Selection, Toward, link_curve, node_canvas,
-    node_height,
+    Geometry, Hit, Item, MAX_ZOOM, NodeGraph, NodeKey, PortAddr, Selection, Toward, link_curve,
+    node_canvas, node_height,
 };
+
+use crate::common::{pixel, renderer};
 
 const WHITE: Color = Color::rgb(1.0, 1.0, 1.0);
 
@@ -387,4 +389,53 @@ fn list_inputs_fan_their_links_and_dragging_adds_another() {
             replacing: None,
         }]
     );
+}
+
+#[test]
+fn wires_stay_drawn_while_their_ends_are_far_outside() {
+    let graph = Arc::new(graph());
+    let geometry = Geometry::new(&graph);
+    let link = graph.links[0];
+    let curve = link_curve(
+        geometry.anchor(link.from).unwrap(),
+        geometry.anchor(link.to).unwrap(),
+    );
+    let view = CanvasView::framing(geometry.bounds().unwrap(), ROOM);
+    let (mut ui, mut scene) = mount(&graph);
+    let pointer = view.to_local(curve[4]);
+    ui.handle_event(Event::PointerMoved(pointer));
+    for _ in 0..12 {
+        ui.handle_event(Event::Scroll {
+            position: pointer,
+            delta: ScrollDelta::from_up(1.0),
+            modifiers: Modifiers::NONE,
+            source: ScrollSource::Wheel,
+        });
+        ui.render(&mut scene);
+    }
+    let end = pointer + (*curve.last().unwrap() - curve[4]) * MAX_ZOOM;
+    let carried = Point::new(ROOM.width + 160.0 - end.x, 0.0);
+    let probe = pointer + carried;
+    assert!(Rect::from_origin_size(Point::ZERO, ROOM).contains(probe));
+    ui.handle_event(Event::Scroll {
+        position: pointer,
+        delta: ScrollDelta::from_content(carried),
+        modifiers: Modifiers::NONE,
+        source: ScrollSource::Continuous(ScrollPhase::Moved),
+    });
+    ui.render(&mut scene);
+
+    let mut renderer = renderer();
+    let mut target = renderer
+        .create_target(ROOM.width as u32, ROOM.height as u32)
+        .unwrap();
+    renderer.draw(&mut scene, &mut target).unwrap();
+    let pixels = renderer.read_pixels(&mut target).unwrap();
+    let shade = pixel(
+        &pixels,
+        ROOM.width as usize,
+        probe.x as usize,
+        probe.y as usize,
+    );
+    assert!(shade.0 > 200, "{shade:?} at {probe:?}\n{}", ui.dump());
 }
