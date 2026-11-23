@@ -1,6 +1,6 @@
 use rikka_types::{Point, Rect, RoundedRect, Size};
 use shell_kit::taskbar::Shape;
-use shell_wallpaper::stage::{aspect, below_taskbar, lerp_rect};
+use shell_wallpaper::stage::{aspect, desktop, lerp_rect};
 
 pub(crate) const PANEL_WIDTH: f32 = 400.0;
 pub(crate) const EDGE: f32 = 16.0;
@@ -28,7 +28,7 @@ pub(crate) struct Frame {
 impl Frame {
     #[must_use]
     pub(crate) fn new(bounds: Rect, taskbar: Option<Shape>, count: usize) -> Frame {
-        let stage = below_taskbar(bounds, taskbar);
+        let stage = desktop(bounds, taskbar);
         let room = Rect::new(
             stage.rect.min_x(),
             stage.rect.min_y(),
@@ -119,7 +119,7 @@ impl Frame {
 
 #[must_use]
 pub(crate) fn panel(output: Size, taskbar: Option<Shape>) -> Rect {
-    let stage = below_taskbar(Rect::from_origin_size(Point::ZERO, output), taskbar).rect;
+    let stage = desktop(Rect::from_origin_size(Point::ZERO, output), taskbar).rect;
     Rect::new(
         stage.max_x() - PANEL_WIDTH - EDGE,
         stage.min_y() + EDGE,

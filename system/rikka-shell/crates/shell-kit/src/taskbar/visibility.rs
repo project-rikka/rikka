@@ -42,6 +42,11 @@ impl TaskbarVisibility {
         self.shape().map_or(0.0, Shape::reserved)
     }
 
+    #[must_use]
+    pub fn border(&self) -> f32 {
+        self.shape().map_or(0.0, Shape::border)
+    }
+
     fn on_move(&self, listener: impl Fn(bool) + 'static) {
         self.0.listeners.borrow_mut().push(Box::new(listener));
     }

@@ -53,7 +53,7 @@ pub(crate) fn view(centre: &Centre) -> impl View {
         .align_items(Align::End)
         .padding(Inset::edges(
             centre.below() + centre::MARGIN,
-            centre::MARGIN,
+            centre.border() + centre::MARGIN,
             0.0,
             0.0,
         ))

@@ -3,7 +3,7 @@ use rikka_ui::{
     Align, Element, Inset, Layout, Length, PaintCtx, Quad, Space, Styled, View, Widget, theme,
 };
 use rikka_widgets::{row, spacer};
-use shell_kit::taskbar::{CORNER, DEPTH};
+use shell_kit::taskbar::{BORDER, CORNER, DEPTH};
 
 use crate::island;
 use crate::state::Bar;
@@ -28,14 +28,18 @@ pub(crate) fn view(bar: &Bar) -> Element {
     Element::with_children(Strip, vec![strip, island::island(bar.island())])
 }
 
-fn desktop_below(bounds: Rect) -> RoundedRect {
+fn hang(bounds: Rect) -> Rect {
+    Rect::new(
+        bounds.x() + BORDER,
+        bounds.y() + DEPTH,
+        (bounds.width() - BORDER * 2.0).max(0.0),
+        CORNER,
+    )
+}
+
+fn desktop_below(hang: Rect) -> RoundedRect {
     RoundedRect::new(
-        Rect::new(
-            bounds.x(),
-            bounds.y() + DEPTH,
-            bounds.width(),
-            bounds.height() - DEPTH + CORNER,
-        ),
+        Rect::new(hang.x(), hang.y(), hang.width(), CORNER * 2.0),
         CornerRadii::new(CORNER, CORNER, 0.0, 0.0),
     )
 }
@@ -54,12 +58,12 @@ impl Widget for Strip {
         if bounds.is_empty() {
             return;
         }
-        ctx.draw_quad(
-            Quad::new(bounds)
-                .fill(theme().palette().background)
-                .cut_out(desktop_below(bounds)),
-        );
-        ctx.glass(Rect::new(bounds.x(), bounds.y(), bounds.width(), DEPTH));
+        let fill = theme().palette().background;
+        let band = Rect::new(bounds.x(), bounds.y(), bounds.width(), DEPTH);
+        let hang = hang(bounds);
+        ctx.draw_quad(Quad::new(band).fill(fill));
+        ctx.draw_quad(Quad::new(hang).fill(fill).cut_out(desktop_below(hang)));
+        ctx.glass(band);
     }
 
     fn debug_name(&self) -> &'static str {

@@ -26,18 +26,17 @@ pub(super) fn taskbar(
     let palette = theme.palette();
     let scale = projection.scale();
     let depth = shape.reserved() * scale;
-    let corner = shape.corner() * scale;
-    let band = Rect::new(card.min_x(), card.min_y(), card.width(), depth + corner);
-    let below = RoundedRect::new(
+    let border = shape.border() * scale;
+    let desktop = RoundedRect::new(
         Rect::new(
-            card.min_x(),
+            card.min_x() + border,
             card.min_y() + depth,
-            card.width(),
-            corner * 2.0,
+            (card.width() - border * 2.0).max(0.0),
+            (card.height() - depth - border).max(0.0),
         ),
-        CornerRadii::new(corner, corner, 0.0, 0.0),
+        CornerRadii::uniform(shape.corner() * scale),
     );
-    ctx.draw_quad(Quad::new(band).fill(palette.background).cut_out(below));
+    ctx.draw_quad(Quad::new(card).fill(palette.background).cut_out(desktop));
 
     let middle = card.min_y() + depth / 2.0;
     let island = Size::new(ISLAND.width * scale, ISLAND.height * scale);

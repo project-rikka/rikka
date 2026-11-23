@@ -2,6 +2,7 @@ mod centre;
 mod cluster;
 mod dropdown_panel;
 mod feature;
+mod frame;
 mod glide;
 mod indicators;
 mod island;

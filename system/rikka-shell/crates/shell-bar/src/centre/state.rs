@@ -110,6 +110,11 @@ impl Centre {
         self.shared.taskbar_visibility.below()
     }
 
+    #[must_use]
+    pub(crate) fn border(&self) -> f32 {
+        self.shared.taskbar_visibility.border()
+    }
+
     pub(crate) fn dismiss(&mut self) {
         self.shared.centre.set(false);
     }

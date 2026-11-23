@@ -1,7 +1,7 @@
 use desk_layout::Projection;
 use rikka_types::{Point, Rect, RoundedRect, Size};
 use shell_kit::taskbar::Shape;
-use shell_wallpaper::stage::{aspect, below_taskbar, lerp, lerp_rect};
+use shell_wallpaper::stage::{aspect, desktop, lerp, lerp_rect};
 
 const THUMBS_TOP: f32 = 16.0;
 const THUMB_SHARE: f32 = 0.085;
@@ -32,7 +32,7 @@ pub(crate) struct Frame {
 
 impl Frame {
     pub(super) fn new(bounds: Rect, taskbar: Option<Shape>, count: usize) -> Frame {
-        let stage = below_taskbar(bounds, taskbar);
+        let stage = desktop(bounds, taskbar);
         let reserved = stage.rect.min_y() - bounds.min_y();
         let aspect = aspect(bounds.size);
         let room = stage.rect;

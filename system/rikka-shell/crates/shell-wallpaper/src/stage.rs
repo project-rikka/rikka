@@ -10,21 +10,11 @@ pub const THUMB_RADIUS: f32 = Corner::Item.radius();
 pub const RING_WIDTH: f32 = 2.0;
 
 #[must_use]
-pub fn below_taskbar(bounds: Rect, taskbar: Option<Shape>) -> RoundedRect {
-    let strip = taskbar
-        .map_or(0.0, Shape::reserved)
-        .clamp(0.0, bounds.height());
-    let rect = Rect::new(
-        bounds.min_x(),
-        bounds.min_y() + strip,
-        bounds.width(),
-        bounds.height() - strip,
-    );
-    let cut = match strip > 0.0 {
-        true => taskbar.map_or(0.0, Shape::corner),
-        false => 0.0,
-    };
-    RoundedRect::new(rect, CornerRadii::new(cut, cut, 0.0, 0.0))
+pub fn desktop(bounds: Rect, taskbar: Option<Shape>) -> RoundedRect {
+    taskbar.map_or(
+        RoundedRect::new(bounds, CornerRadii::uniform(0.0)),
+        |shape| shape.desktop(bounds),
+    )
 }
 
 #[must_use]

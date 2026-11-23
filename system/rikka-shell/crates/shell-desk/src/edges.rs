@@ -34,20 +34,19 @@ impl Edges {
     }
 
     #[must_use]
-    pub(crate) fn taskbar_covers(&self, at: Point) -> bool {
-        self.taskbar().is_some_and(|shape| at.y < shape.reserved())
+    pub(crate) fn taskbar_covers(&self, output: Rect, at: Point) -> bool {
+        self.taskbar().is_some_and(|shape| shape.covers(output, at))
     }
 
     #[must_use]
     pub(crate) fn area(&self, output: Rect) -> Area {
         self.0.observers.read();
-        let top = self.0.taskbar.get().map_or(0.0, Shape::reserved);
-        Area::for_desk(Rect::new(
-            output.min_x(),
-            output.min_y() + top,
-            output.width(),
-            (output.height() - top).max(0.0),
-        ))
+        let desktop = self
+            .0
+            .taskbar
+            .get()
+            .map_or(output, |shape| shape.desktop(output).rect);
+        Area::for_desk(desktop)
     }
 
     fn alter(&self, taskbar: Option<Shape>) {

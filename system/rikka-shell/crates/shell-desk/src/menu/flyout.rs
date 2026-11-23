@@ -1,7 +1,7 @@
 use desk_layout::WidgetId;
 use rikka_seam::Request;
 use rikka_session::settings_app::{Link, Section, Spot};
-use rikka_types::Point;
+use rikka_types::{Point, Rect};
 use rikka_ui::State;
 use shell_kit::toplevels::Toplevels;
 use shell_kit::{AimTarget, CLOSE, Placement};
@@ -52,7 +52,8 @@ impl Flyout {
 
     pub(crate) fn reopen(&mut self, at: Point) {
         let desk_scene = &self.desk_scene;
-        if desk_scene.edges.taskbar_covers(at) || self.windows.covers(&self.screen, at) {
+        let output = Rect::from_origin_size(Point::ZERO, self.screen.size);
+        if desk_scene.edges.taskbar_covers(output, at) || self.windows.covers(&self.screen, at) {
             self.dismiss();
             return;
         }

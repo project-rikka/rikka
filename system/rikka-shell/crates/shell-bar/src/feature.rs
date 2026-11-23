@@ -12,6 +12,7 @@ use shell_kit::{
 use shell_notifications::{History, Quiet};
 
 use crate::centre::{self, Centre};
+use crate::frame::{self, Side};
 use crate::indicators::{self, Drawer, Shelf, Typing, Usage};
 use crate::shared::Shared;
 use crate::state::Bar;
@@ -72,7 +73,7 @@ impl Feature for Taskbar {
         let menu = shared.menu.clone();
         let seam = shell.seam();
 
-        shell
+        let shell = shell
             .follow(appearance::DOMAIN, appearance::TASKBAR_INDICATORS, {
                 let shelf = shelf.clone();
                 move |_, kinds: Vec<String>| shelf.show(&kinds)
@@ -84,7 +85,11 @@ impl Feature for Taskbar {
             .watch(settings_seam::CAPABILITY, move |_, event| {
                 usage.event(event)
             })
-            .surface(bar(shared.clone(), up))
+            .surface(bar(shared.clone(), up.clone()));
+        let shell = Side::ARRANGED.into_iter().fold(shell, |shell, side| {
+            shell.surface(frame::surface(side, up.clone()))
+        });
+        shell
             .surface(
                 SurfaceDesc::destined(
                     menu.destination(),
