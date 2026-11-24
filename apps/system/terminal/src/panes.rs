@@ -4,6 +4,8 @@ use rikka_widgets::{Ratio, Side, SplitRatios};
 use crate::group::Group;
 use crate::tab::Tab;
 
+const MIN_SHARE: f32 = 0.1;
+
 #[derive(Debug)]
 pub(crate) enum Panes {
     Leaf(Group),
@@ -166,6 +168,30 @@ impl Panes {
         }
         split.first.resize(id, ratio);
         split.second.resize(id, ratio);
+    }
+
+    pub(crate) fn nudge(&mut self, group: u64, side: Side, step: f32) -> bool {
+        let Self::Split(split) = self else {
+            return false;
+        };
+        let inner = match split.first.group(group).is_some() {
+            true => &mut split.first,
+            false if split.second.group(group).is_some() => &mut split.second,
+            false => return false,
+        };
+        if inner.nudge(group, side, step) {
+            return true;
+        }
+        if split.axis != side.axis() {
+            return false;
+        }
+        let delta = match side.after() {
+            true => step,
+            false => -step,
+        };
+        let ratio = (split.ratio.get() + delta).clamp(MIN_SHARE, 1.0 - MIN_SHARE);
+        split.ratio.set(ratio);
+        true
     }
 
     pub(crate) fn successor_of(&self, target: u64) -> Option<u64> {

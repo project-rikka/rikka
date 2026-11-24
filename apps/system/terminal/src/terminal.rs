@@ -26,6 +26,8 @@ const BORDER_WIDTH: f32 = 1.0;
 
 const FIND_MARK: &str = "rikka.terminal.find";
 
+const RESIZE_STEP: f32 = 0.05;
+
 #[derive(State)]
 pub(crate) struct Terminal {
     #[untracked]
@@ -102,13 +104,24 @@ impl Terminal {
 
     fn spawn_tab(&mut self, program: Option<&Program>) -> Option<Tab> {
         let id = self.next_tab();
-        match Tab::open(id, &self.config, &self.sender, self.cwd.as_deref(), program) {
+        let at = self.working_directory();
+        match Tab::open(id, &self.config, &self.sender, at.as_deref(), program) {
             Ok(tab) => Some(tab),
             Err(error) => {
                 self.error.set(Some(error.to_string()));
                 None
             }
         }
+    }
+
+    fn working_directory(&self) -> Option<PathBuf> {
+        self.active_tab()
+            .and_then(Tab::working_directory)
+            .or_else(|| self.cwd.clone())
+    }
+
+    fn active_program(&self) -> Option<Program> {
+        self.active_tab().and_then(Tab::program).cloned()
     }
 
     fn claim(&mut self, tab: Tab) -> Tab {
@@ -135,7 +148,8 @@ impl Terminal {
     }
 
     fn tear_off(&self, tab: Tab) {
-        open_window(window_with_tab(tab, self.cwd.clone()));
+        let cwd = tab.working_directory().or_else(|| self.cwd.clone());
+        open_window(window_with_tab(tab, cwd));
     }
 
     fn activate(&mut self, group: u64) {
@@ -191,9 +205,32 @@ impl Terminal {
     }
 
     fn split_open(&mut self, side: Side) {
-        if let Some(tab) = self.spawn_tab(None) {
+        let program = self.active_program();
+        if let Some(tab) = self.spawn_tab(program.as_ref()) {
             let target = *self.active;
             self.split_pane(target, side, tab);
+        }
+    }
+
+    fn split_auto(&mut self) {
+        let wide = self.active_tab().is_none_or(|tab| {
+            let size = tab.session().pixel_size();
+            size.width >= size.height
+        });
+        self.split_open(match wide {
+            true => Side::Right,
+            false => Side::Bottom,
+        });
+    }
+
+    fn duplicate_tab(&mut self) {
+        let active = *self.active;
+        let Some(at) = self.panes.group(active).map(Group::active_index) else {
+            return;
+        };
+        let program = self.active_program();
+        if let Some(tab) = self.spawn_tab(program.as_ref()) {
+            self.insert_tab(active, at + 1, tab);
         }
     }
 
@@ -241,24 +278,24 @@ impl Terminal {
     }
 
     fn key_pressed(&mut self, key: Key, modifiers: Modifiers) -> bool {
-        let Some(command) = keys::command(key, modifiers) else {
+        let performed = keys::command(key, modifiers).is_some_and(|command| self.command(command));
+        if !performed {
             skip_view();
-            return false;
-        };
-        self.command(command);
-        true
+        }
+        performed
     }
 
-    fn command(&mut self, command: Command) {
+    fn command(&mut self, command: Command) -> bool {
         let active = *self.active;
         match command {
             Command::NewWindow => open_window(window(Opening {
-                dir: self.cwd.clone(),
+                dir: self.working_directory(),
                 program: None,
             })),
             Command::CloseWindow => request_window(WindowRequest::AskToClose),
             Command::Fullscreen => request_window(WindowRequest::ToggleFullscreen),
             Command::NewTab => self.open_tab(active),
+            Command::DuplicateTab => self.duplicate_tab(),
             Command::CloseTab => {
                 if let Some(index) = self.panes.group(active).map(Group::active_index) {
                     self.close_tab(active, index);
@@ -270,34 +307,47 @@ impl Terminal {
                 }
             }
             Command::Tab(index) => {
+                let Some(pane) = self.panes.group_mut(active) else {
+                    return false;
+                };
+                if index >= pane.tabs().len() {
+                    return false;
+                }
+                pane.select(index);
+            }
+            Command::LastTab => {
                 if let Some(pane) = self.panes.group_mut(active) {
-                    pane.select(index);
+                    let last = pane.tabs().len().saturating_sub(1);
+                    pane.select(last);
                 }
             }
             Command::Split(side) => self.split_open(side),
+            Command::SplitAuto => self.split_auto(),
             Command::FocusPane(side) => {
-                if let Some(next) = self.panes.neighbour(active, side) {
-                    self.active.set(next);
-                }
+                let Some(next) = self.panes.neighbour(active, side) else {
+                    return false;
+                };
+                self.active.set(next);
             }
+            Command::ResizePane(side) => return self.panes.nudge(active, side, RESIZE_STEP),
             Command::Find => {
                 if let Some(tab) = self.active_tab() {
                     tab.open_find();
                 }
             }
-            Command::Bigger => {
-                self.config.resize_font(1);
-                schedule_size_save();
-            }
-            Command::Smaller => {
-                self.config.resize_font(-1);
-                schedule_size_save();
-            }
+            Command::Bigger => self.zoom(1),
+            Command::Smaller => self.zoom(-1),
             Command::ResetSize => {
                 self.config.reset_font();
                 schedule_size_save();
             }
         }
+        true
+    }
+
+    fn zoom(&mut self, steps: i32) {
+        self.config.resize_font(steps);
+        schedule_size_save();
     }
 }
 
@@ -440,6 +490,7 @@ fn grid_view(terminal: &Terminal, tab: &Tab, group: u64) -> Element {
         find_mark((FIND_MARK, id));
         screen(Rc::clone(tab.session()), terminal.config.font())
             .on_key(|terminal: &mut Terminal, key, modifiers| terminal.key_pressed(key, modifiers))
+            .on_zoom(|terminal: &mut Terminal, steps| terminal.zoom(steps))
             .search(tab.search())
             .active(*terminal.active == group)
             .on_activate(move |terminal: &mut Terminal| terminal.activate(group))

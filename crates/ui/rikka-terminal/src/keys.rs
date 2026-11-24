@@ -5,6 +5,8 @@ const CSI: &[u8] = b"\x1b[";
 const SS3: &[u8] = b"\x1bO";
 const ESC: u8 = 0x1b;
 const DEL: u8 = 0x7f;
+const WORD_RUBOUT: u8 = 0x17;
+const KILL_WORD: &[u8] = b"\x1bd";
 
 #[must_use]
 pub(crate) fn encode(
@@ -21,10 +23,11 @@ pub(crate) fn encode(
         Key::Space => typed(' ', modifiers),
         Key::Enter => Some(escaped(newline(mode), modifiers)),
         Key::Escape => Some(escaped(vec![ESC], modifiers)),
-        Key::Backspace if modifiers.control => Some(escaped(vec![0x08], modifiers)),
+        Key::Backspace if modifiers.control => Some(escaped(vec![WORD_RUBOUT], modifiers)),
         Key::Backspace => Some(escaped(vec![DEL], modifiers)),
         Key::Tab => Some(tab(modifiers)),
         Key::Insert => Some(tilde(2, modifiers)),
+        Key::Delete if modifiers.control => Some(escaped(KILL_WORD.to_vec(), modifiers)),
         Key::Delete => Some(tilde(3, modifiers)),
         Key::PageUp => Some(tilde(5, modifiers)),
         Key::PageDown => Some(tilde(6, modifiers)),

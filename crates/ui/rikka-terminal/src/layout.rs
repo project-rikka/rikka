@@ -1,5 +1,6 @@
 use alacritty_terminal::event::WindowSize;
 use alacritty_terminal::grid::Dimensions;
+use rikka_types::Size;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Layout {
@@ -32,6 +33,13 @@ impl Layout {
         let columns = (width / cell_width).floor().max(0.0) as usize;
         let lines = (height / cell_height).floor().max(0.0) as usize;
         Self::new(columns, lines, cell_width, cell_height)
+    }
+
+    pub(crate) fn pixel_size(&self) -> Size {
+        Size::new(
+            self.columns as f32 * self.cell_width,
+            self.lines as f32 * self.cell_height,
+        )
     }
 
     pub(crate) fn window_size(&self) -> WindowSize {

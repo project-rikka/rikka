@@ -1,5 +1,5 @@
 use rikka_sync::Mutex;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -49,6 +49,7 @@ pub(crate) struct Tab {
     id: u64,
     session: Rc<Session>,
     reporter: Arc<Reporter>,
+    program: Option<Program>,
     title: Tracked<Option<String>>,
     search: Search,
 }
@@ -77,6 +78,7 @@ impl Tab {
             id,
             session: Rc::new(session),
             reporter,
+            program: program.cloned(),
             title: Tracked::new(None),
             search: Search::new(),
         })
@@ -98,6 +100,14 @@ impl Tab {
 
     pub(crate) fn search(&self) -> &Search {
         &self.search
+    }
+
+    pub(crate) fn program(&self) -> Option<&Program> {
+        self.program.as_ref()
+    }
+
+    pub(crate) fn working_directory(&self) -> Option<PathBuf> {
+        self.session.working_directory()
     }
 
     pub(crate) fn open_find(&self) {

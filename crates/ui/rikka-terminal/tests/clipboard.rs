@@ -4,18 +4,45 @@ use rikka_terminal::{ClipboardAccess, Options};
 use rikka_types::{Key, Modifiers, Point};
 use rikka_ui::clipboard::{self, Selection};
 
-use crate::support::{COPY_PASTE, POLL_INTERVAL, Running, TIMEOUT, alone};
+use crate::support::{POLL_INTERVAL, Running, TIMEOUT, alone};
 
 #[test]
-fn paste_chord_writes_clipboard() {
+fn paste_chords_write_clipboard() {
     let _alone = alone();
-    clipboard::set_text_of(Selection::Clipboard, "pasted with a chord\n");
     let mut running = Running::start("cat");
     running.click(Point::new(0.5, 0.5), Modifiers::NONE);
 
-    running.chord(Key::Char('v'), COPY_PASTE);
+    for (modifiers, pasted) in [
+        (Modifiers::CONTROL, "pasted with control v"),
+        (Modifiers::CONTROL_SHIFT, "pasted with control shift v"),
+    ] {
+        clipboard::set_text_of(Selection::Clipboard, &format!("{pasted}\n"));
+        running.chord(Key::Char('v'), modifiers);
+        running.wait_for(pasted, Modifiers::NONE);
+    }
+}
 
-    running.wait_for("pasted with a chord", Modifiers::NONE);
+#[test]
+fn control_c_copies_a_selection_and_interrupts_without_one() {
+    let _alone = alone();
+    clipboard::set_text_of(Selection::Clipboard, "");
+    let mut running = Running::start("stty raw -echo; printf 'ready\\n'; cat -v");
+    running.wait_for("ready", Modifiers::NONE);
+
+    running.chord(Key::Char('c'), Modifiers::CONTROL);
+
+    let copied = clipboard::text_of(Selection::Clipboard).unwrap_or_default();
+    assert!(copied.contains("ready"), "copied {copied:?}");
+    assert_eq!(running.session.selected_text(), None);
+
+    running.chord(Key::Char('c'), Modifiers::CONTROL);
+    running.chord(Key::Char('q'), Modifiers::NONE);
+
+    let output = running.wait_for("^Cq", Modifiers::NONE);
+    assert!(
+        !output.contains("^C^C"),
+        "the copy reached the program: {output:?}"
+    );
 }
 
 #[test]
@@ -26,7 +53,7 @@ fn pasted_line_endings_arrive_once() {
     running.click(Point::new(0.5, 0.5), Modifiers::NONE);
     running.wait_for("ready", Modifiers::NONE);
 
-    running.chord(Key::Char('v'), COPY_PASTE);
+    running.chord(Key::Char('v'), Modifiers::CONTROL_SHIFT);
 
     let output = running.wait_for("second", Modifiers::NONE);
     assert!(output.contains("first\nsecond"), "saw {output:?}");

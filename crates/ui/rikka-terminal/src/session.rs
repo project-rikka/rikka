@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::cell::{Cell, Ref, RefCell};
 use std::ops::{Range, RangeInclusive};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -12,7 +13,7 @@ use alacritty_terminal::sync::FairMutex;
 use alacritty_terminal::term::{Config, Osc52, Term, TermMode, viewport_to_point};
 use alacritty_terminal::tty;
 use rikka_theme::{Ansi, Theme};
-use rikka_types::{Color, Key, KeyLocation, Modifiers};
+use rikka_types::{Color, Key, KeyLocation, Modifiers, Size};
 use rikka_ui::{DragOffer, Handler, NodeHandle, Selection, Watchers};
 
 use crate::composition::Composition;
@@ -21,6 +22,7 @@ use crate::error::Result;
 use crate::keys;
 use crate::layout::Layout;
 use crate::mouse::{self, Button, Motion};
+use crate::movement::{self, Movement};
 use crate::options::Options;
 use crate::palette::Palette;
 use crate::pty::{self, PtyWriter};
@@ -37,20 +39,35 @@ const FOCUS_OUT: &[u8] = b"\x1b[O";
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Granularity {
     Cell,
+    Block,
     Word,
     Line,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SelectionMode {
+    Free,
+    Words,
+    Marking,
+}
+
+struct Ends {
+    anchor: GridPoint,
+    focus: GridPoint,
+    block: bool,
 }
 
 pub struct Session {
     term: Arc<FairMutex<Term<Proxy>>>,
     writer: PtyWriter,
+    child: u32,
     layout: Cell<Layout>,
     composition: RefCell<Composition>,
     palette: RefCell<Palette>,
     colored: Cell<Option<(Ansi, Color)>>,
     generation: Arc<AtomicU64>,
     watchers: Watchers,
-    word_anchor: Cell<Option<Side>>,
+    selecting: Cell<SelectionMode>,
 }
 
 impl Session {
@@ -76,19 +93,29 @@ impl Session {
         let term = Arc::new(FairMutex::new(term));
 
         let pty = tty::new(&options.to_pty(), layout.window_size(), WINDOW_ID)?;
+        let child = pty.child().id();
         let writer = pty::start(pty, Arc::clone(&term), proxy, options.access())?;
 
         Ok(Self {
             term,
             writer,
+            child,
             layout: Cell::new(layout),
             composition: RefCell::new(Composition::default()),
             palette: RefCell::new(Palette::from_theme(&Theme::default())),
             colored: Cell::new(None),
             generation,
             watchers,
-            word_anchor: Cell::new(None),
+            selecting: Cell::new(SelectionMode::Free),
         })
+    }
+
+    pub fn working_directory(&self) -> Option<PathBuf> {
+        std::fs::read_link(format!("/proc/{}/cwd", self.child)).ok()
+    }
+
+    pub fn pixel_size(&self) -> Size {
+        self.layout.get().pixel_size()
     }
 
     pub(crate) fn recolor(&self, theme: &Theme) -> bool {
@@ -202,8 +229,8 @@ impl Session {
         self.send(typed.into_bytes());
     }
 
-    pub(crate) fn scroll(&self, lines: i32) {
-        self.term.lock().scroll_display(Scroll::Delta(lines));
+    pub(crate) fn scroll(&self, scroll: Scroll) {
+        self.term.lock().scroll_display(scroll);
     }
 
     pub(crate) fn wheel(
@@ -249,7 +276,7 @@ impl Session {
         if up == 0 {
             return false;
         }
-        self.scroll(up * WHEEL_LINES);
+        self.scroll(Scroll::Delta(up * WHEEL_LINES));
         true
     }
 
@@ -279,63 +306,98 @@ impl Session {
     pub(crate) fn select(&self, granularity: Granularity, column: usize, line: usize, side: Side) {
         let mut term = self.term.lock();
         let point = viewport_to_point(term.grid().display_offset(), point_of(column, line));
-        let (selection, word_anchor) = match granularity {
-            Granularity::Cell => (Highlight::new(SelectionType::Simple, point, side), None),
-            Granularity::Line => (Highlight::new(SelectionType::Lines, point, side), None),
-            Granularity::Word => (spanning(words::word_cells(&term, point)), Some(Side::Left)),
+        let selection = match granularity {
+            Granularity::Cell => Highlight::new(SelectionType::Simple, point, side),
+            Granularity::Block => Highlight::new(SelectionType::Block, point, side),
+            Granularity::Line => Highlight::new(SelectionType::Lines, point, side),
+            Granularity::Word => spanning(words::word_cells(&term, point)),
         };
         term.selection = Some(selection);
-        self.word_anchor.set(word_anchor);
+        self.selecting.set(match granularity {
+            Granularity::Word => SelectionMode::Words,
+            Granularity::Cell | Granularity::Block | Granularity::Line => SelectionMode::Free,
+        });
     }
 
     pub(crate) fn extend_selection(&self, column: usize, line: usize, side: Side) -> bool {
         let mut term = self.term.lock();
         let point = viewport_to_point(term.grid().display_offset(), point_of(column, line));
-        let Some(anchored) = self.word_anchor.get() else {
+        if self.selecting.get() != SelectionMode::Words {
             let Some(selection) = term.selection.as_mut() else {
                 return false;
             };
             selection.update(point, side);
             return true;
-        };
-        let Some(range) = term
-            .selection
-            .as_ref()
-            .and_then(|selection| selection.to_range(&term))
-        else {
+        }
+        let Some(ends) = ends(&term) else {
             return false;
         };
-        let anchor = words::word_cells(
-            &term,
-            match anchored {
-                Side::Left => range.start,
-                Side::Right => range.end,
-            },
-        );
+        let anchor = words::word_cells(&term, ends.anchor);
         let target = words::word_cells(&term, point);
-        let (span, anchored) = match target.start() >= anchor.start() {
-            true => (
-                *anchor.start()..=*anchor.end().max(target.end()),
-                Side::Left,
+        let selection = match target.start() >= anchor.start() {
+            true => anchored(
+                SelectionType::Simple,
+                *anchor.start(),
+                *anchor.end().max(target.end()),
             ),
-            false => (*target.start()..=*anchor.end(), Side::Right),
+            false => anchored(SelectionType::Simple, *anchor.end(), *target.start()),
         };
-        term.selection = Some(spanning(span));
-        self.word_anchor.set(Some(anchored));
+        term.selection = Some(selection);
         true
     }
 
     pub(crate) fn select_all(&self) {
         let mut term = self.term.lock();
-        let start = GridPoint::new(term.topmost_line(), Column(0));
-        let end = GridPoint::new(term.bottommost_line(), term.last_column());
-        term.selection = Some(spanning(start..=end));
-        self.word_anchor.set(None);
+        let all = movement::first_cell(&term)..=movement::last_cell(&term);
+        term.selection = Some(spanning(all));
+        self.selecting.set(SelectionMode::Free);
+    }
+
+    pub(crate) fn toggle_marking(&self) {
+        if self.is_marking() && self.has_selection() {
+            self.clear_selection();
+            return;
+        }
+        let mut term = self.term.lock();
+        term.scroll_display(Scroll::Bottom);
+        let cursor = term.grid().cursor.point;
+        term.selection = Some(spanning(cursor..=cursor));
+        self.selecting.set(SelectionMode::Marking);
+    }
+
+    pub(crate) fn is_marking(&self) -> bool {
+        self.selecting.get() == SelectionMode::Marking
+    }
+
+    pub(crate) fn move_selection(&self, movement: Movement, extend: bool) {
+        let mut term = self.term.lock();
+        let Some(ends) = ends(&term) else {
+            return;
+        };
+        let moved = movement.apply(&term, ends.focus);
+        let selection = match (extend, ends.block) {
+            (true, true) => anchored(SelectionType::Block, ends.anchor, moved),
+            (true, false) => anchored(SelectionType::Simple, ends.anchor, moved),
+            (false, _) => spanning(moved..=moved),
+        };
+        term.selection = Some(selection);
+        term.scroll_to_point(moved);
+        if self.selecting.get() == SelectionMode::Words {
+            self.selecting.set(SelectionMode::Free);
+        }
+    }
+
+    pub(crate) fn has_selection(&self) -> bool {
+        self.term
+            .lock()
+            .selection
+            .as_ref()
+            .is_some_and(|selection| !selection.is_empty())
     }
 
     pub(crate) fn clear_selection(&self) {
         self.term.lock().selection = None;
-        self.word_anchor.set(None);
+        self.selecting.set(SelectionMode::Free);
     }
 
     pub fn selected_text(&self) -> Option<String> {
@@ -371,6 +433,64 @@ fn spanning(cells: RangeInclusive<GridPoint>) -> Highlight {
     let mut selection = Highlight::new(SelectionType::Simple, start, Side::Left);
     selection.update(end, Side::Right);
     selection
+}
+
+fn anchored(ty: SelectionType, anchor: GridPoint, focus: GridPoint) -> Highlight {
+    let forward = match ty {
+        SelectionType::Block => anchor.column <= focus.column,
+        SelectionType::Simple | SelectionType::Semantic | SelectionType::Lines => anchor <= focus,
+    };
+    let (anchor_side, focus_side) = match forward {
+        true => (Side::Left, Side::Right),
+        false => (Side::Right, Side::Left),
+    };
+    let mut selection = Highlight::new(ty, anchor, anchor_side);
+    selection.update(focus, focus_side);
+    selection
+}
+
+fn ends<T>(term: &Term<T>) -> Option<Ends> {
+    let selection = term.selection.as_ref()?;
+    let range = selection.to_range(term)?;
+    let mut probe = selection.clone();
+    probe.update(movement::last_cell(term), Side::Right);
+    let held = probe
+        .to_range(term)
+        .map_or(range.start, |probed| probed.start);
+    let (start, end) = (range.start, range.end);
+    let (anchor, focus) = match range.is_block {
+        true => {
+            let (anchor_line, focus_line) = match held.line == start.line {
+                true => (start.line, end.line),
+                false => (end.line, start.line),
+            };
+            let column = held.column.0;
+            let (anchor_column, focus_column) =
+                match column.abs_diff(start.column.0) <= column.abs_diff(end.column.0) {
+                    true => (start.column, end.column),
+                    false => (end.column, start.column),
+                };
+            (
+                GridPoint::new(anchor_line, anchor_column),
+                GridPoint::new(focus_line, focus_column),
+            )
+        }
+        false => {
+            let position = |point: GridPoint| {
+                i64::from(point.line.0) * term.columns() as i64 + point.column.0 as i64
+            };
+            let from_start = position(held).abs_diff(position(start));
+            match from_start <= position(held).abs_diff(position(end)) {
+                true => (start, end),
+                false => (end, start),
+            }
+        }
+    };
+    Some(Ends {
+        anchor,
+        focus,
+        block: range.is_block,
+    })
 }
 
 pub(crate) struct Typing {

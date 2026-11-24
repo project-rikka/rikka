@@ -10,7 +10,8 @@ tags: [application, terminal]
 - `Panes::top_row` hands top-edge strips to the title bar as `CaptionBar::columns`. Lower panes draw their own strip. Strips and panes are components keyed by group id; `Terminal.shape`, `Group.shape`, `Split.ratio` and `Tab.title` are the tracked keys, so a title re-views only its strip. The split skeleton and the caption's shares live in the window's root view, so a split drag re-views the title bar and skeleton (about half the window), never the panes.
 - Dropping on a pane's middle joins its tabs, and on an edge splits the pane. A pane emptied by the drag takes the tab back.
 - A closed last tab gives its room to the neighbour. The last pane closes the window.
-- `keys::command` (tabs, `Ctrl+Shift+5`/`Ctrl+Shift+'` split, `Alt+arrow` focus, font size) is the grid's `on_key`. Only the active pane's grid is `active`.
+- `keys::command` is the grid's `on_key` and follows Windows Terminal: `Ctrl+Shift+T/N/W/D` new/window/close/duplicate tab, `Ctrl+Tab`, `Ctrl+PgUp/PgDn`, `Alt` or `Ctrl+Alt`+1–8 (9 = last tab), `Alt+Shift+D/+/-` and `Ctrl+Shift+5`/`Ctrl+Shift+'` split, `Alt+arrow` focus, `Alt+Shift+arrow` resize (`Panes::nudge`), `F11`/`Alt+Enter` fullscreen, font size. A command that cannot act (no neighbour, no such tab) returns false so the key reaches the program. Only the active pane's grid is `active`.
+- New tabs, splits and windows start in the active tab's working directory; duplicates and splits also rerun the tab's `-e` program.
 - Each tab holds a `Session` with a rewireable reporter, so a dragged tab keeps its PTY.
 - A second process start opens a window at that start's working directory.
 - Font-size chords write `rikka.terminal` after a quiet period. The family defaults to JetBrains Mono via fontconfig.
