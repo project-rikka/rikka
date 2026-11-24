@@ -1,6 +1,6 @@
 use rikka_ui::{
-    Anchor, AnchorEdge, Edge, Family, Inset, Length, Space, TextAlign, TextStyled, Transition,
-    fade, fade_scale, pop, slide,
+    Anchor, AnchorEdge, Edge, Family, Inset, Length, Point, Space, TextAlign, TextStyled,
+    Transition, fade, fade_scale, pop, slide,
 };
 use rikka_widgets::{ControlSize, ImageFit};
 
@@ -73,6 +73,20 @@ pub(crate) fn margin_edges(view: &mut View, top: f32, right: f32, bottom: f32, l
     view.current_element().common.style.margin = Some(edges(top, right, bottom, left, "margin"));
 }
 
+pub(crate) fn position(view: &mut View, x: f32, y: f32) {
+    if !(x.is_finite() && y.is_finite()) {
+        violation(format!("({x}, {y}) is not a finite position"));
+    }
+    view.current_element().common.style.position = Some(Point::new(x, y));
+}
+
+pub(crate) fn scale(view: &mut View, factor: f32) {
+    if !(factor.is_finite() && factor > 0.0) {
+        violation(format!("the scale {factor} is not above 0"));
+    }
+    view.current_element().common.scale = Some(factor);
+}
+
 pub(crate) fn opacity(view: &mut View, value: f32) {
     if !(0.0..=1.0).contains(&value) {
         violation(format!("the opacity {value} is not between 0 and 1"));
@@ -81,7 +95,14 @@ pub(crate) fn opacity(view: &mut View, value: f32) {
 }
 
 pub(crate) fn background(view: &mut View, value: ffi::Color) {
-    view.current_element().common.background = Some(color(value));
+    let painted = color(value);
+    let node = view.current_element();
+    match &mut node.kind {
+        Kind::Box { container, .. } => {
+            container.edit(move |container| container.background(painted));
+        }
+        _ => node.common.background = Some(painted),
+    }
 }
 
 pub(crate) fn tooltip(view: &mut View, text: &str) {
@@ -90,6 +111,10 @@ pub(crate) fn tooltip(view: &mut View, text: &str) {
 
 pub(crate) fn key(view: &mut View, key: &str) {
     view.current_element().common.key = Some(key_of(key));
+}
+
+pub(crate) fn glide(view: &mut View) {
+    view.current_element().common.glides = true;
 }
 
 pub(crate) fn transition(view: &mut View, style: ffi::TransitionStyle) {
@@ -202,6 +227,14 @@ pub(crate) fn surface(view: &mut View) {
     match &mut node.kind {
         Kind::Box { container, .. } => container.edit(|container| container.surface()),
         _ => node.refuse("surface"),
+    }
+}
+
+pub(crate) fn glass(view: &mut View) {
+    let node = view.current();
+    match &mut node.kind {
+        Kind::Box { container, .. } => container.edit(|container| container.surface().glass()),
+        _ => node.refuse("glass"),
     }
 }
 

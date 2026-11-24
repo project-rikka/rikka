@@ -9,6 +9,7 @@ tags: [overview, architecture]
 - `system/`: `rikka-compositor`, `rikka-shell`, `rikka-cli` (the `rikka` command), `rikka-nixctl` (privileged NixOS service), `rikka-cast` (ScreenCast portal), `rikka-keyring` (Secret Service daemon), `rikka-pam-helper` (one PAM conversation for `rikka-pam`), `rikka-boost` (GPU clock boost), `rikka-replay` (instant replay), `rikka-remote` (QUIC remote desktop server).
 - `apps/system/` (Linux only, bound to the Rikka session): ade, browser, calculator, discord, files, music, packages, proton, settings, task-manager, terminal, updates (system update logs), viewer. `apps/general/` (Linux and Windows): animate, cut, paint, remote (rikka-remote-viewer).
 - `sdk/` is the application SDK (`librikka.so.0`, IDL `sdk/rikka.ridl`, committed bindings in `sdk/bindings/<language>/` for C, C++, Go, C#, Java and Python); see the SDK note.
+- `minecraft/` is the Rikka Client Fabric mod, which draws rikka-ui over Minecraft's own Vulkan frames through the SDK's embedding API; see the Minecraft notes.
 - `website/` is the public Astro site for Cloudflare Pages; see the website note.
 - `docs/<language>/` holds user documentation, one file per topic with the same name in every language (`docs/en/installation.md`, `docs/ja/installation.md`); English is the source, other languages are twins kept in sync.
 - `engine/gecko/` is the Gecko web engine source (Firefox pin, patches, the `rikka` Gecko project; MPL-2.0), built by `xtask gecko` outside Bazel; see the gecko-engine note.

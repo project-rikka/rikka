@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "rikka"
-version = "0.2.0"
+version = "0.3.0"
 description = "The Rikka application SDK"
 requires-python = ">=3.10"
 classifiers = [

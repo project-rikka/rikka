@@ -7,6 +7,7 @@ pub mod core;
 pub mod drm;
 #[doc(hidden)]
 pub mod error;
+mod external;
 mod gpu;
 #[doc(hidden)]
 pub mod identity;
@@ -37,6 +38,7 @@ pub use crate::drm::{
     ExportedDmabuf, ExportedPlane, SharedRows, Ycbcr, YcbcrMatrix, YcbcrRange,
 };
 pub use crate::error::{Capability, Cause, Error, Resource, Result, Store};
+pub use crate::external::{ExternalDevice, ExternalHandles, HostSubmit};
 pub use crate::gpu::{Gpu, GpuBuilder};
 pub use crate::reclaim::Reclaimer;
 pub use crate::texture::{Pixels, Rows, Staged, TexelRect, TextureFormat, TextureId, Uploads};

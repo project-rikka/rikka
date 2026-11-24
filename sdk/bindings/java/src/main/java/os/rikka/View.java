@@ -83,6 +83,18 @@ public final class View {
     }
 
     /**
+     * Whether the view's embedded surface is leaving through {@link EmbeddedSurface#leave}:
+     * declare only what stays, so the rest plays its exit transitions.
+     */
+    public boolean isLeaving() {
+        try {
+            return (boolean) Native.RK_VIEW_IS_LEAVING.invokeExact(handle());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+    }
+
+    /**
      * A column: children stack top to bottom.
      *
      * @param body declares the children
@@ -761,6 +773,21 @@ public final class View {
     public Element verticalDivider() {
         try {
             Native.RK_VERTICAL_DIVIDER.invokeExact(handle());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+        return declared();
+    }
+
+    /**
+     * Declares a backdrop over its parent, the whole view at the top level, that blurs what
+     * lies beneath without darkening it and swallows presses, for modal content declared after
+     * it; {@link Element#onDismiss} reacts to a press on it. It fades in and out unless given
+     * another {@link Element#transition}.
+     */
+    public Element scrim() {
+        try {
+            Native.RK_SCRIM.invokeExact(handle());
         } catch (Throwable failure) {
             throw Native.rethrow(failure);
         }

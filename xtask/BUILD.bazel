@@ -6,6 +6,8 @@ rikka_binary(
     deps = [
         "//crates/desktop/rikka-instance",
         "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-xml",
         "//crates/graphics/rikka-ltc",
         "//crates/graphics/rikka-symbols-scanner:lib",
         "@crates//:anyhow",
@@ -14,6 +16,7 @@ rikka_binary(
         "@crates//:memchr",
         "@crates//:serde",
         "@crates//:serde_json",
+        "@crates//:sha1",
         "@crates//:sha2",
         "@crates//:tar",
         "@crates//:toml",

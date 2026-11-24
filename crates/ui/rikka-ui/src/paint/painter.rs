@@ -468,6 +468,10 @@ impl PaintCtx<'_> {
         Some(rect.translate(self.bounds.origin))
     }
 
+    pub fn placed(&self) -> Rect {
+        self.layouts.rect(self.node)
+    }
+
     pub fn handle(&self) -> crate::runtime::NodeHandle {
         crate::runtime::NodeHandle::new(self.instance, self.marks)
     }

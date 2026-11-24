@@ -1,9 +1,11 @@
+mod adoption;
 mod creation;
 mod queues;
 mod request;
 mod selection;
 
 use std::ffi::CString;
+use std::sync::Arc;
 
 #[cfg(unix)]
 use ash::khr;
@@ -13,13 +15,14 @@ use crate::core::caps::DeviceProperties;
 #[cfg(unix)]
 use crate::core::dmabuf_support::{DmabufSupport, DrmNodeIds};
 use crate::core::fault::FaultReport;
-use crate::core::instance::VulkanInstance;
+use crate::core::instance::{Ownership, VulkanInstance};
 use crate::core::memory::{Allocation, DeviceMemory, HeapBudget, Placement};
 use crate::core::pipeline_cache::PipelineCache;
 use crate::core::queue_lock::LockedQueue;
 use crate::core::ray_support::RayTracing;
 use crate::core::video_support::VideoSupport;
 use crate::error::Result;
+use crate::external::HostSubmit;
 #[cfg(windows)]
 use crate::win32::Win32Device;
 
@@ -48,6 +51,8 @@ pub struct RenderDevice {
     debug: Option<ext::debug_utils::Device>,
     ray_tracing: Option<RayTracing>,
     fault: FaultReport,
+    ownership: Ownership,
+    host: Option<Arc<dyn HostSubmit>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -125,9 +130,11 @@ impl RenderDevice {
         batches: &[vk::SubmitInfo2<'_>],
         fence: vk::Fence,
     ) -> Result<()> {
-        self.queue(role)
-            .submit(&self.device, batches, fence)
-            .inspect_err(|result| self.observe_loss(*result))?;
+        match &self.host {
+            Some(host) => host.submit(batches),
+            None => self.queue(role).submit(&self.device, batches, fence),
+        }
+        .inspect_err(|result| self.observe_loss(*result))?;
         Ok(())
     }
 
@@ -279,6 +286,14 @@ impl RenderDevice {
     }
 
     pub fn wait_idle(&self) {
+        if self.ownership == Ownership::Borrowed {
+            let _graphics = self.graphics.guard();
+            let result = unsafe { self.device.queue_wait_idle(self.graphics.handle()) };
+            if let Err(err) = result {
+                tracing::error!("vkQueueWaitIdle failed: {err}");
+            }
+            return;
+        }
         let _graphics = self.graphics.guard();
         let _background = self
             .background
@@ -305,7 +320,9 @@ impl Drop for RenderDevice {
         unsafe {
             self.pipeline_cache.close();
             self.memory.close();
-            self.device.destroy_device(None);
+            if self.ownership == Ownership::Owned {
+                self.device.destroy_device(None);
+            }
         }
     }
 }

@@ -8,7 +8,7 @@ use crate::abi::{enter, violation};
 use crate::api::image::Image;
 use crate::ffi;
 use crate::handlers::Callback;
-use crate::values::{finite, fraction, raw_color, selection, symbol};
+use crate::values::{finite, fraction, palette_color, selection, symbol};
 use crate::view::View;
 use crate::view::menu::{MenuEntry, Role};
 use crate::view::node::{Built, Kind, Stack};
@@ -19,30 +19,15 @@ fn label(content: &str) -> rikka_ui::Text {
 }
 
 pub(crate) fn view_palette_color(_: &mut View, role: ffi::ColorRole) -> ffi::Color {
-    let palette = rikka_ui::palette();
-    raw_color(match role {
-        ffi::ColorRole::Background => palette.background,
-        ffi::ColorRole::Surface => palette.surface,
-        ffi::ColorRole::SurfaceVariant => palette.surface_variant,
-        ffi::ColorRole::Text => palette.text,
-        ffi::ColorRole::TextMuted => palette.text_muted,
-        ffi::ColorRole::Accent => palette.accent,
-        ffi::ColorRole::OnAccent => palette.on_accent,
-        ffi::ColorRole::Selection => palette.selection,
-        ffi::ColorRole::OnSelection => palette.on_selection,
-        ffi::ColorRole::Danger => palette.danger,
-        ffi::ColorRole::OnDanger => palette.on_danger,
-        ffi::ColorRole::Warning => palette.warning,
-        ffi::ColorRole::OnWarning => palette.on_warning,
-        ffi::ColorRole::Success => palette.success,
-        ffi::ColorRole::OnSuccess => palette.on_success,
-        ffi::ColorRole::Outline => palette.outline,
-        ffi::ColorRole::Overlay => palette.overlay,
-    })
+    palette_color(&rikka_ui::palette(), role)
 }
 
 pub(crate) fn view_is_dark(_: &mut View) -> bool {
     rikka_ui::theme().is_dark()
+}
+
+pub(crate) fn view_is_leaving(_: &mut View) -> bool {
+    rikka_ui::is_exiting()
 }
 
 fn columns(columns: u32) -> usize {
@@ -237,6 +222,10 @@ pub(crate) fn divider(view: &mut View) {
 
 pub(crate) fn vertical_divider(view: &mut View) {
     view.leaf(Kind::Divider { vertical: true });
+}
+
+pub(crate) fn scrim(view: &mut View) {
+    view.leaf(Kind::Scrim { dismiss: None });
 }
 
 pub(crate) fn button(view: &mut View, text: &str) {

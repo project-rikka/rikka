@@ -3,6 +3,7 @@
   stdenv,
   buildEnv,
   dockerTools,
+  writeText,
   jq,
   bashNonInteractive,
   coreutils,
@@ -140,6 +141,12 @@ let
     '';
   };
 
+  local = writeText "rikka-bazel-local.json" (
+    builtins.toJSON {
+      minecraft_library_path = lib.makeLibraryPath env.minecraftLibraries;
+    }
+  );
+
   image = dockerTools.streamLayeredImage {
     name = registry;
     contents = [
@@ -164,6 +171,7 @@ in
 
   environment = {
     RIKKA_BAZEL_TOOLCHAIN = "${toolchain}";
+    RIKKA_BAZEL_LOCAL = "${local}";
     RIKKA_RBE_IMAGE = "${registry}:${image.imageTag}";
   };
 }

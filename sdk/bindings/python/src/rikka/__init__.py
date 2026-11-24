@@ -17,7 +17,7 @@ from typing import Final, TypeAlias, TypeVar, overload
 
 from . import _native, _runtime
 
-__version__: Final = "0.2.0"
+__version__: Final = "0.3.0"
 
 __all__ = [
     "ActionCallback",
@@ -27,14 +27,23 @@ __all__ = [
     "Axis",
     "BoolCallback",
     "ButtonVariant",
+    "CORNER_CONTROL",
+    "CORNER_DETAIL",
+    "CORNER_ITEM",
+    "CORNER_PANEL",
+    "CORNER_WINDOW",
     "CheckState",
     "Color",
     "ColorRole",
     "Command",
     "Container",
     "Context",
+    "CursorShape",
     "DoubleCallback",
     "Element",
+    "EmbeddedSurface",
+    "EmbeddedSurfaceBuilder",
+    "Embedding",
     "Error",
     "FileChooser",
     "FileChooserPurpose",
@@ -51,6 +60,8 @@ __all__ = [
     "NONE",
     "PathsCallback",
     "PlaybackState",
+    "PointerButton",
+    "Rect",
     "SPACE_HAIR",
     "SPACE_LOOSE",
     "SPACE_NONE",
@@ -69,12 +80,18 @@ __all__ = [
     "TextDocument",
     "TextRole",
     "TextTone",
+    "ThemeBackground",
+    "ThemeCatalog",
     "TransitionStyle",
     "UnsavedAnswer",
     "UnsavedCallback",
     "Video",
     "View",
     "ViewCallback",
+    "VulkanCommandsCallback",
+    "VulkanDevice",
+    "VulkanImage",
+    "VulkanSemaphoreCallback",
     "Window",
     "WindowBuilder",
     "WindowRequest",
@@ -82,6 +99,7 @@ __all__ = [
     "last_error",
     "open_file",
     "open_url",
+    "text_width",
     "version",
 ]
 
@@ -112,6 +130,21 @@ SPACE_LOOSE: Final[float] = 24.0
 #: Spacing token: 32 px.
 SPACE_WIDE: Final[float] = 32.0
 
+#: Corner token: windows, 16 px.
+CORNER_WINDOW: Final[float] = 16.0
+
+#: Corner token: cards, menus, popovers and sheets, 14 px.
+CORNER_PANEL: Final[float] = 14.0
+
+#: Corner token: controls, 10 px.
+CORNER_CONTROL: Final[float] = 10.0
+
+#: Corner token: rows, chips and thumbnails, 8 px.
+CORNER_ITEM: Final[float] = 8.0
+
+#: Corner token: small details, 4 px.
+CORNER_DETAIL: Final[float] = 4.0
+
 
 @dataclass(frozen=True, slots=True)
 class Color:
@@ -130,6 +163,55 @@ def _to_color(value: Color) -> _native.Color:
 
 def _from_color(value: _native.Color) -> Color:
     return Color(value.r, value.g, value.b, value.a)
+
+
+@dataclass(frozen=True, slots=True)
+class Rect:
+    """A rectangle in logical pixels."""
+
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+def _to_rect(value: Rect) -> _native.Rect:
+    _runtime.expect(value, Rect)
+    return _native.Rect(value.x, value.y, value.width, value.height)
+
+
+def _from_rect(value: _native.Rect) -> Rect:
+    return Rect(value.x, value.y, value.width, value.height)
+
+
+@dataclass(frozen=True, slots=True)
+class VulkanImage:
+    """A Vulkan image of another program."""
+
+    #: The VkImage.
+    image: int
+    #: A VkImageView of its single color level and layer.
+    view: int
+    #: Its VkFormat.
+    format: int
+    #: Its width in pixels.
+    width: int
+    #: Its height in pixels.
+    height: int
+    #: The VkImageLayout it is in.
+    layout: int
+    #: Whether its rows run from the bottom up, as in images an OpenGL-style program flips when it
+    #: shows them.
+    bottom_up: bool
+
+
+def _to_vulkan_image(value: VulkanImage) -> _native.VulkanImage:
+    _runtime.expect(value, VulkanImage)
+    return _native.VulkanImage(value.image, value.view, value.format, value.width, value.height, value.layout, value.bottom_up)
+
+
+def _from_vulkan_image(value: _native.VulkanImage) -> VulkanImage:
+    return VulkanImage(value.image, value.view, value.format, value.width, value.height, value.layout, value.bottom_up)
 
 
 class Status(enum.IntEnum):
@@ -281,6 +363,19 @@ class ColorRole(enum.IntEnum):
     ON_SUCCESS = 14
     OUTLINE = 15
     OVERLAY = 16
+
+
+class ThemeBackground(enum.IntEnum):
+    """What lies behind a theme's surfaces."""
+
+    #: The desktop's choice.
+    DESKTOP = 0
+    #: Opaque surfaces.
+    SOLID = 1
+    #: Translucent surfaces over a blur of what lies beneath.
+    GLASS = 2
+    #: Glass whose edges also refract what lies beneath.
+    LIQUID = 3
 
 
 class AnchorEdge(enum.IntEnum):
@@ -449,6 +544,40 @@ class KeyCode(enum.IntEnum):
         return member
 
 
+class PointerButton(enum.IntEnum):
+    """A pointer button."""
+
+    LEFT = 0
+    RIGHT = 1
+    MIDDLE = 2
+    BACK = 3
+    FORWARD = 4
+
+
+class CursorShape(enum.IntEnum):
+    """A pointer shape."""
+
+    DEFAULT = 0
+    HIDDEN = 1
+    #: A hand over something to press.
+    POINTER = 2
+    TEXT = 3
+    WAIT = 4
+    PROGRESS = 5
+    CROSSHAIR = 6
+    MOVE = 7
+    GRAB = 8
+    GRABBING = 9
+    NOT_ALLOWED = 10
+    RESIZE_HORIZONTAL = 11
+    RESIZE_VERTICAL = 12
+    RESIZE_DIAGONAL_DOWN = 13
+    RESIZE_DIAGONAL_UP = 14
+    ZOOM_IN = 15
+    ZOOM_OUT = 16
+    HELP = 17
+
+
 class Modifiers(enum.IntFlag):
     """Keyboard modifiers held with a key."""
 
@@ -527,6 +656,18 @@ StringCallback: TypeAlias = Callable[["Context", str], object]
 UnsavedCallback: TypeAlias = Callable[["Context", UnsavedAnswer], object]
 #: Does blocking work on a background thread.
 WorkCallback: TypeAlias = Callable[[], object]
+#: Hands over a semaphore operation of a Vulkan submission.
+#:
+#: ``semaphore``: The VkSemaphore.
+#:
+#: ``value``: The timeline value, or 0 for a binary semaphore.
+#:
+#: ``stages``: The VkPipelineStageFlags2 it applies to.
+VulkanSemaphoreCallback: TypeAlias = Callable[[int, int, int], object]
+#: Hands over a command buffer of a Vulkan submission.
+#:
+#: ``command_buffer``: The VkCommandBuffer.
+VulkanCommandsCallback: TypeAlias = Callable[[int], object]
 
 
 _ViewCallbackT = TypeVar("_ViewCallbackT", bound=ViewCallback)
@@ -543,6 +684,8 @@ _PathsCallbackT = TypeVar("_PathsCallbackT", bound=PathsCallback)
 _StringCallbackT = TypeVar("_StringCallbackT", bound=StringCallback)
 _UnsavedCallbackT = TypeVar("_UnsavedCallbackT", bound=UnsavedCallback)
 _WorkCallbackT = TypeVar("_WorkCallbackT", bound=WorkCallback)
+_VulkanSemaphoreCallbackT = TypeVar("_VulkanSemaphoreCallbackT", bound=VulkanSemaphoreCallback)
+_VulkanCommandsCallbackT = TypeVar("_VulkanCommandsCallbackT", bound=VulkanCommandsCallback)
 _ElementT = TypeVar("_ElementT", bound="Element")
 
 
@@ -1410,6 +1553,487 @@ class TextDocument(_runtime.Counted):
         return _native.rk_text_document_redo(self._handle)
 
 
+class VulkanDevice(_runtime.Handle):
+    """The Vulkan device of a program that draws embedded surfaces into its own frames. Rikka draws
+    with this device and its queue instead of making its own, so the program must have created
+    them for Vulkan 1.3 with the features listed in :meth:`VulkanDevice.set_features`. Rikka
+    never submits to the queue itself: it hands each submission to the program in order through
+    the submit callbacks, and the program submits it on that queue before its own later work. A
+    render waits for the work handed over three renders before, so the program submits at least
+    once every two renders.
+
+    It owns its native object until it is consumed or released.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_vulkan_device_free
+
+    def __init__(
+        self,
+        get_instance_proc_addr: int,
+        instance: int,
+        api_version: int,
+        physical_device: int,
+        device: int,
+        queue: int,
+        queue_family: int,
+        wait: VulkanSemaphoreCallback,
+        execute: VulkanCommandsCallback,
+        signal: VulkanSemaphoreCallback,
+        *,
+        features: int | None = None,
+    ) -> None:
+        """Describes a program's device.
+
+        Args:
+            get_instance_proc_addr: The address of the vkGetInstanceProcAddr the program loaded.
+            instance: The VkInstance.
+            api_version: The apiVersion the instance was created with; at least 1.3.
+            physical_device: The VkPhysicalDevice the device was made on.
+            device: The VkDevice; it must outlive every embedding drawing with it.
+            queue: The VkQueue the program submits Rikka's work on; it must support graphics.
+            queue_family: The family of that queue.
+            wait: Hands over a semaphore operation of a Vulkan submission. It may run on any
+                thread.
+            execute: Hands over a command buffer of a Vulkan submission. It may run on any thread.
+            signal: Hands over a semaphore operation of a Vulkan submission. It may run on any
+                thread.
+            features: Describes the features the program enabled, read during the call. Rikka needs
+                timelineSemaphore, runtimeDescriptorArray, shaderSampledImageArrayNonUniformIndexing,
+                descriptorBindingSampledImageUpdateAfterBind, descriptorBindingPartiallyBound,
+                descriptorBindingUpdateUnusedWhilePending, dynamicRendering and synchronization2, from
+                their Vulkan 1.2 and 1.3 feature structures or the structures of the extensions they
+                come from.
+        """
+        _runtime.expect_callable(wait)
+        _runtime.expect_callable(execute)
+        _runtime.expect_callable(signal)
+        get_instance_proc_addr_arg = operator.index(get_instance_proc_addr)
+        instance_arg = operator.index(instance)
+        api_version_arg = operator.index(api_version)
+        physical_device_arg = operator.index(physical_device)
+        device_arg = operator.index(device)
+        queue_arg = operator.index(queue)
+        queue_family_arg = operator.index(queue_family)
+        userdata = _runtime.register(wait, execute, signal)
+        self._attach(_native.rk_vulkan_device_new(
+            get_instance_proc_addr_arg,
+            instance_arg,
+            api_version_arg,
+            physical_device_arg,
+            device_arg,
+            queue_arg,
+            queue_family_arg,
+            _vulkan_semaphore_fn_0,
+            _vulkan_commands_fn_1,
+            _vulkan_semaphore_fn_2,
+            userdata,
+            _destroy,
+        ))
+        if features is not None:
+            self.set_features(features)
+
+    def add_instance_extension(self, name: str) -> None:
+        """Names an instance extension the program enabled."""
+        _native.rk_vulkan_device_add_instance_extension(self._handle, _runtime.text(name))
+
+    def add_device_extension(self, name: str) -> None:
+        """Names a device extension the program enabled."""
+        _native.rk_vulkan_device_add_device_extension(self._handle, _runtime.text(name))
+
+    def set_features(self, features: int) -> None:
+        """Describes the features the program enabled, read during the call. Rikka needs
+        timelineSemaphore, runtimeDescriptorArray, shaderSampledImageArrayNonUniformIndexing,
+        descriptorBindingSampledImageUpdateAfterBind, descriptorBindingPartiallyBound,
+        descriptorBindingUpdateUnusedWhilePending, dynamicRendering and synchronization2, from
+        their Vulkan 1.2 and 1.3 feature structures or the structures of the extensions they
+        come from.
+
+        Args:
+            features: The address of the VkPhysicalDeviceFeatures2 whose chain the device was
+                created with.
+        """
+        _native.rk_vulkan_device_set_features(self._handle, features)
+
+
+class ThemeCatalog(_runtime.Counted):
+    """The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
+    and the system's and the person's, Rikka's own first.
+
+    It holds one reference to a native object usable from any thread.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_theme_catalog_unref
+
+    def __init__(self) -> None:
+        """Reads the installed themes."""
+        self._attach(_native.rk_theme_catalog_new())
+
+    @property
+    def count(self) -> int:
+        """How many themes there are."""
+        return _native.rk_theme_catalog_count(self._handle)
+
+    def slug(self, index: int) -> str:
+        """The name that identifies a theme in :meth:`Embedding.set_theme`.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _native.take_string(_native.rk_theme_catalog_slug(self._handle, index))
+
+    def name(self, index: int) -> str:
+        """A theme's display name.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _native.take_string(_native.rk_theme_catalog_name(self._handle, index))
+
+    def is_dark(self, index: int) -> bool:
+        """Whether a theme is dark.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _native.rk_theme_catalog_is_dark(self._handle, index)
+
+    def color(self, index: int, role: ColorRole) -> Color:
+        """A colour of a theme over a solid background, for previewing it.
+
+        Args:
+            index: Below :attr:`ThemeCatalog.count`.
+        """
+        return _from_color(_native.rk_theme_catalog_color(self._handle, index, ColorRole(role)))
+
+
+class Embedding(_runtime.Counted):
+    """Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
+    renders on the thread that submits to the device's queue.
+
+    It holds one reference to a native object usable only on the thread that made it.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_embedding_unref
+    _bound = True
+
+    def __init__(self, device: VulkanDevice) -> None:
+        """Prepares to draw with a device. Check :attr:`Embedding.error_message` before opening
+        surfaces.
+
+        Args:
+            device: It is consumed.
+        """
+        _runtime.expect(device, VulkanDevice)
+        device_raw = device._take()
+        self._attach(_native.rk_embedding_new(device_raw))
+
+    @property
+    def error_message(self) -> str:
+        """Why the embedding cannot draw; empty when it can."""
+        return _native.take_string(_native.rk_embedding_error_message(self._handle))
+
+    def open(self, surface: EmbeddedSurfaceBuilder) -> EmbeddedSurface:
+        """Makes a surface that this embedding draws. The embedding must be able to draw.
+
+        Args:
+            surface: It is consumed.
+        """
+        _runtime.expect(surface, EmbeddedSurfaceBuilder)
+        self_arg = self._handle
+        surface_raw = surface._take()
+        return EmbeddedSurface._adopt(_native.rk_embedding_open(self_arg, surface_raw))
+
+    def set_theme(self, slug: str) -> None:
+        """Draws every surface in another theme than the desktop's.
+
+        Args:
+            slug: A :meth:`ThemeCatalog.slug`; empty follows the desktop's theme. An unknown slug
+                draws the default theme.
+        """
+        _native.rk_embedding_set_theme(self._handle, _runtime.text(slug))
+
+    def set_background(self, background: ThemeBackground) -> None:
+        """Draws every surface over another background than the desktop's."""
+        _native.rk_embedding_set_background(self._handle, ThemeBackground(background))
+
+
+class EmbeddedSurfaceBuilder(_runtime.Handle):
+    """The description of an embedded surface.
+
+    It owns its native object until it is consumed or released.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_embedded_surface_builder_free
+
+    def __init__(self, view: ViewCallback) -> None:
+        """Describes a surface whose content view declares. It wears the embedding's theme and the
+        desktop's language, and its transitions play from its first view on.
+
+        Args:
+            view: Declares the surface's content.
+        """
+        _runtime.expect_callable(view)
+        userdata = _runtime.register(view)
+        self._attach(_native.rk_embedded_surface_builder_new(_view_fn_0, userdata, _destroy))
+
+    def on_start(self, callback: ActionCallback) -> ActionCallback:
+        """Runs once the surface opens; start timers or background work here.
+
+        Args:
+            callback: Reacts to an event. The window's view runs again afterwards unless
+                :meth:`Context.skip_view` is called.
+        """
+        _runtime.expect_callable(callback)
+        self_arg = self._handle
+        userdata = _runtime.register(callback)
+        _native.rk_embedded_surface_builder_on_start(self_arg, _action_fn_0, userdata, _destroy)
+        return callback
+
+    def on_close_request(self, callback: ActionCallback) -> ActionCallback:
+        """Runs when the surface's content asks to close it, through :attr:`WindowRequest.CLOSE`,
+        :attr:`WindowRequest.ASK_TO_CLOSE` or the close command; the program decides whether to
+        drop the surface.
+
+        Args:
+            callback: Reacts to an event. The window's view runs again afterwards unless
+                :meth:`Context.skip_view` is called.
+        """
+        _runtime.expect_callable(callback)
+        self_arg = self._handle
+        userdata = _runtime.register(callback)
+        _native.rk_embedded_surface_builder_on_close_request(
+            self_arg,
+            _action_fn_0,
+            userdata,
+            _destroy,
+        )
+        return callback
+
+    def on_left(self, callback: ActionCallback) -> ActionCallback:
+        """Runs once a leaving surface's exit transitions have played out, so the program can drop
+        it; see :meth:`EmbeddedSurface.leave`.
+
+        Args:
+            callback: Reacts to an event. The window's view runs again afterwards unless
+                :meth:`Context.skip_view` is called.
+        """
+        _runtime.expect_callable(callback)
+        self_arg = self._handle
+        userdata = _runtime.register(callback)
+        _native.rk_embedded_surface_builder_on_left(self_arg, _action_fn_0, userdata, _destroy)
+        return callback
+
+
+class EmbeddedSurface(_runtime.Counted):
+    """A view drawn over a program's own frames: a heads-up display or a menu inside a game, for
+    example. Its glass and frosted panes blur and refract what the program drew beneath them.
+    The program forwards input in logical pixels from the surface's top-left corner, and each
+    input function says whether the surface used the input. It closes when its last reference is
+    gone.
+
+    It holds one reference to a native object usable only on the thread that made it.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_embedded_surface_unref
+    _bound = True
+
+    @property
+    def window(self) -> Window:
+        """The window that callbacks of this surface receive as :attr:`Context.window`, for posting
+        to it from other threads.
+        """
+        return Window._adopt(_native.rk_embedded_surface_window(self._handle))
+
+    def resize(self, width: float, height: float, scale: float) -> None:
+        """Sets the surface's size.
+
+        Args:
+            width: Logical width.
+            height: Logical height.
+            scale: Physical pixels per logical pixel; above 0.
+        """
+        _native.rk_embedded_surface_resize(self._handle, width, height, scale)
+
+    def render(self, target: VulkanImage) -> None:
+        """Draws the surface over what an image holds, as recorded work handed to the device's
+        submit callbacks, which the program then submits before anything that reads the image.
+
+        Args:
+            target: The image to draw over, as large as the surface in physical pixels. It needs
+                color attachment and sampled usage, and stays in its layout.
+
+        Raises:
+            Error: With the failing status.
+        """
+        _check(_native.rk_embedded_surface_render(self._handle, _to_vulkan_image(target)))
+
+    def pointer_move(self, x: float, y: float) -> bool:
+        """Moves the pointer.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_pointer_move(self._handle, x, y)
+
+    def pointer_press(
+        self,
+        x: float,
+        y: float,
+        button: PointerButton,
+        modifiers: Modifiers | int,
+    ) -> bool:
+        """Presses a pointer button.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_pointer_press(
+            self._handle,
+            x,
+            y,
+            PointerButton(button),
+            Modifiers(modifiers),
+        )
+
+    def pointer_release(
+        self,
+        x: float,
+        y: float,
+        button: PointerButton,
+        modifiers: Modifiers | int,
+    ) -> bool:
+        """Releases a pointer button.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_pointer_release(
+            self._handle,
+            x,
+            y,
+            PointerButton(button),
+            Modifiers(modifiers),
+        )
+
+    def pointer_leave(self) -> None:
+        """Tells the surface that the pointer left it."""
+        _native.rk_embedded_surface_pointer_leave(self._handle)
+
+    def scroll(
+        self,
+        x: float,
+        y: float,
+        steps_x: float,
+        steps_y: float,
+        modifiers: Modifiers | int,
+    ) -> bool:
+        """Turns the scroll wheel.
+
+        Args:
+            steps_x: Wheel steps to the right; negative to the left.
+            steps_y: Wheel steps away from the person; negative toward them.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_scroll(
+            self._handle,
+            x,
+            y,
+            steps_x,
+            steps_y,
+            Modifiers(modifiers),
+        )
+
+    def key_press(self, key: KeyCode | int | str, modifiers: Modifiers | int) -> bool:
+        """Presses a key. Keys that type text arrive through :meth:`EmbeddedSurface.type_text`
+        instead, unless Control, Alt or Super is held with them.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_key_press(
+            self._handle,
+            KeyCode(key),
+            Modifiers(modifiers),
+        )
+
+    def key_release(self, key: KeyCode | int | str, modifiers: Modifiers | int) -> bool:
+        """Releases a key.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_key_release(
+            self._handle,
+            KeyCode(key),
+            Modifiers(modifiers),
+        )
+
+    def type_text(self, text: str) -> bool:
+        """Types text that keys produced.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_type_text(self._handle, _runtime.text(text))
+
+    def compose_text(self, text: str, caret_start: int, caret_end: int) -> bool:
+        """Shows an input method's text under composition at the caret.
+
+        Args:
+            caret_start: The UTF-8 byte offset where the composition's caret starts, or
+                :data:`NONE`.
+            caret_end: The byte offset where it ends, not before caret_start.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_compose_text(
+            self._handle,
+            _runtime.text(text),
+            caret_start,
+            caret_end,
+        )
+
+    def commit_text(self, text: str) -> bool:
+        """Inserts the text an input method composed, replacing any composition.
+
+        Returns:
+            Whether the surface used it.
+        """
+        return _native.rk_embedded_surface_commit_text(self._handle, _runtime.text(text))
+
+    @property
+    def cursor(self) -> CursorShape:
+        """The pointer shape the surface asks for."""
+        return CursorShape(_native.rk_embedded_surface_cursor(self._handle))
+
+    @property
+    def caret(self) -> Rect:
+        """Where the caret of the focused text field or editor is, for placing an input method's
+        candidates; 0 by 0 at the origin while no text has focus.
+        """
+        return _from_rect(_native.rk_embedded_surface_caret(self._handle))
+
+    def leave(self) -> None:
+        """Plays the surface's exit: its view sees :attr:`View.is_leaving` and drops what leaves,
+        whose transitions play out; then :meth:`EmbeddedSurfaceBuilder.on_left` runs.
+        """
+        _native.rk_embedded_surface_leave(self._handle)
+
+    def rejoin(self) -> None:
+        """Brings a leaving surface back: its view declares everything again, and what was leaving
+        turns back from where it is.
+        """
+        _native.rk_embedded_surface_rejoin(self._handle)
+
+
 class Context(_runtime.Lent):
     """The context of a callback reacting to the person or the system.
 
@@ -1686,6 +2310,13 @@ class View(_runtime.Declaring):
     def is_dark(self) -> bool:
         """Whether the view is drawn in a dark theme."""
         return _native.rk_view_is_dark(self._handle)
+
+    @property
+    def is_leaving(self) -> bool:
+        """Whether the view's embedded surface is leaving through :meth:`EmbeddedSurface.leave`:
+        declare only what stays, so the rest plays its exit transitions.
+        """
+        return _native.rk_view_is_leaving(self._handle)
 
     def column(self) -> Container:
         """A column: children stack top to bottom.
@@ -2053,6 +2684,15 @@ class View(_runtime.Declaring):
         _native.rk_vertical_divider(self._handle)
         return Element(self)
 
+    def scrim(self) -> Element:
+        """Declares a backdrop over its parent, the whole view at the top level, that blurs what
+        lies beneath without darkening it and swallows presses, for modal content declared after
+        it; :meth:`Element.on_dismiss` reacts to a press on it. It fades in and out unless given
+        another :meth:`Element.transition`.
+        """
+        _native.rk_scrim(self._handle)
+        return Element(self)
+
     def button(self, label: str) -> Element:
         """Declares a labelled button."""
         _native.rk_button(self._handle, _runtime.text(label))
@@ -2376,13 +3016,37 @@ class Element:
         _native.rk_margin_edges(self._view._current(self._serial), top, right, bottom, left)
         return self
 
+    def position(self: _ElementT, x: float, y: float) -> _ElementT:
+        """Places the current element at a point of its parent, out of the flow of its siblings,
+        which lay out as if it were absent.
+
+        Args:
+            x: Logical pixels from the parent's left edge.
+            y: Logical pixels from the parent's top edge.
+        """
+        _native.rk_position(self._view._current(self._serial), x, y)
+        return self
+
+    def scale(self: _ElementT, factor: float) -> _ElementT:
+        """Draws the current element larger or smaller about its top-left corner, without changing
+        the room it takes; the pointer finds its parts where they are drawn.
+
+        Args:
+            factor: Above 0; 1 draws it as laid out.
+        """
+        _native.rk_scale(self._view._current(self._serial), factor)
+        return self
+
     def opacity(self: _ElementT, opacity: float) -> _ElementT:
         """Fades the current element, from 0 to 1."""
         _native.rk_opacity(self._view._current(self._serial), opacity)
         return self
 
     def background(self: _ElementT, color: Color) -> _ElementT:
-        """Paints a colour behind the current element."""
+        """Paints a colour behind the current element. A box paints it within its rounded corners,
+        in place of the theme's surface colour of :meth:`Element.surface` or
+        :meth:`Element.glass`.
+        """
         _native.rk_background(self._view._current(self._serial), _to_color(color))
         return self
 
@@ -2401,6 +3065,13 @@ class Element:
     def transition(self: _ElementT, style: TransitionStyle) -> _ElementT:
         """Animates the current element in and out as it is declared and dropped."""
         _native.rk_transition(self._view._current(self._serial), TransitionStyle(style))
+        return self
+
+    def glide(self: _ElementT) -> _ElementT:
+        """Carries the current element smoothly to wherever layout moves it, as when its siblings
+        come and go, instead of jumping there.
+        """
+        _native.rk_glide(self._view._current(self._serial))
         return self
 
     def anchor(self: _ElementT, target: str, edge: AnchorEdge, x: float, y: float) -> _ElementT:
@@ -2459,6 +3130,14 @@ class Element:
     def surface(self: _ElementT) -> _ElementT:
         """Gives the current box the theme's surface colour and rounded corners."""
         _native.rk_surface(self._view._current(self._serial))
+        return self
+
+    def glass(self: _ElementT) -> _ElementT:
+        """Makes the current box a glass pane with the theme's surface colour and rounded corners.
+        Under a glass theme what lies beneath it shows through blurred, and refracted under a
+        liquid one; in an embedded surface that is what the program drew.
+        """
+        _native.rk_glass(self._view._current(self._serial))
         return self
 
     def corner_radius(self: _ElementT, radius: float) -> _ElementT:
@@ -2854,8 +3533,8 @@ class Element:
         return self
 
     def on_dismiss(self: _ElementT, callback: ActionCallback) -> _ElementT:
-        """Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
-        declaring it to close it.
+        """Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner;
+        stop declaring it to close it.
 
         Args:
             callback: Reacts to an event. The window's view runs again afterwards unless
@@ -3064,6 +3743,16 @@ def open_file(path: str) -> None:
     _check(_native.rk_open_file(_runtime.text(path)))
 
 
+def text_width(text: str, size: float) -> float:
+    """How wide one line of text is when :meth:`View.text` draws it with :meth:`Element.text_size`
+    and no other text styling, in logical pixels.
+
+    Args:
+        size: The text size in logical pixels; above 0.
+    """
+    return _native.rk_text_width(_runtime.text(text), size)
+
+
 @_native.ViewFn
 def _view_fn_0(view, userdata) -> None:
     _runtime.drain()
@@ -3237,6 +3926,33 @@ def _work_fn_0(userdata) -> None:
     _runtime.drain()
     try:
         _runtime.closure(userdata, 0)()
+    except BaseException:
+        _runtime.report()
+
+
+@_native.VulkanSemaphoreFn
+def _vulkan_semaphore_fn_0(semaphore, value, stages, userdata) -> None:
+    _runtime.drain()
+    try:
+        _runtime.closure(userdata, 0)(semaphore, value, stages)
+    except BaseException:
+        _runtime.report()
+
+
+@_native.VulkanSemaphoreFn
+def _vulkan_semaphore_fn_2(semaphore, value, stages, userdata) -> None:
+    _runtime.drain()
+    try:
+        _runtime.closure(userdata, 2)(semaphore, value, stages)
+    except BaseException:
+        _runtime.report()
+
+
+@_native.VulkanCommandsFn
+def _vulkan_commands_fn_1(command_buffer, userdata) -> None:
+    _runtime.drain()
+    try:
+        _runtime.closure(userdata, 1)(command_buffer)
     except BaseException:
         _runtime.report()
 

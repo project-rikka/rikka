@@ -17,3 +17,5 @@ reference
 /.bazel/
 /user.bazelrc
 __pycache__/
+/minecraft/mcsrc/
+/minecraft/run/

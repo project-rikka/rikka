@@ -875,6 +875,10 @@
 
 - [Native Wayland application runtime](application-runtime.md) — rikka-app runs typed windows on its own xdg-shell backend and poll loop: handoff, session capabilities, appearance.
 
+## crates/ui/rikka-app/src/embedded
+
+- [Embedding rikka-ui in another program's Vulkan frames](rikka-ui-embedding.md) — ExternalDevice/ExternalTarget, rikka-ui-host Composer, rikka_app::embedded and the SDK embedded_surface rules.
+
 ## crates/ui/rikka-app/src/win32
 
 - [rikka-app Windows backend (src/win32)](win32-app-backend.md) — How rikka-app runs windows on Win32: loop, window procedure, custom frame, swapchain presenting, input, DnD, appearance.
@@ -970,6 +974,38 @@
 ## installer
 
 - [Installer architecture](installer-architecture.md) — The isolated ratatui NixOS installer, layered core → sys → tui, built static for musl.
+
+## minecraft
+
+- [Minecraft Fabric mod build (Rikka Client)](minecraft.md) — minecraft/ holds the Rikka Client Fabric mod built by Bazel: lock, @minecraft repos, fabric_mod, run, mcsrc sources.
+
+## minecraft/src/main/java/sh/rikka/client
+
+- [Rikka Client mod framework (events, mods, settings, profiles)](minecraft-client-framework.md) — sh.rikka.client packages: EventBus, ClientHooks, Mod/HudMod/ModManager, rikka-ui layers and screens, settings, profiles.
+
+## minecraft/src/main/java/sh/rikka/client/menu
+
+- [Rikka Client ModMenu and HUD editor](minecraft-menu.md) — sh.rikka.client.menu (sidebar-and-cards ModMenu over a scrim) and sh.rikka.client.hud (drag/snap HUD editor).
+
+## minecraft/src/main/java/sh/rikka/client/mods
+
+- [Rikka Client camera, mechanic and visual mods](minecraft-gameplay-mods.md) — mods/camera, mods/mechanic, mods/visual (crosshair, hit color, target ring, time) and mods/item (physics, 2D) and their…
+
+## minecraft/src/main/java/sh/rikka/client/mods/animation
+
+- [Rikka Client Old Animations mod (1.7 visuals)](minecraft-old-animations.md) — mods/animation: one visual-only Mod, its mixin hooks, and the exact-matrix method that maps 1.7 item chains onto modern…
+
+## minecraft/src/main/java/sh/rikka/client/mods/minimap
+
+- [Rikka Client panel HUD mods (minimap, keystrokes, target info, packs)](minecraft-hud-mods.md) — mods/minimap terrain atlas and drawing; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo in mods/hud.
+
+## minecraft/src/main/java/sh/rikka/client/mods/motionblur
+
+- [Rikka Client Motion Blur mod (velocity, frame blending, accumulation)](minecraft-motion-blur.md) — mods/motionblur: motion blur on own RenderPipelines; hook points, passes, frame history, uniforms.
+
+## minecraft/src/main/java/sh/rikka/client/mods/rearview
+
+- [Rikka Client Rearview mod (second world view behind the player)](minecraft-rearview.md) — mods/rearview: 16:9 HUD mirror rendered from vanilla parts; hooks, section sharing, compile scheduling, state save.
 
 ## nix/dist
 

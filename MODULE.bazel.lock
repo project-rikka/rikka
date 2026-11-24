@@ -207,7 +207,7 @@
   "moduleExtensions": {
     "//bazel/nix:extension.bzl%nix": {
       "general": {
-        "bzlTransitiveDigest": "WSemD7FmD9O6uZ/kPV/aPEjy8/+5O4LvESdhkzQrP8U=",
+        "bzlTransitiveDigest": "n/fo40o1B4Ix66lliva6vhN4LBEwhiMBp3bleLLeNQs=",
         "usagesDigest": "QgFxQ2v/wdmZgMnP62C9elvCFfe3xMMAksf8icGE060=",
         "recordedInputs": [],
         "generatedRepoSpecs": {

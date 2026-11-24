@@ -131,3 +131,21 @@ func rikkaWorkFn0(userdata unsafe.Pointer) {
 	drainReleases()
 	retained[func()](userdata, 0)()
 }
+
+//export rikkaVulkanSemaphoreFn0
+func rikkaVulkanSemaphoreFn0(semaphore C.uint64_t, value C.uint64_t, stages C.uint64_t, userdata unsafe.Pointer) {
+	drainReleases()
+	retained[func(uint64, uint64, uint64)](userdata, 0)(uint64(semaphore), uint64(value), uint64(stages))
+}
+
+//export rikkaVulkanSemaphoreFn2
+func rikkaVulkanSemaphoreFn2(semaphore C.uint64_t, value C.uint64_t, stages C.uint64_t, userdata unsafe.Pointer) {
+	drainReleases()
+	retained[func(uint64, uint64, uint64)](userdata, 2)(uint64(semaphore), uint64(value), uint64(stages))
+}
+
+//export rikkaVulkanCommandsFn1
+func rikkaVulkanCommandsFn1(commandBuffer C.uint64_t, userdata unsafe.Pointer) {
+	drainReleases()
+	retained[func(uint64)](userdata, 1)(uint64(commandBuffer))
+}

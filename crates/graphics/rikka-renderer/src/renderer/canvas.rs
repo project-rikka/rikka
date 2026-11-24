@@ -103,6 +103,7 @@ pub struct Canvas {
     pub(crate) release: QueueTransfer,
     pub(crate) wait: Option<vk::SemaphoreSubmitInfo<'static>>,
     pub(crate) signal: Option<vk::SemaphoreSubmitInfo<'static>>,
+    pub(crate) underlay: bool,
 }
 
 impl Canvas {
@@ -124,7 +125,13 @@ impl Canvas {
             release: QueueTransfer::NONE,
             wait: None,
             signal: None,
+            underlay: false,
         }
+    }
+
+    pub(crate) fn over_contents(mut self) -> Self {
+        self.underlay = true;
+        self
     }
 
     #[cfg(unix)]

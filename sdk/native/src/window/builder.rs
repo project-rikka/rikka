@@ -1,12 +1,11 @@
 use std::rc::Rc;
 
 use rikka_app::{LaunchRequest, Sender, WindowShape};
-use rikka_ui::{Command, Element, Handler, Key, Modifiers, WindowRef};
+use rikka_ui::{Command, Handler, Key, Modifiers, WindowRef};
 
 use crate::abi;
 use crate::ffi;
 use crate::handlers::{Callback, action, fixed_flag};
-use crate::view::View;
 use crate::window::Model;
 
 #[derive(Debug)]
@@ -126,7 +125,7 @@ impl WindowBuilder {
         let initial = title.clone();
         let mut window = rikka_app::Window::new(
             move |sender: Sender<Model>| Model::new(sender, title),
-            move |model: &Model| render(&view, model),
+            move |model: &Model| model.render(&view),
         )
         .title(initial)
         .title_from(|model: &Model| model.window.title())
@@ -190,11 +189,4 @@ fn positive_size(width: f32, height: f32) -> (f32, f32) {
         abi::violation(format!("{width} x {height} is not a positive size"));
     }
     (width, height)
-}
-
-fn render(view: &Callback<ffi::ViewFn>, model: &Model) -> Element {
-    let _entry = abi::enter("rk_view_fn");
-    let mut built = View::new();
-    view.call(&mut built);
-    built.finish_window(model.dialogs().elements())
 }

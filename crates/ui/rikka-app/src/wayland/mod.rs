@@ -22,6 +22,7 @@ mod window_state;
 
 use crate::error::Result;
 use crate::launch::Launch;
+use crate::tasks::LoopEvent;
 use crate::wayland::client::Client;
 use crate::wayland::runner::{Runner, RunnerConfig};
 
@@ -40,7 +41,14 @@ pub(crate) fn run(launch: Launch) -> Result<()> {
         mailbox,
         wake,
     } = launch;
-    settings::follow(proxy.clone(), appearance, language);
+    let following = proxy.clone();
+    settings::follow(
+        move |change| {
+            LoopEvent::from_session(change).is_none_or(|event| following.send_event(event).is_ok())
+        },
+        appearance,
+        language,
+    );
     let (client, queue) = Client::connect()?;
     let mut runner = Runner::new(
         RunnerConfig {

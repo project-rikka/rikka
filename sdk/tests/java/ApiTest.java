@@ -1,5 +1,6 @@
 import java.lang.ref.WeakReference;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -23,6 +24,7 @@ import os.rikka.Sound;
 import os.rikka.Status;
 import os.rikka.TextDocument;
 import os.rikka.TextRole;
+import os.rikka.ThemeCatalog;
 import os.rikka.UnsavedAnswer;
 import os.rikka.Video;
 import os.rikka.View;
@@ -246,6 +248,21 @@ public final class ApiTest {
         }
     }
 
+    private static void themeCatalogListsRikkaThemesFirst() {
+        try (ThemeCatalog themes = new ThemeCatalog()) {
+            List<String> slugs = new ArrayList<>();
+            for (int index = 0; index < themes.getCount(); index++) {
+                slugs.add(themes.slug(index));
+                check(!themes.name(index).isEmpty(), "a theme has a name");
+                check(themes.color(index, ColorRole.BACKGROUND).a() == 1.0f, "previews are solid");
+            }
+            check(slugs.size() > 2, "built-in themes are listed");
+            check(slugs.subList(0, 2).containsAll(List.of("rikka", "rikka-light")), "Rikka's themes come first");
+            check(themes.isDark(slugs.indexOf("rikka")), "the dark variant");
+            check(!themes.isDark(slugs.indexOf("rikka-light")), "the light variant");
+        }
+    }
+
     private static WeakReference<Object> runWithoutDisplay(Status[] status, String[] message) {
         Object tracker = new Object();
         Notes notes = new Notes();
@@ -285,6 +302,7 @@ public final class ApiTest {
         imagesShareOneReference();
         missingSoundsFailAndKeepSettings();
         openingARelativeUrlThrows();
+        themeCatalogListsRikkaThemesFirst();
         runningWithoutADisplayThrows();
         if (failures > 0) {
             System.err.println(failures + " checks failed");

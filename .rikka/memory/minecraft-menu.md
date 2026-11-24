@@ -1,0 +1,15 @@
+---
+title: Rikka Client ModMenu and HUD editor
+description: sh.rikka.client.menu (sidebar-and-cards ModMenu over a scrim) and sh.rikka.client.hud (drag/snap HUD editor).
+about: minecraft/src/main/java/sh/rikka/client/menu
+tags: [minecraft, ui]
+---
+
+- `ModMenuScreen` declares a `scrim` (blurs the game) and one panel column with `.transition(FADE_SCALE)`; while leaving it declares nothing. The panel is sized in Java from `surfaceWidth/Height` (max 1120×720) because content-sized boxes cannot fill; its background is the theme's `background` colour, so glass themes stay translucent over the scrim (`.glass()` panes would not fade).
+- Layout: `Sidebar` (brand, `navList` counting headers: Client/Mods/Profiles, Personalization/Themes/Preferences, primary "Edit HUD") │ top bar (back/forward history, title, search on Mods, close) │ `pageStack(pageNumber)` around a scroll. Pages: `ModsPage` (category `segmented`, wrapping mod cards with toggle), `ModPage` (only the settings and controls grids; the top bar names the mod and its toggle is on the `ModsPage` card), `ProfilesPage`, `ThemesPage` (`ThemeCatalog` previews, `Preferences.theme/background`), `PreferencesPage`.
+- `MenuState` (one per session, owned by `MenuKeys`) keeps the `Page` history, category filter and search document, so the menu reopens where it was left.
+- `menu/settings/`: `SettingRows` lays a 2-column grid of cards (name, description, reset when not default, control; wide controls go below the text); `SettingControls` switches over the sealed `Setting` family. Popover state (`ColorControl` HSV editor, `RegistryControl` searchable lazy list), text documents and `KeyCapture` live per screen and are dropped on page change, profile switch and `removed`. Key capture is taken in `ModMenuScreen.keyPressed`/`mouseClicked` (Esc cancels, left click goes to the UI).
+- Mod cards need `Mod.icon()` (a Material Symbols name given to the `Mod` constructor); `SimpleHudMod.shownIcon()` is the HUD's possibly dynamic icon. An unknown symbol name aborts the process, so check new names against `$RIKKA_ICON_LISTINGS`.
+- The sidebar brand is the project-rikka organisation avatar, `assets/rikka-client/textures/gui/project-rikka.jpg`, loaded with `Image.fromEncoded`. Cards that reflow (mods, setting rows, profiles) carry `.glide()` beside their keyed `.transition`; segmented controls get explicit widths.
+- `hud/HudEditorScreen`, no scrim, draws its toolbar at the display scale like the menu and keeps HUD geometry in HUD units (pointer and frame coordinates converted with `hudUnit()`): outline frames at each enabled HudMod's `HudBox`, Java-side hit testing and dragging (frames have no handlers, so presses reach `pressed`), `Snapping` to screen edges/margin/centre and other boxes (Shift disables), auto anchor by thirds, wheel scales, arrows nudge, right click opens the mod page. Toolbar slides in at the bottom. Opened from the menu it returns there.
+- Translations live under `rikka-client.menu.*` and `rikka-client.preference.*` in both lang files.

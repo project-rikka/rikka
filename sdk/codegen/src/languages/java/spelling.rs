@@ -127,6 +127,15 @@ impl<'a> Spelling<'a> {
         }
     }
 
+    pub(super) fn width(&self, primitive: Primitive) -> u64 {
+        match primitive {
+            Primitive::Bool | Primitive::U8 => 1,
+            Primitive::U16 => 2,
+            Primitive::U32 | Primitive::I32 | Primitive::F32 => 4,
+            Primitive::U64 | Primitive::I64 | Primitive::Usize | Primitive::F64 => 8,
+        }
+    }
+
     pub(super) fn value(&self, value: Value) -> String {
         match value {
             Value::Primitive(primitive) => self.primitive(primitive).to_owned(),

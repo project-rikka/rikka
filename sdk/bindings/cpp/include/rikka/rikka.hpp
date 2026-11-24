@@ -74,6 +74,26 @@ inline constexpr float space_loose = RK_SPACE_LOOSE;
  * Spacing token: 32 px.
  */
 inline constexpr float space_wide = RK_SPACE_WIDE;
+/**
+ * Corner token: windows, 16 px.
+ */
+inline constexpr float corner_window = RK_CORNER_WINDOW;
+/**
+ * Corner token: cards, menus, popovers and sheets, 14 px.
+ */
+inline constexpr float corner_panel = RK_CORNER_PANEL;
+/**
+ * Corner token: controls, 10 px.
+ */
+inline constexpr float corner_control = RK_CORNER_CONTROL;
+/**
+ * Corner token: rows, chips and thumbnails, 8 px.
+ */
+inline constexpr float corner_item = RK_CORNER_ITEM;
+/**
+ * Corner token: small details, 4 px.
+ */
+inline constexpr float corner_detail = RK_CORNER_DETAIL;
 
 /**
  * A straight-alpha sRGB colour with components from 0 to 1.
@@ -85,6 +105,55 @@ struct Color {
     float a{};
 
     friend bool operator==(const Color&, const Color&) = default;
+};
+
+/**
+ * A rectangle in logical pixels.
+ */
+struct Rect {
+    float x{};
+    float y{};
+    float width{};
+    float height{};
+
+    friend bool operator==(const Rect&, const Rect&) = default;
+};
+
+/**
+ * A Vulkan image of another program.
+ */
+struct VulkanImage {
+    /**
+     * The VkImage.
+     */
+    std::uint64_t image{};
+    /**
+     * A VkImageView of its single color level and layer.
+     */
+    std::uint64_t view{};
+    /**
+     * Its VkFormat.
+     */
+    std::uint32_t format{};
+    /**
+     * Its width in pixels.
+     */
+    std::uint32_t width{};
+    /**
+     * Its height in pixels.
+     */
+    std::uint32_t height{};
+    /**
+     * The VkImageLayout it is in.
+     */
+    std::uint32_t layout{};
+    /**
+     * Whether its rows run from the bottom up, as in images an OpenGL-style program flips when
+     * it shows them.
+     */
+    bool bottom_up{};
+
+    friend bool operator==(const VulkanImage&, const VulkanImage&) = default;
 };
 
 /**
@@ -278,6 +347,28 @@ enum class ColorRole : std::uint32_t {
 };
 
 /**
+ * What lies behind a theme's surfaces.
+ */
+enum class ThemeBackground : std::uint32_t {
+    /**
+     * The desktop's choice.
+     */
+    desktop = RK_THEME_BACKGROUND_DESKTOP,
+    /**
+     * Opaque surfaces.
+     */
+    solid = RK_THEME_BACKGROUND_SOLID,
+    /**
+     * Translucent surfaces over a blur of what lies beneath.
+     */
+    glass = RK_THEME_BACKGROUND_GLASS,
+    /**
+     * Glass whose edges also refract what lies beneath.
+     */
+    liquid = RK_THEME_BACKGROUND_LIQUID,
+};
+
+/**
  * Where an anchored element sits relative to its target.
  */
 enum class AnchorEdge : std::uint32_t {
@@ -467,6 +558,44 @@ enum class KeyCode : std::uint32_t {
 };
 
 /**
+ * A pointer button.
+ */
+enum class PointerButton : std::uint32_t {
+    left = RK_POINTER_BUTTON_LEFT,
+    right = RK_POINTER_BUTTON_RIGHT,
+    middle = RK_POINTER_BUTTON_MIDDLE,
+    back = RK_POINTER_BUTTON_BACK,
+    forward = RK_POINTER_BUTTON_FORWARD,
+};
+
+/**
+ * A pointer shape.
+ */
+enum class CursorShape : std::uint32_t {
+    default_ = RK_CURSOR_SHAPE_DEFAULT,
+    hidden = RK_CURSOR_SHAPE_HIDDEN,
+    /**
+     * A hand over something to press.
+     */
+    pointer = RK_CURSOR_SHAPE_POINTER,
+    text = RK_CURSOR_SHAPE_TEXT,
+    wait = RK_CURSOR_SHAPE_WAIT,
+    progress = RK_CURSOR_SHAPE_PROGRESS,
+    crosshair = RK_CURSOR_SHAPE_CROSSHAIR,
+    move = RK_CURSOR_SHAPE_MOVE,
+    grab = RK_CURSOR_SHAPE_GRAB,
+    grabbing = RK_CURSOR_SHAPE_GRABBING,
+    not_allowed = RK_CURSOR_SHAPE_NOT_ALLOWED,
+    resize_horizontal = RK_CURSOR_SHAPE_RESIZE_HORIZONTAL,
+    resize_vertical = RK_CURSOR_SHAPE_RESIZE_VERTICAL,
+    resize_diagonal_down = RK_CURSOR_SHAPE_RESIZE_DIAGONAL_DOWN,
+    resize_diagonal_up = RK_CURSOR_SHAPE_RESIZE_DIAGONAL_UP,
+    zoom_in = RK_CURSOR_SHAPE_ZOOM_IN,
+    zoom_out = RK_CURSOR_SHAPE_ZOOM_OUT,
+    help = RK_CURSOR_SHAPE_HELP,
+};
+
+/**
  * Keyboard modifiers held with a key.
  */
 enum class Modifiers : std::uint32_t {
@@ -535,6 +664,11 @@ class Image;
 class Sound;
 class Video;
 class TextDocument;
+class VulkanDevice;
+class ThemeCatalog;
+class Embedding;
+class EmbeddedSurfaceBuilder;
+class EmbeddedSurface;
 class Context;
 class View;
 class Element;
@@ -570,6 +704,22 @@ struct Adopt {
 
 [[nodiscard]] inline Color convert(const rk_color& value) noexcept {
     return { value.r, value.g, value.b, value.a };
+}
+
+[[nodiscard]] inline rk_rect convert(const Rect& value) noexcept {
+    return { value.x, value.y, value.width, value.height };
+}
+
+[[nodiscard]] inline Rect convert(const rk_rect& value) noexcept {
+    return { value.x, value.y, value.width, value.height };
+}
+
+[[nodiscard]] inline rk_vulkan_image convert(const VulkanImage& value) noexcept {
+    return { value.image, value.view, value.format, value.width, value.height, value.layout, value.bottom_up };
+}
+
+[[nodiscard]] inline VulkanImage convert(const rk_vulkan_image& value) noexcept {
+    return { value.image, value.view, value.format, value.width, value.height, value.layout, value.bottom_up };
 }
 
 inline void check(rk_status status) {
@@ -1633,6 +1783,573 @@ private:
 };
 
 /**
+ * The Vulkan device of a program that draws embedded surfaces into its own frames. Rikka draws
+ * with this device and its queue instead of making its own, so the program must have created
+ * them for Vulkan 1.3 with the features listed in rikka::VulkanDevice::features(). Rikka never
+ * submits to the queue itself: it hands each submission to the program in order through the
+ * submit callbacks, and the program submits it on that queue before its own later work. A
+ * render waits for the work handed over three renders before, so the program submits at least
+ * once every two renders.
+ *
+ * Move-only; destroying it releases what it owns.
+ */
+class VulkanDevice {
+public:
+    VulkanDevice(VulkanDevice&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    VulkanDevice& operator=(VulkanDevice&& other) noexcept {
+        VulkanDevice(std::move(other)).swap(*this);
+        return *this;
+    }
+
+    VulkanDevice(const VulkanDevice&) = delete;
+    VulkanDevice& operator=(const VulkanDevice&) = delete;
+
+    ~VulkanDevice() {
+        rk_vulkan_device_free(raw_);
+    }
+
+    /**
+     * Takes ownership of a handle from the C API.
+     */
+    [[nodiscard]] static VulkanDevice adopt(rk_vulkan_device* raw) noexcept {
+        return VulkanDevice(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API, still owned by this object.
+     */
+    [[nodiscard]] rk_vulkan_device* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives up ownership of the handle to the caller, leaving this object empty.
+     */
+    [[nodiscard]] rk_vulkan_device* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(VulkanDevice& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * Describes a program's device.
+     *
+     * @param get_instance_proc_addr The address of the vkGetInstanceProcAddr the program
+     * loaded.
+     * @param instance The VkInstance.
+     * @param api_version The apiVersion the instance was created with; at least 1.3.
+     * @param physical_device The VkPhysicalDevice the device was made on.
+     * @param device The VkDevice; it must outlive every embedding drawing with it.
+     * @param queue The VkQueue the program submits Rikka's work on; it must support graphics.
+     * @param queue_family The family of that queue.
+     * @param wait Hands over a semaphore operation of a Vulkan submission. It may run on any
+     * thread.
+     * @param execute Hands over a command buffer of a Vulkan submission. It may run on any
+     * thread.
+     * @param signal Hands over a semaphore operation of a Vulkan submission. It may run on any
+     * thread.
+     */
+    template <class WaitFn, class ExecuteFn, class SignalFn>
+        requires std::invocable<WaitFn&, std::uint64_t, std::uint64_t, std::uint64_t> && std::invocable<ExecuteFn&, std::uint64_t> && std::invocable<SignalFn&, std::uint64_t, std::uint64_t, std::uint64_t>
+    explicit VulkanDevice(std::uint64_t get_instance_proc_addr, std::uint64_t instance, std::uint32_t api_version, std::uint64_t physical_device, std::uint64_t device, std::uint64_t queue, std::uint32_t queue_family, WaitFn&& wait, ExecuteFn&& execute, SignalFn&& signal);
+
+    /**
+     * Names an instance extension the program enabled.
+     */
+    VulkanDevice& add_instance_extension(std::string_view name) &;
+
+    VulkanDevice&& add_instance_extension(std::string_view name) &&;
+
+    /**
+     * Names a device extension the program enabled.
+     */
+    VulkanDevice& add_device_extension(std::string_view name) &;
+
+    VulkanDevice&& add_device_extension(std::string_view name) &&;
+
+    /**
+     * Describes the features the program enabled, read during the call. Rikka needs
+     * timelineSemaphore, runtimeDescriptorArray, shaderSampledImageArrayNonUniformIndexing,
+     * descriptorBindingSampledImageUpdateAfterBind, descriptorBindingPartiallyBound,
+     * descriptorBindingUpdateUnusedWhilePending, dynamicRendering and synchronization2, from
+     * their Vulkan 1.2 and 1.3 feature structures or the structures of the extensions they come
+     * from.
+     *
+     * @param features The address of the VkPhysicalDeviceFeatures2 whose chain the device was
+     * created with.
+     */
+    VulkanDevice& features(std::uint64_t features) &;
+
+    VulkanDevice&& features(std::uint64_t features) &&;
+
+private:
+    VulkanDevice(detail::Adopt, rk_vulkan_device* raw) noexcept : raw_(raw) {}
+
+    rk_vulkan_device* raw_ = nullptr;
+};
+
+/**
+ * The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
+ * and the system's and the person's, Rikka's own first.
+ *
+ * Copies share one reference-counted object, usable from any thread.
+ */
+class ThemeCatalog {
+public:
+    ThemeCatalog(const ThemeCatalog& other) noexcept : raw_(rk_theme_catalog_ref(other.raw_)) {}
+
+    ThemeCatalog(ThemeCatalog&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    ThemeCatalog& operator=(ThemeCatalog other) noexcept {
+        swap(other);
+        return *this;
+    }
+
+    ~ThemeCatalog() {
+        rk_theme_catalog_unref(raw_);
+    }
+
+    /**
+     * Takes over one reference to a handle from the C API.
+     */
+    [[nodiscard]] static ThemeCatalog adopt(rk_theme_catalog* raw) noexcept {
+        return ThemeCatalog(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API; this object keeps its reference.
+     */
+    [[nodiscard]] rk_theme_catalog* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives this object's reference to the caller, leaving it empty.
+     */
+    [[nodiscard]] rk_theme_catalog* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(ThemeCatalog& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * Reads the installed themes.
+     */
+    explicit ThemeCatalog();
+
+    /**
+     * How many themes there are.
+     */
+    [[nodiscard]] std::size_t count() const;
+
+    /**
+     * The name that identifies a theme in rikka::Embedding::set_theme().
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    [[nodiscard]] std::string slug(std::size_t index);
+
+    /**
+     * A theme's display name.
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    [[nodiscard]] std::string name(std::size_t index);
+
+    /**
+     * Whether a theme is dark.
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    bool is_dark(std::size_t index);
+
+    /**
+     * A colour of a theme over a solid background, for previewing it.
+     *
+     * @param index Below rikka::ThemeCatalog::count().
+     */
+    Color color(std::size_t index, ColorRole role);
+
+private:
+    ThemeCatalog(detail::Adopt, rk_theme_catalog* raw) noexcept : raw_(raw) {}
+
+    rk_theme_catalog* raw_ = nullptr;
+};
+
+/**
+ * Draws embedded surfaces with a program's Vulkan device. Create it, its surfaces and their
+ * renders on the thread that submits to the device's queue.
+ *
+ * Copies share one reference-counted object, usable only on the thread that made it.
+ */
+class Embedding {
+public:
+    Embedding(const Embedding& other) noexcept : raw_(rk_embedding_ref(other.raw_)) {}
+
+    Embedding(Embedding&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    Embedding& operator=(Embedding other) noexcept {
+        swap(other);
+        return *this;
+    }
+
+    ~Embedding() {
+        rk_embedding_unref(raw_);
+    }
+
+    /**
+     * Takes over one reference to a handle from the C API.
+     */
+    [[nodiscard]] static Embedding adopt(rk_embedding* raw) noexcept {
+        return Embedding(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API; this object keeps its reference.
+     */
+    [[nodiscard]] rk_embedding* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives this object's reference to the caller, leaving it empty.
+     */
+    [[nodiscard]] rk_embedding* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(Embedding& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * Prepares to draw with a device. Check rikka::Embedding::error_message() before opening
+     * surfaces.
+     *
+     * @param device Ownership passes to the SDK.
+     */
+    explicit Embedding(VulkanDevice device);
+
+    /**
+     * Why the embedding cannot draw; empty when it can.
+     */
+    [[nodiscard]] std::string error_message() const;
+
+    /**
+     * Makes a surface that this embedding draws. The embedding must be able to draw.
+     *
+     * @param surface Ownership passes to the SDK.
+     */
+    [[nodiscard]] EmbeddedSurface open(EmbeddedSurfaceBuilder surface);
+
+    /**
+     * Draws every surface in another theme than the desktop's.
+     *
+     * @param slug A rikka::ThemeCatalog::slug(); empty follows the desktop's theme. An unknown
+     * slug draws the default theme.
+     */
+    void set_theme(std::string_view slug);
+
+    /**
+     * Draws every surface over another background than the desktop's.
+     */
+    void set_background(ThemeBackground background);
+
+private:
+    Embedding(detail::Adopt, rk_embedding* raw) noexcept : raw_(raw) {}
+
+    rk_embedding* raw_ = nullptr;
+};
+
+/**
+ * The description of an embedded surface.
+ *
+ * Move-only; destroying it releases what it owns.
+ */
+class EmbeddedSurfaceBuilder {
+public:
+    EmbeddedSurfaceBuilder(EmbeddedSurfaceBuilder&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    EmbeddedSurfaceBuilder& operator=(EmbeddedSurfaceBuilder&& other) noexcept {
+        EmbeddedSurfaceBuilder(std::move(other)).swap(*this);
+        return *this;
+    }
+
+    EmbeddedSurfaceBuilder(const EmbeddedSurfaceBuilder&) = delete;
+    EmbeddedSurfaceBuilder& operator=(const EmbeddedSurfaceBuilder&) = delete;
+
+    ~EmbeddedSurfaceBuilder() {
+        rk_embedded_surface_builder_free(raw_);
+    }
+
+    /**
+     * Takes ownership of a handle from the C API.
+     */
+    [[nodiscard]] static EmbeddedSurfaceBuilder adopt(rk_embedded_surface_builder* raw) noexcept {
+        return EmbeddedSurfaceBuilder(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API, still owned by this object.
+     */
+    [[nodiscard]] rk_embedded_surface_builder* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives up ownership of the handle to the caller, leaving this object empty.
+     */
+    [[nodiscard]] rk_embedded_surface_builder* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(EmbeddedSurfaceBuilder& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * Describes a surface whose content view declares. It wears the embedding's theme and the
+     * desktop's language, and its transitions play from its first view on.
+     *
+     * @param view Declares the surface's content.
+     */
+    template <class F>
+        requires std::invocable<F&, View&>
+    explicit EmbeddedSurfaceBuilder(F&& view);
+
+    /**
+     * Runs once the surface opens; start timers or background work here.
+     *
+     * @param callback Reacts to an event. The window's view runs again afterwards unless
+     * rikka::Context::skip_view() is called.
+     */
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder& on_start(F&& callback) &;
+
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder&& on_start(F&& callback) &&;
+
+    /**
+     * Runs when the surface's content asks to close it, through rikka::WindowRequest::close,
+     * rikka::WindowRequest::ask_to_close or the close command; the program decides whether to
+     * drop the surface.
+     *
+     * @param callback Reacts to an event. The window's view runs again afterwards unless
+     * rikka::Context::skip_view() is called.
+     */
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder& on_close_request(F&& callback) &;
+
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder&& on_close_request(F&& callback) &&;
+
+    /**
+     * Runs once a leaving surface's exit transitions have played out, so the program can drop
+     * it; see rikka::EmbeddedSurface::leave().
+     *
+     * @param callback Reacts to an event. The window's view runs again afterwards unless
+     * rikka::Context::skip_view() is called.
+     */
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder& on_left(F&& callback) &;
+
+    template <class F>
+        requires std::invocable<F&, Context&>
+    EmbeddedSurfaceBuilder&& on_left(F&& callback) &&;
+
+private:
+    EmbeddedSurfaceBuilder(detail::Adopt, rk_embedded_surface_builder* raw) noexcept : raw_(raw) {}
+
+    rk_embedded_surface_builder* raw_ = nullptr;
+};
+
+/**
+ * A view drawn over a program's own frames: a heads-up display or a menu inside a game, for
+ * example. Its glass and frosted panes blur and refract what the program drew beneath them. The
+ * program forwards input in logical pixels from the surface's top-left corner, and each input
+ * function says whether the surface used the input. It closes when its last reference is gone.
+ *
+ * Copies share one reference-counted object, usable only on the thread that made it.
+ */
+class EmbeddedSurface {
+public:
+    EmbeddedSurface(const EmbeddedSurface& other) noexcept : raw_(rk_embedded_surface_ref(other.raw_)) {}
+
+    EmbeddedSurface(EmbeddedSurface&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    EmbeddedSurface& operator=(EmbeddedSurface other) noexcept {
+        swap(other);
+        return *this;
+    }
+
+    ~EmbeddedSurface() {
+        rk_embedded_surface_unref(raw_);
+    }
+
+    /**
+     * Takes over one reference to a handle from the C API.
+     */
+    [[nodiscard]] static EmbeddedSurface adopt(rk_embedded_surface* raw) noexcept {
+        return EmbeddedSurface(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API; this object keeps its reference.
+     */
+    [[nodiscard]] rk_embedded_surface* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives this object's reference to the caller, leaving it empty.
+     */
+    [[nodiscard]] rk_embedded_surface* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(EmbeddedSurface& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * The window that callbacks of this surface receive as rikka::Context::window(), for
+     * posting to it from other threads.
+     */
+    [[nodiscard]] Window window() const;
+
+    /**
+     * Sets the surface's size.
+     *
+     * @param width Logical width.
+     * @param height Logical height.
+     * @param scale Physical pixels per logical pixel; above 0.
+     */
+    void resize(float width, float height, float scale);
+
+    /**
+     * Draws the surface over what an image holds, as recorded work handed to the device's
+     * submit callbacks, which the program then submits before anything that reads the image.
+     *
+     * @param target The image to draw over, as large as the surface in physical pixels. It
+     * needs color attachment and sampled usage, and stays in its layout.
+     * @throws rikka::Error with the failing status.
+     */
+    void render(const VulkanImage& target);
+
+    /**
+     * Moves the pointer.
+     *
+     * @return Whether the surface used it.
+     */
+    bool pointer_move(float x, float y);
+
+    /**
+     * Presses a pointer button.
+     *
+     * @return Whether the surface used it.
+     */
+    bool pointer_press(float x, float y, PointerButton button, Modifiers modifiers);
+
+    /**
+     * Releases a pointer button.
+     *
+     * @return Whether the surface used it.
+     */
+    bool pointer_release(float x, float y, PointerButton button, Modifiers modifiers);
+
+    /**
+     * Tells the surface that the pointer left it.
+     */
+    void pointer_leave();
+
+    /**
+     * Turns the scroll wheel.
+     *
+     * @param steps_x Wheel steps to the right; negative to the left.
+     * @param steps_y Wheel steps away from the person; negative toward them.
+     * @return Whether the surface used it.
+     */
+    bool scroll(float x, float y, float steps_x, float steps_y, Modifiers modifiers);
+
+    /**
+     * Presses a key. Keys that type text arrive through rikka::EmbeddedSurface::type_text()
+     * instead, unless Control, Alt or Super is held with them.
+     *
+     * @return Whether the surface used it.
+     */
+    bool key_press(KeyCode key, Modifiers modifiers);
+
+    /**
+     * Releases a key.
+     *
+     * @return Whether the surface used it.
+     */
+    bool key_release(KeyCode key, Modifiers modifiers);
+
+    /**
+     * Types text that keys produced.
+     *
+     * @return Whether the surface used it.
+     */
+    bool type_text(std::string_view text);
+
+    /**
+     * Shows an input method's text under composition at the caret.
+     *
+     * @param caret_start The UTF-8 byte offset where the composition's caret starts, or
+     * rikka::none.
+     * @param caret_end The byte offset where it ends, not before caret_start.
+     * @return Whether the surface used it.
+     */
+    bool compose_text(std::string_view text, std::size_t caret_start, std::size_t caret_end);
+
+    /**
+     * Inserts the text an input method composed, replacing any composition.
+     *
+     * @return Whether the surface used it.
+     */
+    bool commit_text(std::string_view text);
+
+    /**
+     * The pointer shape the surface asks for.
+     */
+    [[nodiscard]] CursorShape cursor() const;
+
+    /**
+     * Where the caret of the focused text field or editor is, for placing an input method's
+     * candidates; 0 by 0 at the origin while no text has focus.
+     */
+    [[nodiscard]] Rect caret() const;
+
+    /**
+     * Plays the surface's exit: its view sees rikka::View::is_leaving() and drops what leaves,
+     * whose transitions play out; then rikka::EmbeddedSurfaceBuilder::on_left() runs.
+     */
+    void leave();
+
+    /**
+     * Brings a leaving surface back: its view declares everything again, and what was leaving
+     * turns back from where it is.
+     */
+    void rejoin();
+
+private:
+    EmbeddedSurface(detail::Adopt, rk_embedded_surface* raw) noexcept : raw_(raw) {}
+
+    rk_embedded_surface* raw_ = nullptr;
+};
+
+/**
  * The context of a callback reacting to the person or the system.
  *
  * Lent to a callback; valid only while the callback runs.
@@ -1787,6 +2504,12 @@ public:
      * Whether the view is drawn in a dark theme.
      */
     [[nodiscard]] bool is_dark() const;
+
+    /**
+     * Whether the view's embedded surface is leaving through rikka::EmbeddedSurface::leave():
+     * declare only what stays, so the rest plays its exit transitions.
+     */
+    [[nodiscard]] bool is_leaving() const;
 
     /**
      * A column: children stack top to bottom.
@@ -2135,6 +2858,14 @@ public:
     Element vertical_divider();
 
     /**
+     * Declares a backdrop over its parent, the whole view at the top level, that blurs what
+     * lies beneath without darkening it and swallows presses, for modal content declared after
+     * it; rikka::Element::on_dismiss() reacts to a press on it. It fades in and out unless
+     * given another rikka::Element::transition().
+     */
+    Element scrim();
+
+    /**
      * Declares a labelled button.
      */
     Element button(std::string_view label);
@@ -2334,12 +3065,31 @@ public:
     Element& margin_edges(float top, float right, float bottom, float left);
 
     /**
+     * Places the current element at a point of its parent, out of the flow of its siblings,
+     * which lay out as if it were absent.
+     *
+     * @param x Logical pixels from the parent's left edge.
+     * @param y Logical pixels from the parent's top edge.
+     */
+    Element& position(float x, float y);
+
+    /**
+     * Draws the current element larger or smaller about its top-left corner, without changing
+     * the room it takes; the pointer finds its parts where they are drawn.
+     *
+     * @param factor Above 0; 1 draws it as laid out.
+     */
+    Element& scale(float factor);
+
+    /**
      * Fades the current element, from 0 to 1.
      */
     Element& opacity(float opacity);
 
     /**
-     * Paints a colour behind the current element.
+     * Paints a colour behind the current element. A box paints it within its rounded corners,
+     * in place of the theme's surface colour of rikka::Element::surface() or
+     * rikka::Element::glass().
      */
     Element& background(const Color& color);
 
@@ -2358,6 +3108,12 @@ public:
      * Animates the current element in and out as it is declared and dropped.
      */
     Element& transition(TransitionStyle style);
+
+    /**
+     * Carries the current element smoothly to wherever layout moves it, as when its siblings
+     * come and go, instead of jumping there.
+     */
+    Element& glide();
 
     /**
      * Places the current popover or popup menu against the element with a key.
@@ -2402,6 +3158,13 @@ public:
      * Gives the current box the theme's surface colour and rounded corners.
      */
     Element& surface();
+
+    /**
+     * Makes the current box a glass pane with the theme's surface colour and rounded corners.
+     * Under a glass theme what lies beneath it shows through blurred, and refracted under a
+     * liquid one; in an embedded surface that is what the program drew.
+     */
+    Element& glass();
 
     /**
      * Rounds the current box or picture.
@@ -2749,8 +3512,8 @@ public:
     Element& on_blur(F&& callback);
 
     /**
-     * Reacts to the person dismissing the current sheet, popover, popup menu or banner; stop
-     * declaring it to close it.
+     * Reacts to the person dismissing the current sheet, popover, popup menu, scrim or banner;
+     * stop declaring it to close it.
      *
      * @param callback Reacts to an event. The window's view runs again afterwards unless
      * rikka::Context::skip_view() is called.
@@ -2918,6 +3681,16 @@ void unsaved_fn(rk_context* context, rk_unsaved_answer answer, void* userdata) n
 template <class Pack, std::size_t Index>
 void work_fn(void* userdata) noexcept {
     std::get<Index>(*static_cast<Pack*>(userdata))();
+}
+
+template <class Pack, std::size_t Index>
+void vulkan_semaphore_fn(std::uint64_t semaphore, std::uint64_t value, std::uint64_t stages, void* userdata) noexcept {
+    std::get<Index>(*static_cast<Pack*>(userdata))(semaphore, value, stages);
+}
+
+template <class Pack, std::size_t Index>
+void vulkan_commands_fn(std::uint64_t command_buffer, void* userdata) noexcept {
+    std::get<Index>(*static_cast<Pack*>(userdata))(command_buffer);
 }
 
 }  // namespace detail
@@ -3428,6 +4201,206 @@ inline bool TextDocument::redo() {
     return rk_text_document_redo(raw_);
 }
 
+template <class WaitFn, class ExecuteFn, class SignalFn>
+    requires std::invocable<WaitFn&, std::uint64_t, std::uint64_t, std::uint64_t> && std::invocable<ExecuteFn&, std::uint64_t> && std::invocable<SignalFn&, std::uint64_t, std::uint64_t, std::uint64_t>
+inline VulkanDevice::VulkanDevice(std::uint64_t get_instance_proc_addr, std::uint64_t instance, std::uint32_t api_version, std::uint64_t physical_device, std::uint64_t device, std::uint64_t queue, std::uint32_t queue_family, WaitFn&& wait, ExecuteFn&& execute, SignalFn&& signal) {
+    using Pack = std::tuple<std::decay_t<WaitFn>, std::decay_t<ExecuteFn>, std::decay_t<SignalFn>>;
+    auto userdata = std::make_unique<Pack>(std::forward<WaitFn>(wait), std::forward<ExecuteFn>(execute), std::forward<SignalFn>(signal));
+    raw_ = rk_vulkan_device_new(get_instance_proc_addr, instance, api_version, physical_device, device, queue, queue_family, detail::vulkan_semaphore_fn<Pack, 0>, detail::vulkan_commands_fn<Pack, 1>, detail::vulkan_semaphore_fn<Pack, 2>, userdata.release(), detail::destroy<Pack>);
+}
+
+inline VulkanDevice& VulkanDevice::add_instance_extension(std::string_view name) & {
+    rk_vulkan_device_add_instance_extension(raw_, detail::str(name));
+    return *this;
+}
+
+inline VulkanDevice&& VulkanDevice::add_instance_extension(std::string_view name) && {
+    return std::move(this->add_instance_extension(name));
+}
+
+inline VulkanDevice& VulkanDevice::add_device_extension(std::string_view name) & {
+    rk_vulkan_device_add_device_extension(raw_, detail::str(name));
+    return *this;
+}
+
+inline VulkanDevice&& VulkanDevice::add_device_extension(std::string_view name) && {
+    return std::move(this->add_device_extension(name));
+}
+
+inline VulkanDevice& VulkanDevice::features(std::uint64_t features) & {
+    rk_vulkan_device_set_features(raw_, features);
+    return *this;
+}
+
+inline VulkanDevice&& VulkanDevice::features(std::uint64_t features) && {
+    return std::move(this->features(features));
+}
+
+inline ThemeCatalog::ThemeCatalog() {
+    raw_ = rk_theme_catalog_new();
+}
+
+inline std::size_t ThemeCatalog::count() const {
+    return rk_theme_catalog_count(raw_);
+}
+
+inline std::string ThemeCatalog::slug(std::size_t index) {
+    return detail::take(rk_theme_catalog_slug(raw_, index));
+}
+
+inline std::string ThemeCatalog::name(std::size_t index) {
+    return detail::take(rk_theme_catalog_name(raw_, index));
+}
+
+inline bool ThemeCatalog::is_dark(std::size_t index) {
+    return rk_theme_catalog_is_dark(raw_, index);
+}
+
+inline Color ThemeCatalog::color(std::size_t index, ColorRole role) {
+    return detail::convert(rk_theme_catalog_color(raw_, index, static_cast<rk_color_role>(role)));
+}
+
+inline Embedding::Embedding(VulkanDevice device) {
+    raw_ = rk_embedding_new(device.release());
+}
+
+inline std::string Embedding::error_message() const {
+    return detail::take(rk_embedding_error_message(raw_));
+}
+
+inline EmbeddedSurface Embedding::open(EmbeddedSurfaceBuilder surface) {
+    return EmbeddedSurface::adopt(rk_embedding_open(raw_, surface.release()));
+}
+
+inline void Embedding::set_theme(std::string_view slug) {
+    rk_embedding_set_theme(raw_, detail::str(slug));
+}
+
+inline void Embedding::set_background(ThemeBackground background) {
+    rk_embedding_set_background(raw_, static_cast<rk_theme_background>(background));
+}
+
+template <class F>
+    requires std::invocable<F&, View&>
+inline EmbeddedSurfaceBuilder::EmbeddedSurfaceBuilder(F&& view) {
+    using Pack = std::tuple<std::decay_t<F>>;
+    auto userdata = std::make_unique<Pack>(std::forward<F>(view));
+    raw_ = rk_embedded_surface_builder_new(detail::view_fn<Pack, 0>, userdata.release(), detail::destroy<Pack>);
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder& EmbeddedSurfaceBuilder::on_start(F&& callback) & {
+    using Pack = std::tuple<std::decay_t<F>>;
+    auto userdata = std::make_unique<Pack>(std::forward<F>(callback));
+    rk_embedded_surface_builder_on_start(raw_, detail::action_fn<Pack, 0>, userdata.release(), detail::destroy<Pack>);
+    return *this;
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder&& EmbeddedSurfaceBuilder::on_start(F&& callback) && {
+    return std::move(this->on_start(std::forward<F>(callback)));
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder& EmbeddedSurfaceBuilder::on_close_request(F&& callback) & {
+    using Pack = std::tuple<std::decay_t<F>>;
+    auto userdata = std::make_unique<Pack>(std::forward<F>(callback));
+    rk_embedded_surface_builder_on_close_request(raw_, detail::action_fn<Pack, 0>, userdata.release(), detail::destroy<Pack>);
+    return *this;
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder&& EmbeddedSurfaceBuilder::on_close_request(F&& callback) && {
+    return std::move(this->on_close_request(std::forward<F>(callback)));
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder& EmbeddedSurfaceBuilder::on_left(F&& callback) & {
+    using Pack = std::tuple<std::decay_t<F>>;
+    auto userdata = std::make_unique<Pack>(std::forward<F>(callback));
+    rk_embedded_surface_builder_on_left(raw_, detail::action_fn<Pack, 0>, userdata.release(), detail::destroy<Pack>);
+    return *this;
+}
+
+template <class F>
+    requires std::invocable<F&, Context&>
+inline EmbeddedSurfaceBuilder&& EmbeddedSurfaceBuilder::on_left(F&& callback) && {
+    return std::move(this->on_left(std::forward<F>(callback)));
+}
+
+inline Window EmbeddedSurface::window() const {
+    return Window::adopt(rk_embedded_surface_window(raw_));
+}
+
+inline void EmbeddedSurface::resize(float width, float height, float scale) {
+    rk_embedded_surface_resize(raw_, width, height, scale);
+}
+
+inline void EmbeddedSurface::render(const VulkanImage& target) {
+    detail::check(rk_embedded_surface_render(raw_, detail::convert(target)));
+}
+
+inline bool EmbeddedSurface::pointer_move(float x, float y) {
+    return rk_embedded_surface_pointer_move(raw_, x, y);
+}
+
+inline bool EmbeddedSurface::pointer_press(float x, float y, PointerButton button, Modifiers modifiers) {
+    return rk_embedded_surface_pointer_press(raw_, x, y, static_cast<rk_pointer_button>(button), static_cast<rk_modifiers>(modifiers));
+}
+
+inline bool EmbeddedSurface::pointer_release(float x, float y, PointerButton button, Modifiers modifiers) {
+    return rk_embedded_surface_pointer_release(raw_, x, y, static_cast<rk_pointer_button>(button), static_cast<rk_modifiers>(modifiers));
+}
+
+inline void EmbeddedSurface::pointer_leave() {
+    rk_embedded_surface_pointer_leave(raw_);
+}
+
+inline bool EmbeddedSurface::scroll(float x, float y, float steps_x, float steps_y, Modifiers modifiers) {
+    return rk_embedded_surface_scroll(raw_, x, y, steps_x, steps_y, static_cast<rk_modifiers>(modifiers));
+}
+
+inline bool EmbeddedSurface::key_press(KeyCode key, Modifiers modifiers) {
+    return rk_embedded_surface_key_press(raw_, static_cast<rk_key_code>(key), static_cast<rk_modifiers>(modifiers));
+}
+
+inline bool EmbeddedSurface::key_release(KeyCode key, Modifiers modifiers) {
+    return rk_embedded_surface_key_release(raw_, static_cast<rk_key_code>(key), static_cast<rk_modifiers>(modifiers));
+}
+
+inline bool EmbeddedSurface::type_text(std::string_view text) {
+    return rk_embedded_surface_type_text(raw_, detail::str(text));
+}
+
+inline bool EmbeddedSurface::compose_text(std::string_view text, std::size_t caret_start, std::size_t caret_end) {
+    return rk_embedded_surface_compose_text(raw_, detail::str(text), caret_start, caret_end);
+}
+
+inline bool EmbeddedSurface::commit_text(std::string_view text) {
+    return rk_embedded_surface_commit_text(raw_, detail::str(text));
+}
+
+inline CursorShape EmbeddedSurface::cursor() const {
+    return static_cast<CursorShape>(rk_embedded_surface_cursor(raw_));
+}
+
+inline Rect EmbeddedSurface::caret() const {
+    return detail::convert(rk_embedded_surface_caret(raw_));
+}
+
+inline void EmbeddedSurface::leave() {
+    rk_embedded_surface_leave(raw_);
+}
+
+inline void EmbeddedSurface::rejoin() {
+    rk_embedded_surface_rejoin(raw_);
+}
+
 inline Window Context::window() const {
     return Window::adopt(rk_window_ref(rk_context_window(raw_)));
 }
@@ -3510,6 +4483,10 @@ inline Color View::palette_color(ColorRole role) {
 
 inline bool View::is_dark() const {
     return rk_view_is_dark(raw_);
+}
+
+inline bool View::is_leaving() const {
+    return rk_view_is_leaving(raw_);
 }
 
 template <class Body>
@@ -3836,6 +4813,11 @@ inline Element View::vertical_divider() {
     return Element(raw_);
 }
 
+inline Element View::scrim() {
+    rk_scrim(raw_);
+    return Element(raw_);
+}
+
 inline Element View::button(std::string_view label) {
     rk_button(raw_, detail::str(label));
     return Element(raw_);
@@ -4007,6 +4989,16 @@ inline Element& Element::margin_edges(float top, float right, float bottom, floa
     return *this;
 }
 
+inline Element& Element::position(float x, float y) {
+    rk_position(raw_, x, y);
+    return *this;
+}
+
+inline Element& Element::scale(float factor) {
+    rk_scale(raw_, factor);
+    return *this;
+}
+
 inline Element& Element::opacity(float opacity) {
     rk_opacity(raw_, opacity);
     return *this;
@@ -4029,6 +5021,11 @@ inline Element& Element::key(std::string_view key) {
 
 inline Element& Element::transition(TransitionStyle style) {
     rk_transition(raw_, static_cast<rk_transition_style>(style));
+    return *this;
+}
+
+inline Element& Element::glide() {
+    rk_glide(raw_);
     return *this;
 }
 
@@ -4069,6 +5066,11 @@ inline Element& Element::wrap_items() {
 
 inline Element& Element::surface() {
     rk_surface(raw_);
+    return *this;
+}
+
+inline Element& Element::glass() {
+    rk_glass(raw_);
     return *this;
 }
 
@@ -4502,6 +5504,16 @@ inline void open_url(std::string_view url) {
  */
 inline void open_file(std::string_view path) {
     detail::check(rk_open_file(detail::str(path)));
+}
+
+/**
+ * How wide one line of text is when rikka::View::text() draws it with
+ * rikka::Element::text_size() and no other text styling, in logical pixels.
+ *
+ * @param size The text size in logical pixels; above 0.
+ */
+inline float text_width(std::string_view text, float size) {
+    return rk_text_width(detail::str(text), size);
 }
 
 }  // namespace rikka

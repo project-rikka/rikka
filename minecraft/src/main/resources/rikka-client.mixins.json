@@ -1,0 +1,52 @@
+{
+	"required": true,
+	"package": "sh.rikka.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"AvatarMixin",
+		"AvatarRendererMixin",
+		"CameraMixin",
+		"ClientClockInstanceMixin",
+		"ClientClockManagerMixin",
+		"ClientLevelMixin",
+		"ConnectionMixin",
+		"EntityRenderDispatcherMixin",
+		"EquipmentLayerRendererMixin",
+		"FirstPersonHandsAndItemsRendererMixin",
+		"FrontendGpuDeviceAccessor",
+		"GameRendererMixin",
+		"GuiGraphicsExtractorAccessor",
+		"HudMixin",
+		"HumanoidModelMixin",
+		"ItemEntityMixin",
+		"ItemEntityRenderStateMixin",
+		"ItemEntityRendererMixin",
+		"ItemInHandLayerMixin",
+		"ItemStackRenderStateAccessor",
+		"KeyMappingMixin",
+		"KeyboardHandlerMixin",
+		"KeyboardInputMixin",
+		"LayerRenderStateAccessor",
+		"LevelExtractorInvoker",
+		"LevelExtractorMixin",
+		"LevelRendererMixin",
+		"LightmapRenderStateExtractorMixin",
+		"LivingEntityMixin",
+		"MinecraftMixin",
+		"MouseHandlerMixin",
+		"OptionsMixin",
+		"OverlayTextureAccessor",
+		"PreferredGraphicsApiMixin",
+		"SpriteContentsAccessor",
+		"VulkanDeviceAccessor",
+		"VulkanFeatureSetsMixin",
+		"VulkanInstanceMixin",
+		"WindowMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

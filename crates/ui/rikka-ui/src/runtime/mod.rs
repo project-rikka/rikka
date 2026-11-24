@@ -270,17 +270,18 @@ impl Ui {
         self.tree.shows_image(key)
     }
 
-    pub fn handle_event(&mut self, event: Event) {
-        self.handle_input(event, None);
+    pub fn handle_event(&mut self, event: Event) -> bool {
+        self.handle_input(event, None)
     }
 
-    pub fn handle_input(&mut self, event: Event, stylus: Option<Stylus>) {
+    pub fn handle_input(&mut self, event: Event, stylus: Option<Stylus>) -> bool {
         let _identified = self.identified();
-        let ((), effects) = crate::task::collecting(|| {
+        let (handled, effects) = crate::task::collecting(|| {
             self.tree
-                .dispatch(&event, stylus.as_ref(), self.content.state());
+                .dispatch(&event, stylus.as_ref(), self.content.state())
         });
         self.absorb(effects);
+        handled
     }
 
     pub fn set_viewport(&mut self, size: Size, scale_factor: f32) {
@@ -295,6 +296,10 @@ impl Ui {
 
     pub fn theme(&self) -> &Theme {
         &self.tree.theme
+    }
+
+    pub fn scale_factor(&self) -> f32 {
+        self.tree.scale
     }
 
     pub fn arrive(&mut self) {

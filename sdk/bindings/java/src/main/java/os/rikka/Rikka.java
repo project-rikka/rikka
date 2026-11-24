@@ -19,7 +19,7 @@ public final class Rikka {
      * The version of librikka this binding declares, packed as
      * major &lt;&lt; 22 | minor &lt;&lt; 12 | patch.
      */
-    public static final int BINDING_VERSION = 8192;
+    public static final int BINDING_VERSION = 12288;
 
     /**
      * As an index: nothing is selected.
@@ -65,6 +65,31 @@ public final class Rikka {
      * Spacing token: 32 px.
      */
     public static final float SPACE_WIDE = 32.0f;
+
+    /**
+     * Corner token: windows, 16 px.
+     */
+    public static final float CORNER_WINDOW = 16.0f;
+
+    /**
+     * Corner token: cards, menus, popovers and sheets, 14 px.
+     */
+    public static final float CORNER_PANEL = 14.0f;
+
+    /**
+     * Corner token: controls, 10 px.
+     */
+    public static final float CORNER_CONTROL = 10.0f;
+
+    /**
+     * Corner token: rows, chips and thumbnails, 8 px.
+     */
+    public static final float CORNER_ITEM = 8.0f;
+
+    /**
+     * Corner token: small details, 4 px.
+     */
+    public static final float CORNER_DETAIL = 4.0f;
 
     private Rikka() {}
 
@@ -127,6 +152,22 @@ public final class Rikka {
         Objects.requireNonNull(path, "path");
         try (Arena arena = Arena.ofConfined()) {
             Native.check((int) Native.RK_OPEN_FILE.invokeExact(Native.str(arena, path)));
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+    }
+
+    /**
+     * How wide one line of text is when {@link View#text} draws it with {@link
+     * Element#textSize} and no other text styling, in logical pixels.
+     *
+     * @param text the text
+     * @param size The text size in logical pixels; above 0.
+     */
+    public static float textWidth(String text, float size) {
+        Objects.requireNonNull(text, "text");
+        try (Arena arena = Arena.ofConfined()) {
+            return (float) Native.RK_TEXT_WIDTH.invokeExact(Native.str(arena, text), size);
         } catch (Throwable failure) {
             throw Native.rethrow(failure);
         }

@@ -9,6 +9,7 @@ pub mod device;
 mod direct_drivers;
 #[cfg(unix)]
 pub mod dmabuf_support;
+mod enabled_features;
 mod exit;
 pub(crate) mod fault;
 pub mod frame;

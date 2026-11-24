@@ -1,0 +1,3 @@
+minecraft = use_extension("//bazel/minecraft:extension.bzl", "minecraft")
+minecraft.lock(file = "//minecraft:minecraft.lock.json")
+use_repo(minecraft, "minecraft", "minecraft_assets")

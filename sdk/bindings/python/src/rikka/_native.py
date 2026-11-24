@@ -20,6 +20,27 @@ class Color(ctypes.Structure):
     ]
 
 
+class Rect(ctypes.Structure):
+    _fields_ = [
+        ("x", ctypes.c_float),
+        ("y", ctypes.c_float),
+        ("width", ctypes.c_float),
+        ("height", ctypes.c_float),
+    ]
+
+
+class VulkanImage(ctypes.Structure):
+    _fields_ = [
+        ("image", ctypes.c_uint64),
+        ("view", ctypes.c_uint64),
+        ("format", ctypes.c_uint32),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("layout", ctypes.c_uint32),
+        ("bottom_up", ctypes.c_bool),
+    ]
+
+
 DestroyFn = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
 ViewFn = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
 ItemFn = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_ssize_t, ctypes.c_bool, ctypes.c_void_p)
@@ -35,6 +56,8 @@ PathsFn = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.POINTER(_runtime.StrVie
 StringFn = ctypes.CFUNCTYPE(None, ctypes.c_void_p, _runtime.StrView, ctypes.c_void_p)
 UnsavedFn = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_uint32, ctypes.c_void_p)
 WorkFn = ctypes.CFUNCTYPE(None, ctypes.c_void_p)
+VulkanSemaphoreFn = ctypes.CFUNCTYPE(None, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p)
+VulkanCommandsFn = ctypes.CFUNCTYPE(None, ctypes.c_uint64, ctypes.c_void_p)
 
 
 def _bind(name: str, restype: object, *argtypes: object) -> ctypes._CFunctionType:
@@ -49,6 +72,7 @@ rk_version = _bind("rk_version", ctypes.c_uint32)
 rk_last_error = _bind("rk_last_error", _runtime.StrView)
 rk_open_url = _bind("rk_open_url", ctypes.c_uint32, _runtime.Str)
 rk_open_file = _bind("rk_open_file", ctypes.c_uint32, _runtime.Str)
+rk_text_width = _bind("rk_text_width", ctypes.c_float, _runtime.Str, ctypes.c_float)
 rk_app_new = _bind("rk_app_new", ctypes.c_void_p, _runtime.Str)
 rk_app_set_single_instance = _bind("rk_app_set_single_instance", None, ctypes.c_void_p, ctypes.c_bool)
 rk_app_add_window = _bind("rk_app_add_window", None, ctypes.c_void_p, ctypes.c_void_p)
@@ -144,6 +168,50 @@ rk_text_document_undo = _bind("rk_text_document_undo", ctypes.c_bool, ctypes.c_v
 rk_text_document_redo = _bind("rk_text_document_redo", ctypes.c_bool, ctypes.c_void_p)
 rk_text_document_ref = _bind("rk_text_document_ref", ctypes.c_void_p, ctypes.c_void_p)
 rk_text_document_unref = _bind("rk_text_document_unref", None, ctypes.c_void_p)
+rk_vulkan_device_new = _bind("rk_vulkan_device_new", ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint32, VulkanSemaphoreFn, VulkanCommandsFn, VulkanSemaphoreFn, ctypes.c_void_p, DestroyFn)
+rk_vulkan_device_add_instance_extension = _bind("rk_vulkan_device_add_instance_extension", None, ctypes.c_void_p, _runtime.Str)
+rk_vulkan_device_add_device_extension = _bind("rk_vulkan_device_add_device_extension", None, ctypes.c_void_p, _runtime.Str)
+rk_vulkan_device_set_features = _bind("rk_vulkan_device_set_features", None, ctypes.c_void_p, ctypes.c_uint64)
+rk_vulkan_device_free = _bind("rk_vulkan_device_free", None, ctypes.c_void_p)
+rk_theme_catalog_new = _bind("rk_theme_catalog_new", ctypes.c_void_p)
+rk_theme_catalog_count = _bind("rk_theme_catalog_count", ctypes.c_ssize_t, ctypes.c_void_p)
+rk_theme_catalog_slug = _bind("rk_theme_catalog_slug", _runtime.String, ctypes.c_void_p, ctypes.c_ssize_t)
+rk_theme_catalog_name = _bind("rk_theme_catalog_name", _runtime.String, ctypes.c_void_p, ctypes.c_ssize_t)
+rk_theme_catalog_is_dark = _bind("rk_theme_catalog_is_dark", ctypes.c_bool, ctypes.c_void_p, ctypes.c_ssize_t)
+rk_theme_catalog_color = _bind("rk_theme_catalog_color", Color, ctypes.c_void_p, ctypes.c_ssize_t, ctypes.c_uint32)
+rk_theme_catalog_ref = _bind("rk_theme_catalog_ref", ctypes.c_void_p, ctypes.c_void_p)
+rk_theme_catalog_unref = _bind("rk_theme_catalog_unref", None, ctypes.c_void_p)
+rk_embedding_new = _bind("rk_embedding_new", ctypes.c_void_p, ctypes.c_void_p)
+rk_embedding_error_message = _bind("rk_embedding_error_message", _runtime.String, ctypes.c_void_p)
+rk_embedding_open = _bind("rk_embedding_open", ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+rk_embedding_set_theme = _bind("rk_embedding_set_theme", None, ctypes.c_void_p, _runtime.Str)
+rk_embedding_set_background = _bind("rk_embedding_set_background", None, ctypes.c_void_p, ctypes.c_uint32)
+rk_embedding_ref = _bind("rk_embedding_ref", ctypes.c_void_p, ctypes.c_void_p)
+rk_embedding_unref = _bind("rk_embedding_unref", None, ctypes.c_void_p)
+rk_embedded_surface_builder_new = _bind("rk_embedded_surface_builder_new", ctypes.c_void_p, ViewFn, ctypes.c_void_p, DestroyFn)
+rk_embedded_surface_builder_on_start = _bind("rk_embedded_surface_builder_on_start", None, ctypes.c_void_p, ActionFn, ctypes.c_void_p, DestroyFn)
+rk_embedded_surface_builder_on_close_request = _bind("rk_embedded_surface_builder_on_close_request", None, ctypes.c_void_p, ActionFn, ctypes.c_void_p, DestroyFn)
+rk_embedded_surface_builder_on_left = _bind("rk_embedded_surface_builder_on_left", None, ctypes.c_void_p, ActionFn, ctypes.c_void_p, DestroyFn)
+rk_embedded_surface_builder_free = _bind("rk_embedded_surface_builder_free", None, ctypes.c_void_p)
+rk_embedded_surface_window = _bind("rk_embedded_surface_window", ctypes.c_void_p, ctypes.c_void_p)
+rk_embedded_surface_resize = _bind("rk_embedded_surface_resize", None, ctypes.c_void_p, ctypes.c_float, ctypes.c_float, ctypes.c_float)
+rk_embedded_surface_render = _bind("rk_embedded_surface_render", ctypes.c_uint32, ctypes.c_void_p, VulkanImage)
+rk_embedded_surface_pointer_move = _bind("rk_embedded_surface_pointer_move", ctypes.c_bool, ctypes.c_void_p, ctypes.c_float, ctypes.c_float)
+rk_embedded_surface_pointer_press = _bind("rk_embedded_surface_pointer_press", ctypes.c_bool, ctypes.c_void_p, ctypes.c_float, ctypes.c_float, ctypes.c_uint32, ctypes.c_uint32)
+rk_embedded_surface_pointer_release = _bind("rk_embedded_surface_pointer_release", ctypes.c_bool, ctypes.c_void_p, ctypes.c_float, ctypes.c_float, ctypes.c_uint32, ctypes.c_uint32)
+rk_embedded_surface_pointer_leave = _bind("rk_embedded_surface_pointer_leave", None, ctypes.c_void_p)
+rk_embedded_surface_scroll = _bind("rk_embedded_surface_scroll", ctypes.c_bool, ctypes.c_void_p, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_uint32)
+rk_embedded_surface_key_press = _bind("rk_embedded_surface_key_press", ctypes.c_bool, ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32)
+rk_embedded_surface_key_release = _bind("rk_embedded_surface_key_release", ctypes.c_bool, ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32)
+rk_embedded_surface_type_text = _bind("rk_embedded_surface_type_text", ctypes.c_bool, ctypes.c_void_p, _runtime.Str)
+rk_embedded_surface_compose_text = _bind("rk_embedded_surface_compose_text", ctypes.c_bool, ctypes.c_void_p, _runtime.Str, ctypes.c_ssize_t, ctypes.c_ssize_t)
+rk_embedded_surface_commit_text = _bind("rk_embedded_surface_commit_text", ctypes.c_bool, ctypes.c_void_p, _runtime.Str)
+rk_embedded_surface_cursor = _bind("rk_embedded_surface_cursor", ctypes.c_uint32, ctypes.c_void_p)
+rk_embedded_surface_caret = _bind("rk_embedded_surface_caret", Rect, ctypes.c_void_p)
+rk_embedded_surface_leave = _bind("rk_embedded_surface_leave", None, ctypes.c_void_p)
+rk_embedded_surface_rejoin = _bind("rk_embedded_surface_rejoin", None, ctypes.c_void_p)
+rk_embedded_surface_ref = _bind("rk_embedded_surface_ref", ctypes.c_void_p, ctypes.c_void_p)
+rk_embedded_surface_unref = _bind("rk_embedded_surface_unref", None, ctypes.c_void_p)
 rk_context_window = _bind("rk_context_window", ctypes.c_void_p, ctypes.c_void_p)
 rk_context_skip_view = _bind("rk_context_skip_view", None, ctypes.c_void_p)
 rk_context_request = _bind("rk_context_request", None, ctypes.c_void_p, ctypes.c_uint32)
@@ -159,6 +227,7 @@ rk_context_alert = _bind("rk_context_alert", None, ctypes.c_void_p, _runtime.Str
 rk_context_confirm = _bind("rk_context_confirm", None, ctypes.c_void_p, _runtime.Str, _runtime.Str, _runtime.Str, BoolFn, ctypes.c_void_p, DestroyFn)
 rk_view_palette_color = _bind("rk_view_palette_color", Color, ctypes.c_void_p, ctypes.c_uint32)
 rk_view_is_dark = _bind("rk_view_is_dark", ctypes.c_bool, ctypes.c_void_p)
+rk_view_is_leaving = _bind("rk_view_is_leaving", ctypes.c_bool, ctypes.c_void_p)
 rk_column_begin = _bind("rk_column_begin", None, ctypes.c_void_p)
 rk_row_begin = _bind("rk_row_begin", None, ctypes.c_void_p)
 rk_grid_begin = _bind("rk_grid_begin", None, ctypes.c_void_p, ctypes.c_uint32)
@@ -203,6 +272,7 @@ rk_video_view = _bind("rk_video_view", None, ctypes.c_void_p, ctypes.c_void_p)
 rk_spacer = _bind("rk_spacer", None, ctypes.c_void_p)
 rk_divider = _bind("rk_divider", None, ctypes.c_void_p)
 rk_vertical_divider = _bind("rk_vertical_divider", None, ctypes.c_void_p)
+rk_scrim = _bind("rk_scrim", None, ctypes.c_void_p)
 rk_button = _bind("rk_button", None, ctypes.c_void_p, _runtime.Str)
 rk_icon_button = _bind("rk_icon_button", None, ctypes.c_void_p, _runtime.Str)
 rk_checkbox = _bind("rk_checkbox", None, ctypes.c_void_p, ctypes.c_uint32, _runtime.Str)
@@ -234,11 +304,14 @@ rk_shrink = _bind("rk_shrink", None, ctypes.c_void_p, ctypes.c_float)
 rk_align_self = _bind("rk_align_self", None, ctypes.c_void_p, ctypes.c_uint32)
 rk_margin = _bind("rk_margin", None, ctypes.c_void_p, ctypes.c_float)
 rk_margin_edges = _bind("rk_margin_edges", None, ctypes.c_void_p, ctypes.c_float, ctypes.c_float, ctypes.c_float, ctypes.c_float)
+rk_position = _bind("rk_position", None, ctypes.c_void_p, ctypes.c_float, ctypes.c_float)
+rk_scale = _bind("rk_scale", None, ctypes.c_void_p, ctypes.c_float)
 rk_opacity = _bind("rk_opacity", None, ctypes.c_void_p, ctypes.c_float)
 rk_background = _bind("rk_background", None, ctypes.c_void_p, Color)
 rk_tooltip = _bind("rk_tooltip", None, ctypes.c_void_p, _runtime.Str)
 rk_key = _bind("rk_key", None, ctypes.c_void_p, _runtime.Str)
 rk_transition = _bind("rk_transition", None, ctypes.c_void_p, ctypes.c_uint32)
+rk_glide = _bind("rk_glide", None, ctypes.c_void_p)
 rk_anchor = _bind("rk_anchor", None, ctypes.c_void_p, _runtime.Str, ctypes.c_uint32, ctypes.c_float, ctypes.c_float)
 rk_gap = _bind("rk_gap", None, ctypes.c_void_p, ctypes.c_float)
 rk_padding = _bind("rk_padding", None, ctypes.c_void_p, ctypes.c_float)
@@ -247,6 +320,7 @@ rk_align_items = _bind("rk_align_items", None, ctypes.c_void_p, ctypes.c_uint32)
 rk_justify = _bind("rk_justify", None, ctypes.c_void_p, ctypes.c_uint32)
 rk_wrap_items = _bind("rk_wrap_items", None, ctypes.c_void_p)
 rk_surface = _bind("rk_surface", None, ctypes.c_void_p)
+rk_glass = _bind("rk_glass", None, ctypes.c_void_p)
 rk_corner_radius = _bind("rk_corner_radius", None, ctypes.c_void_p, ctypes.c_float)
 rk_border = _bind("rk_border", None, ctypes.c_void_p, ctypes.c_float, Color)
 rk_clip_content = _bind("rk_clip_content", None, ctypes.c_void_p)

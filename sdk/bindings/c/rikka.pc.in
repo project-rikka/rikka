@@ -4,6 +4,6 @@ includedir=${prefix}/include
 
 Name: rikka
 Description: rikka application SDK
-Version: 0.2.0
+Version: 0.3.0
 Libs: -L${libdir} -lrikka
 Cflags: -I${includedir}

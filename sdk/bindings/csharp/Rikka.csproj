@@ -16,7 +16,7 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <Deterministic>true</Deterministic>
     <PackageId>Rikka</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Description>The Rikka application SDK</Description>
     <PackageTags>gui;wayland;linux;rikka</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>

@@ -21,6 +21,9 @@ extern void rikkaPathsFn0(rk_context *context, const rk_str *paths, size_t paths
 extern void rikkaStringFn0(rk_context *context, rk_str text, void *userdata);
 extern void rikkaUnsavedFn0(rk_context *context, rk_unsaved_answer answer, void *userdata);
 extern void rikkaWorkFn0(void *userdata);
+extern void rikkaVulkanSemaphoreFn0(uint64_t semaphore, uint64_t value, uint64_t stages, void *userdata);
+extern void rikkaVulkanSemaphoreFn2(uint64_t semaphore, uint64_t value, uint64_t stages, void *userdata);
+extern void rikkaVulkanCommandsFn1(uint64_t command_buffer, void *userdata);
 extern void rikkaDestroy(void* userdata);
 */
 import "C"
@@ -35,7 +38,7 @@ import (
 
 // BindingVersion is the version of librikka this package binds, packed as
 // major << 22 | minor << 12 | patch.
-const BindingVersion uint32 = 8192
+const BindingVersion uint32 = 12288
 
 // None: As an index: nothing is selected.
 const None int = -1
@@ -64,6 +67,21 @@ const SpaceLoose float32 = 24.0
 // SpaceWide: Spacing token: 32 px.
 const SpaceWide float32 = 32.0
 
+// CornerWindow: Corner token: windows, 16 px.
+const CornerWindow float32 = 16.0
+
+// CornerPanel: Corner token: cards, menus, popovers and sheets, 14 px.
+const CornerPanel float32 = 14.0
+
+// CornerControl: Corner token: controls, 10 px.
+const CornerControl float32 = 10.0
+
+// CornerItem: Corner token: rows, chips and thumbnails, 8 px.
+const CornerItem float32 = 8.0
+
+// CornerDetail: Corner token: small details, 4 px.
+const CornerDetail float32 = 4.0
+
 // Color is a straight-alpha sRGB colour with components from 0 to 1.
 type Color struct {
 	R float32
@@ -78,6 +96,49 @@ func (value Color) native() C.rk_color {
 
 func goColor(value C.rk_color) Color {
 	return Color{R: float32(value.r), G: float32(value.g), B: float32(value.b), A: float32(value.a)}
+}
+
+// Rect is a rectangle in logical pixels.
+type Rect struct {
+	X      float32
+	Y      float32
+	Width  float32
+	Height float32
+}
+
+func (value Rect) native() C.rk_rect {
+	return C.rk_rect{x: C.float(value.X), y: C.float(value.Y), width: C.float(value.Width), height: C.float(value.Height)}
+}
+
+func goRect(value C.rk_rect) Rect {
+	return Rect{X: float32(value.x), Y: float32(value.y), Width: float32(value.width), Height: float32(value.height)}
+}
+
+// VulkanImage is a Vulkan image of another program.
+type VulkanImage struct {
+	// The VkImage.
+	Image uint64
+	// A VkImageView of its single color level and layer.
+	View uint64
+	// Its VkFormat.
+	Format uint32
+	// Its width in pixels.
+	Width uint32
+	// Its height in pixels.
+	Height uint32
+	// The VkImageLayout it is in.
+	Layout uint32
+	// Whether its rows run from the bottom up, as in images an OpenGL-style program flips when it
+	// shows them.
+	BottomUp bool
+}
+
+func (value VulkanImage) native() C.rk_vulkan_image {
+	return C.rk_vulkan_image{image: C.uint64_t(value.Image), view: C.uint64_t(value.View), format: C.uint32_t(value.Format), width: C.uint32_t(value.Width), height: C.uint32_t(value.Height), layout: C.uint32_t(value.Layout), bottom_up: C.bool(value.BottomUp)}
+}
+
+func goVulkanImage(value C.rk_vulkan_image) VulkanImage {
+	return VulkanImage{Image: uint64(value.image), View: uint64(value.view), Format: uint32(value.format), Width: uint32(value.width), Height: uint32(value.height), Layout: uint32(value.layout), BottomUp: bool(value.bottom_up)}
 }
 
 // Status is the outcome of an operation that can fail at run time.
@@ -479,6 +540,35 @@ func (value ColorRole) String() string {
 		return "ColorRoleOverlay"
 	}
 	return fmt.Sprintf("ColorRole(%#x)", uint32(value))
+}
+
+// ThemeBackground describes what lies behind a theme's surfaces.
+type ThemeBackground uint32
+
+const (
+	// The desktop's choice.
+	ThemeBackgroundDesktop ThemeBackground = 0
+	// Opaque surfaces.
+	ThemeBackgroundSolid ThemeBackground = 1
+	// Translucent surfaces over a blur of what lies beneath.
+	ThemeBackgroundGlass ThemeBackground = 2
+	// Glass whose edges also refract what lies beneath.
+	ThemeBackgroundLiquid ThemeBackground = 3
+)
+
+// String names the constant value holds.
+func (value ThemeBackground) String() string {
+	switch value {
+	case ThemeBackgroundDesktop:
+		return "ThemeBackgroundDesktop"
+	case ThemeBackgroundSolid:
+		return "ThemeBackgroundSolid"
+	case ThemeBackgroundGlass:
+		return "ThemeBackgroundGlass"
+	case ThemeBackgroundLiquid:
+		return "ThemeBackgroundLiquid"
+	}
+	return fmt.Sprintf("ThemeBackground(%#x)", uint32(value))
 }
 
 // AnchorEdge describes where an anchored element sits relative to its target.
@@ -912,6 +1002,102 @@ func (value KeyCode) String() string {
 		return "KeyF24"
 	}
 	return fmt.Sprintf("KeyCode(%#x)", uint32(value))
+}
+
+// PointerButton is a pointer button.
+type PointerButton uint32
+
+const (
+	PointerButtonLeft    PointerButton = 0
+	PointerButtonRight   PointerButton = 1
+	PointerButtonMiddle  PointerButton = 2
+	PointerButtonBack    PointerButton = 3
+	PointerButtonForward PointerButton = 4
+)
+
+// String names the constant value holds.
+func (value PointerButton) String() string {
+	switch value {
+	case PointerButtonLeft:
+		return "PointerButtonLeft"
+	case PointerButtonRight:
+		return "PointerButtonRight"
+	case PointerButtonMiddle:
+		return "PointerButtonMiddle"
+	case PointerButtonBack:
+		return "PointerButtonBack"
+	case PointerButtonForward:
+		return "PointerButtonForward"
+	}
+	return fmt.Sprintf("PointerButton(%#x)", uint32(value))
+}
+
+// CursorShape is a pointer shape.
+type CursorShape uint32
+
+const (
+	CursorShapeDefault CursorShape = 0
+	CursorShapeHidden  CursorShape = 1
+	// A hand over something to press.
+	CursorShapePointer            CursorShape = 2
+	CursorShapeText               CursorShape = 3
+	CursorShapeWait               CursorShape = 4
+	CursorShapeProgress           CursorShape = 5
+	CursorShapeCrosshair          CursorShape = 6
+	CursorShapeMove               CursorShape = 7
+	CursorShapeGrab               CursorShape = 8
+	CursorShapeGrabbing           CursorShape = 9
+	CursorShapeNotAllowed         CursorShape = 10
+	CursorShapeResizeHorizontal   CursorShape = 11
+	CursorShapeResizeVertical     CursorShape = 12
+	CursorShapeResizeDiagonalDown CursorShape = 13
+	CursorShapeResizeDiagonalUp   CursorShape = 14
+	CursorShapeZoomIn             CursorShape = 15
+	CursorShapeZoomOut            CursorShape = 16
+	CursorShapeHelp               CursorShape = 17
+)
+
+// String names the constant value holds.
+func (value CursorShape) String() string {
+	switch value {
+	case CursorShapeDefault:
+		return "CursorShapeDefault"
+	case CursorShapeHidden:
+		return "CursorShapeHidden"
+	case CursorShapePointer:
+		return "CursorShapePointer"
+	case CursorShapeText:
+		return "CursorShapeText"
+	case CursorShapeWait:
+		return "CursorShapeWait"
+	case CursorShapeProgress:
+		return "CursorShapeProgress"
+	case CursorShapeCrosshair:
+		return "CursorShapeCrosshair"
+	case CursorShapeMove:
+		return "CursorShapeMove"
+	case CursorShapeGrab:
+		return "CursorShapeGrab"
+	case CursorShapeGrabbing:
+		return "CursorShapeGrabbing"
+	case CursorShapeNotAllowed:
+		return "CursorShapeNotAllowed"
+	case CursorShapeResizeHorizontal:
+		return "CursorShapeResizeHorizontal"
+	case CursorShapeResizeVertical:
+		return "CursorShapeResizeVertical"
+	case CursorShapeResizeDiagonalDown:
+		return "CursorShapeResizeDiagonalDown"
+	case CursorShapeResizeDiagonalUp:
+		return "CursorShapeResizeDiagonalUp"
+	case CursorShapeZoomIn:
+		return "CursorShapeZoomIn"
+	case CursorShapeZoomOut:
+		return "CursorShapeZoomOut"
+	case CursorShapeHelp:
+		return "CursorShapeHelp"
+	}
+	return fmt.Sprintf("CursorShape(%#x)", uint32(value))
 }
 
 // Modifiers describes keyboard modifiers held with a key.
@@ -1958,6 +2144,520 @@ func (t *TextDocument) Redo() bool {
 	return result
 }
 
+// VulkanDevice is the Vulkan device of a program that draws embedded surfaces into its own
+// frames. Rikka draws with this device and its queue instead of making its own, so the program
+// must have created them for Vulkan 1.3 with the features listed in [VulkanDevice.Features].
+// Rikka never submits to the queue itself: it hands each submission to the program in order
+// through the submit callbacks, and the program submits it on that queue before its own later
+// work. A render waits for the work handed over three renders before, so the program submits at
+// least once every two renders.
+//
+// It owns its native object until it is handed over; the garbage collector frees an object
+// never handed over.
+type VulkanDevice struct {
+	raw     *C.rk_vulkan_device
+	cleanup runtime.Cleanup
+}
+
+func newVulkanDevice(raw *C.rk_vulkan_device) *VulkanDevice {
+	if raw == nil {
+		panic(unmade("VulkanDevice"))
+	}
+	value := &VulkanDevice{raw: raw}
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_vulkan_device) { C.rk_vulkan_device_free(raw) }, raw)
+	return value
+}
+
+func (x *VulkanDevice) handle() *C.rk_vulkan_device {
+	if x == nil || x.raw == nil {
+		panic(consumed("VulkanDevice"))
+	}
+	return x.raw
+}
+
+func (x *VulkanDevice) take() *C.rk_vulkan_device {
+	raw := x.handle()
+	x.cleanup.Stop()
+	x.raw = nil
+	return raw
+}
+
+// NewVulkanDevice describes a program's device.
+//
+//   - getInstanceProcAddr: The address of the vkGetInstanceProcAddr the program loaded.
+//   - instance: The VkInstance.
+//   - apiVersion: The apiVersion the instance was created with; at least 1.3.
+//   - physicalDevice: The VkPhysicalDevice the device was made on.
+//   - device: The VkDevice; it must outlive every embedding drawing with it.
+//   - queue: The VkQueue the program submits Rikka's work on; it must support graphics.
+//   - queueFamily: The family of that queue.
+//   - wait: Hands over a semaphore operation of a Vulkan submission. It may run on any thread.
+//   - execute: Hands over a command buffer of a Vulkan submission. It may run on any thread.
+//   - signal: Hands over a semaphore operation of a Vulkan submission. It may run on any thread.
+func NewVulkanDevice(getInstanceProcAddr uint64, instance uint64, apiVersion uint32, physicalDevice uint64, device uint64, queue uint64, queueFamily uint32, wait func(semaphore uint64, value uint64, stages uint64), execute func(commandBuffer uint64), signal func(semaphore uint64, value uint64, stages uint64)) *VulkanDevice {
+	if wait == nil {
+		panic("rikka: wait is nil")
+	}
+	if execute == nil {
+		panic("rikka: execute is nil")
+	}
+	if signal == nil {
+		panic("rikka: signal is nil")
+	}
+	userdata := retain(wait, execute, signal)
+	return newVulkanDevice(C.rk_vulkan_device_new(C.uint64_t(getInstanceProcAddr), C.uint64_t(instance), C.uint32_t(apiVersion), C.uint64_t(physicalDevice), C.uint64_t(device), C.uint64_t(queue), C.uint32_t(queueFamily), C.rk_vulkan_semaphore_fn(C.rikkaVulkanSemaphoreFn0), C.rk_vulkan_commands_fn(C.rikkaVulkanCommandsFn1), C.rk_vulkan_semaphore_fn(C.rikkaVulkanSemaphoreFn2), userdata, C.rk_destroy_fn(C.rikkaDestroy)))
+}
+
+// AddInstanceExtension names an instance extension the program enabled.
+func (v *VulkanDevice) AddInstanceExtension(name string) *VulkanDevice {
+	C.rk_vulkan_device_add_instance_extension(v.handle(), cStr(name))
+	runtime.KeepAlive(v)
+	return v
+}
+
+// AddDeviceExtension names a device extension the program enabled.
+func (v *VulkanDevice) AddDeviceExtension(name string) *VulkanDevice {
+	C.rk_vulkan_device_add_device_extension(v.handle(), cStr(name))
+	runtime.KeepAlive(v)
+	return v
+}
+
+// Features describes the features the program enabled, read during the call. Rikka needs
+// timelineSemaphore, runtimeDescriptorArray, shaderSampledImageArrayNonUniformIndexing,
+// descriptorBindingSampledImageUpdateAfterBind, descriptorBindingPartiallyBound,
+// descriptorBindingUpdateUnusedWhilePending, dynamicRendering and synchronization2, from their
+// Vulkan 1.2 and 1.3 feature structures or the structures of the extensions they come from.
+//
+//   - features: The address of the VkPhysicalDeviceFeatures2 whose chain the device was created
+//     with.
+func (v *VulkanDevice) Features(features uint64) *VulkanDevice {
+	C.rk_vulkan_device_set_features(v.handle(), C.uint64_t(features))
+	runtime.KeepAlive(v)
+	return v
+}
+
+// ThemeCatalog is the themes installed on the desktop: the built-in ones, those generated from
+// the wallpaper, and the system's and the person's, Rikka's own first.
+//
+// It holds one reference to a native object usable from any goroutine; the garbage collector
+// drops the reference.
+type ThemeCatalog struct {
+	raw     *C.rk_theme_catalog
+	cleanup runtime.Cleanup
+}
+
+func newThemeCatalog(raw *C.rk_theme_catalog) *ThemeCatalog {
+	if raw == nil {
+		panic(unmade("ThemeCatalog"))
+	}
+	value := &ThemeCatalog{raw: raw}
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_theme_catalog) { C.rk_theme_catalog_unref(raw) }, raw)
+	return value
+}
+
+func (x *ThemeCatalog) handle() *C.rk_theme_catalog {
+	if x == nil || x.raw == nil {
+		panic(consumed("ThemeCatalog"))
+	}
+	return x.raw
+}
+
+// NewThemeCatalog reads the installed themes.
+func NewThemeCatalog() *ThemeCatalog {
+	return newThemeCatalog(C.rk_theme_catalog_new())
+}
+
+// Count how many themes there are.
+func (t *ThemeCatalog) Count() int {
+	result := int(C.rk_theme_catalog_count(t.handle()))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// Slug returns the name that identifies a theme in [Embedding.SetTheme].
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) Slug(index int) string {
+	result := takeString(C.rk_theme_catalog_slug(t.handle(), C.size_t(index)))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// Name returns a theme's display name.
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) Name(index int) string {
+	result := takeString(C.rk_theme_catalog_name(t.handle(), C.size_t(index)))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// IsDark reports whether a theme is dark.
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) IsDark(index int) bool {
+	result := bool(C.rk_theme_catalog_is_dark(t.handle(), C.size_t(index)))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// Color returns a colour of a theme over a solid background, for previewing it.
+//
+//   - index: Below [ThemeCatalog.Count].
+func (t *ThemeCatalog) Color(index int, role ColorRole) Color {
+	result := goColor(C.rk_theme_catalog_color(t.handle(), C.size_t(index), C.rk_color_role(role)))
+	runtime.KeepAlive(t)
+	return result
+}
+
+// Embedding describes draws embedded surfaces with a program's Vulkan device. Create it, its
+// surfaces and their renders on the thread that submits to the device's queue.
+//
+// It holds one reference to a native object usable only on the thread that made it; the garbage
+// collector drops the reference there.
+type Embedding struct {
+	raw     *C.rk_embedding
+	cleanup runtime.Cleanup
+}
+
+func newEmbedding(raw *C.rk_embedding) *Embedding {
+	if raw == nil {
+		panic(unmade("Embedding"))
+	}
+	value := &Embedding{raw: raw}
+	drainReleases()
+	owner := syscall.Gettid()
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_embedding) {
+		releaseOn(owner, func() { C.rk_embedding_unref(raw) })
+	}, raw)
+	return value
+}
+
+func (x *Embedding) handle() *C.rk_embedding {
+	if x == nil || x.raw == nil {
+		panic(consumed("Embedding"))
+	}
+	return x.raw
+}
+
+// NewEmbedding prepares to draw with a device. Check [Embedding.ErrorMessage] before opening
+// surfaces.
+//
+//   - device: It is consumed.
+func NewEmbedding(device *VulkanDevice) *Embedding {
+	deviceRaw := device.take()
+	return newEmbedding(C.rk_embedding_new(deviceRaw))
+}
+
+// ErrorMessage why the embedding cannot draw; empty when it can.
+func (e *Embedding) ErrorMessage() string {
+	result := takeString(C.rk_embedding_error_message(e.handle()))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// Open makes a surface that this embedding draws. The embedding must be able to draw.
+//
+//   - surface: It is consumed.
+func (e *Embedding) Open(surface *EmbeddedSurfaceBuilder) *EmbeddedSurface {
+	surfaceRaw := surface.take()
+	result := newEmbeddedSurface(C.rk_embedding_open(e.handle(), surfaceRaw))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// SetTheme draws every surface in another theme than the desktop's.
+//
+//   - slug: A [ThemeCatalog.Slug]; empty follows the desktop's theme. An unknown slug draws the
+//     default theme.
+func (e *Embedding) SetTheme(slug string) {
+	C.rk_embedding_set_theme(e.handle(), cStr(slug))
+	runtime.KeepAlive(e)
+}
+
+// SetBackground draws every surface over another background than the desktop's.
+func (e *Embedding) SetBackground(background ThemeBackground) {
+	C.rk_embedding_set_background(e.handle(), C.rk_theme_background(background))
+	runtime.KeepAlive(e)
+}
+
+// EmbeddedSurfaceBuilder is the description of an embedded surface.
+//
+// It owns its native object until it is handed over; the garbage collector frees an object
+// never handed over.
+type EmbeddedSurfaceBuilder struct {
+	raw     *C.rk_embedded_surface_builder
+	cleanup runtime.Cleanup
+}
+
+func newEmbeddedSurfaceBuilder(raw *C.rk_embedded_surface_builder) *EmbeddedSurfaceBuilder {
+	if raw == nil {
+		panic(unmade("EmbeddedSurfaceBuilder"))
+	}
+	value := &EmbeddedSurfaceBuilder{raw: raw}
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_embedded_surface_builder) { C.rk_embedded_surface_builder_free(raw) }, raw)
+	return value
+}
+
+func (x *EmbeddedSurfaceBuilder) handle() *C.rk_embedded_surface_builder {
+	if x == nil || x.raw == nil {
+		panic(consumed("EmbeddedSurfaceBuilder"))
+	}
+	return x.raw
+}
+
+func (x *EmbeddedSurfaceBuilder) take() *C.rk_embedded_surface_builder {
+	raw := x.handle()
+	x.cleanup.Stop()
+	x.raw = nil
+	return raw
+}
+
+// NewEmbeddedSurfaceBuilder describes a surface whose content view declares. It wears the
+// embedding's theme and the desktop's language, and its transitions play from its first view
+// on.
+//
+//   - view: Declares the surface's content.
+func NewEmbeddedSurfaceBuilder(view func(view *View)) *EmbeddedSurfaceBuilder {
+	if view == nil {
+		panic("rikka: view is nil")
+	}
+	userdata := retain(view)
+	return newEmbeddedSurfaceBuilder(C.rk_embedded_surface_builder_new(C.rk_view_fn(C.rikkaViewFn0), userdata, C.rk_destroy_fn(C.rikkaDestroy)))
+}
+
+// OnStart runs once the surface opens; start timers or background work here.
+//
+//   - callback: Reacts to an event. The window's view runs again afterwards unless
+//     [Context.SkipView] is called.
+func (e *EmbeddedSurfaceBuilder) OnStart(callback func(context *Context)) *EmbeddedSurfaceBuilder {
+	if callback == nil {
+		panic("rikka: callback is nil")
+	}
+	userdata := retain(callback)
+	C.rk_embedded_surface_builder_on_start(e.handle(), C.rk_action_fn(C.rikkaActionFn0), userdata, C.rk_destroy_fn(C.rikkaDestroy))
+	runtime.KeepAlive(e)
+	return e
+}
+
+// OnCloseRequest runs when the surface's content asks to close it, through
+// [WindowRequestClose], [WindowRequestAskToClose] or the close command; the program decides
+// whether to drop the surface.
+//
+//   - callback: Reacts to an event. The window's view runs again afterwards unless
+//     [Context.SkipView] is called.
+func (e *EmbeddedSurfaceBuilder) OnCloseRequest(callback func(context *Context)) *EmbeddedSurfaceBuilder {
+	if callback == nil {
+		panic("rikka: callback is nil")
+	}
+	userdata := retain(callback)
+	C.rk_embedded_surface_builder_on_close_request(e.handle(), C.rk_action_fn(C.rikkaActionFn0), userdata, C.rk_destroy_fn(C.rikkaDestroy))
+	runtime.KeepAlive(e)
+	return e
+}
+
+// OnLeft runs once a leaving surface's exit transitions have played out, so the program can
+// drop it; see [EmbeddedSurface.Leave].
+//
+//   - callback: Reacts to an event. The window's view runs again afterwards unless
+//     [Context.SkipView] is called.
+func (e *EmbeddedSurfaceBuilder) OnLeft(callback func(context *Context)) *EmbeddedSurfaceBuilder {
+	if callback == nil {
+		panic("rikka: callback is nil")
+	}
+	userdata := retain(callback)
+	C.rk_embedded_surface_builder_on_left(e.handle(), C.rk_action_fn(C.rikkaActionFn0), userdata, C.rk_destroy_fn(C.rikkaDestroy))
+	runtime.KeepAlive(e)
+	return e
+}
+
+// EmbeddedSurface is a view drawn over a program's own frames: a heads-up display or a menu
+// inside a game, for example. Its glass and frosted panes blur and refract what the program
+// drew beneath them. The program forwards input in logical pixels from the surface's top-left
+// corner, and each input function says whether the surface used the input. It closes when its
+// last reference is gone.
+//
+// It holds one reference to a native object usable only on the thread that made it; the garbage
+// collector drops the reference there.
+type EmbeddedSurface struct {
+	raw     *C.rk_embedded_surface
+	cleanup runtime.Cleanup
+}
+
+func newEmbeddedSurface(raw *C.rk_embedded_surface) *EmbeddedSurface {
+	if raw == nil {
+		panic(unmade("EmbeddedSurface"))
+	}
+	value := &EmbeddedSurface{raw: raw}
+	drainReleases()
+	owner := syscall.Gettid()
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_embedded_surface) {
+		releaseOn(owner, func() { C.rk_embedded_surface_unref(raw) })
+	}, raw)
+	return value
+}
+
+func (x *EmbeddedSurface) handle() *C.rk_embedded_surface {
+	if x == nil || x.raw == nil {
+		panic(consumed("EmbeddedSurface"))
+	}
+	return x.raw
+}
+
+// Window returns the window that callbacks of this surface receive as [Context.Window], for
+// posting to it from other threads.
+func (e *EmbeddedSurface) Window() *Window {
+	result := newWindow(C.rk_embedded_surface_window(e.handle()))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// Resize sets the surface's size.
+//
+//   - width: Logical width.
+//   - height: Logical height.
+//   - scale: Physical pixels per logical pixel; above 0.
+func (e *EmbeddedSurface) Resize(width float32, height float32, scale float32) {
+	C.rk_embedded_surface_resize(e.handle(), C.float(width), C.float(height), C.float(scale))
+	runtime.KeepAlive(e)
+}
+
+// Render draws the surface over what an image holds, as recorded work handed to the device's
+// submit callbacks, which the program then submits before anything that reads the image.
+//
+//   - target: The image to draw over, as large as the surface in physical pixels. It needs color
+//     attachment and sampled usage, and stays in its layout.
+//
+// It returns an [*Error] carrying the failing status.
+func (e *EmbeddedSurface) Render(target VulkanImage) error {
+	result := checkStatus(C.rk_embedded_surface_render(e.handle(), target.native()))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// PointerMove moves the pointer.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) PointerMove(x float32, y float32) bool {
+	result := bool(C.rk_embedded_surface_pointer_move(e.handle(), C.float(x), C.float(y)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// PointerPress presses a pointer button.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) PointerPress(x float32, y float32, button PointerButton, modifiers Modifiers) bool {
+	result := bool(C.rk_embedded_surface_pointer_press(e.handle(), C.float(x), C.float(y), C.rk_pointer_button(button), C.rk_modifiers(modifiers)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// PointerRelease releases a pointer button.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) PointerRelease(x float32, y float32, button PointerButton, modifiers Modifiers) bool {
+	result := bool(C.rk_embedded_surface_pointer_release(e.handle(), C.float(x), C.float(y), C.rk_pointer_button(button), C.rk_modifiers(modifiers)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// PointerLeave tells the surface that the pointer left it.
+func (e *EmbeddedSurface) PointerLeave() {
+	C.rk_embedded_surface_pointer_leave(e.handle())
+	runtime.KeepAlive(e)
+}
+
+// Scroll turns the scroll wheel.
+//
+//   - stepsX: Wheel steps to the right; negative to the left.
+//   - stepsY: Wheel steps away from the person; negative toward them.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) Scroll(x float32, y float32, stepsX float32, stepsY float32, modifiers Modifiers) bool {
+	result := bool(C.rk_embedded_surface_scroll(e.handle(), C.float(x), C.float(y), C.float(stepsX), C.float(stepsY), C.rk_modifiers(modifiers)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// KeyPress presses a key. Keys that type text arrive through [EmbeddedSurface.TypeText]
+// instead, unless Control, Alt or Super is held with them.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) KeyPress(key KeyCode, modifiers Modifiers) bool {
+	result := bool(C.rk_embedded_surface_key_press(e.handle(), C.rk_key_code(key), C.rk_modifiers(modifiers)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// KeyRelease releases a key.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) KeyRelease(key KeyCode, modifiers Modifiers) bool {
+	result := bool(C.rk_embedded_surface_key_release(e.handle(), C.rk_key_code(key), C.rk_modifiers(modifiers)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// TypeText types text that keys produced.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) TypeText(text string) bool {
+	result := bool(C.rk_embedded_surface_type_text(e.handle(), cStr(text)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// ComposeText shows an input method's text under composition at the caret.
+//
+//   - caretStart: The UTF-8 byte offset where the composition's caret starts, or [None].
+//   - caretEnd: The byte offset where it ends, not before caret_start.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) ComposeText(text string, caretStart int, caretEnd int) bool {
+	result := bool(C.rk_embedded_surface_compose_text(e.handle(), cStr(text), C.size_t(caretStart), C.size_t(caretEnd)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// CommitText inserts the text an input method composed, replacing any composition.
+//
+// It returns whether the surface used it.
+func (e *EmbeddedSurface) CommitText(text string) bool {
+	result := bool(C.rk_embedded_surface_commit_text(e.handle(), cStr(text)))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// Cursor returns the pointer shape the surface asks for.
+func (e *EmbeddedSurface) Cursor() CursorShape {
+	result := CursorShape(C.rk_embedded_surface_cursor(e.handle()))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// Caret where the caret of the focused text field or editor is, for placing an input method's
+// candidates; 0 by 0 at the origin while no text has focus.
+func (e *EmbeddedSurface) Caret() Rect {
+	result := goRect(C.rk_embedded_surface_caret(e.handle()))
+	runtime.KeepAlive(e)
+	return result
+}
+
+// Leave plays the surface's exit: its view sees [View.IsLeaving] and drops what leaves, whose
+// transitions play out; then [EmbeddedSurfaceBuilder.OnLeft] runs.
+func (e *EmbeddedSurface) Leave() {
+	C.rk_embedded_surface_leave(e.handle())
+	runtime.KeepAlive(e)
+}
+
+// Rejoin brings a leaving surface back: its view declares everything again, and what was
+// leaving turns back from where it is.
+func (e *EmbeddedSurface) Rejoin() {
+	C.rk_embedded_surface_rejoin(e.handle())
+	runtime.KeepAlive(e)
+}
+
 // Context is the context of a callback reacting to the person or the system.
 //
 // It is lent to a callback and valid only while the callback runs.
@@ -2136,6 +2836,12 @@ func (v *View) PaletteColor(role ColorRole) Color {
 // IsDark reports whether the view is drawn in a dark theme.
 func (v *View) IsDark() bool {
 	return bool(C.rk_view_is_dark(v.handle()))
+}
+
+// IsLeaving reports whether the view's embedded surface is leaving through
+// [EmbeddedSurface.Leave]: declare only what stays, so the rest plays its exit transitions.
+func (v *View) IsLeaving() bool {
+	return bool(C.rk_view_is_leaving(v.handle()))
 }
 
 // Column declares a column: children stack top to bottom.
@@ -2568,6 +3274,15 @@ func (v *View) VerticalDivider() Element {
 	return v.declared()
 }
 
+// Scrim declares a backdrop over its parent, the whole view at the top level, that blurs what
+// lies beneath without darkening it and swallows presses, for modal content declared after it;
+// [Element.OnDismiss] reacts to a press on it. It fades in and out unless given another
+// [Element.Transition].
+func (v *View) Scrim() Element {
+	C.rk_scrim(v.handle())
+	return v.declared()
+}
+
 // Button declares a labelled button.
 func (v *View) Button(label string) Element {
 	C.rk_button(v.handle(), cStr(label))
@@ -2812,13 +3527,33 @@ func (e Element) MarginEdges(top float32, right float32, bottom float32, left fl
 	return e
 }
 
+// Position places the current element at a point of its parent, out of the flow of its
+// siblings, which lay out as if it were absent.
+//
+//   - x: Logical pixels from the parent's left edge.
+//   - y: Logical pixels from the parent's top edge.
+func (e Element) Position(x float32, y float32) Element {
+	C.rk_position(e.current(), C.float(x), C.float(y))
+	return e
+}
+
+// Scale draws the current element larger or smaller about its top-left corner, without changing
+// the room it takes; the pointer finds its parts where they are drawn.
+//
+//   - factor: Above 0; 1 draws it as laid out.
+func (e Element) Scale(factor float32) Element {
+	C.rk_scale(e.current(), C.float(factor))
+	return e
+}
+
 // Opacity fades the current element, from 0 to 1.
 func (e Element) Opacity(opacity float32) Element {
 	C.rk_opacity(e.current(), C.float(opacity))
 	return e
 }
 
-// Background paints a colour behind the current element.
+// Background paints a colour behind the current element. A box paints it within its rounded
+// corners, in place of the theme's surface colour of [Element.Surface] or [Element.Glass].
 func (e Element) Background(color Color) Element {
 	C.rk_background(e.current(), color.native())
 	return e
@@ -2840,6 +3575,13 @@ func (e Element) Key(key string) Element {
 // Transition animates the current element in and out as it is declared and dropped.
 func (e Element) Transition(style TransitionStyle) Element {
 	C.rk_transition(e.current(), C.rk_transition_style(style))
+	return e
+}
+
+// Glide carries the current element smoothly to wherever layout moves it, as when its siblings
+// come and go, instead of jumping there.
+func (e Element) Glide() Element {
+	C.rk_glide(e.current())
 	return e
 }
 
@@ -2892,6 +3634,14 @@ func (e Element) WrapItems() Element {
 // Surface gives the current box the theme's surface colour and rounded corners.
 func (e Element) Surface() Element {
 	C.rk_surface(e.current())
+	return e
+}
+
+// Glass makes the current box a glass pane with the theme's surface colour and rounded corners.
+// Under a glass theme what lies beneath it shows through blurred, and refracted under a liquid
+// one; in an embedded surface that is what the program drew.
+func (e Element) Glass() Element {
+	C.rk_glass(e.current())
 	return e
 }
 
@@ -3320,8 +4070,8 @@ func (e Element) OnBlur(callback func(context *Context)) Element {
 	return e
 }
 
-// OnDismiss reacts to the person dismissing the current sheet, popover, popup menu or banner;
-// stop declaring it to close it.
+// OnDismiss reacts to the person dismissing the current sheet, popover, popup menu, scrim or
+// banner; stop declaring it to close it.
 //
 //   - callback: Reacts to an event. The window's view runs again afterwards unless
 //     [Context.SkipView] is called.
@@ -3447,4 +4197,12 @@ func OpenURL(url string) error {
 // It returns an [*Error] carrying the failing status.
 func OpenFile(path string) error {
 	return checkStatus(C.rk_open_file(cStr(path)))
+}
+
+// TextWidth how wide one line of text is when [View.Text] draws it with [Element.TextSize] and
+// no other text styling, in logical pixels.
+//
+//   - size: The text size in logical pixels; above 0.
+func TextWidth(text string, size float32) float32 {
+	return float32(C.rk_text_width(cStr(text), C.float(size)))
 }

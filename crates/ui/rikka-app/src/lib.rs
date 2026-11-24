@@ -1,5 +1,7 @@
 mod app;
 mod device;
+#[cfg(unix)]
+pub mod embedded;
 mod error;
 mod instance;
 mod launch;

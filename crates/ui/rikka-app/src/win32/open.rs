@@ -101,7 +101,7 @@ pub(crate) fn open(
     let mut ui = opening.into_ui(BuiltWindow {
         theme: opener.theme.clone(),
         client_side,
-        route: Route {
+        route: Route::Window {
             proxy: opener.proxy.clone(),
             window: id,
         },

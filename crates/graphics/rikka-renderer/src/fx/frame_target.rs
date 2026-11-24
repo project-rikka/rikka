@@ -12,6 +12,7 @@ pub(crate) struct FrameTarget {
     pub texture: vk::Extent2D,
     pub turn: Transform,
     pub scene: Rect,
+    pub underlay: bool,
     pub space: BlendSpace,
 }
 

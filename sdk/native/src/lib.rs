@@ -1,6 +1,7 @@
 mod abi;
 mod api;
 mod context;
+mod embedding;
 mod error;
 #[allow(dead_code, clippy::too_many_arguments)]
 mod ffi;

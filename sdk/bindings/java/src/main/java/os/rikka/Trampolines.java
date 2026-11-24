@@ -35,6 +35,9 @@ final class Trampolines {
     static final MemorySegment STRING_FN_0 = upcall("stringFn0", FunctionDescriptor.ofVoid(ADDRESS, STR, ADDRESS));
     static final MemorySegment UNSAVED_FN_0 = upcall("unsavedFn0", FunctionDescriptor.ofVoid(ADDRESS, JAVA_INT, ADDRESS));
     static final MemorySegment WORK_FN_0 = upcall("workFn0", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MemorySegment VULKAN_SEMAPHORE_FN_0 = upcall("vulkanSemaphoreFn0", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG, ADDRESS));
+    static final MemorySegment VULKAN_SEMAPHORE_FN_2 = upcall("vulkanSemaphoreFn2", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG, ADDRESS));
+    static final MemorySegment VULKAN_COMMANDS_FN_1 = upcall("vulkanCommandsFn1", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
 
     private Trampolines() {}
 
@@ -242,6 +245,33 @@ final class Trampolines {
         Handle.drain();
         try {
             Handle.<WorkCallback>retained(userdata, 0).run();
+        } catch (Throwable failure) {
+            Handle.fail(failure);
+        }
+    }
+
+    static void vulkanSemaphoreFn0(long semaphore, long value, long stages, MemorySegment userdata) {
+        Handle.drain();
+        try {
+            Handle.<VulkanSemaphoreCallback>retained(userdata, 0).accept(semaphore, value, stages);
+        } catch (Throwable failure) {
+            Handle.fail(failure);
+        }
+    }
+
+    static void vulkanSemaphoreFn2(long semaphore, long value, long stages, MemorySegment userdata) {
+        Handle.drain();
+        try {
+            Handle.<VulkanSemaphoreCallback>retained(userdata, 2).accept(semaphore, value, stages);
+        } catch (Throwable failure) {
+            Handle.fail(failure);
+        }
+    }
+
+    static void vulkanCommandsFn1(long commandBuffer, MemorySegment userdata) {
+        Handle.drain();
+        try {
+            Handle.<VulkanCommandsCallback>retained(userdata, 1).accept(commandBuffer);
         } catch (Throwable failure) {
             Handle.fail(failure);
         }

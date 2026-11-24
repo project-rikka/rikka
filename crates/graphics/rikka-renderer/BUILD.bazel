@@ -36,6 +36,7 @@ rikka_test(
         "//crates/graphics/rikka-renderer/shaders",
         "//crates/graphics/rikka-test-renderer",
         "//crates/graphics/rikka-text",
+        "@crates//:ash",
     ],
 )
 

@@ -1,7 +1,9 @@
 mod cache;
+mod composer;
 mod embedder;
 mod offscreens;
 mod painter;
+mod panes;
 mod resources;
 mod runner;
 mod tasks;
@@ -10,6 +12,7 @@ mod viewports;
 mod wake_hint;
 
 pub use cache::{CacheResolver, ImageCache};
+pub use composer::{Composed, Composer};
 pub use embedder::{Drawing, Embedder, FrameOutcome, Hosted};
 pub use painter::Presenting;
 pub use resources::{ResourceFrame, Resources};

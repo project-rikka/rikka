@@ -153,6 +153,9 @@ pub(crate) enum Kind {
     Divider {
         vertical: bool,
     },
+    Scrim {
+        dismiss: Option<Handler>,
+    },
     Checkbox(Built<Checkbox>),
     Toggle(Built<Switch>),
     Radio(Built<Radio>),
@@ -224,6 +227,7 @@ impl Kind {
             Self::Picture(_) => "a picture",
             Self::Spacer => "a spacer",
             Self::Divider { .. } => "a divider",
+            Self::Scrim { .. } => "a scrim",
             Self::Checkbox(_) => "a checkbox",
             Self::Toggle(_) => "a switch",
             Self::Radio(_) => "a radio button",
@@ -298,6 +302,8 @@ pub(crate) struct Common {
     pub(crate) key: Option<u64>,
     pub(crate) tooltip: Option<String>,
     pub(crate) opacity: Option<f32>,
+    pub(crate) scale: Option<f32>,
+    pub(crate) glides: bool,
     pub(crate) background: Option<Color>,
     pub(crate) transition: Option<Transition>,
     pub(crate) anchor: Option<Anchor>,

@@ -34,6 +34,12 @@ fn validation_settings() -> Vec<vk::LayerSettingEXT<'static>> {
         .collect()
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Ownership {
+    Owned,
+    Borrowed,
+}
+
 pub struct VulkanInstance {
     entry: ash::Entry,
     instance: ash::Instance,
@@ -41,6 +47,7 @@ pub struct VulkanInstance {
     extensions: Vec<CString>,
     #[cfg(unix)]
     _drivers: Option<DirectDrivers>,
+    ownership: Ownership,
 }
 
 struct DebugMessenger {
@@ -165,6 +172,37 @@ impl VulkanInstance {
             extensions,
             #[cfg(unix)]
             _drivers: drivers,
+            ownership: Ownership::Owned,
+        })
+    }
+
+    pub(crate) unsafe fn adopt(
+        get_instance_proc_addr: vk::PFN_vkGetInstanceProcAddr,
+        instance: vk::Instance,
+        api_version: u32,
+        extensions: Vec<CString>,
+    ) -> Result<Self> {
+        if api_version < vk::API_VERSION_1_3 {
+            return Err(Error::Unsupported(format!(
+                "the host instance targets Vulkan {}.{}, 1.3 is required",
+                vk::api_version_major(api_version),
+                vk::api_version_minor(api_version),
+            )));
+        }
+        let entry = unsafe {
+            ash::Entry::from_static_fn(ash::StaticFn {
+                get_instance_proc_addr,
+            })
+        };
+        let instance = unsafe { ash::Instance::load(entry.static_fn(), instance) };
+        Ok(Self {
+            entry,
+            instance,
+            debug: None,
+            extensions,
+            #[cfg(unix)]
+            _drivers: None,
+            ownership: Ownership::Borrowed,
         })
     }
 
@@ -254,6 +292,9 @@ impl VulkanInstance {
 
 impl Drop for VulkanInstance {
     fn drop(&mut self) {
+        if self.ownership == Ownership::Borrowed {
+            return;
+        }
         unsafe {
             if let Some(debug) = self.debug.take() {
                 debug

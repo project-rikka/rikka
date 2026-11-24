@@ -23,6 +23,35 @@ internal static unsafe partial class Native
         public readonly global::Rikka.Color ToPublic() => new(R, G, B, A);
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct Rect
+    {
+        public float X;
+        public float Y;
+        public float Width;
+        public float Height;
+
+        public static Rect From(global::Rikka.Rect value) => new() { X = value.X, Y = value.Y, Width = value.Width, Height = value.Height };
+
+        public readonly global::Rikka.Rect ToPublic() => new(X, Y, Width, Height);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct VulkanImage
+    {
+        public ulong Image;
+        public ulong View;
+        public uint Format;
+        public uint Width;
+        public uint Height;
+        public uint Layout;
+        public byte BottomUp;
+
+        public static VulkanImage From(global::Rikka.VulkanImage value) => new() { Image = value.Image, View = value.View, Format = value.Format, Width = value.Width, Height = value.Height, Layout = value.Layout, BottomUp = value.BottomUp ? (byte)1 : (byte)0 };
+
+        public readonly global::Rikka.VulkanImage ToPublic() => new(Image, View, Format, Width, Height, Layout, BottomUp != 0);
+    }
+
     [LibraryImport(Library, EntryPoint = "rk_string_free")]
     internal static partial void rk_string_free(OwnedString value);
 
@@ -37,6 +66,9 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_open_file")]
     internal static partial uint rk_open_file(Str path);
+
+    [LibraryImport(Library, EntryPoint = "rk_text_width")]
+    internal static partial float rk_text_width(Str text, float size);
 
     [LibraryImport(Library, EntryPoint = "rk_app_new")]
     internal static partial nint rk_app_new(Str id);
@@ -323,6 +355,138 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_text_document_unref")]
     internal static partial void rk_text_document_unref(nint document);
 
+    [LibraryImport(Library, EntryPoint = "rk_vulkan_device_new")]
+    internal static partial nint rk_vulkan_device_new(ulong getInstanceProcAddr, ulong instance, uint apiVersion, ulong physicalDevice, ulong device, ulong queue, uint queueFamily, delegate* unmanaged[Cdecl]<ulong, ulong, ulong, nint, void> wait, delegate* unmanaged[Cdecl]<ulong, nint, void> execute, delegate* unmanaged[Cdecl]<ulong, ulong, ulong, nint, void> signal, nint userdata, delegate* unmanaged[Cdecl]<nint, void> destroy);
+
+    [LibraryImport(Library, EntryPoint = "rk_vulkan_device_add_instance_extension")]
+    internal static partial void rk_vulkan_device_add_instance_extension(nint device, Str name);
+
+    [LibraryImport(Library, EntryPoint = "rk_vulkan_device_add_device_extension")]
+    internal static partial void rk_vulkan_device_add_device_extension(nint device, Str name);
+
+    [LibraryImport(Library, EntryPoint = "rk_vulkan_device_set_features")]
+    internal static partial void rk_vulkan_device_set_features(nint device, ulong features);
+
+    [LibraryImport(Library, EntryPoint = "rk_vulkan_device_free")]
+    internal static partial void rk_vulkan_device_free(nint device);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_new")]
+    internal static partial nint rk_theme_catalog_new();
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_count")]
+    internal static partial nint rk_theme_catalog_count(nint catalog);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_slug")]
+    internal static partial OwnedString rk_theme_catalog_slug(nint catalog, nint index);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_name")]
+    internal static partial OwnedString rk_theme_catalog_name(nint catalog, nint index);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_is_dark")]
+    internal static partial byte rk_theme_catalog_is_dark(nint catalog, nint index);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_color")]
+    internal static partial Native.Color rk_theme_catalog_color(nint catalog, nint index, uint role);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_ref")]
+    internal static partial nint rk_theme_catalog_ref(nint catalog);
+
+    [LibraryImport(Library, EntryPoint = "rk_theme_catalog_unref")]
+    internal static partial void rk_theme_catalog_unref(nint catalog);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_new")]
+    internal static partial nint rk_embedding_new(nint device);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_error_message")]
+    internal static partial OwnedString rk_embedding_error_message(nint embedding);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_open")]
+    internal static partial nint rk_embedding_open(nint embedding, nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_set_theme")]
+    internal static partial void rk_embedding_set_theme(nint embedding, Str slug);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_set_background")]
+    internal static partial void rk_embedding_set_background(nint embedding, uint background);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_ref")]
+    internal static partial nint rk_embedding_ref(nint embedding);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedding_unref")]
+    internal static partial void rk_embedding_unref(nint embedding);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_new")]
+    internal static partial nint rk_embedded_surface_builder_new(delegate* unmanaged[Cdecl]<nint, nint, void> view, nint userdata, delegate* unmanaged[Cdecl]<nint, void> destroy);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_on_start")]
+    internal static partial void rk_embedded_surface_builder_on_start(nint builder, delegate* unmanaged[Cdecl]<nint, nint, void> callback, nint userdata, delegate* unmanaged[Cdecl]<nint, void> destroy);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_on_close_request")]
+    internal static partial void rk_embedded_surface_builder_on_close_request(nint builder, delegate* unmanaged[Cdecl]<nint, nint, void> callback, nint userdata, delegate* unmanaged[Cdecl]<nint, void> destroy);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_on_left")]
+    internal static partial void rk_embedded_surface_builder_on_left(nint builder, delegate* unmanaged[Cdecl]<nint, nint, void> callback, nint userdata, delegate* unmanaged[Cdecl]<nint, void> destroy);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_builder_free")]
+    internal static partial void rk_embedded_surface_builder_free(nint builder);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_window")]
+    internal static partial nint rk_embedded_surface_window(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_resize")]
+    internal static partial void rk_embedded_surface_resize(nint surface, float width, float height, float scale);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_render")]
+    internal static partial uint rk_embedded_surface_render(nint surface, Native.VulkanImage target);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_pointer_move")]
+    internal static partial byte rk_embedded_surface_pointer_move(nint surface, float x, float y);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_pointer_press")]
+    internal static partial byte rk_embedded_surface_pointer_press(nint surface, float x, float y, uint button, uint modifiers);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_pointer_release")]
+    internal static partial byte rk_embedded_surface_pointer_release(nint surface, float x, float y, uint button, uint modifiers);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_pointer_leave")]
+    internal static partial void rk_embedded_surface_pointer_leave(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_scroll")]
+    internal static partial byte rk_embedded_surface_scroll(nint surface, float x, float y, float stepsX, float stepsY, uint modifiers);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_key_press")]
+    internal static partial byte rk_embedded_surface_key_press(nint surface, uint key, uint modifiers);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_key_release")]
+    internal static partial byte rk_embedded_surface_key_release(nint surface, uint key, uint modifiers);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_type_text")]
+    internal static partial byte rk_embedded_surface_type_text(nint surface, Str text);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_compose_text")]
+    internal static partial byte rk_embedded_surface_compose_text(nint surface, Str text, nint caretStart, nint caretEnd);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_commit_text")]
+    internal static partial byte rk_embedded_surface_commit_text(nint surface, Str text);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_cursor")]
+    internal static partial uint rk_embedded_surface_cursor(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_caret")]
+    internal static partial Native.Rect rk_embedded_surface_caret(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_leave")]
+    internal static partial void rk_embedded_surface_leave(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_rejoin")]
+    internal static partial void rk_embedded_surface_rejoin(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_ref")]
+    internal static partial nint rk_embedded_surface_ref(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_unref")]
+    internal static partial void rk_embedded_surface_unref(nint surface);
+
     [LibraryImport(Library, EntryPoint = "rk_context_window")]
     internal static partial nint rk_context_window(nint context);
 
@@ -367,6 +531,9 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_view_is_dark")]
     internal static partial byte rk_view_is_dark(nint view);
+
+    [LibraryImport(Library, EntryPoint = "rk_view_is_leaving")]
+    internal static partial byte rk_view_is_leaving(nint view);
 
     [LibraryImport(Library, EntryPoint = "rk_column_begin")]
     internal static partial void rk_column_begin(nint view);
@@ -500,6 +667,9 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_vertical_divider")]
     internal static partial void rk_vertical_divider(nint view);
 
+    [LibraryImport(Library, EntryPoint = "rk_scrim")]
+    internal static partial void rk_scrim(nint view);
+
     [LibraryImport(Library, EntryPoint = "rk_button")]
     internal static partial void rk_button(nint view, Str label);
 
@@ -593,6 +763,12 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_margin_edges")]
     internal static partial void rk_margin_edges(nint view, float top, float right, float bottom, float left);
 
+    [LibraryImport(Library, EntryPoint = "rk_position")]
+    internal static partial void rk_position(nint view, float x, float y);
+
+    [LibraryImport(Library, EntryPoint = "rk_scale")]
+    internal static partial void rk_scale(nint view, float factor);
+
     [LibraryImport(Library, EntryPoint = "rk_opacity")]
     internal static partial void rk_opacity(nint view, float opacity);
 
@@ -607,6 +783,9 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_transition")]
     internal static partial void rk_transition(nint view, uint style);
+
+    [LibraryImport(Library, EntryPoint = "rk_glide")]
+    internal static partial void rk_glide(nint view);
 
     [LibraryImport(Library, EntryPoint = "rk_anchor")]
     internal static partial void rk_anchor(nint view, Str target, uint edge, float x, float y);
@@ -631,6 +810,9 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_surface")]
     internal static partial void rk_surface(nint view);
+
+    [LibraryImport(Library, EntryPoint = "rk_glass")]
+    internal static partial void rk_glass(nint view);
 
     [LibraryImport(Library, EntryPoint = "rk_corner_radius")]
     internal static partial void rk_corner_radius(nint view, float radius);
@@ -1108,6 +1290,48 @@ internal static unsafe class Trampolines
         try
         {
             Closures.Get<WorkCallback>(userdata, 0)();
+        }
+        catch (Exception exception)
+        {
+            Closures.Fail(exception);
+        }
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    internal static void VulkanSemaphoreFn0(ulong semaphore, ulong value, ulong stages, nint userdata)
+    {
+        Reclaimer.Drain();
+        try
+        {
+            Closures.Get<VulkanSemaphoreCallback>(userdata, 0)(semaphore, value, stages);
+        }
+        catch (Exception exception)
+        {
+            Closures.Fail(exception);
+        }
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    internal static void VulkanSemaphoreFn2(ulong semaphore, ulong value, ulong stages, nint userdata)
+    {
+        Reclaimer.Drain();
+        try
+        {
+            Closures.Get<VulkanSemaphoreCallback>(userdata, 2)(semaphore, value, stages);
+        }
+        catch (Exception exception)
+        {
+            Closures.Fail(exception);
+        }
+    }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    internal static void VulkanCommandsFn1(ulong commandBuffer, nint userdata)
+    {
+        Reclaimer.Drain();
+        try
+        {
+            Closures.Get<VulkanCommandsCallback>(userdata, 1)(commandBuffer);
         }
         catch (Exception exception)
         {

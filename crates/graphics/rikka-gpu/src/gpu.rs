@@ -8,6 +8,7 @@ use crate::core::instance::VulkanInstance;
 #[cfg(unix)]
 use crate::drm::{DrmFormat, query_export_formats, query_render_formats, query_texture_formats};
 use crate::error::Result;
+use crate::external::ExternalDevice;
 use crate::video::{VideoDeviceHandles, video_handles};
 
 #[derive(Clone)]
@@ -40,6 +41,7 @@ pub struct GpuBuilder {
     app_name: String,
     validation: bool,
     request: DeviceRequest,
+    external: Option<ExternalDevice>,
 }
 
 impl GpuBuilder {
@@ -101,9 +103,19 @@ impl GpuBuilder {
         self
     }
 
+    pub fn external(mut self, device: ExternalDevice) -> Self {
+        self.external = Some(device);
+        self
+    }
+
     pub fn build(self) -> Result<Gpu> {
-        let instance = VulkanInstance::new(&self.app_name, self.validation)?;
-        let device = RenderDevice::new(instance, self.request)?;
+        let device = match self.external {
+            Some(external) => RenderDevice::adopt(external, self.request)?,
+            None => RenderDevice::new(
+                VulkanInstance::new(&self.app_name, self.validation)?,
+                self.request,
+            )?,
+        };
         Ok(Gpu {
             shared: Arc::new(Shared {
                 device: Arc::new(device),
@@ -125,6 +137,7 @@ impl Gpu {
             app_name: "rikka".to_owned(),
             validation: cfg!(feature = "validation"),
             request: DeviceRequest::default(),
+            external: None,
         }
     }
 
