@@ -1013,7 +1013,11 @@
 
 ## minecraft/src/main/java/sh/rikka/client/music
 
-- [Rikka Client music player (local files, ModMenu page, Now Playing HUD)](minecraft-music.md) — sh.rikka.client.music: watched <gameDir>/rikka/music library, SoundTags covers, MusicPlayer queue, keys, HUD.
+- [Rikka Client music player (local files, ModMenu page, Music Info HUD)](minecraft-music.md) — sh.rikka.client.music: watched <gameDir>/rikka/music library, SoundTags covers, MusicPlayer queue, keys, HUD.
+
+## minecraft/src/main/java/sh/rikka/client/resource
+
+- [Rikka Client legacy resource pack conversion](minecraft-legacy-packs.md) — sh.rikka.client.resource(.legacy): in-memory upgrade of pre-26.3 resource packs, data files, upgrade steps, harness.
 
 ## nix/dist
 
