@@ -37,6 +37,7 @@ import sh.rikka.client.mods.mechanic.SnapTapMod;
 import sh.rikka.client.mods.minimap.MinimapMod;
 import sh.rikka.client.mods.motionblur.MotionBlurMod;
 import sh.rikka.client.mods.rearview.RearviewMod;
+import sh.rikka.client.mods.translate.ChatTranslateMod;
 import sh.rikka.client.mods.visual.BloodParticleMod;
 import sh.rikka.client.mods.visual.CrosshairMod;
 import sh.rikka.client.mods.visual.ForceMainHandMod;
@@ -75,6 +76,7 @@ public final class BuiltinMods {
 		mods.register(new FreeLookMod());
 		mods.register(new TapLookMod());
 		mods.register(new ZoomMod());
+		mods.register(new ChatTranslateMod());
 		mods.register(new HitDelayFixMod());
 		mods.register(new NoJumpDelayMod());
 		mods.register(new SnapTapMod());

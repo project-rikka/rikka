@@ -19,6 +19,8 @@ import sh.rikka.client.setting.EnumSetting;
 import sh.rikka.client.setting.IntRangeSetting;
 import sh.rikka.client.setting.IntSetting;
 import sh.rikka.client.setting.KeybindSetting;
+import sh.rikka.client.setting.LanguageListSetting;
+import sh.rikka.client.setting.LanguageSetting;
 import sh.rikka.client.setting.PositionSetting;
 import sh.rikka.client.setting.RegistrySetSetting;
 import sh.rikka.client.setting.ScreenPosition;
@@ -218,6 +220,18 @@ public abstract class Mod {
 
 	protected final StringListSetting textList(String id, String... defaults) {
 		return this.settings.textList(id, defaults);
+	}
+
+	protected final LanguageSetting language(String id, String defaultTag) {
+		return this.settings.language(id, defaultTag);
+	}
+
+	protected final LanguageSetting languageOrGame(String id) {
+		return this.settings.languageOrGame(id);
+	}
+
+	protected final LanguageListSetting languages(String id, String... defaults) {
+		return this.settings.languages(id, defaults);
 	}
 
 	protected final PositionSetting position(String id, ScreenPosition defaultValue) {

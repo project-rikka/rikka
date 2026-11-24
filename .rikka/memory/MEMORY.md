@@ -1007,6 +1007,10 @@
 
 - [Rikka Client Rearview mod (second world view behind the player)](minecraft-rearview.md) — mods/rearview: 16:9 HUD mirror rendered from vanilla parts; hooks, section sharing, compile scheduling, state save.
 
+## minecraft/src/main/java/sh/rikka/client/mods/translate
+
+- [Rikka Client Chat Translate mod and the Google translation client](minecraft-chat-translate.md) — sh.rikka.client.translate (Google translateHtml client, queue, chat markup) and mods/translate (inline chat translation…
+
 ## nix/dist
 
 - [Binary distribution (project-rikka/packages, nix/dist, release workflow)](distribution.md) — How Rikka ships prebuilt: portable builds, xtask release, the generated packages flake and its NixOS module.

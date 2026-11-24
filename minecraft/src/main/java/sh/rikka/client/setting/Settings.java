@@ -99,6 +99,18 @@ public final class Settings {
 		return add(new StringListSetting(id, key(id), List.of(defaults)));
 	}
 
+	public LanguageSetting language(String id, String defaultTag) {
+		return add(new LanguageSetting(id, key(id), defaultTag, false));
+	}
+
+	public LanguageSetting languageOrGame(String id) {
+		return add(new LanguageSetting(id, key(id), LanguageSetting.GAME, true));
+	}
+
+	public LanguageListSetting languages(String id, String... defaults) {
+		return add(new LanguageListSetting(id, key(id), List.of(defaults)));
+	}
+
 	public PositionSetting position(String id, ScreenPosition defaultValue) {
 		return add(new PositionSetting(id, key(id), defaultValue));
 	}

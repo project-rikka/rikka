@@ -25,6 +25,8 @@ import sh.rikka.client.setting.EnumSetting;
 import sh.rikka.client.setting.IntRangeSetting;
 import sh.rikka.client.setting.IntSetting;
 import sh.rikka.client.setting.KeybindSetting;
+import sh.rikka.client.setting.LanguageListSetting;
+import sh.rikka.client.setting.LanguageSetting;
 import sh.rikka.client.setting.PositionSetting;
 import sh.rikka.client.setting.RegistrySetSetting;
 import sh.rikka.client.setting.ScreenPosition;
@@ -49,6 +51,7 @@ public final class SettingControls implements AutoCloseable {
 	private final ColorControl colors = new ColorControl();
 	private final TextControls texts = new TextControls();
 	private final RegistryControl registries = new RegistryControl();
+	private final LanguageControl languages = new LanguageControl();
 
 	public KeyCapture capture() {
 		return this.capture;
@@ -59,7 +62,8 @@ public final class SettingControls implements AutoCloseable {
 			|| setting instanceof EnumSetSetting<?>
 			|| setting instanceof IntRangeSetting
 			|| setting instanceof DoubleRangeSetting
-			|| setting instanceof PositionSetting;
+			|| setting instanceof PositionSetting
+			|| setting instanceof LanguageListSetting;
 	}
 
 	public void control(View view, Setting<?, ?> setting) {
@@ -81,6 +85,8 @@ public final class SettingControls implements AutoCloseable {
 			case RegistrySetSetting<?> registry -> this.registries.view(view, registry);
 			case StringListSetting list -> this.texts.list(view, list);
 			case PositionSetting position -> position(view, position);
+			case LanguageSetting language -> this.languages.single(view, language);
+			case LanguageListSetting languageList -> this.languages.list(view, languageList);
 		}
 	}
 
@@ -93,6 +99,7 @@ public final class SettingControls implements AutoCloseable {
 		this.capture.cancel();
 		this.colors.close();
 		this.registries.close();
+		this.languages.close();
 		this.texts.close();
 	}
 

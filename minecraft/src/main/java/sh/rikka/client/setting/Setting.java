@@ -11,7 +11,7 @@ import sh.rikka.client.RikkaClient;
 
 public abstract sealed class Setting<T, S extends Setting<T, S>>
 	permits BoolSetting, IntSetting, DoubleSetting, ColorSetting, StringSetting, EnumSetting, KeybindSetting, IntRangeSetting,
-	DoubleRangeSetting, EnumSetSetting, RegistrySetSetting, StringListSetting, PositionSetting {
+	DoubleRangeSetting, EnumSetSetting, RegistrySetSetting, StringListSetting, PositionSetting, LanguageSetting, LanguageListSetting {
 	private static final String SHARED_TRANSLATION_PREFIX = RikkaClient.MOD_ID + ".setting.";
 	private static final BooleanSupplier ALWAYS = () -> true;
 
