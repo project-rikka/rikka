@@ -1,20 +1,15 @@
 package sh.rikka.client.mods.motionblur;
 
 import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
-import com.mojang.renderpearl.api.pipeline.ColorTargetState;
-import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
 import com.mojang.renderpearl.api.pipeline.UniformType;
-import net.minecraft.resources.Identifier;
-import sh.rikka.client.RikkaClient;
+import sh.rikka.client.render.post.ScreenPipeline;
 
 final class MotionBlurPipelines {
 	static final int MAX_BLENDED_FRAMES = 24;
-	static final String MAIN_SAMPLER = "MainSampler";
 	static final String MAIN_DEPTH_SAMPLER = "MainDepthSampler";
 	static final String HISTORY_SAMPLER = "HistorySampler";
 
-	private static final String SCREEN_QUAD = "core/screenquad";
 	private static final String[] FRAME_SAMPLERS = frameSamplers();
 
 	static final RenderPipeline VELOCITY_TRANSLATION = velocity("translation", "MOTION_BLUR_TRANSLATION");
@@ -33,7 +28,7 @@ final class MotionBlurPipelines {
 
 	private static RenderPipeline velocity(String variant, String define) {
 		BindGroupLayout layout = BindGroupLayout.builder()
-			.withUniform(MAIN_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+			.withUniform(ScreenPipeline.MAIN_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
 			.withUniform(MAIN_DEPTH_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
 			.withUniform(VelocityUniforms.BLOCK, UniformType.UNIFORM_BUFFER)
 			.build();
@@ -51,7 +46,7 @@ final class MotionBlurPipelines {
 
 	private static RenderPipeline accumulation(String variant, String define) {
 		BindGroupLayout layout = BindGroupLayout.builder()
-			.withUniform(MAIN_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
+			.withUniform(ScreenPipeline.MAIN_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
 			.withUniform(HISTORY_SAMPLER, UniformType.COMBINED_IMAGE_SAMPLER)
 			.withUniform(AccumulationUniforms.BLOCK, UniformType.UNIFORM_BUFFER)
 			.build();
@@ -59,17 +54,7 @@ final class MotionBlurPipelines {
 	}
 
 	private static RenderPipeline.Builder screen(String name, String shader, BindGroupLayout layout) {
-		return RenderPipeline.builder()
-			.withLocation(id("pipeline/motion_blur/" + name))
-			.withVertexShader(SCREEN_QUAD)
-			.withFragmentShader(id("post/motion_blur/" + shader))
-			.withPrimitiveTopology(PrimitiveTopology.TRIANGLES)
-			.withBindGroupLayout(layout)
-			.withColorTargetState(ColorTargetState.DEFAULT);
-	}
-
-	private static Identifier id(String path) {
-		return Identifier.fromNamespaceAndPath(RikkaClient.MOD_ID, path);
+		return ScreenPipeline.builder("motion_blur/" + name, "motion_blur/" + shader, layout);
 	}
 
 	private static String[] frameSamplers() {

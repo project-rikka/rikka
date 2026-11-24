@@ -6,6 +6,7 @@ import sh.rikka.client.mods.animation.OldAnimationsMod;
 import sh.rikka.client.mods.camera.FreeLookMod;
 import sh.rikka.client.mods.camera.TapLookMod;
 import sh.rikka.client.mods.camera.ZoomMod;
+import sh.rikka.client.mods.colorsaturation.ColorSaturationMod;
 import sh.rikka.client.mods.hud.ClockMod;
 import sh.rikka.client.mods.hud.ComboCounterMod;
 import sh.rikka.client.mods.hud.CoordsMod;
@@ -67,6 +68,7 @@ public final class BuiltinMods {
 		mods.register(new FullbrightMod());
 		mods.register(new TimeChangerMod());
 		mods.register(new WeatherChangerMod());
+		mods.register(new ColorSaturationMod());
 		mods.register(new MotionBlurMod());
 		mods.register(new CrosshairMod());
 		mods.register(new HitColorMod());

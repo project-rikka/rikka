@@ -97,9 +97,9 @@ final class ProfilesPage implements AutoCloseable {
 										}
 									})
 									.grow(1.0F);
-								view.iconButton("dns")
+								view.customButton(() -> view.icon("dns").tint(view.paletteColor(editing ? ColorRole.ACCENT : ColorRole.TEXT_MUTED)))
+									.buttonStyle(ButtonVariant.GHOST)
 									.tooltip(Labels.of("profiles.servers"))
-									.tint(view.paletteColor(editing ? ColorRole.ACCENT : ColorRole.TEXT_MUTED))
 									.onPress(context -> this.servers.toggle(profile));
 								if (!active) {
 									view.button(Labels.of("profiles.use"))

@@ -3,6 +3,10 @@ package sh.rikka.client.mods.motionblur;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
 import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import sh.rikka.client.render.post.ScreenBuffer;
+import sh.rikka.client.render.post.ScreenPass;
+import sh.rikka.client.render.post.ScreenPipeline;
+import sh.rikka.client.render.post.UniformStream;
 
 final class Accumulation {
 	private static final float MAX_STRENGTH_SCALE = 7.0F;
@@ -27,7 +31,7 @@ final class Accumulation {
 		GpuBufferSlice block = this.uniforms.write(new AccumulationUniforms(blendFactor(strength * scale)));
 		RenderTarget blended = this.output.sizedLike(main);
 		ScreenPass.draw(pipeline, blended, pass -> {
-			pass.setUniform(MotionBlurPipelines.MAIN_SAMPLER, main.getColorTextureView(), ScreenPass.nearest());
+			pass.setUniform(ScreenPipeline.MAIN_SAMPLER, main.getColorTextureView(), ScreenPass.nearest());
 			pass.setUniform(MotionBlurPipelines.HISTORY_SAMPLER, previous.getColorTextureView(), ScreenPass.nearest());
 			pass.setUniform(AccumulationUniforms.BLOCK, block);
 		});

@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import sh.rikka.client.events.ClientHooks;
+import sh.rikka.client.mods.colorsaturation.ColorSaturationHooks;
 import sh.rikka.client.mods.motionblur.MotionBlurHooks;
 import sh.rikka.client.mods.rearview.RearviewHooks;
 
@@ -57,5 +58,6 @@ abstract class GameRendererMixin {
 	@Inject(method = "renderLevel", at = @At("TAIL"))
 	private void rikka$levelFinished(CallbackInfo callback) {
 		MotionBlurHooks.levelFinished(this.mainRenderTarget);
+		ColorSaturationHooks.levelFinished(this.mainRenderTarget);
 	}
 }

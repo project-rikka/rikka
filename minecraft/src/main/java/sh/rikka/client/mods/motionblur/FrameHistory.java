@@ -2,6 +2,8 @@ package sh.rikka.client.mods.motionblur;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.pipeline.TextureTarget;
+import sh.rikka.client.render.post.ScreenBuffer;
+import sh.rikka.client.render.post.ScreenPass;
 
 final class FrameHistory {
 	private static final int SLOTS = MotionBlurPipelines.MAX_BLENDED_FRAMES;

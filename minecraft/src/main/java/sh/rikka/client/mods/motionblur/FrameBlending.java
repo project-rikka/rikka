@@ -2,6 +2,8 @@ package sh.rikka.client.mods.motionblur;
 
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import sh.rikka.client.render.post.ScreenPass;
+import sh.rikka.client.render.post.UniformStream;
 
 final class FrameBlending {
 	private static final int MAX_FRAMES = MotionBlurPipelines.MAX_BLENDED_FRAMES;

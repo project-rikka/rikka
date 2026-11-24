@@ -995,6 +995,10 @@
 
 - [Rikka Client Old Animations mod (1.7 visuals)](minecraft-old-animations.md) — mods/animation: one visual-only Mod, its mixin hooks, and the exact-matrix method that maps 1.7 item chains onto modern…
 
+## minecraft/src/main/java/sh/rikka/client/mods/colorsaturation
+
+- [Rikka Client Color Saturation mod (colour grade post pass)](minecraft-color-saturation.md) — mods/colorsaturation: hue, saturation, contrast, brightness as one affine colour matrix in a full-screen pass.
+
 ## minecraft/src/main/java/sh/rikka/client/mods/minimap
 
 - [Rikka Client panel HUD mods (minimap, keystrokes, target info, packs)](minecraft-hud-mods.md) — mods/minimap terrain atlas and drawing; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo in mods/hud.
