@@ -42,12 +42,19 @@ unavailable = "此会话无法更改外观：{reason}"
 refused = "无法更改主题：{reason}"
 desktop = "桌面"
 taskbar = "任务栏"
+taskbar-position = "任务栏位置"
 wallpaper = "壁纸"
 
 [settings.appearance.indicators]
 title = "任务栏指示器"
 input-method = "输入法"
 ai-usage = "AI 用量"
+
+[settings.appearance.taskbar-positions]
+top = "顶部"
+bottom = "底部"
+left = "左侧"
+right = "右侧"
 
 [settings.appearance.categories]
 dark = "Dark"

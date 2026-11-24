@@ -1,5 +1,7 @@
 use rikka_types::{Key, Modifiers, Point, Rect};
-use rikka_ui::{Anchor, Element, Handler, IntoHandler, Length, Styled, View, is_exiting, pop};
+use rikka_ui::{
+    Anchor, AnchorEdge, Element, Handler, IntoHandler, Length, Styled, View, is_exiting, pop,
+};
 use rikka_widgets::column;
 
 use crate::AimTarget;
@@ -14,7 +16,7 @@ const WIDEST: f32 = 92.0;
 
 #[derive(Debug)]
 enum Origin {
-    Pointer(Point),
+    Pointer(Point, AnchorEdge),
     Mark(Rect),
     Centre,
 }
@@ -51,8 +53,13 @@ impl Popover {
     }
 
     #[must_use]
-    pub fn at(mut self, at: Point) -> Self {
-        self.standing = Origin::Pointer(at);
+    pub fn at(self, at: Point) -> Self {
+        self.opening(at, AnchorEdge::BelowStart)
+    }
+
+    #[must_use]
+    pub fn opening(mut self, at: Point, toward: AnchorEdge) -> Self {
+        self.standing = Origin::Pointer(at, toward);
         self
     }
 
@@ -60,7 +67,7 @@ impl Popover {
     pub fn beside(mut self, sighted: Option<AimTarget>) -> Self {
         self.standing = match sighted {
             Some(AimTarget::Caret(rect)) => Origin::Mark(rect),
-            Some(AimTarget::Pointer(at)) => Origin::Pointer(at),
+            Some(AimTarget::Pointer(at)) => Origin::Pointer(at, AnchorEdge::BelowStart),
             None => Origin::Centre,
         };
         self
@@ -101,10 +108,7 @@ impl View for Popover {
         } = self;
 
         let (target, anchor) = match standing {
-            Origin::Pointer(at) => (
-                cursor(at).build(),
-                Anchor::below(CURSOR).offset(CURSOR_GAP, CURSOR_GAP),
-            ),
+            Origin::Pointer(at, edge) => (cursor(at).build(), pointer_anchor(edge)),
             Origin::Mark(rect) => (
                 mark(rect).build(),
                 Anchor::below(CURSOR).offset(0.0, MARK_GAP),
@@ -138,5 +142,18 @@ impl View for Popover {
             Some(on_reopen) => scrim.on_secondary_press(on_reopen).build(),
             None => scrim.build(),
         }
+    }
+}
+
+fn pointer_anchor(edge: AnchorEdge) -> Anchor {
+    let anchor = Anchor::new(CURSOR, edge);
+    match edge {
+        AnchorEdge::BelowStart | AnchorEdge::AboveStart | AnchorEdge::BesideTop => {
+            anchor.offset(CURSOR_GAP, CURSOR_GAP)
+        }
+        AnchorEdge::BelowEnd | AnchorEdge::AboveEnd | AnchorEdge::BesideLeftTop => {
+            anchor.offset(-CURSOR_GAP, CURSOR_GAP)
+        }
+        AnchorEdge::Center | AnchorEdge::Cover => anchor,
     }
 }

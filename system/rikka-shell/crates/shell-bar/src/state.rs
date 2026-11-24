@@ -5,7 +5,10 @@ use rikka_session::workspaces::COUNT;
 use rikka_types::Rect;
 use rikka_ui::{State, every_keyed, skip_view, stream};
 use shell_kit::Placement;
+use shell_kit::taskbar::Shape;
 
+use crate::dock::Dock;
+use crate::dropdown_panel::Opening;
 use crate::indicators::Kind;
 use crate::island::Island;
 use crate::shared::Shared;
@@ -26,7 +29,7 @@ pub(crate) struct Bar {
 
 impl Bar {
     #[must_use]
-    pub(crate) fn new(shared: Shared, placement: &Placement) -> Bar {
+    pub(crate) fn new(shared: Shared, placement: &Placement, shape: Shape) -> Bar {
         let tasks = Tasks::new(
             shared.seam.clone(),
             shared.apps.clone(),
@@ -37,7 +40,7 @@ impl Bar {
             shared.recording.clone(),
             tasks,
             shared.menu.clone(),
-            placement.size.width,
+            Dock::new(shape, placement.size),
         );
         Bar {
             shared,
@@ -79,6 +82,10 @@ impl Bar {
         &self.island
     }
 
+    pub(crate) fn dock(&self) -> Dock {
+        self.island.dock()
+    }
+
     pub(crate) fn bell(&self) -> Option<Bell> {
         Bell::new(self.shared.quiet.get(), self.shared.history.is_unread())
     }
@@ -114,11 +121,21 @@ impl Bar {
     }
 
     pub(crate) fn unfold(&mut self, chevron: Rect) {
-        self.shared.fold.unfold(chevron);
+        let opening = self.opening(chevron);
+        self.shared.fold.unfold(opening);
     }
 
     pub(super) fn indicate(&mut self, kind: Kind, at: Rect) {
-        self.shared.shelf.open(kind, at);
+        let opening = self.opening(at);
+        self.shared.shelf.open(kind, opening);
+    }
+
+    fn opening(&self, at: Rect) -> Opening {
+        let dock = self.dock();
+        Opening {
+            from: dock.on_output(at),
+            edge: dock.edge(),
+        }
     }
 
     fn tick_indicators(&mut self) {

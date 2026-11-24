@@ -18,8 +18,8 @@ pub(crate) fn view(flyout: &Flyout) -> impl View {
     let tray = flyout.tray();
     scrim(
         column! {
-            if !is_exiting() {
-                dropdown_panel(flyout.from(), WIDTH, rows(flyout, tray), on_key)
+            if let Some(opening) = flyout.opening().filter(|_| !is_exiting()) {
+                dropdown_panel(opening, WIDTH, rows(flyout, tray), on_key)
                     .beside(menus(flyout, tray));
             }
         }

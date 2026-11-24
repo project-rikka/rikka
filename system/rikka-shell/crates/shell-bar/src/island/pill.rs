@@ -1,7 +1,10 @@
 use rikka_types::Color;
 use rikka_ui::{
-    Align, Element, Inset, Justify, Layout, Length, PaintCtx, Quad, Space, View, Widget, motion,
+    Align, Axis, Element, Inset, Justify, Layout, Length, PaintCtx, Quad, Space, View, Widget,
+    motion,
 };
+
+use crate::axis;
 
 pub(crate) const HEIGHT: f32 = 28.0;
 
@@ -17,21 +20,24 @@ pub(crate) struct Pill {
     child: Element,
     padding: Inset,
     round: bool,
+    axis: Axis,
 }
 
-pub(crate) fn pill(child: impl View, padding: Inset) -> Pill {
+pub(crate) fn pill(child: impl View, padding: Inset, axis: Axis) -> Pill {
     Pill {
         child: child.build(),
         padding,
         round: false,
+        axis,
     }
 }
 
-pub(super) fn bubble(child: impl View) -> Pill {
+pub(super) fn bubble(child: impl View, axis: Axis) -> Pill {
     Pill {
         child: child.build(),
         padding: Inset::NONE,
         round: true,
+        axis,
     }
 }
 
@@ -39,15 +45,14 @@ impl Widget for Pill {
     type State = ();
 
     fn layout(&self) -> Layout {
-        let layout = Layout::row()
+        let layout = axis::across(axis::layout(self.axis), self.axis, Length::px(HEIGHT))
             .align_items(Align::Center)
             .justify(Justify::Center)
             .gap(GAP)
-            .height(Length::px(HEIGHT))
             .padding(self.padding)
             .fixed();
         match self.round {
-            true => layout.width(Length::px(HEIGHT)),
+            true => axis::along_size(layout, self.axis, Length::px(HEIGHT)),
             false => layout,
         }
     }
@@ -60,7 +65,7 @@ impl Widget for Pill {
             Quad::new(shape)
                 .fill(faded(palette.surface))
                 .stroke(BORDER, faded(palette.outline))
-                .radius(shape.height() / 2.0),
+                .radius(shape.width().min(shape.height()) / 2.0),
         );
     }
 

@@ -9,7 +9,7 @@ mod tile;
 pub(crate) use art::Art;
 pub(crate) use menu::{Flyout, MenuRequest, Opened, view as menu_view};
 pub(crate) use state::Tasks;
-pub(crate) use task_list::{Aim, Touch, task_list};
+pub(crate) use task_list::{Aim, TaskList, Touch, task_list};
 pub(crate) use thumbnail::thumbnail;
 pub(crate) use tile::Tile;
 

@@ -2,14 +2,15 @@ use std::mem::discriminant;
 
 use rikka_sound::Spectrum;
 use rikka_theme::{Corner, Palette};
-use rikka_types::{Color, Point};
+use rikka_types::Color;
 use rikka_ui::{
-    Align, Element, Inset, Length, MaterialSymbol, Space, Styled, TextStyled, View, palette, text,
+    Align, Axis, Element, Length, MaterialSymbol, Space, Styled, TextStyled, View, palette, text,
 };
-use rikka_widgets::{container, icon, row, spacer};
+use rikka_widgets::{column, container, icon, row, spacer};
 use shell_feeds::{art, cover, percent, waveform};
-use shell_kit::taskbar::Shape;
+use shell_kit::taskbar::DEPTH;
 
+use crate::axis;
 use crate::glide::{glide, grows, settles};
 use crate::island::clock::span;
 use crate::island::cover_transition::{CoverFrame, CoverTarget};
@@ -18,7 +19,7 @@ use crate::island::live::{self, Live};
 use crate::island::notice::{Tone, sensor_symbol, sensor_tone};
 use crate::island::pill::{self, bubble, pill};
 use crate::island::state::Island;
-use crate::tasks::task_list;
+use crate::tasks::{TaskList, task_list};
 
 const BUBBLES: usize = 2;
 const MARK: f32 = 16.0;
@@ -28,6 +29,7 @@ const WAVE_HEIGHT: f32 = 14.0;
 const TITLE: f32 = 220.0;
 const TEXT_INSET: f32 = 12.0;
 const FLANK: f32 = 360.0;
+const SIDE_FLANK: f32 = 260.0;
 const BARE: f32 = 2.0;
 const SPACING: Space = Space::SNUG;
 
@@ -89,21 +91,30 @@ impl Middle {
     }
 }
 
-fn seat_width(live: &Live) -> f32 {
-    match live {
-        Live::Media(_) => 26.0,
-        Live::Recording(_) => 46.0,
-        Live::Sensor { .. } => MARK,
-        Live::LowBattery { .. } | Live::Charging { .. } => 36.0,
+fn seat(live: &Live, axis: Axis) -> f32 {
+    match (live, axis) {
+        (Live::Media(_), _) => 26.0,
+        (Live::Sensor { .. }, _) | (_, Axis::Vertical) => MARK,
+        (Live::Recording(_), Axis::Horizontal) => 46.0,
+        (Live::LowBattery { .. } | Live::Charging { .. }, Axis::Horizontal) => 36.0,
+    }
+}
+
+fn flank(axis: Axis) -> f32 {
+    match axis {
+        Axis::Horizontal => FLANK,
+        Axis::Vertical => SIDE_FLANK,
     }
 }
 
 pub(crate) fn compact(island: &Island, live_activities: &[Live], seated: bool) -> Face {
+    let axis = island.dock().axis();
     let lead = live_activities.first();
     let mode = Mode::of(island);
     let main = pill(
-        content(island, lead, mode),
-        Inset::exact(0.0, mode.trail_inset(lead), 0.0, mode.lead_inset(lead)),
+        content(island, lead, mode, axis),
+        axis::inset(axis, mode.lead_inset(lead), mode.trail_inset(lead)),
+        axis,
     );
     let main = container(main)
         .on_hover(Island::hover_face)
@@ -115,59 +126,80 @@ pub(crate) fn compact(island: &Island, live_activities: &[Live], seated: bool) -
         .take(BUBBLES)
         .map(|live| {
             glide(
-                bubble(live_bubble(live)),
+                axis,
+                bubble(live_bubble(live), axis),
                 grows(),
                 (BUBBLE, discriminant(live)),
             )
         })
         .collect();
     let children = mirror(bubbles.len())
-        .map(|width| spacer().width(width).grow(0.0).build().keyed(MIRROR))
+        .map(|length| {
+            let size = axis::size(axis, length, 0.0);
+            spacer()
+                .width(size.width)
+                .height(size.height)
+                .grow(0.0)
+                .build()
+                .keyed(MIRROR)
+        })
         .into_iter()
         .chain(std::iter::once(main))
         .chain(bubbles)
         .collect();
-    face(children, seated)
+    face(children, seated, axis)
 }
 
-fn content(island: &Island, lead: Option<&Live>, mode: Mode) -> Element {
+fn content(island: &Island, lead: Option<&Live>, mode: Mode, axis: Axis) -> Element {
     let tasks = island.tasks();
     let shown = match mode {
         Mode::Idle => &[][..],
         Mode::Tasks => tasks.shown(),
     };
     let list = task_list(
-        shown,
-        tasks.board().showing,
-        tasks.tiles(),
-        (island.width() - FLANK * 2.0).max(0.0),
+        TaskList {
+            groups: shown,
+            space: tasks.board().showing,
+            tiles: tasks.tiles(),
+            longest: (island.dock().length() - flank(axis) * 2.0).max(0.0),
+            axis,
+        },
         Island::touched,
     )
     .keyed(LIST);
-    row! {
-        if let Some(live) = lead {
+    let leading =
+        lead.map(|live| {
             glide(
-                container(beside(leading(live), live, Side::Lead, mode))
-                    .padding(Inset::exact(0.0, SPACING.px(), 0.0, 0.0)),
+                axis,
+                container(beside(leading(live), live, Side::Lead, mode, axis))
+                    .padding(axis::inset(axis, 0.0, SPACING.px())),
                 grows(),
                 (Side::Lead, mode, discriminant(live)),
-            );
-        }
-        if mode == Mode::Idle {
-            glide(middle(island, lead), settles(), Middle::of(lead));
-        }
-        list;
-        if let Some(live) = lead {
-            glide(
-                container(beside(trailing(live, island, island.spectrum()), live, Side::Trail, mode))
-                    .padding(Inset::exact(0.0, 0.0, 0.0, SPACING.px())),
-                grows(),
-                (Side::Trail, mode, discriminant(live)),
-            );
-        }
-    }
-    .align_items(Align::Center)
-    .build()
+            )
+        });
+    let middle = (mode == Mode::Idle)
+        .then(|| middle(island, lead, axis))
+        .flatten()
+        .map(|middle| glide(axis, middle, settles(), Middle::of(lead)));
+    let trailing = lead.and_then(|live| {
+        let trail = trailing(live, island, island.spectrum(), axis)?;
+        Some(glide(
+            axis,
+            container(beside(trail, live, Side::Trail, mode, axis)).padding(axis::inset(
+                axis,
+                SPACING.px(),
+                0.0,
+            )),
+            grows(),
+            (Side::Trail, mode, discriminant(live)),
+        ))
+    });
+    axis::line(axis, leading)
+        .extend(middle)
+        .push(list)
+        .extend(trailing)
+        .align_items(Align::Center)
+        .build()
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -176,19 +208,27 @@ enum Side {
     Trail,
 }
 
-fn beside(child: Element, live: &Live, side: Side, mode: Mode) -> Element {
+fn beside(child: Element, live: &Live, side: Side, mode: Mode, axis: Axis) -> Element {
     let align = match side {
         Side::Lead => Align::Start,
         Side::Trail => Align::End,
     };
-    match mode {
-        Mode::Idle => child,
-        Mode::Tasks => container(child)
+    match (mode, axis) {
+        (Mode::Idle, _) => child,
+        (Mode::Tasks, Axis::Horizontal) => container(child)
             .align_x(align)
             .align_y(Align::Center)
             .on_hover(Island::aim_live)
-            .width(Length::px(seat_width(live)))
+            .width(Length::px(seat(live, axis)))
             .height(Length::FILL)
+            .shrink(0.0)
+            .build(),
+        (Mode::Tasks, Axis::Vertical) => container(child)
+            .align_x(Align::Center)
+            .align_y(align)
+            .on_hover(Island::aim_live)
+            .width(Length::FILL)
+            .height(Length::px(seat(live, axis)))
             .shrink(0.0)
             .build(),
     }
@@ -204,30 +244,42 @@ pub(crate) fn cover_target(island: &Island, live_activities: &[Live]) -> Option<
         return None;
     };
     let bubbles = live_activities.len().saturating_sub(1).min(BUBBLES);
-    let before = mirror(bubbles).map_or(0.0, |width| width + face::GAP.px());
+    let before = mirror(bubbles).map_or(0.0, |length| length + face::GAP.px());
     let inset = Mode::of(island).lead_inset(live_activities.first());
-    let frame = COVER.inset(Point::new(before + inset, (Shape.reserved() - ART) / 2.0));
+    let axis = island.dock().axis();
+    let frame = COVER.inset(axis.point(before + inset, (DEPTH - ART) / 2.0));
     Some(CoverTarget::new(frame, cover(player.track.as_ref())))
 }
 
-fn middle(island: &Island, lead: Option<&Live>) -> Element {
-    match lead {
-        Some(Live::Media(player)) => text(live::title(player))
-            .label()
-            .no_wrap()
-            .max_width(Length::px(TITLE))
+fn middle(island: &Island, lead: Option<&Live>, axis: Axis) -> Option<Element> {
+    let clock = island.clock();
+    match (lead, axis) {
+        (Some(Live::Media(_)), Axis::Vertical) => None,
+        (_, Axis::Vertical) => Some(
+            column! {
+                text(clock.hour()).label().no_wrap();
+                text(clock.minute()).label().no_wrap();
+            }
+            .align_items(Align::Center)
             .build(),
-        Some(_) => text(island.clock().time()).label().no_wrap().build(),
-        None => {
-            let clock = island.clock();
+        ),
+        (Some(Live::Media(player)), Axis::Horizontal) => Some(
+            text(live::title(player))
+                .label()
+                .no_wrap()
+                .max_width(Length::px(TITLE))
+                .build(),
+        ),
+        (Some(_), Axis::Horizontal) => Some(text(clock.time()).label().no_wrap().build()),
+        (None, Axis::Horizontal) => Some(
             row! {
                 text(clock.date()).label().no_wrap();
                 text(clock.time()).label().no_wrap();
             }
             .gap(Space::SNUG)
             .align_items(Align::Center)
-            .build()
-        }
+            .build(),
+        ),
     }
 }
 
@@ -245,24 +297,40 @@ fn leading(live: &Live) -> Element {
     }
 }
 
-fn trailing(live: &Live, island: &Island, spectrum: Option<Spectrum>) -> Element {
+fn trailing(
+    live: &Live,
+    island: &Island,
+    spectrum: Option<Spectrum>,
+    axis: Axis,
+) -> Option<Element> {
     let palette = palette();
-    match live {
-        Live::Media(_) => waveform(spectrum, WAVE_BARS, WAVE_HEIGHT)
-            .color(palette.accent)
-            .build(),
-        Live::Recording(_) => text(span(island.elapsed()))
-            .label()
-            .color(palette.danger)
-            .no_wrap()
-            .build(),
-        Live::Sensor { sensor, .. } => mark(sensor_symbol(*sensor), palette.text_muted),
-        Live::LowBattery { charge } => text(percent(*charge))
-            .label()
-            .color(palette.danger)
-            .no_wrap()
-            .build(),
-        Live::Charging { charge, .. } => text(percent(*charge)).label().no_wrap().build(),
+    match (live, axis) {
+        (Live::Media(_), _) => Some(
+            waveform(spectrum, WAVE_BARS, WAVE_HEIGHT)
+                .color(palette.accent)
+                .build(),
+        ),
+        (Live::Sensor { sensor, .. }, _) => Some(mark(sensor_symbol(*sensor), palette.text_muted)),
+        (Live::Recording(_) | Live::LowBattery { .. } | Live::Charging { .. }, Axis::Vertical) => {
+            None
+        }
+        (Live::Recording(_), Axis::Horizontal) => Some(
+            text(span(island.elapsed()))
+                .label()
+                .color(palette.danger)
+                .no_wrap()
+                .build(),
+        ),
+        (Live::LowBattery { charge }, Axis::Horizontal) => Some(
+            text(percent(*charge))
+                .label()
+                .color(palette.danger)
+                .no_wrap()
+                .build(),
+        ),
+        (Live::Charging { charge, .. }, Axis::Horizontal) => {
+            Some(text(percent(*charge)).label().no_wrap().build())
+        }
     }
 }
 

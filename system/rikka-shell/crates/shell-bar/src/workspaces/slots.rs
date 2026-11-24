@@ -1,11 +1,15 @@
 use rikka_theme::Theme;
 use rikka_types::PointerButton;
 use rikka_ui::{
-    Color, Curve, Element, Event, EventCtx, Handler, IntoHandler, Layout, Length, PaintCtx, Point,
-    Quad, Rect, Size, Spring, View, Widget, theme,
+    Axis, Color, Curve, Element, Event, EventCtx, Handler, IntoHandler, Layout, Length, PaintCtx,
+    Point, Quad, Rect, Size, Spring, View, Widget, theme,
 };
 
-const PILL: Size = Size::new(24.0, 14.0);
+use crate::axis;
+
+const PILL: f32 = 24.0;
+
+const PILL_THICKNESS: f32 = 14.0;
 
 const DOT: [f32; 3] = [8.0, 6.0, 4.0];
 
@@ -21,6 +25,7 @@ const COLOR: Curve = Curve::Spring(Spring::DEFAULT_EFFECTS);
 pub(crate) struct Slots {
     showing: usize,
     holding: Vec<bool>,
+    axis: Axis,
     on_show: Handler<(usize,)>,
 }
 
@@ -29,15 +34,23 @@ pub(crate) struct SlotsState {
     hovered: Option<usize>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Mark {
+    along: f32,
+    across: f32,
+}
+
 impl Slots {
     pub(crate) fn new<Marker>(
         showing: usize,
         holding: Vec<bool>,
+        axis: Axis,
         on_show: impl IntoHandler<(usize,), (), Marker>,
     ) -> Slots {
         Slots {
             showing,
             holding,
+            axis,
             on_show: on_show.into_handler(),
         }
     }
@@ -47,10 +60,10 @@ impl Slots {
     }
 
     fn places(&self) -> impl Iterator<Item = (f32, Size)> + '_ {
-        sizes(self.showing, self.count()).scan(0.0, |left, size| {
-            let middle = *left + size.width / 2.0;
-            *left += size.width + GAP;
-            Some((middle, size))
+        marks(self.showing, self.count()).scan(0.0, |start, mark| {
+            let middle = *start + mark.along / 2.0;
+            *start += mark.along + GAP;
+            Some((middle, axis::size(self.axis, mark.along, mark.across)))
         })
     }
 
@@ -66,10 +79,10 @@ impl Slots {
         if !bounds.contains(at) {
             return None;
         }
-        let local = at.x - bounds.x();
+        let local = self.axis.coord(at) - self.axis.coord(bounds.origin);
         let mut edge = 0.0;
-        sizes(self.showing, self.count()).position(|size| {
-            edge += size.width + GAP;
+        marks(self.showing, self.count()).position(|mark| {
+            edge += mark.along + GAP;
             local < edge
         })
     }
@@ -84,21 +97,27 @@ impl Slots {
     }
 }
 
-fn sizes(showing: usize, count: usize) -> impl Iterator<Item = Size> {
+fn marks(showing: usize, count: usize) -> impl Iterator<Item = Mark> {
     (1..=count).map(move |number| {
         if number == showing {
-            return PILL;
+            return Mark {
+                along: PILL,
+                across: PILL_THICKNESS,
+            };
         }
         let away = number.abs_diff(showing);
-        let width = DOT[(away - 1).min(DOT.len() - 1)];
-        Size::new(width, width)
+        let side = DOT[(away - 1).min(DOT.len() - 1)];
+        Mark {
+            along: side,
+            across: side,
+        }
     })
 }
 
-fn width(count: usize) -> f32 {
+fn length(count: usize) -> f32 {
     (1..=count)
         .map(|showing| {
-            sizes(showing, count).map(|size| size.width).sum::<f32>() + GAP * (count - 1) as f32
+            marks(showing, count).map(|mark| mark.along).sum::<f32>() + GAP * (count - 1) as f32
         })
         .fold(0.0, f32::max)
 }
@@ -107,22 +126,28 @@ impl Widget for Slots {
     type State = SlotsState;
 
     fn layout(&self) -> Layout {
-        Layout::row().size(Length::px(width(self.count())), Length::FILL)
+        axis::sized(
+            Layout::row(),
+            self.axis,
+            Length::px(length(self.count())),
+            Length::FILL,
+        )
     }
 
     fn paint(&self, state: &mut SlotsState, ctx: &mut PaintCtx<'_>) {
         let bounds = ctx.bounds();
-        let middle = bounds.center().y;
+        let start = self.axis.coord(bounds.origin);
+        let middle = self.axis.across().coord(bounds.center());
         let hovered = state.hovered;
         for (index, (place, extent)) in self.places().enumerate() {
             let colour = self.colour(index, &theme(), hovered == Some(index));
-            let at = bounds.x() + ctx.animate_curve(("at", index), place, INDICATOR);
+            let at = start + ctx.animate_curve(("at", index), place, INDICATOR);
             let size = ctx.animate_curve(("size", index), extent, TOGGLE);
             let fill = ctx.animate_curve(("fill", index), colour, COLOR);
             ctx.draw_quad(
-                Quad::new(Rect::from_center(Point::new(at, middle), size))
+                Quad::new(Rect::from_center(self.axis.point(at, middle), size))
                     .fill(fill)
-                    .radius(size.height / 2.0),
+                    .radius(size.width.min(size.height) / 2.0),
             );
         }
     }

@@ -9,11 +9,14 @@ use crate::indicators::panel::state::Drawer;
 
 pub(crate) fn view(drawer: &Drawer) -> impl View {
     let shelf = drawer.shelf();
-    let open = shelf.open_indicator().filter(|_| !is_exiting());
+    let open = shelf
+        .open_indicator()
+        .zip(shelf.opening())
+        .filter(|_| !is_exiting());
     scrim(
         column! {
-            if let Some(indicator) = open {
-                dropdown_panel(shelf.from(), WIDTH, vec![indicator.panel(shelf)], on_key)
+            if let Some((indicator, opening)) = open {
+                dropdown_panel(opening, WIDTH, vec![indicator.panel(shelf)], on_key)
                     .build()
                     .keyed(indicator.kind());
             }

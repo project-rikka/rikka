@@ -1,11 +1,20 @@
+use rikka_session::wallpaper::Reserved;
 use rikka_theme::Theme;
 use shell_kit::taskbar::Shape;
 
 #[must_use]
-pub(crate) fn reserved(taskbar: Option<Shape>, theme: &Theme) -> f32 {
-    match theme.translucency().is_translucent() {
-        true => 0.0,
-        false => taskbar.map_or(0.0, Shape::reserved),
+pub(crate) fn reserved(taskbar: Option<Shape>, theme: &Theme) -> Reserved {
+    match (taskbar, theme.translucency().is_translucent()) {
+        (Some(shape), false) => {
+            let strip = shape.strip();
+            Reserved {
+                top: strip.top(),
+                right: strip.right(),
+                bottom: strip.bottom(),
+                left: strip.left(),
+            }
+        }
+        (None, _) | (Some(_), true) => Reserved::default(),
     }
 }
 

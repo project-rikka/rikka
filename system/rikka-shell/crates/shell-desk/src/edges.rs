@@ -5,7 +5,7 @@ use desk_layout::Area;
 use rikka_types::{Point, Rect};
 use rikka_ui::{Observed, Observers};
 use shell_kit::Shell;
-use shell_kit::taskbar::{Shape, TaskbarVisibility};
+use shell_kit::taskbar::{Shape, TaskbarLayout};
 
 #[derive(Clone, Default)]
 pub struct Edges(Rc<Inner>);
@@ -19,11 +19,11 @@ struct Inner {
 impl Edges {
     #[must_use]
     pub(crate) fn follow(&self, shell: Shell) -> Shell {
-        let taskbar_visibility = TaskbarVisibility::read(&shell);
-        self.0.taskbar.set(taskbar_visibility.shape());
-        taskbar_visibility.following(shell, {
-            let (edges, taskbar_visibility) = (self.clone(), taskbar_visibility.clone());
-            move |_| edges.alter(taskbar_visibility.shape())
+        let taskbar_layout = TaskbarLayout::read(&shell);
+        self.0.taskbar.set(taskbar_layout.shape());
+        taskbar_layout.following(shell, {
+            let edges = self.clone();
+            move |shape| edges.alter(shape)
         })
     }
 

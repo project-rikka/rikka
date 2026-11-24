@@ -2,14 +2,15 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use futures_util::Stream;
-use rikka_types::{Point, Rect};
 use rikka_worker::Observable;
 use shell_kit::Presence;
+
+use crate::dropdown_panel::Opening;
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Fold {
     presence: Presence,
-    from: Rc<Cell<Point>>,
+    opening: Rc<Cell<Option<Opening>>>,
     moved: Observable<bool>,
 }
 
@@ -20,12 +21,12 @@ impl Fold {
     }
 
     #[must_use]
-    pub(crate) fn from(&self) -> Point {
-        self.from.get()
+    pub(crate) fn opening(&self) -> Option<Opening> {
+        self.opening.get()
     }
 
-    pub(crate) fn unfold(&self, chevron: Rect) {
-        self.from.set(Point::new(chevron.max_x(), chevron.max_y()));
+    pub(crate) fn unfold(&self, opening: Opening) {
+        self.opening.set(Some(opening));
         self.set(true);
     }
 

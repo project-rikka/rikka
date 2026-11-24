@@ -30,6 +30,16 @@ impl Clock {
     }
 
     #[must_use]
+    pub(crate) fn hour(self) -> String {
+        format!("{:02}", self.hour)
+    }
+
+    #[must_use]
+    pub(crate) fn minute(self) -> String {
+        format!("{:02}", self.minute)
+    }
+
+    #[must_use]
     pub(crate) fn date(self) -> Label {
         let weekday = weekday(self.date.weekday(), NameLength::Short).to_string();
         tr!(

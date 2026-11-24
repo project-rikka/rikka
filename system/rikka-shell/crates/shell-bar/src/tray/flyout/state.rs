@@ -4,6 +4,7 @@ use rikka_types::{Point, PointerButton};
 use rikka_ui::{State as UiState, stream};
 use shell_apps::AppIcons;
 
+use crate::dropdown_panel::Opening;
 use crate::shared::Shared;
 use crate::tray::flyout::open::Open;
 use crate::tray::look::Look;
@@ -71,8 +72,8 @@ impl Flyout {
     }
 
     #[must_use]
-    pub(crate) fn from(&self) -> Point {
-        self.shared.fold.from()
+    pub(crate) fn opening(&self) -> Option<Opening> {
+        self.shared.fold.opening()
     }
 
     #[must_use]

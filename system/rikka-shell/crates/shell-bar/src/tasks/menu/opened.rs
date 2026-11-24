@@ -1,8 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use rikka_settings::session::appearance::TaskbarPosition;
 use rikka_types::Point;
+use rikka_ui::AnchorEdge;
 use shell_kit::launch::Spawn;
+use shell_kit::taskbar::Edge;
 use shell_kit::{Destination, Presence};
 use task_board::{Group, Window};
 
@@ -11,6 +14,7 @@ use crate::tasks::tile::Tile;
 #[derive(Clone, Debug)]
 pub(crate) struct MenuRequest {
     pub(crate) at: Point,
+    pub(crate) edge: Edge,
     pub(crate) space: usize,
     pub(crate) name: String,
     pub(crate) windows: Vec<Window>,
@@ -19,13 +23,30 @@ pub(crate) struct MenuRequest {
 
 impl MenuRequest {
     #[must_use]
-    pub(crate) fn new(at: Point, space: usize, group: &Group, tile: &Tile) -> MenuRequest {
+    pub(crate) fn new(
+        at: Point,
+        edge: Edge,
+        space: usize,
+        group: &Group,
+        tile: &Tile,
+    ) -> MenuRequest {
         MenuRequest {
             at,
+            edge,
             space,
             name: tile.name.clone(),
             windows: group.windows.clone(),
             starts: tile.starts(),
+        }
+    }
+
+    #[must_use]
+    pub(crate) fn toward(&self) -> AnchorEdge {
+        match self.edge.position() {
+            TaskbarPosition::Top => AnchorEdge::BelowStart,
+            TaskbarPosition::Bottom => AnchorEdge::AboveStart,
+            TaskbarPosition::Left => AnchorEdge::BesideTop,
+            TaskbarPosition::Right => AnchorEdge::BesideLeftTop,
         }
     }
 }

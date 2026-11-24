@@ -1,11 +1,15 @@
+use rikka_settings::session::appearance::TaskbarPosition;
 use rikka_theme::Corner;
-use rikka_types::{Key, Modifiers, Point};
+use rikka_types::{Key, Modifiers, Rect};
 use rikka_ui::{
     Align, Anchor, AnchorEdge, Curve, DurationToken, Element, Handler, IntoHandler, Motion,
-    Property, Space, Spring, Styled, View, fade, offset, palette, scale,
+    Property, Space, Spring, Styled, Transition, View, fade, palette, scale,
 };
 use rikka_widgets::{column, column_of, container};
-use shell_kit::{CURSOR, cursor, sheet};
+use shell_kit::taskbar::Edge;
+use shell_kit::{CURSOR, mark, sheet};
+
+use crate::rim;
 
 pub(crate) const EXIT_DURATION: DurationToken = DurationToken::Short4;
 
@@ -25,8 +29,30 @@ const ENTER_FROM: f32 = 0.96;
 
 const ARRIVING: Curve = Curve::Spring(Spring::DEFAULT_SPATIAL);
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct Opening {
+    pub(crate) from: Rect,
+    pub(crate) edge: Edge,
+}
+
+impl Opening {
+    fn anchor(self) -> Anchor {
+        let (toward, x, y) = match self.edge.position() {
+            TaskbarPosition::Top => (AnchorEdge::BelowEnd, 0.0, GAP),
+            TaskbarPosition::Bottom => (AnchorEdge::AboveEnd, 0.0, GAP),
+            TaskbarPosition::Left => (AnchorEdge::BesideTop, GAP, 0.0),
+            TaskbarPosition::Right => (AnchorEdge::BesideLeftTop, -GAP, 0.0),
+        };
+        Anchor::new(CURSOR, toward).offset(x, y)
+    }
+
+    fn arrival(self) -> Transition {
+        scale(ENTER_FROM) + rim::shifted(self.edge, DROP)
+    }
+}
+
 pub(crate) struct DropdownPanel {
-    from: Point,
+    opening: Opening,
     width: f32,
     rows: Vec<Element>,
     on_key: Handler<(Key, Modifiers), bool>,
@@ -34,13 +60,13 @@ pub(crate) struct DropdownPanel {
 }
 
 pub(super) fn dropdown_panel<Marker>(
-    from: Point,
+    opening: Opening,
     width: f32,
     rows: Vec<Element>,
     on_key: impl IntoHandler<(Key, Modifiers), bool, Marker>,
 ) -> DropdownPanel {
     DropdownPanel {
-        from,
+        opening,
         width,
         rows,
         on_key: on_key.into_handler(),
@@ -72,12 +98,12 @@ impl View for DropdownPanel {
         .glass()
         .resizing();
         column! {
-            cursor(self.from);
+            mark(self.opening.from);
             sheet(card, self.on_key)
                 .build()
                 .width(self.width)
-                .transition((scale(ENTER_FROM) + offset(0.0, -DROP)).enter(ARRIVING))
-                .anchored(Anchor::new(CURSOR, AnchorEdge::BelowEnd).offset(0.0, GAP));
+                .transition(self.opening.arrival().enter(ARRIVING))
+                .anchored(self.opening.anchor());
             for layer in self.beside {
                 layer;
             }

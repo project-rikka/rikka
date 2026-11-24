@@ -2,12 +2,14 @@ use rikka_format::truncate;
 use rikka_session::toplevels::Bounds;
 use rikka_types::Size;
 use rikka_ui::{
-    Align, Element, Label, Length, MaterialSymbol, Space, Styled, TextStyled, View, text, tr,
+    Align, Axis, Element, Label, Length, MaterialSymbol, Space, Styled, TextStyled, View, text, tr,
 };
 use rikka_widgets::{ControlSize, button, column, container, icon, row};
 use task_board::Window;
 
+use crate::axis;
 use crate::glide::{glide, settles};
+use crate::island::body::MARGIN;
 use crate::island::state::Island;
 use crate::tasks::{Aim, Tile, thumbnail};
 
@@ -15,7 +17,6 @@ const BOX: Size = Size::new(200.0, 124.0);
 const NARROWEST: f32 = 132.0;
 const GAP: f32 = 10.0;
 const PADDING: f32 = 10.0;
-const MARGIN: f32 = 8.0;
 const SMALLEST: f32 = 0.25;
 const UNKNOWN_SHAPE: f32 = 16.0 / 10.0;
 const CLOSE: f32 = 14.0;
@@ -25,6 +26,7 @@ const HEADER_GAP: f32 = 4.0;
 
 pub(super) fn view(island: &Island, aim: &Aim) -> Option<(Element, f32)> {
     let (group, tile) = island.tasks().group(aim.space, &aim.key)?;
+    let axis = island.dock().axis();
     let shapes: Vec<Size> = group
         .windows
         .iter()
@@ -34,41 +36,55 @@ pub(super) fn view(island: &Island, aim: &Aim) -> Option<(Element, f32)> {
         .iter()
         .map(|shape| shape.width.max(NARROWEST))
         .collect();
-    let gaps = widths.len().saturating_sub(1) as f32 * GAP;
-    let natural: f32 = widths.iter().sum();
-    let room = island.width() - MARGIN * 2.0 - gaps - PADDING * 2.0;
+    let lengths: Vec<f32> = match axis {
+        Axis::Horizontal => widths.clone(),
+        Axis::Vertical => shapes
+            .iter()
+            .map(|shape| shape.height + CLOSE_ROOM + HEADER_GAP)
+            .collect(),
+    };
+    let gaps = lengths.len().saturating_sub(1) as f32 * GAP;
+    let natural: f32 = lengths.iter().sum();
+    let room = island.dock().length() - MARGIN * 2.0 - gaps - PADDING * 2.0;
     let shrink = match natural > room && natural > 0.0 {
         true => (room / natural).max(SMALLEST),
         false => 1.0,
     };
-    let width = natural * shrink + gaps + PADDING * 2.0;
-    let entries = row! {
-        for ((window, shape), entry) in group.windows.iter().zip(&shapes).zip(&widths) {
-            glide(
-                entry_view(
-                    window,
-                    tile,
-                    Size::new(shape.width * shrink, shape.height * shrink),
-                    entry * shrink,
-                ),
-                settles(),
-                window.id.clone(),
-            );
-        }
-    }
+    let width = match axis {
+        Axis::Horizontal => natural * shrink + gaps + PADDING * 2.0,
+        Axis::Vertical => widths.iter().copied().fold(0.0, f32::max) * shrink + PADDING * 2.0,
+    };
+    let entries = axis::line(
+        axis,
+        group
+            .windows
+            .iter()
+            .zip(&shapes)
+            .zip(&widths)
+            .map(|((window, shape), entry)| {
+                glide(
+                    axis,
+                    entry_view(
+                        window,
+                        tile,
+                        Size::new(shape.width * shrink, shape.height * shrink),
+                        entry * shrink,
+                    ),
+                    settles(),
+                    window.id.clone(),
+                )
+            }),
+    )
     .gap(GAP)
-    .align_items(Align::End);
+    .align_items(match axis {
+        Axis::Horizontal => Align::End,
+        Axis::Vertical => Align::Center,
+    });
     let card = container(entries)
         .padding(PADDING)
         .width(Length::px(width))
         .build();
     Some((card, width))
-}
-
-#[must_use]
-pub(super) fn left(centre: f32, width: f32, room: f32) -> f32 {
-    let most = (room - width - MARGIN).max(MARGIN);
-    (centre - width / 2.0).clamp(MARGIN, most)
 }
 
 fn fitted(bounds: Bounds) -> Size {

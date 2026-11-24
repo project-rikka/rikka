@@ -1,27 +1,30 @@
 use rikka_settings::seam as settings_seam;
+use rikka_settings::session::appearance::TaskbarPosition;
 use rikka_settings::session::power;
 use rikka_tray::Tray;
+use rikka_ui::State;
 use shell_apps::Apps;
 use shell_feeds::{Daemons, Feeds, ScreenRecording};
 use shell_ime::InputMethods;
-use shell_kit::taskbar::{Shape, TaskbarVisibility};
+use shell_kit::taskbar::{Edge, Shape, TaskbarLayout};
 use shell_kit::{
-    Anchor, EXIT_DURATION as MENU_EXIT_DURATION, Feature, KeyboardMode, Layer, Presence, Shell,
+    EXIT_DURATION as MENU_EXIT_DURATION, Feature, KeyboardMode, Layer, Presence, Shell,
     SurfaceDesc, appearance,
 };
 use shell_notifications::{History, Quiet};
 
 use crate::centre::{self, Centre};
-use crate::frame::{self, Side};
 use crate::indicators::{self, Drawer, Shelf, Typing, Usage};
+use crate::rim::EXIT_DURATION;
 use crate::shared::Shared;
 use crate::state::Bar;
 use crate::status::Percentage;
 use crate::tasks::{self, Flyout as MenuFlyout, Opened};
 use crate::tray::{self, Flyout, Fold};
-use crate::{dropdown_panel, strip};
+use crate::{dropdown_panel, frame, strip};
 
 const NAME: &str = "taskbar";
+
 #[derive(Debug)]
 pub struct Taskbar {
     pub daemons: Daemons,
@@ -36,14 +39,12 @@ pub struct Taskbar {
 
 impl Feature for Taskbar {
     fn install(self, shell: Shell) -> Shell {
-        let taskbar_visibility = TaskbarVisibility::read(&shell);
-        let up = Presence::default();
-        up.set(taskbar_visibility.is_up());
-        let shell = taskbar_visibility.following(shell, {
-            let up = up.clone();
-            move |stands| {
-                up.set(stands);
-            }
+        let taskbar_layout = TaskbarLayout::read(&shell);
+        let docks = Docks::default();
+        docks.stand(taskbar_layout.shape());
+        let shell = taskbar_layout.following(shell, {
+            let docks = docks.clone();
+            move |shape| docks.stand(shape)
         });
         let feeds = self.feeds;
         let usage = Usage::load();
@@ -61,7 +62,7 @@ impl Feature for Taskbar {
             quiet: self.quiet,
             history: self.history,
             recording: self.recording,
-            taskbar_visibility,
+            taskbar_layout,
             shelf: shelf.clone(),
             percentage: Percentage::default(),
             feeds,
@@ -84,10 +85,12 @@ impl Feature for Taskbar {
             })
             .watch(settings_seam::CAPABILITY, move |_, event| {
                 usage.event(event)
-            })
-            .surface(bar(shared.clone(), up.clone()));
-        let shell = Side::ARRANGED.into_iter().fold(shell, |shell, side| {
-            shell.surface(frame::surface(side, up.clone()))
+            });
+        let shell = Edge::ALL.into_iter().fold(shell, |shell, edge| {
+            let shell = shell.surface(docks.docked(edge, bar(shared.clone(), edge)));
+            frame::surfaces(edge)
+                .into_iter()
+                .fold(shell, |shell, desc| shell.surface(docks.docked(edge, desc)))
         });
         shell
             .surface(
@@ -137,18 +140,56 @@ impl Feature for Taskbar {
     }
 }
 
-fn bar(shared: Shared, up: Presence) -> SurfaceDesc<Bar> {
-    SurfaceDesc::per_output(
-        move |placement| Bar::new(shared.clone(), &placement),
+#[derive(Clone, Debug, Default)]
+struct Docks {
+    top: Presence,
+    bottom: Presence,
+    left: Presence,
+    right: Presence,
+}
+
+impl Docks {
+    fn stand(&self, shape: Option<Shape>) {
+        for edge in Edge::ALL {
+            self.presence(edge)
+                .set(shape.is_some_and(|shape| shape.edge() == edge));
+        }
+    }
+
+    fn presence(&self, edge: Edge) -> Presence {
+        match edge.position() {
+            TaskbarPosition::Top => &self.top,
+            TaskbarPosition::Bottom => &self.bottom,
+            TaskbarPosition::Left => &self.left,
+            TaskbarPosition::Right => &self.right,
+        }
+        .clone()
+    }
+
+    fn docked<S: State>(&self, edge: Edge, desc: SurfaceDesc<S>) -> SurfaceDesc<S> {
+        Edge::ALL
+            .into_iter()
+            .filter(|other| *other != edge)
+            .fold(desc, |desc, other| desc.after(self.presence(other)))
+            .animated(self.presence(edge), EXIT_DURATION)
+    }
+}
+
+fn bar(shared: Shared, edge: Edge) -> SurfaceDesc<Bar> {
+    let shape = Shape::new(edge.position());
+    let desc = SurfaceDesc::per_output(
+        move |placement| Bar::new(shared.clone(), &placement, shape),
         strip::view,
     )
     .on_start(Bar::start)
     .on_moved(Bar::moved)
     .name(NAME)
     .layer(Layer::Top)
-    .anchor(Anchor::TOP)
-    .height(Shape.height())
-    .exclusive_zone(Shape.exclusive())
-    .pointer(Shape.pointer())
-    .presence(up)
+    .anchor(edge.anchor())
+    .exclusive_zone(shape.exclusive())
+    .pointer(shape.pointer());
+    match edge.is_vertical() {
+        true => desc.width(shape.extent()),
+        false => desc.height(shape.extent()),
+    }
 }

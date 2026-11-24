@@ -3,12 +3,12 @@ use std::rc::Rc;
 
 use futures_util::{Stream, StreamExt};
 use rikka_seam::SeamClient;
-use rikka_types::{Point, Rect};
 use rikka_ui::Element;
 use rikka_worker::Observable;
 use shell_kit::Presence;
 use shell_kit::launch::Spawn;
 
+use crate::dropdown_panel::Opening;
 use crate::indicators::{Indicator, Kind};
 
 #[derive(Clone)]
@@ -19,7 +19,7 @@ struct Inner {
     all: Vec<Rc<dyn Indicator>>,
     shown: RefCell<Vec<Kind>>,
     open: Cell<Option<Kind>>,
-    from: Cell<Point>,
+    opening: Cell<Option<Opening>>,
     presence: Presence,
     changed: Observable<()>,
 }
@@ -33,7 +33,7 @@ impl Shelf {
             all,
             shown: RefCell::new(shown),
             open: Cell::new(None),
-            from: Cell::new(Point::new(0.0, 0.0)),
+            opening: Cell::new(None),
             presence: Presence::default(),
             changed: Observable::default(),
         }))
@@ -55,11 +55,11 @@ impl Shelf {
             .collect()
     }
 
-    pub(crate) fn open(&self, kind: Kind, at: Rect) {
+    pub(crate) fn open(&self, kind: Kind, opening: Opening) {
         let Some(indicator) = self.shown().find(|indicator| indicator.kind() == kind) else {
             return;
         };
-        self.0.from.set(Point::new(at.max_x(), at.max_y()));
+        self.0.opening.set(Some(opening));
         self.0.open.set(Some(kind));
         self.0.presence.set(true);
         indicator.on_open();
@@ -84,8 +84,8 @@ impl Shelf {
     }
 
     #[must_use]
-    pub(crate) fn from(&self) -> Point {
-        self.0.from.get()
+    pub(crate) fn opening(&self) -> Option<Opening> {
+        self.0.opening.get()
     }
 
     #[must_use]

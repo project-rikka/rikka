@@ -1,7 +1,7 @@
 use rikka_types::PointerButton;
 use rikka_ui::{
-    Behavior, Curve, Element, Event, EventCtx, Handler, Layout, Length, PaintCtx, Point, Rect,
-    Size, View, Widget, motion, palette,
+    Behavior, Curve, Element, Event, EventCtx, Handler, Layout, Length, PaintCtx, Rect, Size, View,
+    Widget, motion, palette,
 };
 
 use crate::tasks::Art;
@@ -60,7 +60,7 @@ impl TaskIcon {
             space: self.space,
             key: self.key.clone(),
             button,
-            at: Point::new(bounds.center().x, bounds.max_y()),
+            bounds,
         }
     }
 }
@@ -87,7 +87,7 @@ impl Widget for TaskIcon {
             false => 1.0,
         };
         let presence = ctx.animate_curve(PRESENCE, presence, motion::FILL);
-        let side = bounds.width() * ICON_SHARE;
+        let side = bounds.width().min(bounds.height()) * ICON_SHARE;
         let art = Rect::from_center(bounds.center(), Size::new(side, side));
         self.icon.paint(ctx, art, zoom, &palette(), presence);
     }
@@ -101,7 +101,7 @@ impl Widget for TaskIcon {
                 let aim = Aim {
                     space: self.space,
                     key: self.key.clone(),
-                    centre: bounds.center().x,
+                    bounds,
                 };
                 ctx.call(&self.on_touch, (Touch::Aimed(aim),));
             }

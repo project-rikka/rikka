@@ -163,14 +163,12 @@ impl Surfaces {
         }
 
         for desc in self.descs.ids() {
-            if !self.descs[desc].is_up() {
-                if !self.release_lock(desc) {
-                    continue;
-                }
+            if !self.descs[desc].is_up() && self.release_lock(desc) {
                 self.despawn_all(desc);
-                continue;
             }
-            if !self.may_lock(desc) {
+        }
+        for desc in self.descs.ids() {
+            if !self.descs[desc].is_up() || self.waits(desc) || !self.may_lock(desc) {
                 continue;
             }
             match self.descs[desc].settings.output.clone() {
@@ -213,6 +211,18 @@ impl Surfaces {
         for id in theirs {
             self.despawn(&id);
         }
+    }
+
+    fn waits(&self, desc: SurfaceId) -> bool {
+        let after = &self.descs[desc].settings.after;
+        !after.is_empty()
+            && self.descs.iter().any(|(other, surface)| {
+                surface
+                    .settings
+                    .presence()
+                    .is_some_and(|bound| after.iter().any(|awaited| awaited.shares(bound)))
+                    && self.spawned_anywhere(other)
+            })
     }
 
     fn spawned_on(&self, desc: SurfaceId, output: &ObjectId) -> bool {

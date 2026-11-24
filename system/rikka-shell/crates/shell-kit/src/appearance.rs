@@ -3,8 +3,10 @@ use rikka_settings::Value;
 use rikka_settings::seam::protocol;
 use rikka_settings::session::appearance;
 pub use rikka_settings::session::appearance::{
-    DOMAIN, ICON_THEME, TASKBAR, TASKBAR_DEFAULT, TASKBAR_INDICATORS, THEME, WALLPAPER,
+    DOMAIN, ICON_THEME, TASKBAR, TASKBAR_DEFAULT, TASKBAR_INDICATORS, TASKBAR_POSITION, THEME,
+    TaskbarPosition, WALLPAPER,
 };
+use rikka_types::Choice;
 
 use crate::Shell;
 
@@ -44,6 +46,14 @@ pub fn taskbar(shell: &Shell) -> bool {
     shell
         .setting::<bool>(DOMAIN, TASKBAR)
         .unwrap_or(appearance::TASKBAR_DEFAULT)
+}
+
+pub fn taskbar_position(shell: &Shell) -> TaskbarPosition {
+    shell
+        .setting::<String>(DOMAIN, TASKBAR_POSITION)
+        .map_or_else(TaskbarPosition::default, |slug| {
+            TaskbarPosition::of_slug(&slug)
+        })
 }
 
 pub fn write(key: &str, value: impl Into<Value>) -> Request {

@@ -4,9 +4,8 @@ use rikka_seam::{Delivery, Request, SeamClient};
 use rikka_session::gestures::{self, Axis};
 use rikka_session::shortcuts::Shortcut;
 use rikka_session::surfaces;
-use rikka_ui::Inset;
 use shell_desk::DeskScene;
-use shell_kit::taskbar::TaskbarVisibility;
+use shell_kit::taskbar::TaskbarLayout;
 use shell_kit::{
     CLOSE, DesktopFrost, Feature, KeyboardMode, OPEN, PointerMode, Presence, PresenceService,
     Reach, Shell, SurfaceDesc, TOGGLE, appearance,
@@ -41,15 +40,14 @@ impl Feature for Overview {
         let shell = shell.service(service);
 
         let desktop = Desktop::default();
-        let taskbar_visibility = TaskbarVisibility::read(&shell);
-        desktop.set_taskbar(taskbar_visibility.shape());
+        let taskbar_layout = TaskbarLayout::read(&shell);
+        desktop.set_taskbar(taskbar_layout.shape());
         let reach = Reach::new(reaching(&desktop));
 
-        let shell = taskbar_visibility.following(shell, {
-            let (taskbar_visibility, desktop, reach) =
-                (taskbar_visibility.clone(), desktop.clone(), reach.clone());
-            move |_| {
-                desktop.set_taskbar(taskbar_visibility.shape());
+        let shell = taskbar_layout.following(shell, {
+            let (desktop, reach) = (desktop.clone(), reach.clone());
+            move |shape| {
+                desktop.set_taskbar(shape);
                 reach.set(reaching(&desktop));
             }
         });
@@ -130,7 +128,7 @@ impl Swiping {
 #[must_use]
 fn reaching(desktop: &Desktop) -> PointerMode {
     match desktop.taskbar() {
-        Some(shape) => PointerMode::Inset(Inset::edges(shape.reserved(), 0.0, 0.0, 0.0)),
+        Some(shape) => PointerMode::Inset(shape.strip()),
         None => PointerMode::Take,
     }
 }

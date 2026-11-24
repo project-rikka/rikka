@@ -16,7 +16,7 @@ pub(crate) fn view(flyout: &Flyout) -> Element {
     let panel = menu().items(rows(request)).width(WIDTH).still();
 
     popover(panel, Flyout::dismiss)
-        .at(request.at)
+        .opening(request.at, request.toward())
         .width(WIDTH)
         .on_key(|flyout: &mut Flyout, key: Key, _: Modifiers| {
             let dismissed = key == Key::Escape;

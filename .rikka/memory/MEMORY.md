@@ -1065,7 +1065,7 @@
 
 ## system/rikka-shell/crates/shell-bar
 
-- [Shell taskbar, tray and control centre](shell-taskbar-machine.md) — The per-output edge strip taskbar, workspaces, tray, recording stop, machine status and the shared control centre.
+- [Shell taskbar, tray and control centre](shell-taskbar-machine.md) — The per-output edge strip taskbar on any display edge, docking slides, tray, status and the control centre.
 
 ## system/rikka-shell/crates/shell-bar/src/indicators
 
