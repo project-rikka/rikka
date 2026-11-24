@@ -35,6 +35,7 @@ import sh.rikka.client.mods.mechanic.HitDelayFixMod;
 import sh.rikka.client.mods.mechanic.NoJumpDelayMod;
 import sh.rikka.client.mods.mechanic.SnapTapMod;
 import sh.rikka.client.mods.minimap.MinimapMod;
+import sh.rikka.client.mods.motionblur.MotionBlurMod;
 import sh.rikka.client.mods.visual.BloodParticleMod;
 import sh.rikka.client.mods.visual.CrosshairMod;
 import sh.rikka.client.mods.visual.ForceMainHandMod;
@@ -61,6 +62,7 @@ public final class BuiltinMods {
 		mods.register(new ForceMainHandMod());
 		mods.register(new FullbrightMod());
 		mods.register(new TimeChangerMod());
+		mods.register(new MotionBlurMod());
 		mods.register(new CrosshairMod());
 		mods.register(new HitColorMod());
 		mods.register(new TargetIndicatorMod());

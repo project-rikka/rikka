@@ -995,6 +995,10 @@
 
 - [Rikka Client panel HUD mods (minimap, keystrokes, target info, packs)](minecraft-hud-mods.md) — mods/minimap terrain atlas and drawing; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo in mods/hud.
 
+## minecraft/src/main/java/sh/rikka/client/mods/motionblur
+
+- [Rikka Client Motion Blur mod (velocity, frame blending, accumulation)](minecraft-motion-blur.md) — mods/motionblur: motion blur on own RenderPipelines; hook points, passes, frame history, uniforms.
+
 ## nix/dist
 
 - [Binary distribution (project-rikka/packages, nix/dist, release workflow)](distribution.md) — How Rikka ships prebuilt: portable builds, xtask release, the generated packages flake and its NixOS module.
