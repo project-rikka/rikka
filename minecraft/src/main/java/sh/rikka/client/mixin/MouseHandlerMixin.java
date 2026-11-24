@@ -40,6 +40,7 @@ abstract class MouseHandlerMixin {
 		at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;turn(DD)V")
 	)
 	private void rikka$turn(LocalPlayer player, double horizontal, double vertical, Operation<Void> original) {
+		ClientHooks.look(horizontal, vertical);
 		double scale = CameraHooks.turnScale();
 		if (!CameraHooks.freeLookTurn(player, horizontal * scale, vertical * scale)) {
 			original.call(player, horizontal * scale, vertical * scale);

@@ -8,6 +8,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.PacketListener;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
@@ -27,7 +28,12 @@ public final class ClientHooks {
 	private static final EventChannel<PacketEvent.Send> PACKET_SEND = RikkaClient.events().channel(PacketEvent.Send.class);
 	private static final EventChannel<PacketEvent.Receive> PACKET_RECEIVE = RikkaClient.events().channel(PacketEvent.Receive.class);
 	private static final EventChannel<JumpEvent> JUMP = RikkaClient.events().channel(JumpEvent.class);
+	private static final EventChannel<LookEvent> LOOK = RikkaClient.events().channel(LookEvent.class);
+	private static final EventChannel<ChunkLoadEvent> CHUNK_LOAD = RikkaClient.events().channel(ChunkLoadEvent.class);
+	private static final EventChannel<BlockUpdateEvent> BLOCK_UPDATE = RikkaClient.events().channel(BlockUpdateEvent.class);
+	private static final EventChannel<ResourceReloadEvent> RESOURCE_RELOAD = RikkaClient.events().channel(ResourceReloadEvent.class);
 	private static final HudRenderEvent HUD_RENDER_EVENT = new HudRenderEvent();
+	private static final LookEvent LOOK_EVENT = new LookEvent();
 
 	private ClientHooks() {
 	}
@@ -38,6 +44,29 @@ public final class ClientHooks {
 
 	public static void tickPost() {
 		TICK_POST.post(TickEvent.Post.INSTANCE);
+	}
+
+	public static void look(double horizontal, double vertical) {
+		if (LOOK.hasListeners()) {
+			LOOK_EVENT.update(horizontal, vertical);
+			LOOK.post(LOOK_EVENT);
+		}
+	}
+
+	public static void chunkLoaded(int chunkX, int chunkZ) {
+		if (CHUNK_LOAD.hasListeners()) {
+			CHUNK_LOAD.post(new ChunkLoadEvent(chunkX, chunkZ));
+		}
+	}
+
+	public static void blockUpdated(BlockPos pos) {
+		if (BLOCK_UPDATE.hasListeners()) {
+			BLOCK_UPDATE.post(new BlockUpdateEvent(pos.immutable()));
+		}
+	}
+
+	public static void resourcesReloaded() {
+		RESOURCE_RELOAD.post(ResourceReloadEvent.INSTANCE);
 	}
 
 	public static void localPlayerJump(LocalPlayer player) {

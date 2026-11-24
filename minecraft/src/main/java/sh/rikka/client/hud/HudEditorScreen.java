@@ -26,13 +26,14 @@ import sh.rikka.client.menu.Labels;
 import sh.rikka.client.menu.MenuState;
 import sh.rikka.client.menu.ModMenuScreen;
 import sh.rikka.client.menu.Page;
+import sh.rikka.client.mod.HudEditing;
 import sh.rikka.client.mod.HudMod;
 import sh.rikka.client.mod.Mod;
 import sh.rikka.client.setting.DoubleSetting;
 import sh.rikka.client.ui.RikkaScreen;
 import sh.rikka.client.ui.style.Colors;
 
-public final class HudEditorScreen extends RikkaScreen {
+public final class HudEditorScreen extends RikkaScreen implements HudEditing {
 	private static final float FRAME_BORDER = 1.0F;
 	private static final float ACTIVE_BORDER = 1.5F;
 	private static final float RESTING_FILL = 0.06F;

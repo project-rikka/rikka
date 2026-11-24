@@ -47,7 +47,19 @@ final class HudLayer {
 			this.geometry = geometry;
 			this.surface.resize(geometry.width(), geometry.height(), geometry.scale());
 		}
+		if (isAnimating()) {
+			invalidate();
+		}
 		this.surface.render(target);
+	}
+
+	private boolean isAnimating() {
+		for (Mod mod : this.mods.all()) {
+			if (mod instanceof HudMod hud && hud.isEnabled() && hud.animating()) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	void invalidate() {

@@ -985,11 +985,15 @@
 
 ## minecraft/src/main/java/sh/rikka/client/mods
 
-- [Rikka Client camera, mechanic and visual mods](minecraft-gameplay-mods.md) — mods/camera (FreeLook, TapLook, Zoom), mods/mechanic (SnapTap, HitDelayFix, NoJumpDelay), mods/visual and their hooks.
+- [Rikka Client camera, mechanic and visual mods](minecraft-gameplay-mods.md) — mods/camera, mods/mechanic, mods/visual (crosshair, hit color, target ring, time) and mods/item (physics, 2D) and their…
 
 ## minecraft/src/main/java/sh/rikka/client/mods/animation
 
 - [Rikka Client Old Animations mod (1.7 visuals)](minecraft-old-animations.md) — mods/animation: one visual-only Mod, its mixin hooks, and the exact-matrix method that maps 1.7 item chains onto modern…
+
+## minecraft/src/main/java/sh/rikka/client/mods/minimap
+
+- [Rikka Client panel HUD mods (minimap, keystrokes, target info, packs)](minecraft-hud-mods.md) — mods/minimap terrain atlas and drawing; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo in mods/hud.
 
 ## nix/dist
 

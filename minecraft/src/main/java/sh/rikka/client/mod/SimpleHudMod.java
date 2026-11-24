@@ -22,7 +22,6 @@ public abstract class SimpleHudMod extends HudMod {
 	private static final float TEXT_SIZE = 13.0F;
 	private static final float CORNER_RADIUS = 9.0F;
 	private static final int DEFAULT_COLOR = 0xFFFFFFFF;
-	private static final Color BACKDROP = new Color(0.0F, 0.0F, 0.0F, 0.4F);
 
 	private final BoolSetting showIcon;
 	private final BoolSetting showBackground;

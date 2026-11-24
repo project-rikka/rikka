@@ -9,13 +9,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.MultiPlayerGameMode;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.server.packs.repository.RepositorySource;
+import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -25,9 +28,14 @@ import sh.rikka.client.events.ClientHooks;
 import sh.rikka.client.mods.animation.AnimationHooks;
 import sh.rikka.client.mods.mechanic.MechanicHooks;
 import sh.rikka.client.resource.ClientModPackSource;
+import sh.rikka.client.resource.ReloadNotifier;
 
 @Mixin(Minecraft.class)
 abstract class MinecraftMixin {
+	@Shadow
+	@Final
+	private ReloadableResourceManager resourceManager;
+
 	@ModifyReturnValue(method = "createTitle", at = @At("RETURN"))
 	private String rikka$createTitle(String title) {
 		return title + " | " + RikkaClient.NAME;
@@ -44,6 +52,18 @@ abstract class MinecraftMixin {
 		RepositorySource[] extended = Arrays.copyOf(sources, sources.length + 1);
 		extended[sources.length] = new ClientModPackSource();
 		return extended;
+	}
+
+	@Inject(
+		method = "<init>",
+		at = @At(
+			value = "INVOKE",
+			target = "Lnet/minecraft/server/packs/resources/ReloadableResourceManager;createReload(Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;Ljava/util/concurrent/CompletableFuture;Ljava/util/List;)Lnet/minecraft/server/packs/resources/ReloadInstance;",
+			ordinal = 0
+		)
+	)
+	private void rikka$addReloadNotifier(CallbackInfo callback) {
+		this.resourceManager.registerReloadListener(new ReloadNotifier());
 	}
 
 	@Inject(method = "tick", at = @At("HEAD"))

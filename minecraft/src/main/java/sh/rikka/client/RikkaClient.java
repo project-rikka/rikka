@@ -16,6 +16,8 @@ import sh.rikka.client.mod.Mod;
 import sh.rikka.client.mod.ModKeybinds;
 import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mods.BuiltinMods;
+import sh.rikka.client.target.TargetTracker;
+import sh.rikka.client.ui.HudOverlays;
 import sh.rikka.client.ui.RikkaUi;
 
 public final class RikkaClient implements ClientModInitializer {
@@ -24,6 +26,7 @@ public final class RikkaClient implements ClientModInitializer {
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	private static final EventBus EVENTS = new EventBus(RikkaClient::onListenerFailure);
+	private static final TargetTracker TARGETS = new TargetTracker();
 	private static volatile @Nullable Services services;
 
 	@Override
@@ -35,6 +38,8 @@ public final class RikkaClient implements ClientModInitializer {
 		ProfileManager profiles = ProfileManager.open(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID), mods, preferences, EVENTS);
 		EVENTS.subscribe(new ModKeybinds(mods));
 		EVENTS.subscribe(new CombatTracker(EVENTS));
+		EVENTS.subscribe(TARGETS);
+		EVENTS.subscribe(new HudOverlays(mods));
 		EVENTS.subscribe(new MenuKeys(preferences));
 		services = new Services(mods, preferences, profiles);
 		LOGGER.info("{} initialized with profile {}", NAME, profiles.active());
@@ -42,6 +47,10 @@ public final class RikkaClient implements ClientModInitializer {
 
 	public static EventBus events() {
 		return EVENTS;
+	}
+
+	public static TargetTracker targets() {
+		return TARGETS;
 	}
 
 	public static ModManager mods() {
