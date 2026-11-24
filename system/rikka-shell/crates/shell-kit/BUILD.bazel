@@ -37,6 +37,8 @@ rikka_test(
     name = "main",
     deps = [
         ":shell-kit",
+        "//crates/foundation/rikka-types",
         "//crates/graphics/rikka-image",
+        "//crates/session/rikka-settings",
     ],
 )

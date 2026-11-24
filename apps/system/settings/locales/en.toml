@@ -42,12 +42,19 @@ unavailable = "Appearance settings unavailable: {reason}"
 refused = "Cannot change theme: {reason}"
 desktop = "Desktop"
 taskbar = "Taskbar"
+taskbar-position = "Taskbar position"
 wallpaper = "Wallpaper"
 
 [settings.appearance.indicators]
 title = "Taskbar indicators"
 input-method = "Input method"
 ai-usage = "AI usage"
+
+[settings.appearance.taskbar-positions]
+top = "Top"
+bottom = "Bottom"
+left = "Left"
+right = "Right"
 
 [settings.appearance.categories]
 dark = "Dark"

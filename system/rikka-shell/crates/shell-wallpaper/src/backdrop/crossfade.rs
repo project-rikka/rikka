@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use rikka_session::wallpaper::Reserved;
 use rikka_types::Rect;
 use rikka_ui::{Element, Layout, Length, PaintCtx, View, Widget};
 
@@ -13,7 +14,7 @@ pub(crate) struct Crossfade {
     pub(crate) incoming: Picture,
     pub(crate) phase: Phase,
     pub(crate) generation: u64,
-    pub(crate) reserved: f32,
+    pub(crate) reserved: Reserved,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,7 +49,7 @@ impl Widget for Crossfade {
             Phase::Settled => 1.0,
         };
 
-        let within = below(ctx.bounds(), self.reserved);
+        let within = within(ctx.bounds(), self.reserved);
         if within.is_empty() {
             return;
         }
@@ -67,12 +68,13 @@ impl View for Crossfade {
     }
 }
 
-fn below(bounds: Rect, reserved: f32) -> Rect {
-    let reserved = reserved.clamp(0.0, bounds.height());
+fn within(bounds: Rect, reserved: Reserved) -> Rect {
+    let left = reserved.left.clamp(0.0, bounds.width());
+    let top = reserved.top.clamp(0.0, bounds.height());
     Rect::new(
-        bounds.x(),
-        bounds.y() + reserved,
-        bounds.width(),
-        bounds.height() - reserved,
+        bounds.x() + left,
+        bounds.y() + top,
+        (bounds.width() - left - reserved.right.max(0.0)).max(0.0),
+        (bounds.height() - top - reserved.bottom.max(0.0)).max(0.0),
     )
 }

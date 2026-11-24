@@ -101,6 +101,11 @@ impl<S: State> SurfaceDesc<S> {
         self
     }
 
+    pub fn after(mut self, presence: Presence) -> Self {
+        self.settings.after.push(presence);
+        self
+    }
+
     pub fn wallpaper(self) -> Self {
         let mut desc = self.desktop();
         desc.settings.layer = Layer::Background;

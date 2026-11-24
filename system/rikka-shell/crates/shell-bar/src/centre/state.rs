@@ -7,6 +7,7 @@ use rikka_ui::{State, TextDocument, after, skip_view, stream};
 use rikka_widgets::Dismissible;
 use shell_feeds::Daemons;
 use shell_kit::launch::Spawn;
+use shell_kit::taskbar::Shape;
 use shell_notifications::{History, HistoryList};
 
 use crate::centre::detail::Detail;
@@ -106,13 +107,8 @@ impl Centre {
     }
 
     #[must_use]
-    pub(crate) fn below(&self) -> f32 {
-        self.shared.taskbar_visibility.below()
-    }
-
-    #[must_use]
-    pub(crate) fn border(&self) -> f32 {
-        self.shared.taskbar_visibility.border()
+    pub(crate) fn taskbar(&self) -> Option<Shape> {
+        self.shared.taskbar_layout.shape()
     }
 
     pub(crate) fn dismiss(&mut self) {

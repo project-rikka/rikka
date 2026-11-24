@@ -18,9 +18,14 @@ pub(crate) fn settles() -> Transition {
 }
 
 #[must_use]
-pub(crate) fn glide(child: impl View, transition: Transition, key: impl Hash) -> Element {
+pub(crate) fn glide(
+    axis: Axis,
+    child: impl View,
+    transition: Transition,
+    key: impl Hash,
+) -> Element {
     AnimatedPosition::default()
-        .along(Axis::Horizontal)
+        .along(axis)
         .holding(child)
         .transition(transition)
         .keyed(key)

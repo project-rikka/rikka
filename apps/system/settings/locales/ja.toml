@@ -42,12 +42,19 @@ unavailable = "外観設定を利用できません: {reason}"
 refused = "テーマを変更できませんでした: {reason}"
 desktop = "デスクトップ"
 taskbar = "タスクバー"
+taskbar-position = "タスクバーの位置"
 wallpaper = "壁紙"
 
 [settings.appearance.indicators]
 title = "タスクバーのインジケーター"
 input-method = "入力方式"
 ai-usage = "AI 使用量"
+
+[settings.appearance.taskbar-positions]
+top = "上"
+bottom = "下"
+left = "左"
+right = "右"
 
 [settings.appearance.categories]
 dark = "ダーク"

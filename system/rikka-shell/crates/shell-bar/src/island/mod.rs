@@ -8,7 +8,6 @@ mod forecast;
 mod live;
 mod notice;
 mod pill;
-mod stage;
 mod state;
 mod view;
 

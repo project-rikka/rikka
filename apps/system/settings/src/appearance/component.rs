@@ -7,7 +7,7 @@ use crate::amount::amount;
 use crate::appearance::glass::glass;
 use crate::appearance::themes::{self, Installed, ThemeChoice};
 use crate::appearance::wallpapers::{self, Wallpapers};
-use crate::controls::flag_or;
+use crate::controls::{Choices, choice, flag_or};
 use crate::domain::{Domain, domain_page};
 use crate::notice::domain_notice;
 use crate::page::Page;
@@ -25,6 +25,25 @@ const INDICATORS: [(appearance::Indicator, &str); 2] = [
     (
         appearance::Indicator::AiUsage,
         "settings.appearance.indicators.ai-usage",
+    ),
+];
+
+const POSITIONS: Choices = &[
+    (
+        appearance::TASKBAR_TOP,
+        "settings.appearance.taskbar-positions.top",
+    ),
+    (
+        appearance::TASKBAR_BOTTOM,
+        "settings.appearance.taskbar-positions.bottom",
+    ),
+    (
+        appearance::TASKBAR_LEFT,
+        "settings.appearance.taskbar-positions.left",
+    ),
+    (
+        appearance::TASKBAR_RIGHT,
+        "settings.appearance.taskbar-positions.right",
     ),
 ];
 
@@ -177,6 +196,13 @@ fn desktop(appearance: &Appearance) -> impl View {
             appearance::TASKBAR,
             appearance::TASKBAR_DEFAULT,
         );
+        choice(
+            appearance,
+            tr!("settings.appearance.taskbar-position"),
+            appearance::TASKBAR_POSITION,
+            POSITIONS,
+        )
+        .dimmed(!appearance.taskbar());
     }
     .gap(Space::SNUG)
 }

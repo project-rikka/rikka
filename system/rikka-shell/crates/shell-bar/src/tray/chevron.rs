@@ -1,7 +1,10 @@
+use rikka_settings::session::appearance::TaskbarPosition;
 use rikka_text::IconSpec;
 use rikka_types::{Point, Rect, Size};
 use rikka_ui::{Element, Layout, Length, MaterialSymbol, PaintCtx, View, Widget, palette};
+use shell_kit::taskbar::Edge;
 
+use crate::axis;
 use crate::cluster::{DEPTH, INSET, SYMBOL};
 use crate::tray::MARK;
 
@@ -9,21 +12,29 @@ use crate::tray::MARK;
 pub(super) struct Chevron {
     unfolded: bool,
     attention: bool,
+    edge: Edge,
 }
 
 impl Chevron {
     #[must_use]
-    pub(crate) fn new(unfolded: bool, attention: bool) -> Chevron {
+    pub(crate) fn new(unfolded: bool, attention: bool, edge: Edge) -> Chevron {
         Chevron {
             unfolded,
             attention,
+            edge,
         }
     }
 
     fn symbol(&self) -> MaterialSymbol {
+        let (inward, outward) = match self.edge.position() {
+            TaskbarPosition::Top => (MaterialSymbol::EXPAND_MORE, MaterialSymbol::EXPAND_LESS),
+            TaskbarPosition::Bottom => (MaterialSymbol::EXPAND_LESS, MaterialSymbol::EXPAND_MORE),
+            TaskbarPosition::Left => (MaterialSymbol::CHEVRON_RIGHT, MaterialSymbol::CHEVRON_LEFT),
+            TaskbarPosition::Right => (MaterialSymbol::CHEVRON_LEFT, MaterialSymbol::CHEVRON_RIGHT),
+        };
         match self.unfolded {
-            true => MaterialSymbol::EXPAND_LESS,
-            false => MaterialSymbol::EXPAND_MORE,
+            true => outward,
+            false => inward,
         }
     }
 }
@@ -32,11 +43,9 @@ impl Widget for Chevron {
     type State = ();
 
     fn layout(&self) -> Layout {
+        let size = axis::size(self.edge.axis(), SYMBOL + INSET * 2.0, SYMBOL + DEPTH * 2.0);
         Layout::row()
-            .size(
-                Length::px(SYMBOL + INSET * 2.0),
-                Length::px(SYMBOL + DEPTH * 2.0),
-            )
+            .size(Length::px(size.width), Length::px(size.height))
             .fixed()
     }
 
@@ -49,13 +58,16 @@ impl Widget for Chevron {
             palette.text,
         );
         if self.attention {
-            let corner = Point::new(bounds.max_x() - INSET / 2.0, bounds.y() + DEPTH);
+            let inset = self.edge.axis().point(INSET / 2.0, DEPTH);
+            let corner = Point::new(bounds.max_x() - inset.x, bounds.y() + inset.y);
             ctx.draw_circle(corner, MARK, palette.accent);
         }
     }
 
     fn same(&self, other: &Self) -> bool {
-        self.unfolded == other.unfolded && self.attention == other.attention
+        self.unfolded == other.unfolded
+            && self.attention == other.attention
+            && self.edge == other.edge
     }
 
     fn debug_name(&self) -> &'static str {

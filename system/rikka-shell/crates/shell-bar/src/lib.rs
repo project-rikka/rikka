@@ -1,11 +1,14 @@
+mod axis;
 mod centre;
 mod cluster;
+mod dock;
 mod dropdown_panel;
 mod feature;
 mod frame;
 mod glide;
 mod indicators;
 mod island;
+mod rim;
 mod shared;
 mod state;
 mod status;

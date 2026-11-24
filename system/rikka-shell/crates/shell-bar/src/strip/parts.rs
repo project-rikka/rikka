@@ -1,14 +1,16 @@
 use std::sync::{Arc, LazyLock};
 
 use rikka_types::Rect;
-use rikka_ui::{Align, IconSource, ImageSource, Inset, Length, View, palette};
-use rikka_widgets::{ControlSize, button, container, icon, row};
+use rikka_ui::{Align, IconSource, ImageSource, Length, View, palette};
+use rikka_widgets::{ControlSize, button, container, icon};
 use shell_kit::highlight_button;
 
+use crate::axis;
 use crate::cluster::{DEPTH, INSET, RADIUS};
 use crate::state::Bar;
+use crate::status::{self, Status};
+use crate::tray;
 use crate::workspaces::Slots;
-use crate::{status, tray};
 
 const LOGO: f32 = 18.0;
 
@@ -34,6 +36,7 @@ pub(crate) fn workspaces(bar: &Bar) -> impl View {
     Slots::new(
         bar.showing(),
         bar.holding().to_vec(),
+        bar.dock().axis(),
         |bar: &mut Bar, number| {
             bar.show(number);
         },
@@ -42,36 +45,39 @@ pub(crate) fn workspaces(bar: &Bar) -> impl View {
 
 #[must_use]
 pub(crate) fn cluster(bar: &Bar) -> impl View {
-    row! {
-        tray(bar);
-        indicators(bar);
-        status::status(
-            &bar.shared().daemons,
-            bar.bell(),
-            bar.shared().percentage.is_shown(),
-            bar.is_hovered(),
-        );
-    }
-    .align_items(Align::Center)
+    let axis = bar.dock().axis();
+    axis::line(axis, tray(bar))
+        .push(indicators(bar))
+        .push(status::status(Status {
+            daemons: &bar.shared().daemons,
+            bell: bar.bell(),
+            percentage: bar.shared().percentage.is_shown(),
+            hovered: bar.is_hovered(),
+            axis,
+        }))
+        .align_items(Align::Center)
 }
 
-fn tray(bar: &Bar) -> impl View {
+fn tray(bar: &Bar) -> Option<impl View> {
     let shared = bar.shared();
     let unfolded = shared.fold.is_unfolded();
-    shared.tray.read(|tray| tray::chevron(tray, unfolded))
+    let edge = bar.dock().edge();
+    shared.tray.read(|tray| tray::chevron(tray, unfolded, edge))
 }
 
 fn indicators(bar: &Bar) -> impl View {
     let shelf = &bar.shared().shelf;
-    row! {
-        for (kind, mark) in shelf.marks() {
+    let axis = bar.dock().axis();
+    axis::line(
+        axis,
+        shelf.marks().into_iter().map(|(kind, mark)| {
             highlight_button(
-                container(mark).padding(Inset::xy(INSET, DEPTH)),
+                container(mark).padding(axis::padding(axis, INSET, DEPTH)),
                 move |bar: &mut Bar, at: Rect| bar.indicate(kind, at),
             )
             .pressed(shelf.is_open(kind))
-            .radius(RADIUS);
-        }
-    }
+            .radius(RADIUS)
+        }),
+    )
     .align_items(Align::Center)
 }

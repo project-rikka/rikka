@@ -3,7 +3,7 @@ use rikka_seam::{Request, SeamClient};
 use rikka_tray::Tray;
 use shell_apps::Apps;
 use shell_feeds::{Daemons, Feeds, ScreenRecording};
-use shell_kit::taskbar::TaskbarVisibility;
+use shell_kit::taskbar::TaskbarLayout;
 use shell_kit::{Presence, TOGGLE};
 use shell_notifications::{History, Quiet};
 
@@ -23,7 +23,7 @@ pub(crate) struct Shared {
     pub(crate) quiet: Quiet,
     pub(crate) history: History,
     pub(crate) recording: ScreenRecording,
-    pub(crate) taskbar_visibility: TaskbarVisibility,
+    pub(crate) taskbar_layout: TaskbarLayout,
     pub(crate) shelf: Shelf,
     pub(crate) percentage: Percentage,
     pub(crate) feeds: Feeds,

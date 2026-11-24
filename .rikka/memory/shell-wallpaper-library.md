@@ -7,7 +7,7 @@ tags: [wallpaper, shell]
 
 - The library is `UserDirs::wallpapers()` (`Pictures/Wallpaper`). The shell creates and reads it but never writes pictures, and there is no `add`; Files' Set as wallpaper copies pictures in, and the watcher picks them up.
 - The id is the file name. `Library::at_id` refuses anything but one plain component, and non-UTF-8 names are skipped. `shell_wallpaper::file_of(id)` gives the path.
-- `rikka.wallpaper`: `list` (deferred to the `LibraryWatcher` thread), `refresh`, `show` (one `is_file`; unknown ids warn and refuse), `showing` (id + file), and the reserved strip.
+- `rikka.wallpaper` (4.0): `list` (deferred to the `LibraryWatcher` thread), `refresh`, `show` (one `is_file`; unknown ids warn and refuse), `showing` (id + file), and `reserve`/`reserved`: a `Reserved` inset per edge (the opaque taskbar strip's edge only) that the wallpaper is laid out inside.
 - `LibraryWatcher` holds a `rikka_xdg::Watch` via `Weak`. Announcements coalesce.
 - Thumbnails live in the shared freedesktop cache through `rikka-thumbnails` (`x-large`, keyed by the file URI, valid while `Thumb::MTime` matches), so Files and the shell reuse each other's; made on one queue thread and never pruned by the shell.
 - `asked` and `refused` stop repeated requests. Videos get `Preview::Motion` instead of a thumbnail.

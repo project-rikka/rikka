@@ -4,13 +4,14 @@ use std::time::Duration;
 use rikka_mpris::{Control, Player};
 use rikka_session::{toplevels, workspaces};
 use rikka_sound::Spectrum;
-use rikka_types::{Point, PointerButton};
+use rikka_types::{PointerButton, Rect};
 use rikka_ui::{State, after_keyed, skip_view, stream};
 use rikka_weather::TemperatureUnit;
 use shell_activity::{Activity, ActivityEvent};
 use shell_feeds::{Feeds, ScreenRecording};
 use shell_kit::{Need, Period, Placement};
 
+use crate::dock::Dock;
 use crate::island::clock::Clock;
 use crate::island::forecast::Forecast;
 use crate::island::live::{self, Live};
@@ -46,7 +47,7 @@ pub(crate) struct Island {
     recording: ScreenRecording,
     tasks: Tasks,
     menu: Opened,
-    width: f32,
+    dock: Dock,
     hovering: bool,
     aim: Option<Target>,
     showing: Option<Target>,
@@ -68,7 +69,7 @@ impl Island {
         recording: ScreenRecording,
         tasks: Tasks,
         menu: Opened,
-        width: f32,
+        dock: Dock,
     ) -> Island {
         let unit = feeds.scale.get();
         let minutes = feeds.wall.need(Period::Minute);
@@ -77,7 +78,7 @@ impl Island {
             recording,
             tasks,
             menu,
-            width,
+            dock,
             hovering: false,
             aim: None,
             showing: None,
@@ -147,8 +148,9 @@ impl Island {
     }
 
     pub(crate) fn moved(&mut self, placement: &Placement) {
-        let resized = self.width != placement.size.width;
-        self.width = placement.size.width;
+        let docked = self.dock.on(placement.size);
+        let resized = self.dock != docked;
+        self.dock = docked;
         let changed = self.tasks.moved(placement.name.clone());
         self.retasked(changed || resized);
     }
@@ -253,17 +255,17 @@ impl Island {
                 space,
                 key,
                 button,
-                at,
-            } => self.chose(space, &key, button, at),
+                bounds,
+            } => self.chose(space, &key, button, bounds),
         }
     }
 
-    fn chose(&mut self, space: usize, key: &str, button: PointerButton, at: Point) {
+    fn chose(&mut self, space: usize, key: &str, button: PointerButton, bounds: Rect) {
         match button {
             PointerButton::Primary => self.tasks.press(space, key),
             PointerButton::Middle => self.tasks.launch(key),
             PointerButton::Secondary => {
-                self.unfold(space, key, at);
+                self.unfold(space, key, bounds);
                 return self.dismiss();
             }
             PointerButton::Back | PointerButton::Forward | PointerButton::Other(_) => {}
@@ -271,11 +273,12 @@ impl Island {
         skip_view();
     }
 
-    fn unfold(&self, space: usize, key: &str, at: Point) {
+    fn unfold(&self, space: usize, key: &str, bounds: Rect) {
         let Some((group, tile)) = self.tasks.group(space, key) else {
             return;
         };
-        let request = MenuRequest::new(at, space, group, tile);
+        let at = self.dock.facing(bounds);
+        let request = MenuRequest::new(at, self.dock.edge(), space, group, tile);
         self.menu.open(self.tasks.output(), request);
     }
 
@@ -335,8 +338,8 @@ impl Island {
     }
 
     #[must_use]
-    pub(crate) fn width(&self) -> f32 {
-        self.width
+    pub(crate) fn dock(&self) -> Dock {
+        self.dock
     }
 
     #[must_use]

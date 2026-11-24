@@ -12,6 +12,8 @@ pub const WALLPAPER: &str = "wallpaper";
 
 pub const TASKBAR: &str = "taskbar";
 
+pub const TASKBAR_POSITION: &str = "taskbar-position";
+
 pub const TASKBAR_INDICATORS: &str = "taskbar-indicators";
 
 pub const ICON_THEME: &str = "icon-theme";
@@ -33,6 +35,41 @@ pub const BLUR_RADIUS: &str = "blur-radius";
 pub const UNSET: &str = "";
 
 pub const TASKBAR_DEFAULT: bool = true;
+
+pub const TASKBAR_TOP: &str = "top";
+
+pub const TASKBAR_BOTTOM: &str = "bottom";
+
+pub const TASKBAR_LEFT: &str = "left";
+
+pub const TASKBAR_RIGHT: &str = "right";
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum TaskbarPosition {
+    #[default]
+    Top,
+    Bottom,
+    Left,
+    Right,
+}
+
+impl Choice for TaskbarPosition {
+    const ALL: &'static [TaskbarPosition] = &[
+        TaskbarPosition::Top,
+        TaskbarPosition::Bottom,
+        TaskbarPosition::Left,
+        TaskbarPosition::Right,
+    ];
+
+    fn slug(self) -> &'static str {
+        match self {
+            TaskbarPosition::Top => TASKBAR_TOP,
+            TaskbarPosition::Bottom => TASKBAR_BOTTOM,
+            TaskbarPosition::Left => TASKBAR_LEFT,
+            TaskbarPosition::Right => TASKBAR_RIGHT,
+        }
+    }
+}
 
 pub const INDICATOR_INPUT_METHOD: &str = "input-method";
 
@@ -142,7 +179,11 @@ pub fn schema() -> Schema {
         )
         .key(
             Key::bool(TASKBAR, TASKBAR_DEFAULT)
-                .summary("Whether the strip across the top of every display is up"),
+                .summary("Whether the taskbar is up on every display"),
+        )
+        .key(
+            Key::choice::<TaskbarPosition>(TASKBAR_POSITION)
+                .summary("Which display edge the taskbar stands on: top, bottom, left or right"),
         )
         .key(
             Key::list(

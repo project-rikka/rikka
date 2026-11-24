@@ -2,8 +2,8 @@ use rikka_seam::{
     Call, EventInfo, Manifest, Method, MethodInfo, SeamError, Service, ServiceContext,
 };
 use rikka_session::wallpaper::{
-    CAPABILITY, DisplayedWallpaper, LIST, LISTED, REFRESH, RESERVE, RESERVED, SHOW, SHOWING,
-    VERSION,
+    CAPABILITY, DisplayedWallpaper, LIST, LISTED, REFRESH, RESERVE, RESERVED, Reserved, SHOW,
+    SHOWING, VERSION,
 };
 use shell_kit::Host;
 
@@ -15,7 +15,7 @@ pub(super) struct WallpaperService {
     library_watcher: Option<LibraryWatcher>,
     seam: Option<ServiceContext>,
     showing: Option<DisplayedWallpaper>,
-    reserved: f32,
+    reserved: Reserved,
 }
 
 impl WallpaperService {
@@ -26,7 +26,7 @@ impl WallpaperService {
             library_watcher: None,
             seam: None,
             showing: None,
-            reserved: 0.0,
+            reserved: Reserved::default(),
         }
     }
 
@@ -37,7 +37,7 @@ impl WallpaperService {
     }
 
     #[must_use]
-    pub(crate) fn below(mut self, reserved: f32) -> WallpaperService {
+    pub(crate) fn below(mut self, reserved: Reserved) -> WallpaperService {
         self.reserved = reserved;
         self
     }
@@ -89,7 +89,7 @@ impl WallpaperService {
     }
 
     fn reserve(&mut self, call: Call) {
-        let reserved = match call.decode::<f32>() {
+        let reserved = match call.decode::<Reserved>() {
             Ok(reserved) => reserved,
             Err(error) => return call.fail(error),
         };
@@ -119,9 +119,9 @@ impl Service<Host> for WallpaperService {
             .method(MethodInfo::new(SHOWING).summary("Returns the current wallpaper id"))
             .method(
                 MethodInfo::new(RESERVE)
-                    .summary("How much of the top of every output the backdrop leaves alone"),
+                    .summary("How much of each edge of every output the backdrop leaves alone"),
             )
-            .method(MethodInfo::new(RESERVED).summary("Returns the reserved top strip height"))
+            .method(MethodInfo::new(RESERVED).summary("Returns the reserved strip on each edge"))
             .event(
                 EventInfo::new(LISTED)
                     .summary("Library or thumbnail changed")

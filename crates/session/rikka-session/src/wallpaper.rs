@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::protocol::Protocol;
 
-pub const PROTOCOL: Protocol = Protocol::new("rikka.wallpaper", Version::new(3, 0));
+pub const PROTOCOL: Protocol = Protocol::new("rikka.wallpaper", Version::new(4, 0));
 pub const CAPABILITY: &str = PROTOCOL.capability();
 pub const VERSION: Version = PROTOCOL.version();
 
@@ -47,6 +47,14 @@ pub struct DisplayedWallpaper {
     pub file: PathBuf,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Reserved {
+    pub top: f32,
+    pub right: f32,
+    pub bottom: f32,
+    pub left: f32,
+}
+
 #[derive(Clone, Debug)]
 pub struct WallpaperClient {
     seam: SeamClient,
@@ -70,8 +78,8 @@ impl WallpaperClient {
         PROTOCOL.notify_with(&self.seam, SHOW, &id);
     }
 
-    pub fn reserve(&self, strip: f32) {
-        PROTOCOL.notify_with(&self.seam, RESERVE, &strip);
+    pub fn reserve(&self, reserved: Reserved) {
+        PROTOCOL.notify_with(&self.seam, RESERVE, &reserved);
     }
 
     pub fn showing(&self) -> Reply {
@@ -94,6 +102,6 @@ pub fn displayed(
     PROTOCOL.states(seam, SHOWING, SHOWING)
 }
 
-pub fn reserves(seam: &SeamClient) -> impl Stream<Item = f32> + Send + 'static {
+pub fn reserves(seam: &SeamClient) -> impl Stream<Item = Reserved> + Send + 'static {
     PROTOCOL.states(seam, RESERVED, RESERVED)
 }

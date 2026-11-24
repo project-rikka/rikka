@@ -15,6 +15,7 @@ pub(crate) fn island(island: &Island) -> Element {
         None => (None, None),
     };
     body(
+        island.dock(),
         compact(island, &live_activities, seated),
         card,
         CoverTransition::new(rest, open, seated),

@@ -1,9 +1,8 @@
 use rikka_seam::Request;
 use rikka_session::shortcuts::Shortcut;
 use rikka_session::surfaces;
-use rikka_ui::Inset;
 use shell_desk::{CAPABILITY, DeskScene};
-use shell_kit::taskbar::{Shape, TaskbarVisibility};
+use shell_kit::taskbar::{Shape, TaskbarLayout};
 use shell_kit::{
     DesktopFrost, Feature, KeyboardMode, PointerMode, PresenceService, Reach, Shell, SurfaceDesc,
     TOGGLE,
@@ -36,12 +35,12 @@ impl Feature for DeskEditor {
         let shell = shell
             .service(service)
             .on_shortcut(Shortcut::EditDesk, Request::new(CAPABILITY, TOGGLE));
-        let taskbar_visibility = TaskbarVisibility::read(&shell);
-        let reach = Reach::new(reaching(taskbar_visibility.shape()));
-        let shell = taskbar_visibility.following(shell, {
-            let (taskbar_visibility, reach) = (taskbar_visibility.clone(), reach.clone());
-            move |_| {
-                reach.set(reaching(taskbar_visibility.shape()));
+        let taskbar_layout = TaskbarLayout::read(&shell);
+        let reach = Reach::new(reaching(taskbar_layout.shape()));
+        let shell = taskbar_layout.following(shell, {
+            let reach = reach.clone();
+            move |shape| {
+                reach.set(reaching(shape));
             }
         });
         let frost = DesktopFrost::default();
@@ -67,7 +66,7 @@ impl Feature for DeskEditor {
 
 fn reaching(taskbar: Option<Shape>) -> PointerMode {
     match taskbar {
-        Some(shape) => PointerMode::Inset(Inset::edges(shape.reserved(), 0.0, 0.0, 0.0)),
+        Some(shape) => PointerMode::Inset(shape.strip()),
         None => PointerMode::Take,
     }
 }

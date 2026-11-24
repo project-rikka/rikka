@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use rikka_seam::{Payload, SeamClient, SeamError};
-use rikka_session::wallpaper::{self, CAPABILITY, SHOWING, WallpaperClient};
+use rikka_session::wallpaper::{self, CAPABILITY, Reserved, SHOWING, WallpaperClient};
 use rikka_ui::{
     Element, State, View, after, after_keyed, cancel, spawn, spawn_blocking, stream, stream_keyed,
 };
@@ -30,7 +30,7 @@ pub(crate) struct Wallpaper {
     arriving: Option<ShownWallpaper>,
     crossed: bool,
     awaiting: u64,
-    reserved: f32,
+    reserved: Reserved,
     #[untracked]
     shown_on: ShownOn,
 }
@@ -55,7 +55,7 @@ impl Wallpaper {
             arriving: None,
             crossed: true,
             awaiting: 0,
-            reserved: 0.0,
+            reserved: Reserved::default(),
             shown_on: ShownOn::default(),
         }
     }
@@ -67,7 +67,7 @@ impl Wallpaper {
     }
 
     #[must_use]
-    pub(crate) fn below(mut self, reserved: f32) -> Wallpaper {
+    pub(crate) fn below(mut self, reserved: Reserved) -> Wallpaper {
         self.reserved = reserved;
         self
     }
@@ -97,7 +97,7 @@ impl Wallpaper {
         );
         stream(
             wallpaper::reserves(seam),
-            |wallpaper: &mut Wallpaper, below: f32| wallpaper.reserved = below,
+            |wallpaper: &mut Wallpaper, below: Reserved| wallpaper.reserved = below,
         );
         spawn(
             WallpaperClient::new(seam.clone()).showing(),
