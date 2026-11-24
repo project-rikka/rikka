@@ -57,7 +57,7 @@ pub use controls::switch::{Switch, switch};
 pub use controls::tool_tile::tool_tile;
 
 pub use lists::collection::{
-    Collection, Highlights, Slot, Surface, lazy_column, lazy_grid, lazy_row, lazy_tiles,
+    Collection, Highlights, Rearrange, Slot, Surface, lazy_column, lazy_grid, lazy_row, lazy_tiles,
 };
 pub use lists::columns::{
     COLUMN_HEADER, COLUMN_PADDING, ColumnHeader, ColumnSpec, ColumnWidths, column_header,

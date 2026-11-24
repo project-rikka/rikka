@@ -68,6 +68,15 @@ pub struct Slot {
     pub index: usize,
     pub selected: bool,
 }
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Rearrange {
+    #[default]
+    Ride,
+    Glide,
+    Settle,
+}
+
 pub(crate) struct Props {
     pub(crate) uniform: Option<f32>,
     pub(crate) estimate: Option<f32>,
@@ -94,7 +103,7 @@ pub(crate) struct Props {
     pub(crate) autofocus: bool,
     pub(crate) takes_tab: bool,
     pub(crate) lit: bool,
-    pub(crate) glides: bool,
+    pub(crate) rearrange: Rearrange,
 }
 
 impl Default for Props {
@@ -125,7 +134,7 @@ impl Default for Props {
             autofocus: false,
             takes_tab: false,
             lit: false,
-            glides: true,
+            rearrange: Rearrange::Ride,
         }
     }
 }
@@ -479,6 +488,7 @@ pub struct CollectionState {
     laid: Option<u64>,
     cells: FxHashSet<u64>,
     standing: FxHashSet<u64>,
+    arrivals: FxHashSet<u64>,
     names: Vec<u64>,
     previous: Option<Cells>,
     pending: Option<Shuffle>,
@@ -578,7 +588,7 @@ impl Widget for Collection {
     fn build(&self, state: &mut CollectionState) -> Vec<Element> {
         let across = self.across(state).max(1);
         let reflowed = std::mem::replace(&mut state.across, across) != across;
-        self.carry(state, across, reflowed);
+        let rearranged = self.carry(state, across, reflowed);
         state
             .spans
             .adopt(self.bands(across), self.guess(), self.pitch());
@@ -619,7 +629,7 @@ impl Widget for Collection {
         let cells = (window.start * across)..(window.end * across).min(self.count);
         state.keys.adopt(self.made, cells.clone());
         if !self.rides() {
-            return self.gliding(state, &built, cells, known, across);
+            return self.gliding(state, &built, cells, known, rearranged, across);
         }
         let mut elements = self.riding(state, &built, cells);
         elements.extend(self.ghosts(state, &built));
@@ -688,6 +698,7 @@ impl Widget for Collection {
         }
         state.adopt(self.props.place.as_ref(), self.props.subject);
         state.pending = None;
+        state.arrivals.clear();
         if let Some(ride) = state.ride.as_mut() {
             match state.riders.ride(ride, ctx.now(), &state.spans) {
                 true => ctx.request_frame(),
@@ -871,14 +882,14 @@ impl Collection {
         Ahead::new(&state.spans, visible_range, heading, room)
     }
 
-    fn carry(&self, state: &mut CollectionState, across: usize, reflowed: bool) {
+    fn carry(&self, state: &mut CollectionState, across: usize, reflowed: bool) -> bool {
         let Some(named) = &self.props.named else {
             state.settle();
-            return;
+            return false;
         };
         if reflowed || state.built != Some(self.props.subject) {
             state.settle();
-            return;
+            return false;
         }
         let bands = self.bands(across);
         let name = |band: usize| named(band * across);
@@ -889,14 +900,19 @@ impl Collection {
                 .zip(&state.names)
                 .any(|(band, was)| band >= bands || name(band) != *was);
         if !changed {
-            return;
+            return false;
         }
         match state.reshuffle(bands, &name, self.props.follow) {
-            Some(shuffle) if self.rides() && self.props.glides && !self.props.follow => {
+            Some(shuffle)
+                if self.rides()
+                    && self.props.rearrange == Rearrange::Ride
+                    && !self.props.follow =>
+            {
                 state.pending = Some(shuffle);
             }
             _ => state.settle(),
         }
+        true
     }
 
     fn choreograph(&self, state: &mut CollectionState) {
@@ -916,7 +932,13 @@ impl Collection {
     }
 
     fn rides(&self) -> bool {
-        self.props.named.is_some() && matches!(self.lines, Lines::Down | Lines::Across)
+        self.props.named.is_some()
+            && self.props.rearrange != Rearrange::Glide
+            && matches!(self.lines, Lines::Down | Lines::Across)
+    }
+
+    fn named_key(&self, name: u64) -> u64 {
+        hash_of((self.props.subject, "named", name))
     }
 
     fn gliding(
@@ -925,6 +947,7 @@ impl Collection {
         built: &Cells,
         cells: Range<usize>,
         known: Range<usize>,
+        rearranged: bool,
         across: usize,
     ) -> Vec<Element> {
         let fades = !self.props.follow;
@@ -939,21 +962,31 @@ impl Collection {
                     band = (at, state.spans.top(at));
                 }
                 let along = band.1 - state.origin;
-                let place = u64::from(along.to_bits());
+                let name = self.props.named.as_ref().map(|named| named(index));
+                let place = hash_of((along.to_bits(), name));
                 if keeps
-                    && let Some(key) = built.retained_key(index, place, &state.keys)
+                    && let Some(key) = built
+                        .retained_key(index, place, &state.keys)
+                        .map(|key| name.map_or(key, |name| self.named_key(name)))
                     && state.standing.contains(&key)
                 {
                     state.cells.insert(key);
                     return Element::retained(key);
                 }
                 let (content, key) = built.seat(index, place, &mut state.keys);
-                let arriving = fades && known.contains(&at) && !state.standing.contains(&key);
+                let key = name.map_or(key, |name| self.named_key(name));
+                let entered = match name {
+                    Some(_) => rearranged,
+                    None => known.contains(&at),
+                };
+                if fades && entered && !state.standing.contains(&key) {
+                    state.arrivals.insert(key);
+                }
                 state.cells.insert(key);
                 AnimatedPosition::default()
                     .along(self.along())
                     .anchored(index, along)
-                    .arriving(arriving)
+                    .arriving(state.arrivals.contains(&key))
                     .with_content(content)
                     .keyed(key)
             })
@@ -982,7 +1015,7 @@ impl Collection {
         cells
             .zip(names.iter().copied())
             .map(|(index, name)| {
-                let key = hash_of((self.props.subject, "named", name));
+                let key = self.named_key(name);
                 let home = corner + spans.top(index) - start;
                 let place = hash_of((name, riding, riding.map(|_| home.to_bits())));
                 if keeps && built.retained_key(index, place, keys).is_some() {
@@ -1284,8 +1317,8 @@ macro_rules! collection_methods {
             self
         }
 
-        pub fn glides(mut self, glides: bool) -> Self {
-            self.props.glides = glides;
+        pub fn rearrange(mut self, rearrange: $crate::Rearrange) -> Self {
+            self.props.rearrange = rearrange;
             self
         }
     };

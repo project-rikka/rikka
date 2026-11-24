@@ -6,7 +6,7 @@ use rikka_ui::{
     offset, palette, scale, text, tr,
 };
 use rikka_widgets::{
-    ControlSize, column, container, icon, list, list_item, row, spacer, text_field,
+    ControlSize, Rearrange, column, container, icon, list, list_item, row, spacer, text_field,
 };
 use shell_kit::{scrim, sheet};
 
@@ -216,7 +216,7 @@ fn lines(launcher: &Launcher) -> impl View {
     list(rows)
         .selected(launcher.selected())
         .control_size(ControlSize::Large)
-        .glides(false)
+        .rearrange(Rearrange::Glide)
         .activates_on_press(true)
         .on_select(|launcher: &mut Launcher, index| launcher.select(index))
         .on_activate(|launcher: &mut Launcher, index| launcher.activate(index))

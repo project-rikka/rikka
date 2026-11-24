@@ -75,6 +75,7 @@ impl Widget for Marker {
 struct Rows {
     ids: Vec<u64>,
     measured: bool,
+    rearrange: Rearrange,
     seen: Rc<Seen>,
 }
 
@@ -90,7 +91,8 @@ fn rows_view(rows: &Rows) -> Element {
         })
         .keyed(id)
     })
-    .named(move |index| ids[index]);
+    .named(move |index| ids[index])
+    .rearrange(rows.rearrange);
     let column = match rows.measured {
         true => column.estimate(Length::px(ROW)),
         false => column.uniform(Length::px(ROW)),
@@ -118,11 +120,16 @@ struct Watch {
 
 impl Watch {
     fn new(rows: &[u64], measured: bool, scrolled: f32) -> Watch {
+        Watch::open(rows, measured, scrolled, Rearrange::Ride)
+    }
+
+    fn open(rows: &[u64], measured: bool, scrolled: f32, rearrange: Rearrange) -> Watch {
         let seen = Rc::new(Seen::default());
         let mut ui = TypedUi::new(
             Rows {
                 ids: rows.to_vec(),
                 measured,
+                rearrange,
                 seen: Rc::clone(&seen),
             },
             rows_view,
@@ -482,6 +489,58 @@ fn folding_back_mid_motion_keeps_rows_where_drawn() {
             drawn = shown;
         }
     }
+}
+
+#[test]
+fn gliding_rows_show_each_result_set_at_once() {
+    let changes: [(usize, Vec<u64>); 2] =
+        [(1, vec![100, 3, 2, 101, 5, 6]), (4, vec![3, 102, 5, 2, 6])];
+    let mut watch = Watch::open(&rows(12), false, 0.0, Rearrange::Glide);
+    let mut drawn = watch.frame(FRAME);
+    let mut results = rows(12);
+    for frame in 0..FRAMES {
+        let mut arrived = Vec::new();
+        if let Some((_, next)) = changes.iter().find(|(at, _)| *at == frame) {
+            arrived = next
+                .iter()
+                .filter(|id| !results.contains(id))
+                .copied()
+                .collect();
+            results = next.clone();
+            let ids = results.clone();
+            watch.ui.update(|rows| rows.ids = ids);
+        }
+        let shown = watch.frame(FRAME);
+        for now in &shown {
+            assert!(
+                results.contains(&now.id),
+                "row {} left over at frame {frame}: {:?}",
+                now.id,
+                layout(&shown)
+            );
+            let place = results.iter().position(|id| *id == now.id).unwrap_or(0) as f32 * ROW;
+            if arrived.contains(&now.id) {
+                assert!(
+                    (now.at - place).abs() < 0.5,
+                    "new row {} drawn at {} instead of {place} at frame {frame}",
+                    now.id,
+                    now.at
+                );
+            }
+            if let Some(was) = drawn.iter().find(|was| was.id == now.id) {
+                assert!(
+                    (now.at - was.at).abs() < LEAP,
+                    "row {} leapt from {} to {} at frame {frame}",
+                    now.id,
+                    was.at,
+                    now.at
+                );
+            }
+        }
+        drawn = shown;
+    }
+    let settled = watch.rests();
+    settled_in_order("gliding", &results, &settled);
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

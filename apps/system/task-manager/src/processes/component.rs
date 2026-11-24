@@ -53,7 +53,7 @@ impl Processes {
             sizings: Tracked::new(mode.columns().into_iter().map(Sizing::new).collect()),
             mode: Tracked::new(mode),
             reading: Rc::new(Reading::default()),
-            row_order: Tracked::new(RowOrder::new(table.peek(), false)),
+            row_order: Tracked::new(RowOrder::new(table.peek(), Rearrange::Settle)),
             table,
             expanded: HashSet::new(),
             selected: Tracked::new(None),
@@ -76,7 +76,7 @@ impl Processes {
 
     pub(crate) fn rebuild_if_stale(&mut self) {
         if self.stale {
-            self.rebuild(false);
+            self.rebuild(Rearrange::Settle);
         }
     }
 
@@ -94,13 +94,13 @@ impl Processes {
         if !self.expanded.remove(&pid) {
             self.expanded.insert(pid);
         }
-        self.rebuild(true);
+        self.rebuild(Rearrange::Ride);
     }
 
     pub(crate) fn sort(&mut self, column: Column) {
         let sorting = self.sorting.toggled(column);
         self.sorting.set(sorting);
-        self.rebuild(false);
+        self.rebuild(Rearrange::Settle);
     }
 
     pub(crate) fn resize(&mut self, position: usize, width: f32) {
@@ -143,7 +143,7 @@ impl Processes {
         let revision = self.search.revision();
         if self.searched != revision {
             self.searched = revision;
-            self.rebuild(false);
+            self.rebuild(Rearrange::Settle);
         }
     }
 
@@ -171,7 +171,7 @@ impl Processes {
         });
     }
 
-    fn rebuild(&mut self, glides: bool) {
+    fn rebuild(&mut self, rearrange: Rearrange) {
         self.stale = false;
         let scale = Scale::new(&self.reading.groups, self.reading.machine.memory.total);
         let builder = Builder::new(*self.sorting, &self.search.text(), &self.expanded);
@@ -191,7 +191,7 @@ impl Processes {
             scale,
         });
         self.row_order
-            .set(RowOrder::new(Rc::clone(&snapshot), glides));
+            .set(RowOrder::new(Rc::clone(&snapshot), rearrange));
         self.table.set(snapshot);
         self.refocus();
     }
@@ -228,7 +228,7 @@ pub(crate) fn view(processes: &Processes) -> impl View {
             .collect(),
         table: processes.table.clone(),
         snapshot: Rc::clone(&processes.row_order.snapshot),
-        glides: processes.row_order.glides,
+        rearrange: processes.row_order.rearrange,
         order: processes.row_order.order,
         focus,
         selected,

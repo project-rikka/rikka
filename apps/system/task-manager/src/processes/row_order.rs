@@ -1,22 +1,23 @@
 use std::rc::Rc;
 
 use rikka_ui::hash_of;
+use rikka_widgets::Rearrange;
 
 use crate::processes::row::Row;
 use crate::processes::table::Snapshot;
 
 pub(crate) struct RowOrder {
     pub(crate) snapshot: Rc<Snapshot>,
-    pub(crate) glides: bool,
+    pub(crate) rearrange: Rearrange,
     pub(crate) order: u64,
 }
 
 impl RowOrder {
-    pub(crate) fn new(snapshot: Rc<Snapshot>, glides: bool) -> RowOrder {
+    pub(crate) fn new(snapshot: Rc<Snapshot>, rearrange: Rearrange) -> RowOrder {
         let names: Vec<u64> = snapshot.rows.iter().map(Row::name).collect();
         RowOrder {
             snapshot,
-            glides,
+            rearrange,
             order: hash_of(names),
         }
     }
@@ -24,6 +25,6 @@ impl RowOrder {
 
 impl PartialEq for RowOrder {
     fn eq(&self, other: &Self) -> bool {
-        self.glides == other.glides && self.order == other.order
+        self.rearrange == other.rearrange && self.order == other.order
     }
 }

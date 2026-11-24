@@ -12,4 +12,4 @@ tags: [windows, presentation]
 - `acquire_image` queries the surface only when the swapchain is missing, out of date or differs from the frame `start` planned.
 - Threads: `start`/`record_image` run on the paint thread under the renderer lock and never call WSI functions that may `SendMessage`; `acquire_image` (paint thread, no lock) re-fits/recreates the swapchain and acquires; `present` runs on the UI thread. Keep the message pump free of waits on the paint thread.
 - `acquire_image` returns `Stale` when the surface fit changed since `start` or the swapchain is out of date; an acquired image the renderer did not draw is held for the next frame.
-- Wine (winevulkan) runs it, so the five apps can be tried on Linux: Xvfb, lavapipe (`VK_DRIVER_FILES` + `VK_LOADER_DRIVERS_SELECT=*lvp*`), `HKCU\Software\Wine\X11 Driver\Decorated=N`.
+- Wine (winevulkan) runs it, so the general apps can be tried on Linux: Xvfb, lavapipe (`VK_DRIVER_FILES` + `VK_LOADER_DRIVERS_SELECT=*lvp*`), `HKCU\Software\Wine\X11 Driver\Decorated=N`.

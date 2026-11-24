@@ -28,7 +28,7 @@ pub(crate) struct Grid {
     pub(crate) titles: Vec<String>,
     pub(crate) table: RowTable,
     pub(crate) snapshot: Rc<Snapshot>,
-    pub(crate) glides: bool,
+    pub(crate) rearrange: Rearrange,
     pub(crate) order: u64,
     pub(crate) focus: Option<usize>,
     pub(crate) selected: Option<i32>,
@@ -38,7 +38,7 @@ pub(crate) struct Grid {
 
 impl Grid {
     pub(crate) fn view(self) -> impl View {
-        let (count, focus, glides) = (self.snapshot.rows.len(), self.focus, self.glides);
+        let (count, focus, rearrange) = (self.snapshot.rows.len(), self.focus, self.rearrange);
         let grid = Rc::new(self);
         let shared = grid.shared();
         let (drawn, reached, chosen, keyed, versioned, named) = (
@@ -73,7 +73,7 @@ impl Grid {
             })
         })
         .named(move |index| named.snapshot.rows.get(index).map_or(0, Row::name))
-        .glides(glides)
+        .rearrange(rearrange)
         .focus(focus)
         .reachable(move |index| {
             reached
