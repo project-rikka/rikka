@@ -989,7 +989,7 @@
 
 ## minecraft/src/main/java/sh/rikka/client/mods
 
-- [Rikka Client camera, mechanic and visual mods](minecraft-gameplay-mods.md) — mods/camera, mods/mechanic, mods/visual (crosshair, hit color, target ring, time) and mods/item (physics, 2D) and their…
+- [Rikka Client camera, mechanic, visual and utility mods](minecraft-gameplay-mods.md) — mods/camera, mechanic, visual (crosshair, chunk borders, TNT timer), item, quickswitch, privacy (Streamer Mode) and hoo…
 
 ## minecraft/src/main/java/sh/rikka/client/mods/animation
 
@@ -1001,7 +1001,7 @@
 
 ## minecraft/src/main/java/sh/rikka/client/mods/minimap
 
-- [Rikka Client panel HUD mods (minimap, keystrokes, target info, packs)](minecraft-hud-mods.md) — mods/minimap terrain atlas and drawing; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo in mods/hud.
+- [Rikka Client panel HUD mods (minimap, keystrokes, target info, compass, subtitles)](minecraft-hud-mods.md) — mods/minimap terrain atlas; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo, Compass, Sound Subtitl…
 
 ## minecraft/src/main/java/sh/rikka/client/mods/motionblur
 

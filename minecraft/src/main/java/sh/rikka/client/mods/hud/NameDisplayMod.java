@@ -3,6 +3,7 @@ package sh.rikka.client.mods.hud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import sh.rikka.client.mod.SimpleHudMod;
+import sh.rikka.client.mods.privacy.PrivacyHooks;
 import sh.rikka.client.setting.ScreenPosition;
 
 public final class NameDisplayMod extends SimpleHudMod {
@@ -13,6 +14,6 @@ public final class NameDisplayMod extends SimpleHudMod {
 	@Override
 	protected String label() {
 		LocalPlayer player = Minecraft.getInstance().player;
-		return player == null ? UNAVAILABLE : player.getName().getString();
+		return player == null ? UNAVAILABLE : PrivacyHooks.text(player.getName().getString());
 	}
 }

@@ -1,6 +1,6 @@
 ---
-title: Rikka Client panel HUD mods (minimap, keystrokes, target info, packs)
-description: mods/minimap terrain atlas and drawing; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo in mods/hud.
+title: Rikka Client panel HUD mods (minimap, keystrokes, target info, compass, subtitles)
+description: mods/minimap terrain atlas; Keystrokes, MouseStrokes, InventoryDisplay, PackDisplay, TargetInfo, Compass, Sound Subtitles.
 about: minecraft/src/main/java/sh/rikka/client/mods/minimap
 tags: [minecraft, hud]
 ---
@@ -14,3 +14,5 @@ tags: [minecraft, hud]
 - Keystrokes reads movement/jump `KeyMapping.isDown` and mouse buttons from `MouseInputEvent` (a press since the last view still flashes); `animating()` looks only at keys it shows. CPS uses `mods/hud/ClickRates`, shared with CPS Display. MouseStrokes integrates `LookEvent` deltas into two `Smoothed` offsets returning to centre.
 - TargetInfo follows `RikkaClient.targets()` (the local player while editing), fading/scaling in Java so the vanilla face matches the rikka panel; non-player portraits are a PiP entity model shown only past half visibility.
 - PackDisplay lists the selected, non-required packs top first (else vanilla) with `pack.png` as an `Image.fromEncoded` and text widths measured once, refreshed on the first tick after enable and on `ResourceReloadEvent`; images are closed when replaced.
+- Compass lays its strip out in Java: ticks are boxes painted with `look.mark`/`mutedMark` and labels fixed-width rows, all `.position`ed in a clipped box and faded toward the edges; it re-views every frame from `Camera.yRot()` and marks `level.getRespawnData()` and `getLastDeathLocation()` in the same dimension.
+- `mods/subtitles/`: `SubtitleLog` is a `SoundEventListener` (added on the first tick, removed on disable) keyed by the vanilla subtitle `Component`; each caption is a keyed pill with `.transition` + `.glide`, an 8-way `Bearing` icon from the `ListenerTransform`, opacity fading with age, newest nearest the anchored edge.

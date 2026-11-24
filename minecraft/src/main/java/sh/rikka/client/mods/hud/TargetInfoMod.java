@@ -21,6 +21,7 @@ import sh.rikka.client.RikkaClient;
 import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.mod.HudCanvas;
 import sh.rikka.client.mod.OverlayHudMod;
+import sh.rikka.client.mods.privacy.PrivacyHooks;
 import sh.rikka.client.setting.BoolSetting;
 import sh.rikka.client.setting.ColorSetting;
 import sh.rikka.client.setting.ScreenPosition;
@@ -220,6 +221,6 @@ public final class TargetInfoMod extends OverlayHudMod {
 	}
 
 	private static String name(LivingEntity entity) {
-		return Objects.requireNonNullElse(ChatFormatting.stripFormatting(entity.getDisplayName().getString()), "");
+		return PrivacyHooks.text(Objects.requireNonNullElse(ChatFormatting.stripFormatting(entity.getDisplayName().getString()), ""));
 	}
 }

@@ -1,13 +1,16 @@
 package sh.rikka.client.mods.visual;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Camera;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.RemotePlayer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.TntRenderState;
 import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.item.PrimedTnt;
 
 public final class VisualHooks {
 	private VisualHooks() {
@@ -43,12 +46,23 @@ public final class VisualHooks {
 		if (indicator != null) {
 			indicator.extracted(entity, state);
 		}
+		TntTimerMod tntTimer = TntTimerMod.active();
+		if (tntTimer != null && entity instanceof PrimedTnt tnt && state instanceof TntRenderState tntState) {
+			tntTimer.extracted(tnt, tntState);
+		}
 	}
 
 	public static void entitySubmitted(EntityRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
 		TargetIndicatorMod indicator = TargetIndicatorMod.active();
 		if (indicator != null) {
 			indicator.submitted(state, poseStack, collector);
+		}
+	}
+
+	public static void emitGizmos(Camera camera) {
+		ChunkBordersMod chunkBorders = ChunkBordersMod.active();
+		if (chunkBorders != null) {
+			chunkBorders.emitGizmos(camera);
 		}
 	}
 }

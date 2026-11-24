@@ -9,6 +9,7 @@ import sh.rikka.client.mods.camera.ZoomMod;
 import sh.rikka.client.mods.colorsaturation.ColorSaturationMod;
 import sh.rikka.client.mods.hud.ClockMod;
 import sh.rikka.client.mods.hud.ComboCounterMod;
+import sh.rikka.client.mods.hud.CompassMod;
 import sh.rikka.client.mods.hud.CoordsMod;
 import sh.rikka.client.mods.hud.CpsDisplayMod;
 import sh.rikka.client.mods.hud.DayCounterMod;
@@ -38,9 +39,13 @@ import sh.rikka.client.mods.mechanic.NoJumpDelayMod;
 import sh.rikka.client.mods.mechanic.SnapTapMod;
 import sh.rikka.client.mods.minimap.MinimapMod;
 import sh.rikka.client.mods.motionblur.MotionBlurMod;
+import sh.rikka.client.mods.privacy.StreamerModeMod;
+import sh.rikka.client.mods.quickswitch.QuickSwitchMod;
 import sh.rikka.client.mods.rearview.RearviewMod;
+import sh.rikka.client.mods.subtitles.SoundSubtitlesMod;
 import sh.rikka.client.mods.translate.ChatTranslateMod;
 import sh.rikka.client.mods.visual.BloodParticleMod;
+import sh.rikka.client.mods.visual.ChunkBordersMod;
 import sh.rikka.client.mods.visual.CrosshairMod;
 import sh.rikka.client.mods.visual.ForceMainHandMod;
 import sh.rikka.client.mods.visual.FullbrightMod;
@@ -49,6 +54,7 @@ import sh.rikka.client.mods.visual.ParticlesMod;
 import sh.rikka.client.mods.visual.ProjectileTrailMod;
 import sh.rikka.client.mods.visual.TargetIndicatorMod;
 import sh.rikka.client.mods.visual.TimeChangerMod;
+import sh.rikka.client.mods.visual.TntTimerMod;
 import sh.rikka.client.mods.weather.WeatherChangerMod;
 import sh.rikka.client.setting.Anchor;
 import sh.rikka.client.setting.ScreenPosition;
@@ -73,6 +79,8 @@ public final class BuiltinMods {
 		mods.register(new CrosshairMod());
 		mods.register(new HitColorMod());
 		mods.register(new TargetIndicatorMod());
+		mods.register(new TntTimerMod());
+		mods.register(new ChunkBordersMod());
 		mods.register(new ItemPhysicsMod());
 		mods.register(new Items2DMod());
 		mods.register(new ParticlesMod());
@@ -85,6 +93,8 @@ public final class BuiltinMods {
 		mods.register(new HitDelayFixMod());
 		mods.register(new NoJumpDelayMod());
 		mods.register(new SnapTapMod());
+		mods.register(new QuickSwitchMod());
+		mods.register(new StreamerModeMod());
 		mods.register(new FpsDisplayMod(left(0)));
 		mods.register(new PingDisplayMod(left(1)));
 		mods.register(new CpsDisplayMod(left(2)));
@@ -111,6 +121,8 @@ public final class BuiltinMods {
 		mods.register(new InventoryDisplayMod(new ScreenPosition(Anchor.BOTTOM_RIGHT, -MARGIN, -MARGIN)));
 		mods.register(new PackDisplayMod(new ScreenPosition(Anchor.BOTTOM_LEFT, MARGIN, -MARGIN)));
 		mods.register(new MusicInfoMod(left(8)));
+		mods.register(new CompassMod(new ScreenPosition(Anchor.TOP_CENTER, 0.0, MARGIN)));
+		mods.register(new SoundSubtitlesMod(new ScreenPosition(Anchor.CENTER_RIGHT, -MARGIN, 0.0)));
 	}
 
 	private static ScreenPosition left(int row) {

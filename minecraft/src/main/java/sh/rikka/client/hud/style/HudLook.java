@@ -116,6 +116,21 @@ public final class HudLook implements AutoCloseable {
 		return inked(text, MUTED);
 	}
 
+	public Element mark(Element box) {
+		return marked(box, 1.0F);
+	}
+
+	public Element mutedMark(Element box) {
+		return marked(box, MUTED);
+	}
+
+	private Element marked(Element box, float share) {
+		if (this.preset.text() == HudInk.ACCENT) {
+			return box.background(CLEAR).backgroundGradient(accent(share));
+		}
+		return box.background(Colors.fade(this.textColor, share));
+	}
+
 	private Element inked(Element text, float share) {
 		if (this.preset.text() == HudInk.ACCENT) {
 			text.tintGradient(accent(share));
