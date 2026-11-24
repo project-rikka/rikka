@@ -17,7 +17,7 @@ use rikka_gpu::error::Result;
 use super::PrimitivePipeline;
 use super::store::{Store, refresh};
 
-const BINDINGS: usize = 8;
+const BINDINGS: usize = 9;
 
 pub(super) type SetBindings = [BufferBinding; BINDINGS];
 
@@ -200,6 +200,13 @@ impl PrimitivePipeline {
             retained_scene,
             &upload.extras,
         )?;
+        let (paint_buffer, paint_bytes) = store.paints.refresh(
+            &self.device,
+            ctx,
+            "rikka.node_paints",
+            retained_scene,
+            &upload.paints,
+        )?;
         let conversions = self.colors.bind(&self.device, ctx, colors, space)?;
 
         let set = self.instance_sets[ctx.frame_slot];
@@ -212,6 +219,7 @@ impl PrimitivePipeline {
             move_buffer,
             conversions,
             extra_buffer,
+            paint_buffer,
         ];
         let written = &mut self.written[ctx.frame_slot];
         if *written != Some(bindings) {
@@ -225,7 +233,8 @@ impl PrimitivePipeline {
                 + clip_bytes
                 + shown_bytes
                 + move_bytes
-                + extra_bytes,
+                + extra_bytes
+                + paint_bytes,
             instances: instance_bytes / size_of::<GpuInstance>(),
         })
     }
@@ -243,6 +252,7 @@ impl PrimitivePipeline {
             store.captured.reset_epochs();
             store.moves.reset_epochs();
             store.extras.reset_epochs();
+            store.paints.reset_epochs();
         }
     }
 }

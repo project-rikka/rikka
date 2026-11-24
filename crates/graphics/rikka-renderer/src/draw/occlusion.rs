@@ -55,11 +55,17 @@ pub(crate) struct ReblurRegion {
 }
 
 pub(crate) fn may_occlude(node: &Node) -> bool {
+    let opaque_fill = match node
+        .gradients
+        .as_deref()
+        .and_then(|gradients| gradients.fill)
+    {
+        Some(gradient) => gradient.is_opaque(),
+        None => node.fill.a >= 1.0,
+    };
     let solid = match node.shape {
-        Shape::Rect | Shape::RoundedRect { .. } => node.backdrop.is_some() || node.fill.a >= 1.0,
-        Shape::Image { rotation, .. } => {
-            node.opaque.is_some() && rotation == 0.0 && node.fill.a >= 1.0
-        }
+        Shape::Rect | Shape::RoundedRect { .. } => node.backdrop.is_some() || opaque_fill,
+        Shape::Image { rotation, .. } => node.opaque.is_some() && rotation == 0.0 && opaque_fill,
         _ => false,
     };
     solid

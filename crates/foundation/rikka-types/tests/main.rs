@@ -1,6 +1,7 @@
 mod cancel;
 mod color;
 mod geometry;
+mod gradient;
 mod lens;
 mod locale;
 mod scroll_delta;

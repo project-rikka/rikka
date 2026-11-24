@@ -111,8 +111,12 @@ impl Batcher {
                         ledger: &retained.moves.ledger,
                     },
                     extras: Ledgered {
-                        data: &retained.extras.entries,
-                        ledger: &retained.extras.ledger,
+                        data: &retained.extras.clips.entries,
+                        ledger: &retained.extras.clips.ledger,
+                    },
+                    paints: Ledgered {
+                        data: &retained.extras.paints.entries,
+                        ledger: &retained.extras.paints.ledger,
                     },
                 },
             },
@@ -144,8 +148,12 @@ impl Batcher {
                             ledger: &direct.moves.ledger,
                         },
                         extras: Ledgered {
-                            data: &direct.extras.entries,
-                            ledger: &direct.extras.ledger,
+                            data: &direct.extras.clips.entries,
+                            ledger: &direct.extras.clips.ledger,
+                        },
+                        paints: Ledgered {
+                            data: &direct.extras.paints.entries,
+                            ledger: &direct.extras.paints.ledger,
                         },
                     },
                 }

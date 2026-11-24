@@ -6,11 +6,13 @@ use rikka_animation::{Curve, Motion};
 use rikka_renderer::{Blur, Transform};
 use rikka_text::{ColorScheme, IconSpec, TextLayout, TextPaint};
 use rikka_theme::{Palette, Theme, Translucency};
-use rikka_types::{Color, CornerRadii, Lens, Point, Rect, RoundedRect, Size, WindowView};
+use rikka_types::{Color, CornerRadii, Gradient, Lens, Point, Rect, RoundedRect, Size, WindowView};
 
 use crate::icon_source::IconSource;
 use crate::motion::{Animatable, Clock, Motions, POPPED};
+use crate::paint::ink::Ink;
 use crate::paint::revealing::Revealing;
+use crate::paint::shadow::Shadow;
 use crate::paint::sprite::Sprite;
 use crate::picture::ImageSource;
 use crate::scroll::Reveal;
@@ -94,10 +96,22 @@ pub(crate) enum Primitive {
     Quad {
         rect: Rect,
         fill: Color,
+        fill_gradient: Option<Box<Gradient>>,
         radii: CornerRadii,
         stroke: Option<(f32, Color)>,
+        stroke_gradient: Option<Box<Gradient>>,
         blur: Option<f32>,
         lens: Option<Lens>,
+        cutout: Option<RoundedRect>,
+        clip: Option<RoundedRect>,
+        opacity: f32,
+    },
+    Shadow {
+        rect: Rect,
+        radii: CornerRadii,
+        sigma: f32,
+        color: Color,
+        gradient: Option<Box<Gradient>>,
         cutout: Option<RoundedRect>,
         clip: Option<RoundedRect>,
         opacity: f32,
@@ -116,6 +130,7 @@ pub(crate) enum Primitive {
         run: TextRun,
         paint: TextPaint,
         color: Color,
+        gradient: Option<Box<Gradient>>,
         clip: Option<RoundedRect>,
     },
     Icon {
@@ -123,6 +138,7 @@ pub(crate) enum Primitive {
         spec: IconSpec,
         scale: f32,
         color: Color,
+        gradient: Option<Box<Gradient>>,
         clip: Option<RoundedRect>,
     },
     Image {
@@ -130,6 +146,7 @@ pub(crate) enum Primitive {
         source: ImageSource,
         placeholder: Option<ImageSource>,
         tint: Color,
+        gradient: Option<Box<Gradient>>,
         pixelated: bool,
         radii: CornerRadii,
         turn: f32,
@@ -152,6 +169,7 @@ impl Primitive {
         let back = Point::new(-origin.x, -origin.y);
         match self {
             Primitive::Quad { rect, .. }
+            | Primitive::Shadow { rect, .. }
             | Primitive::Text { rect, .. }
             | Primitive::Icon { rect, .. }
             | Primitive::Image { rect, .. }
@@ -176,6 +194,9 @@ impl Primitive {
         };
         match self {
             Primitive::Quad {
+                rect, clip, cutout, ..
+            }
+            | Primitive::Shadow {
                 rect, clip, cutout, ..
             } => {
                 *rect = settled(*rect);
@@ -216,6 +237,7 @@ impl Primitive {
     pub(crate) fn clip(&self) -> Option<RoundedRect> {
         match self {
             Primitive::Quad { clip, .. }
+            | Primitive::Shadow { clip, .. }
             | Primitive::Arc { clip, .. }
             | Primitive::Text { clip, .. }
             | Primitive::Icon { clip, .. }
@@ -232,6 +254,7 @@ impl Primitive {
     pub(crate) fn set_clip(&mut self, shape: Option<RoundedRect>) {
         match self {
             Primitive::Quad { clip, .. }
+            | Primitive::Shadow { clip, .. }
             | Primitive::Arc { clip, .. }
             | Primitive::Text { clip, .. }
             | Primitive::Icon { clip, .. }
@@ -246,6 +269,9 @@ impl Primitive {
             Primitive::Quad {
                 cutout: Some(_),
                 ..
+            } | Primitive::Shadow {
+                cutout: Some(_),
+                ..
             }
         )
     }
@@ -257,7 +283,7 @@ impl Primitive {
             }
         };
         match self {
-            Primitive::Quad { clip, cutout, .. } => {
+            Primitive::Quad { clip, cutout, .. } | Primitive::Shadow { clip, cutout, .. } => {
                 moved(clip);
                 moved(cutout);
             }
@@ -270,26 +296,46 @@ impl Primitive {
     }
     fn fades_by(&mut self, opacity: f32) -> bool {
         match self {
-            Primitive::Quad { opacity: alpha, .. } => *alpha *= opacity,
-            Primitive::Arc { color, .. }
-            | Primitive::Icon { color, .. }
-            | Primitive::Segment { color, .. } => {
+            Primitive::Quad { opacity: alpha, .. } | Primitive::Shadow { opacity: alpha, .. } => {
+                *alpha *= opacity;
+            }
+            Primitive::Arc { color, .. } | Primitive::Segment { color, .. } => {
                 *color = color.scale_alpha(opacity);
             }
+            Primitive::Icon {
+                color, gradient, ..
+            } => {
+                *color = color.scale_alpha(opacity);
+                fade_gradient(gradient, opacity);
+            }
             Primitive::Text { run, .. } if !run.spans.is_empty() => return false,
-            Primitive::Text { color, .. } => *color = color.scale_alpha(opacity),
-            Primitive::Image { tint, .. } => *tint = tint.scale_alpha(opacity),
+            Primitive::Text {
+                color, gradient, ..
+            } => {
+                *color = color.scale_alpha(opacity);
+                fade_gradient(gradient, opacity);
+            }
+            Primitive::Image { tint, gradient, .. } => {
+                *tint = tint.scale_alpha(opacity);
+                fade_gradient(gradient, opacity);
+            }
         }
         true
+    }
+}
+
+fn fade_gradient(gradient: &mut Option<Box<Gradient>>, opacity: f32) {
+    if let Some(gradient) = gradient {
+        **gradient = gradient.scale_alpha(opacity);
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Quad {
     rect: Rect,
-    fill: Color,
+    fill: Ink,
     radii: CornerRadii,
-    stroke: Option<(f32, Color)>,
+    stroke: Option<(f32, Ink)>,
     blur: Option<f32>,
     cutout: Option<RoundedRect>,
 }
@@ -298,7 +344,7 @@ impl Quad {
     pub fn new(rect: Rect) -> Self {
         Self {
             rect,
-            fill: Color::TRANSPARENT,
+            fill: Ink::Solid(Color::TRANSPARENT),
             radii: CornerRadii::ZERO,
             stroke: None,
             blur: None,
@@ -306,8 +352,8 @@ impl Quad {
         }
     }
 
-    pub fn fill(mut self, color: Color) -> Self {
-        self.fill = color;
+    pub fn fill(mut self, ink: impl Into<Ink>) -> Self {
+        self.fill = ink.into();
         self
     }
 
@@ -316,8 +362,8 @@ impl Quad {
         self
     }
 
-    pub fn stroke(mut self, width: f32, color: Color) -> Self {
-        self.stroke = Some((width, color));
+    pub fn stroke(mut self, width: f32, ink: impl Into<Ink>) -> Self {
+        self.stroke = Some((width, ink.into()));
         self
     }
 
@@ -914,14 +960,34 @@ impl PaintCtx<'_> {
     fn push_quad(&mut self, quad: Quad, lens: Option<Lens>) {
         let scale = self.scale;
         let frost = lens.map_or(1.0, Lens::frost);
+        let (stroke, stroke_gradient) = match quad.stroke {
+            Some((width, ink)) => (Some((width * scale, ink.color())), ink.gradient()),
+            None => (None, None),
+        };
         self.push(Primitive::Quad {
             rect: self.place(quad.rect),
-            fill: quad.fill,
+            fill: quad.fill.color(),
+            fill_gradient: quad.fill.gradient(),
             radii: quad.radii * scale,
-            stroke: quad.stroke.map(|(w, c)| (w * scale, c)),
+            stroke,
+            stroke_gradient,
             blur: quad.blur.map(|sigma| sigma * scale * frost),
             lens,
             cutout: quad.cutout.map(|shape| self.place_shape(shape)),
+            clip: self.physical_clip(),
+            opacity: 1.0,
+        });
+    }
+
+    pub fn draw_shadow(&mut self, shape: RoundedRect, shadow: Shadow) {
+        let cast = self.place_shape(shadow.cast(shape));
+        self.push(Primitive::Shadow {
+            rect: cast.rect,
+            radii: cast.radii,
+            sigma: shadow.sigma() * self.scale,
+            color: shadow.ink.color(),
+            gradient: shadow.ink.gradient(),
+            cutout: Some(self.place_shape(shape)),
             clip: self.physical_clip(),
             opacity: 1.0,
         });
@@ -965,17 +1031,17 @@ impl PaintCtx<'_> {
         });
     }
 
-    pub fn draw_text(&mut self, rect: Rect, run: TextRun, color: Color) {
+    pub fn draw_text(&mut self, rect: Rect, run: TextRun, ink: impl Into<Ink>) {
         let width = rect.width();
         let laid = self
             .layouts
             .leaf(self.node)
             .and_then(|leaf| leaf.laid(&run, width))
             .unwrap_or_else(|| rikka_text::layout_approx(run.as_shape(), Some(width)));
-        self.draw_laid_text(rect, run, laid, color);
+        self.draw_laid_text(rect, run, laid, ink);
     }
 
-    pub(crate) fn draw_measured_text(&mut self, rect: Rect, color: Color) -> bool {
+    pub(crate) fn draw_measured_text(&mut self, rect: Rect, ink: impl Into<Ink>) -> bool {
         let Some(leaf) = self.layouts.leaf(self.node) else {
             return false;
         };
@@ -991,7 +1057,7 @@ impl PaintCtx<'_> {
             .laid_within(width)
             .unwrap_or_else(|| rikka_text::layout_approx(run.as_shape(), Some(width)));
         let run = run.clone();
-        self.draw_laid_text(rect, run, laid, color);
+        self.draw_laid_text(rect, run, laid, ink);
         true
     }
 
@@ -1000,7 +1066,7 @@ impl PaintCtx<'_> {
         rect: Rect,
         run: TextRun,
         laid: Arc<TextLayout>,
-        color: Color,
+        ink: impl Into<Ink>,
     ) {
         let scheme = match self.theme().is_dark() {
             true => ColorScheme::Dark,
@@ -1011,11 +1077,13 @@ impl PaintCtx<'_> {
             .scaled(self.scale)
             .with_color_scheme(scheme);
         let run = crate::text::elide::shown(run, &paint.layout);
+        let ink = ink.into();
         self.push(Primitive::Text {
             rect: self.place(rect),
             run,
             paint,
-            color,
+            color: ink.color(),
+            gradient: ink.gradient(),
             clip: self.physical_clip(),
         });
     }
@@ -1030,12 +1098,14 @@ impl PaintCtx<'_> {
         self.draw_text(rect, run, color);
     }
 
-    pub fn draw_icon(&mut self, rect: Rect, spec: IconSpec, color: Color) {
+    pub fn draw_icon(&mut self, rect: Rect, spec: IconSpec, ink: impl Into<Ink>) {
+        let ink = ink.into();
         self.push(Primitive::Icon {
             rect: self.place(rect),
             spec,
             scale: self.scale,
-            color,
+            color: ink.color(),
+            gradient: ink.gradient(),
             clip: self.physical_clip(),
         });
     }
@@ -1048,8 +1118,8 @@ impl PaintCtx<'_> {
         self.draw_sprite(Sprite::new(rect, source).pixelated());
     }
 
-    pub fn draw_mask(&mut self, rect: Rect, source: impl Into<ImageSource>, color: Color) {
-        self.draw_sprite(Sprite::new(rect, source).tinted(color));
+    pub fn draw_mask(&mut self, rect: Rect, source: impl Into<ImageSource>, ink: impl Into<Ink>) {
+        self.draw_sprite(Sprite::new(rect, source).tinted(ink));
     }
 
     pub fn draw_sprite(&mut self, sprite: Sprite) {
@@ -1060,7 +1130,8 @@ impl PaintCtx<'_> {
                 .placeholder
                 .map(|placeholder| placeholder.rastered_for(rect.size)),
             rect,
-            tint: sprite.tint,
+            tint: sprite.tint.color(),
+            gradient: sprite.tint.gradient(),
             pixelated: sprite.pixelated,
             radii: sprite.radii * self.scale,
             turn: sprite.turn,

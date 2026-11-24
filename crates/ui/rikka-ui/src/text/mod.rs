@@ -5,6 +5,7 @@ pub mod elide;
 mod keying;
 mod run;
 pub mod selection;
+mod shadow;
 pub(crate) mod shaping;
 mod style;
 mod widget;
@@ -20,5 +21,6 @@ pub use rikka_text_document::{
     Splice, Travel, place_of,
 };
 pub use run::TextRun;
+pub use shadow::TextShadow;
 pub use style::{TextColor, TextRole, TextStyle, TextStyled};
 pub use widget::{Text, text};

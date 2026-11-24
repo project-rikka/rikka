@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rikka_app::embedded::Background;
+use rikka_app::embedded::{Background, SurfaceBackground};
 use rikka_ui::Event;
 
 use crate::embedding::{
@@ -68,12 +68,16 @@ pub(crate) fn embedding_set_theme(embedding: &Embedding, slug: &str) {
 }
 
 pub(crate) fn embedding_set_background(embedding: &Embedding, background: ffi::ThemeBackground) {
-    embedding.set_background(match background {
+    embedding.set_background(chosen(background));
+}
+
+fn chosen(background: ffi::ThemeBackground) -> Option<Background> {
+    match background {
         ffi::ThemeBackground::Desktop => None,
         ffi::ThemeBackground::Solid => Some(Background::Solid),
         ffi::ThemeBackground::Glass => Some(Background::Glass),
         ffi::ThemeBackground::Liquid => Some(Background::Liquid),
-    });
+    }
 }
 
 pub(crate) fn embedded_surface_builder_new(view: Callback<ffi::ViewFn>) -> EmbeddedSurfaceBuilder {
@@ -107,6 +111,20 @@ pub(crate) fn embedded_surface_leave(surface: &EmbeddedSurface) {
 
 pub(crate) fn embedded_surface_rejoin(surface: &EmbeddedSurface) {
     surface.rejoin();
+}
+
+pub(crate) fn embedded_surface_set_background(
+    surface: &EmbeddedSurface,
+    background: ffi::ThemeBackground,
+) {
+    surface.set_background(match chosen(background) {
+        Some(background) => SurfaceBackground::Fixed(background),
+        None => SurfaceBackground::Desktop,
+    });
+}
+
+pub(crate) fn embedded_surface_follow_background(surface: &EmbeddedSurface) {
+    surface.set_background(SurfaceBackground::Embedding);
 }
 
 pub(crate) fn embedded_surface_window(surface: &EmbeddedSurface) -> Arc<Window> {

@@ -18,6 +18,9 @@ public sealed interface Page {
 	record Themes() implements Page {
 	}
 
+	record Hud() implements Page {
+	}
+
 	record Preferences() implements Page {
 	}
 }

@@ -1,6 +1,7 @@
 use rikka_renderer::Transform;
 use rikka_types::{Color, CornerRadii, Rect};
 
+use crate::paint::ink::Ink;
 use crate::picture::ImageSource;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -12,7 +13,7 @@ pub struct Sprite {
     pub(crate) turn: f32,
     pub(crate) mirror: Transform,
     pub(crate) pixelated: bool,
-    pub(crate) tint: Color,
+    pub(crate) tint: Ink,
 }
 
 impl Sprite {
@@ -25,7 +26,7 @@ impl Sprite {
             turn: 0.0,
             mirror: Transform::Normal,
             pixelated: false,
-            tint: Color::WHITE,
+            tint: Ink::Solid(Color::WHITE),
         }
     }
 
@@ -54,8 +55,8 @@ impl Sprite {
         self
     }
 
-    pub fn tinted(mut self, tint: Color) -> Self {
-        self.tint = tint;
+    pub fn tinted(mut self, tint: impl Into<Ink>) -> Self {
+        self.tint = tint.into();
         self
     }
 

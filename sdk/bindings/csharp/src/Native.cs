@@ -196,6 +196,18 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_image_unref")]
     internal static partial void rk_image_unref(nint image);
 
+    [LibraryImport(Library, EntryPoint = "rk_gradient_new_linear")]
+    internal static partial nint rk_gradient_new_linear(float angle, Native.Color from, Native.Color to);
+
+    [LibraryImport(Library, EntryPoint = "rk_gradient_with_stop")]
+    internal static partial nint rk_gradient_with_stop(nint gradient, float offset, Native.Color color);
+
+    [LibraryImport(Library, EntryPoint = "rk_gradient_ref")]
+    internal static partial nint rk_gradient_ref(nint gradient);
+
+    [LibraryImport(Library, EntryPoint = "rk_gradient_unref")]
+    internal static partial void rk_gradient_unref(nint gradient);
+
     [LibraryImport(Library, EntryPoint = "rk_sound_new")]
     internal static partial nint rk_sound_new(Str path);
 
@@ -516,6 +528,12 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_embedded_surface_rejoin")]
     internal static partial void rk_embedded_surface_rejoin(nint surface);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_set_background")]
+    internal static partial void rk_embedded_surface_set_background(nint surface, uint background);
+
+    [LibraryImport(Library, EntryPoint = "rk_embedded_surface_follow_background")]
+    internal static partial void rk_embedded_surface_follow_background(nint surface);
 
     [LibraryImport(Library, EntryPoint = "rk_embedded_surface_ref")]
     internal static partial nint rk_embedded_surface_ref(nint surface);
@@ -856,6 +874,18 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_border")]
     internal static partial void rk_border(nint view, float width, Native.Color color);
 
+    [LibraryImport(Library, EntryPoint = "rk_background_gradient")]
+    internal static partial void rk_background_gradient(nint view, nint gradient);
+
+    [LibraryImport(Library, EntryPoint = "rk_border_gradient")]
+    internal static partial void rk_border_gradient(nint view, float width, nint gradient);
+
+    [LibraryImport(Library, EntryPoint = "rk_shadow")]
+    internal static partial void rk_shadow(nint view, float blur, float spread, float x, float y, Native.Color color);
+
+    [LibraryImport(Library, EntryPoint = "rk_shadow_gradient")]
+    internal static partial void rk_shadow_gradient(nint view, float blur, float spread, float x, float y, nint gradient);
+
     [LibraryImport(Library, EntryPoint = "rk_clip_content")]
     internal static partial void rk_clip_content(nint view);
 
@@ -888,6 +918,12 @@ internal static unsafe partial class Native
 
     [LibraryImport(Library, EntryPoint = "rk_tint")]
     internal static partial void rk_tint(nint view, Native.Color color);
+
+    [LibraryImport(Library, EntryPoint = "rk_tint_gradient")]
+    internal static partial void rk_tint_gradient(nint view, nint gradient);
+
+    [LibraryImport(Library, EntryPoint = "rk_text_shadow")]
+    internal static partial void rk_text_shadow(nint view, float x, float y, Native.Color color);
 
     [LibraryImport(Library, EntryPoint = "rk_icon_size")]
     internal static partial void rk_icon_size(nint view, float size);

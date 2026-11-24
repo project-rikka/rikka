@@ -1,16 +1,14 @@
 package sh.rikka.client.mod;
 
 import net.minecraft.client.Minecraft;
-import os.rikka.Color;
 import os.rikka.View;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.setting.DoubleSetting;
 import sh.rikka.client.setting.PositionSetting;
 import sh.rikka.client.setting.ScreenPosition;
 
 public abstract class HudMod extends Mod {
 	public static final float UNITS_PER_GUI_PIXEL = 13.0F / 9.0F;
-
-	protected static final Color BACKDROP = new Color(0.0F, 0.0F, 0.0F, 0.4F);
 
 	private static final double MIN_SCALE = 0.5;
 	private static final double MAX_SCALE = 3.0;
@@ -38,7 +36,7 @@ public abstract class HudMod extends Mod {
 
 	public abstract float height();
 
-	protected abstract void view(View view);
+	protected abstract void view(View view, HudLook look);
 
 	public boolean animating() {
 		return false;
@@ -56,9 +54,9 @@ public abstract class HudMod extends Mod {
 		return new HudBounds(placement.left(screenWidth, width), placement.top(screenHeight, height), width, height);
 	}
 
-	public final void place(View view, float screenWidth, float screenHeight) {
+	public final void place(View view, HudLook look, float screenWidth, float screenHeight) {
 		HudBounds bounds = bounds(screenWidth, screenHeight);
-		view.column(() -> view(view))
+		view.column(() -> view(view, look))
 			.position(bounds.left(), bounds.top())
 			.width(width())
 			.height(height())

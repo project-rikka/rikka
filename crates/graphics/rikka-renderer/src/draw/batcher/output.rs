@@ -1,6 +1,6 @@
 use crate::draw::arena::Ledger;
 use crate::draw::chunks::{Chunk, Segment};
-use crate::draw::instance::{GpuGroupClip, GpuInstance};
+use crate::draw::instance::{GpuGroupClip, GpuInstance, GpuPaint};
 use crate::draw::retained::RetainedBatch;
 use crate::scene::SceneId;
 
@@ -21,6 +21,7 @@ pub(crate) struct Upload<'a> {
     pub captured: Ledgered<'a, u32>,
     pub moves: Ledgered<'a, [f32; 2]>,
     pub extras: Ledgered<'a, GpuGroupClip>,
+    pub paints: Ledgered<'a, GpuPaint>,
 }
 
 pub(crate) struct Ledgered<'a, T> {

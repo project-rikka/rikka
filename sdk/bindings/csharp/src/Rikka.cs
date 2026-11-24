@@ -1510,6 +1510,83 @@ public sealed unsafe class Image : IDisposable, IEquatable<Image>
 
 /// <summary>
 /// <para>
+/// Colours that blend along a straight line across what they paint, in premultiplied sRGB as in CSS: box
+/// fills, outlines and shadows, text and icons. The line runs through the painted element's centre and is
+/// long enough that its ends just reach the farthest corners.
+/// </para>
+/// <para>
+/// It holds one reference to a native object usable from any thread; disposing it or the finalizer drops the
+/// reference.
+/// </para>
+/// </summary>
+
+public sealed unsafe class Gradient : IDisposable, IEquatable<Gradient>
+{
+    internal readonly NativeHandle handle;
+
+    private Gradient(NativeHandle handle) => this.handle = handle;
+
+    internal static Gradient Adopt(nint raw) => new(Handle(raw));
+
+    private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_gradient_unref, false, nameof(Gradient));
+
+    /// <summary>
+    /// <para>
+    /// A gradient from one colour to another.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    /// <param name="angle">Degrees clockwise from upward, as in CSS: 90 runs from left to right.</param>
+    /// <param name="from">The from.</param>
+    /// <param name="to">The to.</param>
+    public static Gradient FromLinear(float angle, Color from, Color to)
+    {
+        return Adopt(Native.rk_gradient_new_linear(angle, Native.Color.From(from), Native.Color.From(to)));
+    }
+
+    /// <summary>
+    /// <para>
+    /// This gradient with one more colour stop, at most 8 in all. A stop at the offset of others goes after
+    /// them.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    /// <param name="offset">
+    /// Where the colour sits along the line, from 0 at its start to 1 at its end.
+    /// </param>
+    /// <param name="color">The color.</param>
+    public Gradient WithStop(float offset, Color color)
+    {
+        using var self = handle.Lease();
+        return Gradient.Adopt(Native.rk_gradient_with_stop(self.Raw, offset, Native.Color.From(color)));
+    }
+
+    /// <summary>
+    /// Releases the native object now; a disposed or handed-over object refuses further use.
+    /// </summary>
+    public void Dispose() => handle.Dispose();
+
+    /// <summary>
+    /// Whether both hold the same native object.
+    /// </summary>
+    /// <param name="other">The object to compare with.</param>
+    /// <returns>Whether they are the same object.</returns>
+    public bool Equals(Gradient? other) =>
+        other is not null && other.handle.DangerousGetHandle() == handle.DangerousGetHandle();
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as Gradient);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => handle.DangerousGetHandle().GetHashCode();
+}
+
+/// <summary>
+/// <para>
 /// A sound or piece of music played from a file: MP3, FLAC, Ogg Vorbis, Opus, WAV, AAC and the like. It opens
 /// in the background and streams, so long pieces cost little memory. Views that read its state or position
 /// run again as it plays. A playing sound keeps playing after its last reference is gone, until it pauses or
@@ -3178,6 +3255,26 @@ public sealed unsafe class EmbeddedSurface : IDisposable, IEquatable<EmbeddedSur
     }
 
     /// <summary>
+    /// Draws this surface over another background than the embedding's, so its glass panes blur or refract
+    /// differently; <see cref="ThemeBackground.Desktop"/> follows the desktop's.
+    /// </summary>
+    /// <param name="background">The background.</param>
+    public void SetBackground(ThemeBackground background)
+    {
+        using var self = handle.Lease();
+        Native.rk_embedded_surface_set_background(self.Raw, (uint)background);
+    }
+
+    /// <summary>
+    /// Draws this surface over the embedding's background again.
+    /// </summary>
+    public void FollowBackground()
+    {
+        using var self = handle.Lease();
+        Native.rk_embedded_surface_follow_background(self.Raw);
+    }
+
+    /// <summary>
     /// Releases the native object now; a disposed or handed-over object refuses further use.
     /// </summary>
     public void Dispose() => handle.Dispose();
@@ -4660,6 +4757,65 @@ public readonly unsafe struct Element
     }
 
     /// <summary>
+    /// Fills the current box with a gradient in place of its background colour.
+    /// </summary>
+    /// <param name="gradient">The gradient.</param>
+    public Element BackgroundGradient(Gradient gradient)
+    {
+        ArgumentNullException.ThrowIfNull(gradient);
+        using var gradientLease = gradient.handle.Lease();
+        Native.rk_background_gradient(Raw, gradientLease.Raw);
+        return this;
+    }
+
+    /// <summary>
+    /// Outlines the current box with a gradient.
+    /// </summary>
+    /// <param name="width">The width.</param>
+    /// <param name="gradient">The gradient.</param>
+    public Element BorderGradient(float width, Gradient gradient)
+    {
+        ArgumentNullException.ThrowIfNull(gradient);
+        using var gradientLease = gradient.handle.Lease();
+        Native.rk_border_gradient(Raw, width, gradientLease.Raw);
+        return this;
+    }
+
+    /// <summary>
+    /// Casts a shadow around the current box, outside its rounded bounds, as CSS box-shadow does. Each call
+    /// adds a shadow beneath the earlier ones.
+    /// </summary>
+    /// <param name="blur">The blur radius; 0 draws a hard edge.</param>
+    /// <param name="spread">
+    /// How far the shadow reaches past the box before it blurs; negative shrinks it.
+    /// </param>
+    /// <param name="x">How far right the shadow falls.</param>
+    /// <param name="y">How far down the shadow falls.</param>
+    /// <param name="color">The color.</param>
+    public Element Shadow(float blur, float spread, float x, float y, Color color)
+    {
+        Native.rk_shadow(Raw, blur, spread, x, y, Native.Color.From(color));
+        return this;
+    }
+
+    /// <summary>
+    /// Casts a shadow around the current box painted with a gradient, a glow; see <see
+    /// cref="Element.Shadow"/>.
+    /// </summary>
+    /// <param name="blur">The blur.</param>
+    /// <param name="spread">The spread.</param>
+    /// <param name="x">The x.</param>
+    /// <param name="y">The y.</param>
+    /// <param name="gradient">The gradient.</param>
+    public Element ShadowGradient(float blur, float spread, float x, float y, Gradient gradient)
+    {
+        ArgumentNullException.ThrowIfNull(gradient);
+        using var gradientLease = gradient.handle.Lease();
+        Native.rk_shadow_gradient(Raw, blur, spread, x, y, gradientLease.Raw);
+        return this;
+    }
+
+    /// <summary>
     /// Clips the current box's children to its rounded bounds.
     /// </summary>
     public Element ClipContent()
@@ -4762,6 +4918,30 @@ public readonly unsafe struct Element
     public Element Tint(Color color)
     {
         Native.rk_tint(Raw, Native.Color.From(color));
+        return this;
+    }
+
+    /// <summary>
+    /// Paints the current text or icon with a gradient across its bounds in place of its colour.
+    /// </summary>
+    /// <param name="gradient">The gradient.</param>
+    public Element TintGradient(Gradient gradient)
+    {
+        ArgumentNullException.ThrowIfNull(gradient);
+        using var gradientLease = gradient.handle.Lease();
+        Native.rk_tint_gradient(Raw, gradientLease.Raw);
+        return this;
+    }
+
+    /// <summary>
+    /// Draws a copy of the current text or icon beneath it, offset and in one colour.
+    /// </summary>
+    /// <param name="x">How far right the copy falls.</param>
+    /// <param name="y">How far down the copy falls.</param>
+    /// <param name="color">The color.</param>
+    public Element TextShadow(float x, float y, Color color)
+    {
+        Native.rk_text_shadow(Raw, x, y, Native.Color.From(color));
         return this;
     }
 

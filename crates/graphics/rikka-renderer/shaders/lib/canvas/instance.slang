@@ -14,7 +14,7 @@ struct Instance {
     uint shown;
     uint clip_index;
     uint cut_index;
-    uint padding;
+    uint paint_index;
 }
 
 struct Push {
@@ -52,6 +52,9 @@ static const uint FLAG_UV_SWAP = 32u;
 static const uint FLAG_OUTSIDE_GROUP_CLIP = 64u;
 static const uint FLAG_PIXELATED = 128u;
 static const uint FLAG_TURNED = 256u;
+static const uint FLAG_FILL_GRADIENT = 512u;
+static const uint FLAG_STROKE_GRADIENT = 1024u;
+static const uint FLAG_SHADOW = 2048u;
 
 struct Varyings {
     float4 position : SV_Position;
@@ -65,4 +68,6 @@ struct Varyings {
     [[vk::location(7)]] nointerpolation float2 clip_shift : CLIP_SHIFT;
     [[vk::location(8)]] nointerpolation float4 clip : CLIP;
     [[vk::location(9)]] nointerpolation float4 clip_radii : CLIP_RADII;
+    [[vk::location(10)]] nointerpolation uint paint : PAINT;
+    [[vk::location(11)]] float2 paint_t : PAINT_T;
 }

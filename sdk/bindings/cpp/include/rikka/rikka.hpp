@@ -661,6 +661,7 @@ class WindowBuilder;
 class FileChooser;
 class Window;
 class Image;
+class Gradient;
 class Sound;
 class SoundTags;
 class Video;
@@ -1300,6 +1301,78 @@ private:
     Image(detail::Adopt, rk_image* raw) noexcept : raw_(raw) {}
 
     rk_image* raw_ = nullptr;
+};
+
+/**
+ * Colours that blend along a straight line across what they paint, in premultiplied sRGB as in
+ * CSS: box fills, outlines and shadows, text and icons. The line runs through the painted
+ * element's centre and is long enough that its ends just reach the farthest corners.
+ *
+ * Copies share one reference-counted object, usable from any thread.
+ */
+class Gradient {
+public:
+    Gradient(const Gradient& other) noexcept : raw_(rk_gradient_ref(other.raw_)) {}
+
+    Gradient(Gradient&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    Gradient& operator=(Gradient other) noexcept {
+        swap(other);
+        return *this;
+    }
+
+    ~Gradient() {
+        rk_gradient_unref(raw_);
+    }
+
+    /**
+     * Takes over one reference to a handle from the C API.
+     */
+    [[nodiscard]] static Gradient adopt(rk_gradient* raw) noexcept {
+        return Gradient(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API; this object keeps its reference.
+     */
+    [[nodiscard]] rk_gradient* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives this object's reference to the caller, leaving it empty.
+     */
+    [[nodiscard]] rk_gradient* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(Gradient& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * A gradient from one colour to another.
+     *
+     * Thread-safe.
+     *
+     * @param angle Degrees clockwise from upward, as in CSS: 90 runs from left to right.
+     */
+    [[nodiscard]] static Gradient from_linear(float angle, const Color& from, const Color& to);
+
+    /**
+     * This gradient with one more colour stop, at most 8 in all. A stop at the offset of others
+     * goes after them.
+     *
+     * Thread-safe.
+     *
+     * @param offset Where the colour sits along the line, from 0 at its start to 1 at its end.
+     */
+    [[nodiscard]] Gradient with_stop(float offset, const Color& color);
+
+private:
+    Gradient(detail::Adopt, rk_gradient* raw) noexcept : raw_(raw) {}
+
+    rk_gradient* raw_ = nullptr;
 };
 
 /**
@@ -2471,6 +2544,17 @@ public:
      */
     void rejoin();
 
+    /**
+     * Draws this surface over another background than the embedding's, so its glass panes blur
+     * or refract differently; rikka::ThemeBackground::desktop follows the desktop's.
+     */
+    void set_background(ThemeBackground background);
+
+    /**
+     * Draws this surface over the embedding's background again.
+     */
+    void follow_background();
+
 private:
     EmbeddedSurface(detail::Adopt, rk_embedded_surface* raw) noexcept : raw_(raw) {}
 
@@ -3305,6 +3389,34 @@ public:
     Element& border(float width, const Color& color);
 
     /**
+     * Fills the current box with a gradient in place of its background colour.
+     */
+    Element& background_gradient(const Gradient& gradient);
+
+    /**
+     * Outlines the current box with a gradient.
+     */
+    Element& border_gradient(float width, const Gradient& gradient);
+
+    /**
+     * Casts a shadow around the current box, outside its rounded bounds, as CSS box-shadow
+     * does. Each call adds a shadow beneath the earlier ones.
+     *
+     * @param blur The blur radius; 0 draws a hard edge.
+     * @param spread How far the shadow reaches past the box before it blurs; negative shrinks
+     * it.
+     * @param x How far right the shadow falls.
+     * @param y How far down the shadow falls.
+     */
+    Element& shadow(float blur, float spread, float x, float y, const Color& color);
+
+    /**
+     * Casts a shadow around the current box painted with a gradient, a glow; see
+     * rikka::Element::shadow().
+     */
+    Element& shadow_gradient(float blur, float spread, float x, float y, const Gradient& gradient);
+
+    /**
      * Clips the current box's children to its rounded bounds.
      */
     Element& clip_content();
@@ -3359,6 +3471,19 @@ public:
      * banner.
      */
     Element& tint(const Color& color);
+
+    /**
+     * Paints the current text or icon with a gradient across its bounds in place of its colour.
+     */
+    Element& tint_gradient(const Gradient& gradient);
+
+    /**
+     * Draws a copy of the current text or icon beneath it, offset and in one colour.
+     *
+     * @param x How far right the copy falls.
+     * @param y How far down the copy falls.
+     */
+    Element& text_shadow(float x, float y, const Color& color);
 
     /**
      * Sets the current icon's size in logical pixels.
@@ -4133,6 +4258,14 @@ inline Image Image::from_rgba(std::uint32_t width, std::uint32_t height, std::sp
     return Image::adopt(rk_image_new_rgba(width, height, pixels.data(), pixels.size()));
 }
 
+inline Gradient Gradient::from_linear(float angle, const Color& from, const Color& to) {
+    return Gradient::adopt(rk_gradient_new_linear(angle, detail::convert(from), detail::convert(to)));
+}
+
+inline Gradient Gradient::with_stop(float offset, const Color& color) {
+    return Gradient::adopt(rk_gradient_with_stop(raw_, offset, detail::convert(color)));
+}
+
 inline Sound::Sound(std::string_view path) {
     raw_ = rk_sound_new(detail::str(path));
 }
@@ -4567,6 +4700,14 @@ inline void EmbeddedSurface::leave() {
 
 inline void EmbeddedSurface::rejoin() {
     rk_embedded_surface_rejoin(raw_);
+}
+
+inline void EmbeddedSurface::set_background(ThemeBackground background) {
+    rk_embedded_surface_set_background(raw_, static_cast<rk_theme_background>(background));
+}
+
+inline void EmbeddedSurface::follow_background() {
+    rk_embedded_surface_follow_background(raw_);
 }
 
 inline Window Context::window() const {
@@ -5252,6 +5393,26 @@ inline Element& Element::border(float width, const Color& color) {
     return *this;
 }
 
+inline Element& Element::background_gradient(const Gradient& gradient) {
+    rk_background_gradient(raw_, gradient.raw());
+    return *this;
+}
+
+inline Element& Element::border_gradient(float width, const Gradient& gradient) {
+    rk_border_gradient(raw_, width, gradient.raw());
+    return *this;
+}
+
+inline Element& Element::shadow(float blur, float spread, float x, float y, const Color& color) {
+    rk_shadow(raw_, blur, spread, x, y, detail::convert(color));
+    return *this;
+}
+
+inline Element& Element::shadow_gradient(float blur, float spread, float x, float y, const Gradient& gradient) {
+    rk_shadow_gradient(raw_, blur, spread, x, y, gradient.raw());
+    return *this;
+}
+
 inline Element& Element::clip_content() {
     rk_clip_content(raw_);
     return *this;
@@ -5304,6 +5465,16 @@ inline Element& Element::text_line_height(float line_height) {
 
 inline Element& Element::tint(const Color& color) {
     rk_tint(raw_, detail::convert(color));
+    return *this;
+}
+
+inline Element& Element::tint_gradient(const Gradient& gradient) {
+    rk_tint_gradient(raw_, gradient.raw());
+    return *this;
+}
+
+inline Element& Element::text_shadow(float x, float y, const Color& color) {
+    rk_text_shadow(raw_, x, y, detail::convert(color));
     return *this;
 }
 

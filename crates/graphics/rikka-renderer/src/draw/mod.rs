@@ -1,8 +1,8 @@
 pub(crate) mod arena;
 pub(crate) mod batcher;
 pub(crate) mod chunks;
-pub(crate) mod clips;
 pub(crate) mod emit;
+pub(crate) mod extras;
 pub(crate) mod fades;
 pub(crate) mod glyph_refs;
 pub(crate) mod groups;

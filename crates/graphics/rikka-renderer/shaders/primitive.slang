@@ -2,6 +2,8 @@ import canvas.instance;
 import canvas.sdf;
 import canvas.glyph_curves;
 import canvas.color;
+import canvas.gradient;
+import canvas.shadow;
 
 struct GroupClip {
     float4 clip;
@@ -123,6 +125,14 @@ Varyings vertex(int vertex_index : SV_VulkanVertexID, int instance_index : SV_Vu
         out.clip = UNCLIPPED;
         out.clip_radii = float4(0.0);
     }
+    out.paint = inst.paint_index;
+    out.paint_t = float2(0.0);
+    if ((flags & (FLAG_FILL_GRADIENT | FLAG_STROKE_GRADIENT)) != 0u) {
+        float2 emitted = pos - shift;
+        Paint paint = node_paints[inst.paint_index];
+        out.paint_t = float2(gradient_along(paint.fill.line, emitted),
+                             gradient_along(paint.stroke.line, emitted));
+    }
 
     float2 placed = pos / pc.target.xy;
     if (pc.target[2] > 0.5) {
@@ -168,6 +178,14 @@ float4 converted(float4 sampled, uint decode_mode, uint color_slot) {
     return convert(sampled, conversions[color_slot]);
 }
 
+float4 painted(Gradient gradient, float t, float opacity, float2 pos, uint encode_mode) {
+    float4 color = convert(gradient_at(gradient, t), conversions[0]) * opacity;
+    if (encode_mode != ENCODE_LINEAR) {
+        color.rgb += (dither(pos) - 0.5) * color.a * (1.0 / 255.0);
+    }
+    return color;
+}
+
 float coverage(float sdf) {
     return clamp(0.5 - sdf, 0.0, 1.0);
 }
@@ -203,12 +221,21 @@ float4 fragment(Varyings in) : SV_Target {
         discard;
     }
 
+    float4 fill = in.fill;
+    float4 stroke = in.stroke;
+    if ((flags & FLAG_FILL_GRADIENT) != 0u && kind != KIND_GLYPH_COLOR) {
+        fill = painted(node_paints[in.paint].fill, in.paint_t.x, opacity, pos, encode_mode);
+    }
+    if ((flags & FLAG_STROKE_GRADIENT) != 0u) {
+        stroke = painted(node_paints[in.paint].stroke, in.paint_t.y, opacity, pos, encode_mode);
+    }
+
     if (kind == KIND_GLYPH_MASK) {
         float mask = textures[NonUniformResourceIndex(tex)].SampleLevel(in.uv, 0.0).r;
-        return in.fill * mask * clip_cov;
+        return fill * mask * clip_cov;
     }
     if (kind == KIND_GLYPH_CURVES) {
-        return in.fill * glyph_curve_coverage(tex, in.uv, in.radii.x) * clip_cov;
+        return fill * glyph_curve_coverage(tex, in.uv, in.radii.x) * clip_cov;
     }
     if (kind == KIND_GLYPH_COLOR) {
         float4 s = converted(textures[NonUniformResourceIndex(tex)].SampleLevel(in.uv, 0.0),
@@ -219,7 +246,16 @@ float4 fragment(Varyings in) : SV_Target {
     if ((flags & FLAG_ARC) != 0u) {
         float r = min(half_size.x, half_size.y);
         float rb = min(stroke_width * 0.5, r);
-        return in.stroke * coverage(sd_arc(p, in.radii, r - rb, rb)) * clip_cov;
+        return stroke * coverage(sd_arc(p, in.radii, r - rb, rb)) * clip_cov;
+    }
+
+    if ((flags & FLAG_SHADOW) != 0u) {
+        float sigma = stroke_width;
+        float2 half_shape = max(half_size - ceil(sigma * SHADOW_REACH), float2(0.0));
+        float shade = (sigma > 0.0)
+            ? rounded_box_shadow(p, half_shape, in.radii, sigma)
+            : coverage(sd_rounded_rect(p, half_shape, in.radii));
+        return fill * clamp(shade, 0.0, 1.0) * clip_cov;
     }
 
     float sdf = ((flags & FLAG_CIRCLE) != 0u)
@@ -243,9 +279,9 @@ float4 fragment(Varyings in) : SV_Target {
             }
         }
 
-        base = converted(s, decode_mode, color_slot) * in.fill;
+        base = converted(s, decode_mode, color_slot) * fill;
     } else if (kind == KIND_BACKDROP && tex != NO_GLASS) {
-        float4 tint = in.fill;
+        float4 tint = fill;
         float2 at = clamp(in.uv, pc.glass_bounds.xy, pc.glass_bounds.zw);
         float4 s = textures[pc.glass_tex].SampleLevel(at, 0.0);
 
@@ -265,11 +301,11 @@ float4 fragment(Varyings in) : SV_Target {
             base.rgb += (dither(pos) - 0.5) * base.a * (1.0 / 255.0);
         }
     } else {
-        base = in.fill;
+        base = fill;
     }
 
     float outer = coverage(sdf);
     float inner = (stroke_width > 0.0) ? coverage(sdf + stroke_width) : outer;
 
-    return (base * inner + in.stroke * (outer - inner)) * clip_cov;
+    return (base * inner + stroke * (outer - inner)) * clip_cov;
 }

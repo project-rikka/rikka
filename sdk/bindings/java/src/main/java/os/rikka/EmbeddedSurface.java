@@ -318,6 +318,36 @@ public final class EmbeddedSurface implements AutoCloseable {
     }
 
     /**
+     * Draws this surface over another background than the embedding's, so its glass panes blur
+     * or refract differently; {@link ThemeBackground#DESKTOP} follows the desktop's.
+     *
+     * @param background the background
+     */
+    public void setBackground(ThemeBackground background) {
+        Objects.requireNonNull(background, "background");
+        try {
+            Native.RK_EMBEDDED_SURFACE_SET_BACKGROUND.invokeExact(handle.raw(), background.value());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    /**
+     * Draws this surface over the embedding's background again.
+     */
+    public void followBackground() {
+        try {
+            Native.RK_EMBEDDED_SURFACE_FOLLOW_BACKGROUND.invokeExact(handle.raw());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    /**
      * Releases the native object now; a closed or handed-over object refuses further use.
      */
     @Override

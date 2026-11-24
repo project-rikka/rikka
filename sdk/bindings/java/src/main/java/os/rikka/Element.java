@@ -4,6 +4,7 @@ package os.rikka;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.ref.Reference;
 import java.util.Objects;
 import java.util.Set;
 
@@ -524,6 +525,88 @@ public final class Element {
     }
 
     /**
+     * Fills the current box with a gradient in place of its background colour.
+     *
+     * @param gradient the gradient
+     * @return this element
+     */
+    public Element backgroundGradient(Gradient gradient) {
+        Objects.requireNonNull(gradient, "gradient");
+        try {
+            Native.RK_BACKGROUND_GRADIENT.invokeExact(view.current(serial), gradient.handle.raw());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(gradient);
+        }
+        return this;
+    }
+
+    /**
+     * Outlines the current box with a gradient.
+     *
+     * @param width the width
+     * @param gradient the gradient
+     * @return this element
+     */
+    public Element borderGradient(float width, Gradient gradient) {
+        Objects.requireNonNull(gradient, "gradient");
+        try {
+            Native.RK_BORDER_GRADIENT.invokeExact(view.current(serial), width, gradient.handle.raw());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(gradient);
+        }
+        return this;
+    }
+
+    /**
+     * Casts a shadow around the current box, outside its rounded bounds, as CSS box-shadow
+     * does. Each call adds a shadow beneath the earlier ones.
+     *
+     * @param blur The blur radius; 0 draws a hard edge.
+     * @param spread How far the shadow reaches past the box before it blurs; negative shrinks
+     * it.
+     * @param x How far right the shadow falls.
+     * @param y How far down the shadow falls.
+     * @param color the color
+     * @return this element
+     */
+    public Element shadow(float blur, float spread, float x, float y, Color color) {
+        Objects.requireNonNull(color, "color");
+        try (Arena arena = Arena.ofConfined()) {
+            Native.RK_SHADOW.invokeExact(view.current(serial), blur, spread, x, y, Native.color(arena, color));
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+        return this;
+    }
+
+    /**
+     * Casts a shadow around the current box painted with a gradient, a glow; see {@link
+     * Element#shadow}.
+     *
+     * @param blur the blur
+     * @param spread the spread
+     * @param x the x
+     * @param y the y
+     * @param gradient the gradient
+     * @return this element
+     */
+    public Element shadowGradient(float blur, float spread, float x, float y, Gradient gradient) {
+        Objects.requireNonNull(gradient, "gradient");
+        try {
+            Native.RK_SHADOW_GRADIENT.invokeExact(view.current(serial), blur, spread, x, y, gradient.handle.raw());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(gradient);
+        }
+        return this;
+    }
+
+    /**
      * Clips the current box's children to its rounded bounds.
      *
      * @return this element
@@ -684,6 +767,42 @@ public final class Element {
         Objects.requireNonNull(color, "color");
         try (Arena arena = Arena.ofConfined()) {
             Native.RK_TINT.invokeExact(view.current(serial), Native.color(arena, color));
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        }
+        return this;
+    }
+
+    /**
+     * Paints the current text or icon with a gradient across its bounds in place of its colour.
+     *
+     * @param gradient the gradient
+     * @return this element
+     */
+    public Element tintGradient(Gradient gradient) {
+        Objects.requireNonNull(gradient, "gradient");
+        try {
+            Native.RK_TINT_GRADIENT.invokeExact(view.current(serial), gradient.handle.raw());
+        } catch (Throwable failure) {
+            throw Native.rethrow(failure);
+        } finally {
+            Reference.reachabilityFence(gradient);
+        }
+        return this;
+    }
+
+    /**
+     * Draws a copy of the current text or icon beneath it, offset and in one colour.
+     *
+     * @param x How far right the copy falls.
+     * @param y How far down the copy falls.
+     * @param color the color
+     * @return this element
+     */
+    public Element textShadow(float x, float y, Color color) {
+        Objects.requireNonNull(color, "color");
+        try (Arena arena = Arena.ofConfined()) {
+            Native.RK_TEXT_SHADOW.invokeExact(view.current(serial), x, y, Native.color(arena, color));
         } catch (Throwable failure) {
             throw Native.rethrow(failure);
         }

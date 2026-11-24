@@ -25,6 +25,7 @@ TYPES = [
     "FilesCallback",
     "Fit",
     "FontWeight",
+    "Gradient",
     "Handle",
     "Image",
     "IndexCallback",

@@ -1,4 +1,4 @@
-use rikka_types::{Color, CornerRadii, Rect, RoundedRect};
+use rikka_types::{Color, CornerRadii, Gradient, Rect, RoundedRect};
 
 use crate::scene::{Node, Scene};
 
@@ -18,6 +18,9 @@ pub(crate) const FLAG_UV_SWAP: u32 = 32;
 pub(crate) const FLAG_OUTSIDE_GROUP_CLIP: u32 = 64;
 pub(crate) const FLAG_PIXELATED: u32 = 128;
 pub(crate) const FLAG_TURNED: u32 = 256;
+pub(crate) const FLAG_FILL_GRADIENT: u32 = 512;
+pub(crate) const FLAG_STROKE_GRADIENT: u32 = 1024;
+pub(crate) const FLAG_SHADOW: u32 = 2048;
 
 const KIND_MASK: u32 = 0x7;
 const FLAGS_SHIFT: u32 = 3;
@@ -26,9 +29,10 @@ const COLOR_SHIFT: u32 = 16;
 const COLOR_MASK: u32 = 0xFFFF;
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct ClipSlots {
+pub(crate) struct ExtraSlots {
     pub clip: u32,
     pub cut: u32,
+    pub paint: u32,
 }
 
 #[repr(C)]
@@ -49,7 +53,7 @@ pub(crate) struct GpuInstance {
     pub shown: u32,
     pub clip_index: u32,
     pub cut_index: u32,
-    pub padding: u32,
+    pub paint_index: u32,
 }
 
 const _: () = assert!(size_of::<GpuInstance>() == 128);
@@ -72,7 +76,7 @@ impl GpuInstance {
             shown: 0,
             clip_index: 0,
             cut_index: 0,
-            padding: 0,
+            paint_index: 0,
         }
     }
 
@@ -84,7 +88,7 @@ impl GpuInstance {
         self.meta = (self.meta & !KIND_MASK) | (kind & KIND_MASK);
     }
 
-    pub(crate) fn placed(mut self, node: &Node, clips: ClipSlots) -> Self {
+    pub(crate) fn placed(mut self, node: &Node, clips: ExtraSlots) -> Self {
         self.group = Scene::group_slot(node.group);
         self.clip_group = Scene::group_slot(node.clip_group);
         if !node.clipped_by_group {
@@ -97,6 +101,16 @@ impl GpuInstance {
         if clips.cut != 0 {
             self.cut_index = clips.cut;
             self = self.with_flags(FLAG_CUT);
+        }
+        if clips.paint != 0 {
+            self.paint_index = clips.paint;
+            let gradients = node.gradients.as_deref();
+            if gradients.is_some_and(|gradients| gradients.fill.is_some()) {
+                self = self.with_flags(FLAG_FILL_GRADIENT);
+            }
+            if gradients.is_some_and(|gradients| gradients.stroke.is_some()) {
+                self = self.with_flags(FLAG_STROKE_GRADIENT);
+            }
         }
         self
     }
@@ -191,5 +205,67 @@ impl GpuGroupClip {
             Some(clip) => Self::from_rounded(clip),
             None => Self::UNCLIPPED,
         }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub(crate) struct GpuGradient {
+    pub line: [f32; 4],
+    pub offsets: [f32; Gradient::MAX_STOPS],
+    pub colors: [[f32; 4]; Gradient::MAX_STOPS],
+    pub count: u32,
+    pub padding: [u32; 3],
+}
+
+const _: () = assert!(size_of::<GpuGradient>() == 192);
+
+impl GpuGradient {
+    const NONE: Self = Self {
+        line: [0.0; 4],
+        offsets: [0.0; Gradient::MAX_STOPS],
+        colors: [[0.0; 4]; Gradient::MAX_STOPS],
+        count: 0,
+        padding: [0; 3],
+    };
+
+    fn of(gradient: Option<Gradient>, rect: Rect) -> Self {
+        let Some(gradient) = gradient else {
+            return Self::NONE;
+        };
+        let (start, end) = gradient.line(rect);
+        let mut placed = Self {
+            line: [start.x, start.y, end.x, end.y],
+            ..Self::NONE
+        };
+        for (at, stop) in gradient.stops().iter().enumerate() {
+            placed.offsets[at] = stop.offset;
+            placed.colors[at] = stop.color.to_premultiplied();
+        }
+        placed.count = gradient.stops().len() as u32;
+        placed
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub(crate) struct GpuPaint {
+    pub fill: GpuGradient,
+    pub stroke: GpuGradient,
+}
+
+impl GpuPaint {
+    pub(crate) const UNPAINTED: Self = Self {
+        fill: GpuGradient::NONE,
+        stroke: GpuGradient::NONE,
+    };
+
+    pub(crate) fn of(node: &Node) -> Option<Self> {
+        let gradients = node.gradients.as_deref()?;
+        let rect = node.painted_rect();
+        Some(Self {
+            fill: GpuGradient::of(gradients.fill, rect),
+            stroke: GpuGradient::of(gradients.stroke, rect),
+        })
     }
 }

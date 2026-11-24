@@ -705,6 +705,15 @@ typedef struct rk_window rk_window;
 typedef struct rk_image rk_image;
 
 /**
+ * Colours that blend along a straight line across what they paint, in premultiplied sRGB as in
+ * CSS: box fills, outlines and shadows, text and icons. The line runs through the painted
+ * element's centre and is long enough that its ends just reach the farthest corners.
+ *
+ * Reference-counted with rk_gradient_ref() and rk_gradient_unref(); usable from any thread.
+ */
+typedef struct rk_gradient rk_gradient;
+
+/**
  * A sound or piece of music played from a file: MP3, FLAC, Ogg Vorbis, Opus, WAV, AAC and the
  * like. It opens in the background and streams, so long pieces cost little memory. Views that
  * read its state or position run again as it plays. A playing sound keeps playing after its
@@ -1296,6 +1305,43 @@ RK_API rk_image *rk_image_ref(rk_image *image);
  * Thread-safe.
  */
 RK_API void rk_image_unref(rk_image *image);
+
+/**
+ * A gradient from one colour to another.
+ *
+ * Thread-safe.
+ *
+ * @param angle Degrees clockwise from upward, as in CSS: 90 runs from left to right.
+ * @return The caller owns the result; release it with rk_gradient_unref().
+ */
+RK_API RK_NODISCARD rk_gradient *rk_gradient_new_linear(float angle, rk_color from, rk_color to);
+
+/**
+ * This gradient with one more colour stop, at most 8 in all. A stop at the offset of others
+ * goes after them.
+ *
+ * Thread-safe.
+ *
+ * @param offset Where the colour sits along the line, from 0 at its start to 1 at its end.
+ * @return The caller owns the result; release it with rk_gradient_unref().
+ */
+RK_API RK_NODISCARD rk_gradient *rk_gradient_with_stop(rk_gradient *gradient, float offset, rk_color color);
+
+/**
+ * Adds a reference to a gradient. Passing NULL returns NULL.
+ *
+ * Thread-safe.
+ *
+ * @return `gradient` itself.
+ */
+RK_API rk_gradient *rk_gradient_ref(rk_gradient *gradient);
+
+/**
+ * Drops a reference to a gradient; the last one destroys it. Passing NULL does nothing.
+ *
+ * Thread-safe.
+ */
+RK_API void rk_gradient_unref(rk_gradient *gradient);
 
 /**
  * Opens a sound file in the background.
@@ -2107,6 +2153,17 @@ RK_API void rk_embedded_surface_leave(rk_embedded_surface *surface);
 RK_API void rk_embedded_surface_rejoin(rk_embedded_surface *surface);
 
 /**
+ * Draws this surface over another background than the embedding's, so its glass panes blur or
+ * refract differently; RK_THEME_BACKGROUND_DESKTOP follows the desktop's.
+ */
+RK_API void rk_embedded_surface_set_background(rk_embedded_surface *surface, rk_theme_background background);
+
+/**
+ * Draws this surface over the embedding's background again.
+ */
+RK_API void rk_embedded_surface_follow_background(rk_embedded_surface *surface);
+
+/**
  * Adds a reference to an embedded surface. Passing NULL returns NULL.
  *
  * @return `surface` itself.
@@ -2849,6 +2906,32 @@ RK_API void rk_corner_radius(rk_view *view, float radius);
 RK_API void rk_border(rk_view *view, float width, rk_color color);
 
 /**
+ * Fills the current box with a gradient in place of its background colour.
+ */
+RK_API void rk_background_gradient(rk_view *view, rk_gradient *gradient);
+
+/**
+ * Outlines the current box with a gradient.
+ */
+RK_API void rk_border_gradient(rk_view *view, float width, rk_gradient *gradient);
+
+/**
+ * Casts a shadow around the current box, outside its rounded bounds, as CSS box-shadow does.
+ * Each call adds a shadow beneath the earlier ones.
+ *
+ * @param blur The blur radius; 0 draws a hard edge.
+ * @param spread How far the shadow reaches past the box before it blurs; negative shrinks it.
+ * @param x How far right the shadow falls.
+ * @param y How far down the shadow falls.
+ */
+RK_API void rk_shadow(rk_view *view, float blur, float spread, float x, float y, rk_color color);
+
+/**
+ * Casts a shadow around the current box painted with a gradient, a glow; see rk_shadow().
+ */
+RK_API void rk_shadow_gradient(rk_view *view, float blur, float spread, float x, float y, rk_gradient *gradient);
+
+/**
  * Clips the current box's children to its rounded bounds.
  */
 RK_API void rk_clip_content(rk_view *view);
@@ -2902,6 +2985,19 @@ RK_API void rk_text_line_height(rk_view *view, float line_height);
  * Colours the current text, icon, slider, progress bar, spinner, gauge, list item or banner.
  */
 RK_API void rk_tint(rk_view *view, rk_color color);
+
+/**
+ * Paints the current text or icon with a gradient across its bounds in place of its colour.
+ */
+RK_API void rk_tint_gradient(rk_view *view, rk_gradient *gradient);
+
+/**
+ * Draws a copy of the current text or icon beneath it, offset and in one colour.
+ *
+ * @param x How far right the copy falls.
+ * @param y How far down the copy falls.
+ */
+RK_API void rk_text_shadow(rk_view *view, float x, float y, rk_color color);
 
 /**
  * Sets the current icon's size in logical pixels.

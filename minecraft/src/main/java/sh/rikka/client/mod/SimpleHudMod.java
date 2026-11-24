@@ -3,14 +3,12 @@ package sh.rikka.client.mod;
 import net.minecraft.client.resources.language.I18n;
 import org.jspecify.annotations.Nullable;
 import os.rikka.Align;
-import os.rikka.Color;
 import os.rikka.Element;
 import os.rikka.Rikka;
 import os.rikka.View;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.setting.BoolSetting;
-import sh.rikka.client.setting.ColorSetting;
 import sh.rikka.client.setting.ScreenPosition;
-import sh.rikka.client.ui.style.Colors;
 
 public abstract class SimpleHudMod extends HudMod {
 	public static final String UNAVAILABLE = "—";
@@ -20,21 +18,15 @@ public abstract class SimpleHudMod extends HudMod {
 	private static final float GAP = 6.0F;
 	private static final float ICON_SIZE = 15.0F;
 	private static final float TEXT_SIZE = 13.0F;
-	private static final float CORNER_RADIUS = 9.0F;
-	private static final int DEFAULT_COLOR = 0xFFFFFFFF;
 
 	private final BoolSetting showIcon;
 	private final BoolSetting showBackground;
-	private final BoolSetting customColor;
-	private final ColorSetting color;
 
 	@SuppressWarnings("this-escape")
 	protected SimpleHudMod(String id, ScreenPosition defaultPosition, String icon) {
 		super(id, defaultPosition, icon);
 		this.showIcon = bool("icon", true);
 		this.showBackground = bool("background", true);
-		this.customColor = bool("custom_color", false);
-		this.color = color("color", DEFAULT_COLOR).visibleWhen(this.customColor::get);
 	}
 
 	protected abstract String label();
@@ -59,34 +51,32 @@ public abstract class SimpleHudMod extends HudMod {
 	}
 
 	@Override
-	protected final void view(View view) {
+	protected final void view(View view, HudLook look) {
 		String text = label();
 		@Nullable String icon = this.showIcon.get() ? shownIcon() : null;
-		Color tint = Colors.of(this.customColor.get() ? this.color.argb() : DEFAULT_COLOR);
-		view.row(() -> panel(view, text, icon, tint))
+		view.row(() -> panel(view, look, text, icon))
 			.fillWidth()
 			.fillHeight()
 			.alignItems(Align.CENTER);
 	}
 
-	private void panel(View view, String text, @Nullable String icon, Color tint) {
-		Element panel = view.box(() -> view.row(() -> content(view, text, icon, tint))
+	private void panel(View view, HudLook look, String text, @Nullable String icon) {
+		Element panel = view.box(() -> view.row(() -> content(view, look, text, icon))
 				.fillHeight()
 				.gap(GAP)
 				.alignItems(Align.CENTER))
 			.height(HEIGHT)
 			.shrink(0.0F)
-			.paddingEdges(0.0F, PADDING, 0.0F, PADDING)
-			.cornerRadius(CORNER_RADIUS);
+			.paddingEdges(0.0F, PADDING, 0.0F, PADDING);
 		if (this.showBackground.get()) {
-			panel.glass().background(BACKDROP);
+			look.panel(panel);
 		}
 	}
 
-	private static void content(View view, String text, @Nullable String icon, Color tint) {
+	private static void content(View view, HudLook look, String text, @Nullable String icon) {
 		if (icon != null) {
-			view.icon(icon).iconSize(ICON_SIZE).tint(tint);
+			look.text(view.icon(icon).iconSize(ICON_SIZE));
 		}
-		view.text(text).textSize(TEXT_SIZE).textNoWrap().tint(tint);
+		look.text(view.text(text).textSize(TEXT_SIZE).textNoWrap());
 	}
 }

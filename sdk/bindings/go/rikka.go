@@ -1661,6 +1661,55 @@ func NewImageFromRGBA(width uint32, height uint32, pixels []byte) *Image {
 	return newImage(C.rk_image_new_rgba(C.uint32_t(width), C.uint32_t(height), (*C.uint8_t)(unsafe.Pointer(unsafe.SliceData(pixels))), C.size_t(len(pixels))))
 }
 
+// Gradient describes colours that blend along a straight line across what they paint, in
+// premultiplied sRGB as in CSS: box fills, outlines and shadows, text and icons. The line runs
+// through the painted element's centre and is long enough that its ends just reach the farthest
+// corners.
+//
+// It holds one reference to a native object usable from any goroutine; the garbage collector
+// drops the reference.
+type Gradient struct {
+	raw     *C.rk_gradient
+	cleanup runtime.Cleanup
+}
+
+func newGradient(raw *C.rk_gradient) *Gradient {
+	if raw == nil {
+		panic(unmade("Gradient"))
+	}
+	value := &Gradient{raw: raw}
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_gradient) { C.rk_gradient_unref(raw) }, raw)
+	return value
+}
+
+func (x *Gradient) handle() *C.rk_gradient {
+	if x == nil || x.raw == nil {
+		panic(consumed("Gradient"))
+	}
+	return x.raw
+}
+
+// NewGradientFromLinear returns a gradient from one colour to another.
+//
+// Thread-safe.
+//
+//   - angle: Degrees clockwise from upward, as in CSS: 90 runs from left to right.
+func NewGradientFromLinear(angle float32, from Color, to Color) *Gradient {
+	return newGradient(C.rk_gradient_new_linear(C.float(angle), from.native(), to.native()))
+}
+
+// WithStop this gradient with one more colour stop, at most 8 in all. A stop at the offset of
+// others goes after them.
+//
+// Thread-safe.
+//
+//   - offset: Where the colour sits along the line, from 0 at its start to 1 at its end.
+func (g *Gradient) WithStop(offset float32, color Color) *Gradient {
+	result := newGradient(C.rk_gradient_with_stop(g.handle(), C.float(offset), color.native()))
+	runtime.KeepAlive(g)
+	return result
+}
+
 // Sound is a sound or piece of music played from a file: MP3, FLAC, Ogg Vorbis, Opus, WAV, AAC
 // and the like. It opens in the background and streams, so long pieces cost little memory.
 // Views that read its state or position run again as it plays. A playing sound keeps playing
@@ -2777,6 +2826,19 @@ func (e *EmbeddedSurface) Rejoin() {
 	runtime.KeepAlive(e)
 }
 
+// SetBackground draws this surface over another background than the embedding's, so its glass
+// panes blur or refract differently; [ThemeBackgroundDesktop] follows the desktop's.
+func (e *EmbeddedSurface) SetBackground(background ThemeBackground) {
+	C.rk_embedded_surface_set_background(e.handle(), C.rk_theme_background(background))
+	runtime.KeepAlive(e)
+}
+
+// FollowBackground draws this surface over the embedding's background again.
+func (e *EmbeddedSurface) FollowBackground() {
+	C.rk_embedded_surface_follow_background(e.handle())
+	runtime.KeepAlive(e)
+}
+
 // Context is the context of a callback reacting to the person or the system.
 //
 // It is lent to a callback and valid only while the callback runs.
@@ -3776,6 +3838,40 @@ func (e Element) Border(width float32, color Color) Element {
 	return e
 }
 
+// BackgroundGradient fills the current box with a gradient in place of its background colour.
+func (e Element) BackgroundGradient(gradient *Gradient) Element {
+	C.rk_background_gradient(e.current(), gradient.handle())
+	runtime.KeepAlive(gradient)
+	return e
+}
+
+// BorderGradient outlines the current box with a gradient.
+func (e Element) BorderGradient(width float32, gradient *Gradient) Element {
+	C.rk_border_gradient(e.current(), C.float(width), gradient.handle())
+	runtime.KeepAlive(gradient)
+	return e
+}
+
+// Shadow casts a shadow around the current box, outside its rounded bounds, as CSS box-shadow
+// does. Each call adds a shadow beneath the earlier ones.
+//
+//   - blur: The blur radius; 0 draws a hard edge.
+//   - spread: How far the shadow reaches past the box before it blurs; negative shrinks it.
+//   - x: How far right the shadow falls.
+//   - y: How far down the shadow falls.
+func (e Element) Shadow(blur float32, spread float32, x float32, y float32, color Color) Element {
+	C.rk_shadow(e.current(), C.float(blur), C.float(spread), C.float(x), C.float(y), color.native())
+	return e
+}
+
+// ShadowGradient casts a shadow around the current box painted with a gradient, a glow; see
+// [Element.Shadow].
+func (e Element) ShadowGradient(blur float32, spread float32, x float32, y float32, gradient *Gradient) Element {
+	C.rk_shadow_gradient(e.current(), C.float(blur), C.float(spread), C.float(x), C.float(y), gradient.handle())
+	runtime.KeepAlive(gradient)
+	return e
+}
+
 // ClipContent clips the current box's children to its rounded bounds.
 func (e Element) ClipContent() Element {
 	C.rk_clip_content(e.current())
@@ -3841,6 +3937,23 @@ func (e Element) TextLineHeight(lineHeight float32) Element {
 // banner.
 func (e Element) Tint(color Color) Element {
 	C.rk_tint(e.current(), color.native())
+	return e
+}
+
+// TintGradient paints the current text or icon with a gradient across its bounds in place of
+// its colour.
+func (e Element) TintGradient(gradient *Gradient) Element {
+	C.rk_tint_gradient(e.current(), gradient.handle())
+	runtime.KeepAlive(gradient)
+	return e
+}
+
+// TextShadow draws a copy of the current text or icon beneath it, offset and in one colour.
+//
+//   - x: How far right the copy falls.
+//   - y: How far down the copy falls.
+func (e Element) TextShadow(x float32, y float32, color Color) Element {
+	C.rk_text_shadow(e.current(), C.float(x), C.float(y), color.native())
 	return e
 }
 

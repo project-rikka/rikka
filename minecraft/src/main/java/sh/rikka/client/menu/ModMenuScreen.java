@@ -3,6 +3,7 @@ package sh.rikka.client.menu;
 import com.mojang.blaze3d.platform.InputConstants;
 import java.nio.file.Path;
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -34,7 +35,7 @@ public final class ModMenuScreen extends RikkaScreen {
 	private static final float SEARCH_WIDTH = 240.0F;
 	private static final float SIDEBAR_TINT = 0.5F;
 	private static final float BORDER_ALPHA = 0.4F;
-	private static final int FIRST_MOD_PAGE = 5;
+	private static final int FIRST_MOD_PAGE = 6;
 
 	private final MenuState state;
 	private final SettingControls controls = new SettingControls();
@@ -44,6 +45,7 @@ public final class ModMenuScreen extends RikkaScreen {
 	private final ProfilesPage profiles = new ProfilesPage(this.controls::forgetAll);
 	private final ThemesPage themes = new ThemesPage();
 	private final PreferencesPage preferences = new PreferencesPage(new SettingRows(this.controls));
+	private final HudPage hud = new HudPage(new SettingRows(this.controls));
 	private @Nullable Subscription musicChanges;
 	private Page shown;
 
@@ -153,6 +155,7 @@ public final class ModMenuScreen extends RikkaScreen {
 			case Page.Music _ -> this.music.view(view, this.state);
 			case Page.Profiles _ -> scrolled(view, () -> this.profiles.view(view));
 			case Page.Themes _ -> scrolled(view, () -> this.themes.view(view));
+			case Page.Hud _ -> scrolled(view, () -> this.hud.view(view));
 			case Page.Preferences _ -> scrolled(view, () -> this.preferences.view(view));
 		}
 	}
@@ -173,6 +176,7 @@ public final class ModMenuScreen extends RikkaScreen {
 			case Page.Music _ -> Labels.of("nav.music");
 			case Page.Profiles _ -> Labels.of("nav.profiles");
 			case Page.Themes _ -> Labels.of("nav.themes");
+			case Page.Hud _ -> Labels.of("nav.hud");
 			case Page.Preferences _ -> Labels.of("nav.preferences");
 		};
 	}
@@ -183,7 +187,8 @@ public final class ModMenuScreen extends RikkaScreen {
 			case Page.Music _ -> 1;
 			case Page.Profiles _ -> 2;
 			case Page.Themes _ -> 3;
-			case Page.Preferences _ -> 4;
+			case Page.Hud _ -> 4;
+			case Page.Preferences _ -> 5;
 			case Page.ModSettings settings -> FIRST_MOD_PAGE + RikkaClient.mods().all().indexOf(settings.mod());
 		};
 	}
@@ -194,6 +199,14 @@ public final class ModMenuScreen extends RikkaScreen {
 
 	private void editHud() {
 		leaveTo(HudEditorScreen.fromMenu(this.state));
+	}
+
+	@Override
+	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+		super.extractRenderState(graphics, mouseX, mouseY, a);
+		if (this.shown instanceof Page.Hud && HudPage.isAnimated()) {
+			refresh();
+		}
 	}
 
 	@Override
@@ -247,5 +260,6 @@ public final class ModMenuScreen extends RikkaScreen {
 		this.profiles.close();
 		this.sidebar.close();
 		this.themes.close();
+		this.hud.close();
 	}
 }

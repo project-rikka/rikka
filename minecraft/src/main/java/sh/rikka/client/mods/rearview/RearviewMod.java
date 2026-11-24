@@ -14,12 +14,12 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import org.jspecify.annotations.Nullable;
-import os.rikka.Color;
 import os.rikka.Element;
 import os.rikka.View;
 import sh.rikka.client.RikkaClient;
 import sh.rikka.client.event.EventHandler;
 import sh.rikka.client.events.ResourceReloadEvent;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.mod.HudCanvas;
 import sh.rikka.client.mod.OverlayHudMod;
 import sh.rikka.client.render.GuiMesh;
@@ -32,10 +32,8 @@ public final class RearviewMod extends OverlayHudMod {
 	private static final float WIDTH = 256.0F;
 	private static final float HEIGHT = 144.0F;
 	private static final float INSET = 2.0F;
-	private static final float BORDER_WIDTH = 1.0F;
 	private static final float CORNER_RADIUS = 12.0F;
 	private static final int CORNER_SEGMENTS = 8;
-	private static final Color BORDER = new Color(1.0F, 1.0F, 1.0F, 0.18F);
 	private static final RenderPipeline PIPELINE = RenderPipeline.builder()
 		.withLocation(Identifier.fromNamespaceAndPath(RikkaClient.MOD_ID, "pipeline/rearview"))
 		.withBindGroupLayout(BindGroupLayouts.GLOBALS)
@@ -108,11 +106,11 @@ public final class RearviewMod extends OverlayHudMod {
 	}
 
 	@Override
-	protected void view(View view) {
+	protected void view(View view, HudLook look) {
 		Element frame = view.box(() -> {
-		}).position(0.0F, 0.0F).width(WIDTH).height(HEIGHT).cornerRadius(CORNER_RADIUS);
+		}).position(0.0F, 0.0F).width(WIDTH).height(HEIGHT);
 		if (this.background.get()) {
-			frame.glass().background(BACKDROP).border(BORDER_WIDTH, BORDER);
+			look.panel(frame, CORNER_RADIUS);
 		}
 	}
 

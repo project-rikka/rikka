@@ -9,7 +9,6 @@ use rikka_clipboard::Clipboard;
 use rikka_gpu::ExternalDevice;
 use rikka_i18n::I18nBuilder;
 use rikka_renderer::{ExternalImage, Renderer};
-use rikka_theme::Theme;
 use rikka_types::{Color, CursorShape, Rect, Size};
 use rikka_ui::{Command, Event, State, Ui, WindowRequest};
 use rikka_ui_host::{Composer, VideoPlayback};
@@ -20,6 +19,7 @@ use crate::preload;
 use crate::sender::{Route, Sender, WindowAlive};
 use crate::wayland::settings::{self, SessionChange};
 
+pub use look::SurfaceBackground;
 pub(crate) use mail::{Mail, Post};
 pub use rikka_settings::session::appearance::Background;
 pub use surface::Embedded;
@@ -58,7 +58,7 @@ enum Deferred {
     },
     Leave(SurfaceId),
     Rejoin(SurfaceId),
-    Wear(Box<Theme>),
+    Wear,
 }
 
 struct Live {
@@ -143,6 +143,7 @@ impl Embedding {
     }
 
     pub fn close(&self, id: SurfaceId) {
+        self.look.borrow_mut().forget(id);
         self.defer(Deferred::Close(id));
     }
 
@@ -159,16 +160,24 @@ impl Embedding {
     }
 
     pub fn set_theme(&self, slug: Option<String>) {
-        let worn = self.look.borrow_mut().set_theme(slug);
-        if let Some(theme) = worn {
-            self.defer(Deferred::Wear(Box::new(theme)));
+        if self.look.borrow_mut().set_theme(slug) {
+            self.defer(Deferred::Wear);
         }
     }
 
     pub fn set_background(&self, background: Option<Background>) {
-        let worn = self.look.borrow_mut().set_background(background);
-        if let Some(theme) = worn {
-            self.defer(Deferred::Wear(Box::new(theme)));
+        if self.look.borrow_mut().set_background(background) {
+            self.defer(Deferred::Wear);
+        }
+    }
+
+    pub fn set_surface_background(&self, id: SurfaceId, background: SurfaceBackground) {
+        if self
+            .look
+            .borrow_mut()
+            .set_surface_background(id, background)
+        {
+            self.defer(Deferred::Wear);
         }
     }
 
@@ -267,7 +276,7 @@ impl Embedding {
                         hooks.departed = false;
                     }
                 }
-                Deferred::Wear(theme) => wear(live, &theme),
+                Deferred::Wear => wear(live, &self.look.borrow()),
             }
         }
     }
@@ -277,12 +286,12 @@ impl Embedding {
             match mail {
                 Mail::Message { surface, inbound } => live.composer.deliver(&surface, inbound),
                 Mail::Session(SessionChange::Appearance { appearance, theme }) => {
-                    let worn = self
+                    let changed = self
                         .look
                         .borrow_mut()
                         .follow(*appearance, theme.map(|theme| *theme));
-                    if let Some(theme) = worn {
-                        wear(live, &theme);
+                    if changed {
+                        wear(live, &self.look.borrow());
                     }
                 }
                 Mail::Session(SessionChange::Language) => {}
@@ -291,9 +300,12 @@ impl Embedding {
     }
 }
 
-fn wear(live: &mut Live, theme: &Theme) {
-    for (_, composed) in live.composer.iter_mut() {
-        composed.ui.set_theme(theme.clone());
+fn wear(live: &mut Live, look: &Look) {
+    for (id, composed) in live.composer.iter_mut() {
+        let theme = look.worn_by(*id);
+        if composed.ui.theme() != theme {
+            composed.ui.set_theme(theme.clone());
+        }
     }
 }
 
