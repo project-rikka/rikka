@@ -9,6 +9,7 @@
 		"ClientClockInstanceMixin",
 		"ClientClockManagerMixin",
 		"ClientLevelMixin",
+		"ConnectScreenMixin",
 		"ConnectionMixin",
 		"EntityRenderDispatcherMixin",
 		"EquipmentLayerRendererMixin",
