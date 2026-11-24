@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "rikka-client",
+	"id": "rikka",
 	"version": "${version}",
 	"name": "Rikka Client",
 	"description": "A Minecraft PvP client for Rikka.",
@@ -11,7 +11,7 @@
 		]
 	},
 	"mixins": [
-		"rikka-client.mixins.json"
+		"rikka.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=${loader_version}",

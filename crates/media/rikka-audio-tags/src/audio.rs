@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use music_core::Codec;
+use rikka_audio_decode::Codec;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Audio {

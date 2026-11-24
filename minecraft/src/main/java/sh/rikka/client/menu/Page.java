@@ -9,6 +9,9 @@ public sealed interface Page {
 	record ModSettings(Mod mod) implements Page {
 	}
 
+	record Music() implements Page {
+	}
+
 	record Profiles() implements Page {
 	}
 

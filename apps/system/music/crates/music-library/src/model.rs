@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 use music_core::{Fidelity, Isrc};
-use music_tags::ReplayGain;
+use rikka_audio_tags::ReplayGain;
 
 use crate::ids::{AlbumId, ArtistId, GenreId, TrackId};
 

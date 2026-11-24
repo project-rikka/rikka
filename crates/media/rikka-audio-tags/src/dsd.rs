@@ -1,7 +1,6 @@
 use std::path::Path;
 
-use music_core::Codec;
-use rikka_audio_decode::DsdInfo;
+use rikka_audio_decode::{Codec, DsdInfo};
 
 use crate::audio::Audio;
 use crate::error::{Error, Result};

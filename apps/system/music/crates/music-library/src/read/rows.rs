@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use music_core::{Codec, Fidelity, Isrc};
-use music_tags::{Gain, ReplayGain};
+use rikka_audio_tags::{Gain, ReplayGain};
 use rusqlite::Row;
 
 use crate::artwork::ArtworkCache;

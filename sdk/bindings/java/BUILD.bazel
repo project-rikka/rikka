@@ -43,6 +43,7 @@ TYPES = [
     "ShapeCallback",
     "SizeClass",
     "Sound",
+    "SoundTags",
     "Status",
     "StringCallback",
     "TextAlignment",

@@ -11,37 +11,44 @@ import sh.rikka.client.config.ProfileManager;
 import sh.rikka.client.event.Event;
 import sh.rikka.client.event.EventBus;
 import sh.rikka.client.events.CombatTracker;
+import sh.rikka.client.events.KeyPresses;
 import sh.rikka.client.menu.MenuKeys;
 import sh.rikka.client.mod.Mod;
 import sh.rikka.client.mod.ModKeybinds;
 import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mods.BuiltinMods;
+import sh.rikka.client.music.MusicKeys;
+import sh.rikka.client.music.MusicPlayer;
 import sh.rikka.client.target.TargetTracker;
 import sh.rikka.client.ui.HudOverlays;
 import sh.rikka.client.ui.RikkaUi;
 
 public final class RikkaClient implements ClientModInitializer {
-	public static final String MOD_ID = "rikka-client";
+	public static final String MOD_ID = "rikka";
 	public static final String NAME = "Rikka Client";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
+	private static final String MUSIC_FOLDER = "music";
 	private static final EventBus EVENTS = new EventBus(RikkaClient::onListenerFailure);
 	private static final TargetTracker TARGETS = new TargetTracker();
 	private static volatile @Nullable Services services;
 
 	@Override
 	public void onInitializeClient() {
+		FabricLoader loader = FabricLoader.getInstance();
 		ModManager mods = new ModManager(EVENTS);
 		BuiltinMods.register(mods);
 		mods.lock();
 		Preferences preferences = new Preferences();
-		ProfileManager profiles = ProfileManager.open(FabricLoader.getInstance().getConfigDir().resolve(MOD_ID), mods, preferences, EVENTS);
+		ProfileManager profiles = ProfileManager.open(loader.getConfigDir().resolve(MOD_ID), mods, preferences, EVENTS);
+		MusicPlayer music = MusicPlayer.open(loader.getGameDir().resolve(MOD_ID).resolve(MUSIC_FOLDER), preferences, EVENTS, Minecraft.getInstance());
 		EVENTS.subscribe(new ModKeybinds(mods));
 		EVENTS.subscribe(new CombatTracker(EVENTS));
 		EVENTS.subscribe(TARGETS);
 		EVENTS.subscribe(new HudOverlays(mods));
-		EVENTS.subscribe(new MenuKeys(preferences));
-		services = new Services(mods, preferences, profiles);
+		EVENTS.subscribe(new KeyPresses(new MenuKeys(preferences)));
+		EVENTS.subscribe(new KeyPresses(new MusicKeys(preferences, music)));
+		services = new Services(mods, preferences, profiles, music);
 		LOGGER.info("{} initialized with profile {}", NAME, profiles.active());
 	}
 
@@ -65,10 +72,15 @@ public final class RikkaClient implements ClientModInitializer {
 		return requireServices().profiles();
 	}
 
+	public static MusicPlayer music() {
+		return requireServices().music();
+	}
+
 	public static void shutdown() {
 		RikkaUi.shutdown();
 		Services current = services;
 		if (current != null) {
+			current.music().close();
 			current.profiles().close();
 		}
 	}
@@ -94,6 +106,6 @@ public final class RikkaClient implements ClientModInitializer {
 		}
 	}
 
-	private record Services(ModManager mods, Preferences preferences, ProfileManager profiles) {
+	private record Services(ModManager mods, Preferences preferences, ProfileManager profiles, MusicPlayer music) {
 	}
 }

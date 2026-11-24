@@ -662,6 +662,7 @@ class FileChooser;
 class Window;
 class Image;
 class Sound;
+class SoundTags;
 class Video;
 class TextDocument;
 class VulkanDevice;
@@ -1467,6 +1468,133 @@ private:
     Sound(detail::Adopt, rk_sound* raw) noexcept : raw_(raw) {}
 
     rk_sound* raw_ = nullptr;
+};
+
+/**
+ * The tags a sound file carries: its title, artists, album and cover, from ID3, Vorbis
+ * comments, MP4, APE or RIFF tags. Reading them reads the file and decodes the cover, so read
+ * them on a background thread.
+ *
+ * Copies share one reference-counted object, usable from any thread.
+ */
+class SoundTags {
+public:
+    SoundTags(const SoundTags& other) noexcept : raw_(rk_sound_tags_ref(other.raw_)) {}
+
+    SoundTags(SoundTags&& other) noexcept : raw_(std::exchange(other.raw_, nullptr)) {}
+
+    SoundTags& operator=(SoundTags other) noexcept {
+        swap(other);
+        return *this;
+    }
+
+    ~SoundTags() {
+        rk_sound_tags_unref(raw_);
+    }
+
+    /**
+     * Takes over one reference to a handle from the C API.
+     */
+    [[nodiscard]] static SoundTags adopt(rk_sound_tags* raw) noexcept {
+        return SoundTags(detail::Adopt{}, raw);
+    }
+
+    /**
+     * The handle for the C API; this object keeps its reference.
+     */
+    [[nodiscard]] rk_sound_tags* raw() const noexcept {
+        return raw_;
+    }
+
+    /**
+     * Gives this object's reference to the caller, leaving it empty.
+     */
+    [[nodiscard]] rk_sound_tags* release() noexcept {
+        return std::exchange(raw_, nullptr);
+    }
+
+    void swap(SoundTags& other) noexcept {
+        std::swap(raw_, other.raw_);
+    }
+
+    /**
+     * Reads the tags of a sound file. A file without tags reads as empty ones.
+     *
+     * Thread-safe.
+     *
+     * @param cover_size The largest width and height of the cover in pixels; a larger cover is
+     * scaled down to fit. 0 skips the cover.
+     */
+    explicit SoundTags(std::string_view path, std::uint32_t cover_size);
+
+    /**
+     * Its title; empty when the file names none.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] std::string title() const;
+
+    /**
+     * Its artists, joined with commas; empty when the file names none.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] std::string artist() const;
+
+    /**
+     * The album it belongs to; empty when the file names none.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] std::string album() const;
+
+    /**
+     * The album's artists, joined with commas; empty when the file names none.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] std::string album_artist() const;
+
+    /**
+     * Its place on its disc, counting from 1; 0 when unknown.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] std::uint32_t track_number() const;
+
+    /**
+     * Its length in seconds; 0 when unknown.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] double duration() const;
+
+    /**
+     * Whether it has a cover that could be decoded.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] bool has_cover() const;
+
+    /**
+     * Its front cover, or the first picture it carries, scaled down to the size asked for. Read
+     * it only when rikka::SoundTags::has_cover() is true.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] Image cover() const;
+
+    /**
+     * Why the file's tags cannot be read; empty when they were read.
+     *
+     * Thread-safe.
+     */
+    [[nodiscard]] std::string error_message() const;
+
+private:
+    SoundTags(detail::Adopt, rk_sound_tags* raw) noexcept : raw_(raw) {}
+
+    rk_sound_tags* raw_ = nullptr;
 };
 
 /**
@@ -4067,6 +4195,46 @@ inline void Sound::set_looping(bool looping) {
 
 inline std::string Sound::error_message() const {
     return detail::take(rk_sound_error_message(raw_));
+}
+
+inline SoundTags::SoundTags(std::string_view path, std::uint32_t cover_size) {
+    raw_ = rk_sound_tags_new(detail::str(path), cover_size);
+}
+
+inline std::string SoundTags::title() const {
+    return detail::take(rk_sound_tags_title(raw_));
+}
+
+inline std::string SoundTags::artist() const {
+    return detail::take(rk_sound_tags_artist(raw_));
+}
+
+inline std::string SoundTags::album() const {
+    return detail::take(rk_sound_tags_album(raw_));
+}
+
+inline std::string SoundTags::album_artist() const {
+    return detail::take(rk_sound_tags_album_artist(raw_));
+}
+
+inline std::uint32_t SoundTags::track_number() const {
+    return rk_sound_tags_track_number(raw_);
+}
+
+inline double SoundTags::duration() const {
+    return rk_sound_tags_duration(raw_);
+}
+
+inline bool SoundTags::has_cover() const {
+    return rk_sound_tags_has_cover(raw_);
+}
+
+inline Image SoundTags::cover() const {
+    return Image::adopt(rk_sound_tags_cover(raw_));
+}
+
+inline std::string SoundTags::error_message() const {
+    return detail::take(rk_sound_tags_error_message(raw_));
 }
 
 inline Video::Video(std::string_view path) {

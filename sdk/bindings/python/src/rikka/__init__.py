@@ -73,6 +73,7 @@ __all__ = [
     "ShapeCallback",
     "SizeClass",
     "Sound",
+    "SoundTags",
     "Status",
     "StringCallback",
     "TextAlignment",
@@ -1296,6 +1297,102 @@ class Sound(_runtime.Counted):
         Thread-safe.
         """
         return _native.take_string(_native.rk_sound_error_message(self._handle))
+
+
+class SoundTags(_runtime.Counted):
+    """The tags a sound file carries: its title, artists, album and cover, from ID3, Vorbis
+    comments, MP4, APE or RIFF tags. Reading them reads the file and decodes the cover, so read
+    them on a background thread.
+
+    It holds one reference to a native object usable from any thread.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_sound_tags_unref
+
+    def __init__(self, path: str, cover_size: int) -> None:
+        """Reads the tags of a sound file. A file without tags reads as empty ones.
+
+        Thread-safe.
+
+        Args:
+            cover_size: The largest width and height of the cover in pixels; a larger cover is
+                scaled down to fit. 0 skips the cover.
+        """
+        self._attach(_native.rk_sound_tags_new(_runtime.text(path), cover_size))
+
+    @property
+    def title(self) -> str:
+        """Its title; empty when the file names none.
+
+        Thread-safe.
+        """
+        return _native.take_string(_native.rk_sound_tags_title(self._handle))
+
+    @property
+    def artist(self) -> str:
+        """Its artists, joined with commas; empty when the file names none.
+
+        Thread-safe.
+        """
+        return _native.take_string(_native.rk_sound_tags_artist(self._handle))
+
+    @property
+    def album(self) -> str:
+        """The album it belongs to; empty when the file names none.
+
+        Thread-safe.
+        """
+        return _native.take_string(_native.rk_sound_tags_album(self._handle))
+
+    @property
+    def album_artist(self) -> str:
+        """The album's artists, joined with commas; empty when the file names none.
+
+        Thread-safe.
+        """
+        return _native.take_string(_native.rk_sound_tags_album_artist(self._handle))
+
+    @property
+    def track_number(self) -> int:
+        """Its place on its disc, counting from 1; 0 when unknown.
+
+        Thread-safe.
+        """
+        return _native.rk_sound_tags_track_number(self._handle)
+
+    @property
+    def duration(self) -> float:
+        """Its length in seconds; 0 when unknown.
+
+        Thread-safe.
+        """
+        return _native.rk_sound_tags_duration(self._handle)
+
+    @property
+    def has_cover(self) -> bool:
+        """Whether it has a cover that could be decoded.
+
+        Thread-safe.
+        """
+        return _native.rk_sound_tags_has_cover(self._handle)
+
+    @property
+    def cover(self) -> Image:
+        """Its front cover, or the first picture it carries, scaled down to the size asked for.
+        Read it only when :attr:`SoundTags.has_cover` is true.
+
+        Thread-safe.
+        """
+        return Image._adopt(_native.rk_sound_tags_cover(self._handle))
+
+    @property
+    def error_message(self) -> str:
+        """Why the file's tags cannot be read; empty when they were read.
+
+        Thread-safe.
+        """
+        return _native.take_string(_native.rk_sound_tags_error_message(self._handle))
 
 
 class Video(_runtime.Counted):

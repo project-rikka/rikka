@@ -247,6 +247,42 @@ internal static unsafe partial class Native
     [LibraryImport(Library, EntryPoint = "rk_sound_unref")]
     internal static partial void rk_sound_unref(nint sound);
 
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_new")]
+    internal static partial nint rk_sound_tags_new(Str path, uint coverSize);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_title")]
+    internal static partial OwnedString rk_sound_tags_title(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_artist")]
+    internal static partial OwnedString rk_sound_tags_artist(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_album")]
+    internal static partial OwnedString rk_sound_tags_album(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_album_artist")]
+    internal static partial OwnedString rk_sound_tags_album_artist(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_track_number")]
+    internal static partial uint rk_sound_tags_track_number(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_duration")]
+    internal static partial double rk_sound_tags_duration(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_has_cover")]
+    internal static partial byte rk_sound_tags_has_cover(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_cover")]
+    internal static partial nint rk_sound_tags_cover(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_error_message")]
+    internal static partial OwnedString rk_sound_tags_error_message(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_ref")]
+    internal static partial nint rk_sound_tags_ref(nint tags);
+
+    [LibraryImport(Library, EntryPoint = "rk_sound_tags_unref")]
+    internal static partial void rk_sound_tags_unref(nint tags);
+
     [LibraryImport(Library, EntryPoint = "rk_video_new")]
     internal static partial nint rk_video_new(Str path);
 

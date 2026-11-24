@@ -20,10 +20,11 @@ import sh.rikka.client.RikkaClient;
 final class Sidebar implements AutoCloseable {
 	private static final float WIDTH = 236.0F;
 	private static final float LOGO_SIZE = 38.0F;
-	private static final String LOGO = "/assets/rikka-client/textures/gui/project-rikka.jpg";
+	private static final String LOGO = "/assets/" + RikkaClient.MOD_ID + "/textures/gui/project-rikka.jpg";
 	private static final List<Entry> NAV = List.of(
 		new Header("nav.client"),
 		new Item("nav.mods", "extension", new Page.Mods()),
+		new Item("nav.music", "library_music", new Page.Music()),
 		new Item("nav.profiles", "switch_account", new Page.Profiles()),
 		new Header("nav.personalization"),
 		new Item("nav.themes", "palette", new Page.Themes()),

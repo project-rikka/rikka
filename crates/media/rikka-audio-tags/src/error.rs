@@ -1,4 +1,4 @@
-use music_core::Codec;
+use rikka_audio_decode::Codec;
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum Error {

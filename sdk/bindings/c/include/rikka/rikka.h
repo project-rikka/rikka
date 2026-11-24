@@ -715,6 +715,15 @@ typedef struct rk_image rk_image;
 typedef struct rk_sound rk_sound;
 
 /**
+ * The tags a sound file carries: its title, artists, album and cover, from ID3, Vorbis
+ * comments, MP4, APE or RIFF tags. Reading them reads the file and decodes the cover, so read
+ * them on a background thread.
+ *
+ * Reference-counted with rk_sound_tags_ref() and rk_sound_tags_unref(); usable from any thread.
+ */
+typedef struct rk_sound_tags rk_sound_tags;
+
+/**
  * A video played from a file, such as MP4, WebM or Matroska, with its sound, shown by
  * rk_video_view(). It opens once a view shows it. Views that read its state or position run
  * again as it plays. A playing video keeps playing after its last reference is gone, until it
@@ -1422,6 +1431,109 @@ RK_API rk_sound *rk_sound_ref(rk_sound *sound);
  * Thread-safe.
  */
 RK_API void rk_sound_unref(rk_sound *sound);
+
+/**
+ * Reads the tags of a sound file. A file without tags reads as empty ones.
+ *
+ * Thread-safe.
+ *
+ * @param cover_size The largest width and height of the cover in pixels; a larger cover is
+ * scaled down to fit. 0 skips the cover.
+ * @return The caller owns the result; release it with rk_sound_tags_unref().
+ */
+RK_API RK_NODISCARD rk_sound_tags *rk_sound_tags_new(rk_str path, uint32_t cover_size);
+
+/**
+ * Its title; empty when the file names none.
+ *
+ * Thread-safe.
+ *
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_sound_tags_title(rk_sound_tags *tags);
+
+/**
+ * Its artists, joined with commas; empty when the file names none.
+ *
+ * Thread-safe.
+ *
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_sound_tags_artist(rk_sound_tags *tags);
+
+/**
+ * The album it belongs to; empty when the file names none.
+ *
+ * Thread-safe.
+ *
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_sound_tags_album(rk_sound_tags *tags);
+
+/**
+ * The album's artists, joined with commas; empty when the file names none.
+ *
+ * Thread-safe.
+ *
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_sound_tags_album_artist(rk_sound_tags *tags);
+
+/**
+ * Its place on its disc, counting from 1; 0 when unknown.
+ *
+ * Thread-safe.
+ */
+RK_API uint32_t rk_sound_tags_track_number(rk_sound_tags *tags);
+
+/**
+ * Its length in seconds; 0 when unknown.
+ *
+ * Thread-safe.
+ */
+RK_API double rk_sound_tags_duration(rk_sound_tags *tags);
+
+/**
+ * Whether it has a cover that could be decoded.
+ *
+ * Thread-safe.
+ */
+RK_API bool rk_sound_tags_has_cover(rk_sound_tags *tags);
+
+/**
+ * Its front cover, or the first picture it carries, scaled down to the size asked for. Read it
+ * only when rk_sound_tags_has_cover() is true.
+ *
+ * Thread-safe.
+ *
+ * @return The caller owns the result; release it with rk_image_unref().
+ */
+RK_API RK_NODISCARD rk_image *rk_sound_tags_cover(rk_sound_tags *tags);
+
+/**
+ * Why the file's tags cannot be read; empty when they were read.
+ *
+ * Thread-safe.
+ *
+ * @return The caller owns the string; release it with rk_string_free().
+ */
+RK_API RK_NODISCARD rk_string rk_sound_tags_error_message(rk_sound_tags *tags);
+
+/**
+ * Adds a reference to a sound tags. Passing NULL returns NULL.
+ *
+ * Thread-safe.
+ *
+ * @return `tags` itself.
+ */
+RK_API rk_sound_tags *rk_sound_tags_ref(rk_sound_tags *tags);
+
+/**
+ * Drops a reference to a sound tags; the last one destroys it. Passing NULL does nothing.
+ *
+ * Thread-safe.
+ */
+RK_API void rk_sound_tags_unref(rk_sound_tags *tags);
 
 /**
  * Refers to a video file.

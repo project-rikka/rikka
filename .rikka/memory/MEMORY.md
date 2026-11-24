@@ -183,7 +183,7 @@
 
 ## apps/system/music/crates/music-library
 
-- [Music local library (music-tags, music-library, music-local)](music-local.md) — How rikka-music indexes local files (tags, SQLite index, watching) and serves them as the always-linked local service.
+- [Music local library (rikka-audio-tags, music-library, music-local)](music-local.md) — How rikka-music indexes local files (tags, SQLite index, watching) and serves them as the always-linked local service.
 
 ## apps/system/music/crates/music-spotify
 
@@ -1006,6 +1006,10 @@
 ## minecraft/src/main/java/sh/rikka/client/mods/rearview
 
 - [Rikka Client Rearview mod (second world view behind the player)](minecraft-rearview.md) — mods/rearview: 16:9 HUD mirror rendered from vanilla parts; hooks, section sharing, compile scheduling, state save.
+
+## minecraft/src/main/java/sh/rikka/client/music
+
+- [Rikka Client music player (local files, ModMenu page, Now Playing HUD)](minecraft-music.md) — sh.rikka.client.music: watched <gameDir>/rikka/music library, SoundTags covers, MusicPlayer queue, keys, HUD.
 
 ## nix/dist
 

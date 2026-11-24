@@ -1827,6 +1827,125 @@ func (s *Sound) ErrorMessage() string {
 	return result
 }
 
+// SoundTags is the tags a sound file carries: its title, artists, album and cover, from ID3,
+// Vorbis comments, MP4, APE or RIFF tags. Reading them reads the file and decodes the cover, so
+// read them on a background thread.
+//
+// It holds one reference to a native object usable from any goroutine; the garbage collector
+// drops the reference.
+type SoundTags struct {
+	raw     *C.rk_sound_tags
+	cleanup runtime.Cleanup
+}
+
+func newSoundTags(raw *C.rk_sound_tags) *SoundTags {
+	if raw == nil {
+		panic(unmade("SoundTags"))
+	}
+	value := &SoundTags{raw: raw}
+	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_sound_tags) { C.rk_sound_tags_unref(raw) }, raw)
+	return value
+}
+
+func (x *SoundTags) handle() *C.rk_sound_tags {
+	if x == nil || x.raw == nil {
+		panic(consumed("SoundTags"))
+	}
+	return x.raw
+}
+
+// NewSoundTags reads the tags of a sound file. A file without tags reads as empty ones.
+//
+// Thread-safe.
+//
+//   - coverSize: The largest width and height of the cover in pixels; a larger cover is scaled down
+//     to fit. 0 skips the cover.
+func NewSoundTags(path string, coverSize uint32) *SoundTags {
+	return newSoundTags(C.rk_sound_tags_new(cStr(path), C.uint32_t(coverSize)))
+}
+
+// Title its title; empty when the file names none.
+//
+// Thread-safe.
+func (s *SoundTags) Title() string {
+	result := takeString(C.rk_sound_tags_title(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// Artist its artists, joined with commas; empty when the file names none.
+//
+// Thread-safe.
+func (s *SoundTags) Artist() string {
+	result := takeString(C.rk_sound_tags_artist(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// Album returns the album it belongs to; empty when the file names none.
+//
+// Thread-safe.
+func (s *SoundTags) Album() string {
+	result := takeString(C.rk_sound_tags_album(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// AlbumArtist returns the album's artists, joined with commas; empty when the file names none.
+//
+// Thread-safe.
+func (s *SoundTags) AlbumArtist() string {
+	result := takeString(C.rk_sound_tags_album_artist(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// TrackNumber its place on its disc, counting from 1; 0 when unknown.
+//
+// Thread-safe.
+func (s *SoundTags) TrackNumber() uint32 {
+	result := uint32(C.rk_sound_tags_track_number(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// Duration its length in seconds; 0 when unknown.
+//
+// Thread-safe.
+func (s *SoundTags) Duration() float64 {
+	result := float64(C.rk_sound_tags_duration(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// HasCover reports whether it has a cover that could be decoded.
+//
+// Thread-safe.
+func (s *SoundTags) HasCover() bool {
+	result := bool(C.rk_sound_tags_has_cover(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// Cover its front cover, or the first picture it carries, scaled down to the size asked for.
+// Read it only when [SoundTags.HasCover] is true.
+//
+// Thread-safe.
+func (s *SoundTags) Cover() *Image {
+	result := newImage(C.rk_sound_tags_cover(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
+// ErrorMessage why the file's tags cannot be read; empty when they were read.
+//
+// Thread-safe.
+func (s *SoundTags) ErrorMessage() string {
+	result := takeString(C.rk_sound_tags_error_message(s.handle()))
+	runtime.KeepAlive(s)
+	return result
+}
+
 // Video is a video played from a file, such as MP4, WebM or Matroska, with its sound, shown by
 // [View.VideoView]. It opens once a view shows it. Views that read its state or position run
 // again as it plays. A playing video keeps playing after its last reference is gone, until it
