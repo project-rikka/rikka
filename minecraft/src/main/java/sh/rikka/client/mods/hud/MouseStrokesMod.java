@@ -5,6 +5,7 @@ import os.rikka.Element;
 import os.rikka.View;
 import sh.rikka.client.event.EventHandler;
 import sh.rikka.client.events.LookEvent;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.mod.HudMod;
 import sh.rikka.client.setting.BoolSetting;
 import sh.rikka.client.setting.ColorSetting;
@@ -22,7 +23,6 @@ public final class MouseStrokesMod extends HudMod {
 	private static final float GAIN = 0.2F;
 	private static final float RETURN_MILLIS = 70.0F;
 	private static final float REST = 0.05F;
-	private static final float CORNER_RADIUS = 9.0F;
 	private static final float CROSS_ALPHA = 0.18F;
 	private static final float CROSS_THICKNESS = 1.0F;
 	private static final int MAX_TRAIL = 16;
@@ -77,12 +77,12 @@ public final class MouseStrokesMod extends HudMod {
 	}
 
 	@Override
-	protected void view(View view) {
+	protected void view(View view, HudLook look) {
 		step();
 		Element panel = view.box(() -> {
-		}).position(0.0F, 0.0F).width(SIZE).height(SIZE).cornerRadius(CORNER_RADIUS);
+		}).position(0.0F, 0.0F).width(SIZE).height(SIZE);
 		if (this.background.get()) {
-			panel.glass().background(BACKDROP);
+			look.panel(panel);
 		}
 		Color dot = Colors.of(this.dotColor.argb());
 		if (this.crosshair.get()) {

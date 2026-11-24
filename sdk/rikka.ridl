@@ -648,6 +648,22 @@ shared class image {
     constructor rgba(width: u32, height: u32, pixels: [u8]);
 }
 
+/// Colours that blend along a straight line across what they paint, in premultiplied sRGB as in
+/// CSS: box fills, outlines and shadows, text and icons. The line runs through the painted
+/// element's centre and is long enough that its ends just reach the farthest corners.
+shared class gradient {
+    /// A gradient from one colour to another.
+    /// @param angle Degrees clockwise from upward, as in CSS: 90 runs from left to right.
+    @thread_safe
+    constructor linear(angle: f32, from: color, to: color);
+
+    /// This gradient with one more colour stop, at most 8 in all. A stop at the offset of
+    /// others goes after them.
+    /// @param offset Where the colour sits along the line, from 0 at its start to 1 at its end.
+    @thread_safe
+    fn with_stop(offset: f32, color: color) -> gradient;
+}
+
 /// A sound or piece of music played from a file: MP3, FLAC, Ogg Vorbis, Opus, WAV, AAC and the
 /// like. It opens in the background and streams, so long pieces cost little memory. Views that
 /// read its state or position run again as it plays. A playing sound keeps playing after its
@@ -1075,6 +1091,13 @@ local class embedded_surface {
     /// Brings a leaving surface back: its view declares everything again, and what was leaving
     /// turns back from where it is.
     fn rejoin();
+
+    /// Draws this surface over another background than the embedding's, so its glass panes blur
+    /// or refract differently; [theme_background.desktop] follows the desktop's.
+    fn set_background(background: theme_background);
+
+    /// Draws this surface over the embedding's background again.
+    fn follow_background();
 }
 
 /// The context of a callback reacting to the person or the system.
@@ -1472,6 +1495,23 @@ scoped class view {
     /// Outlines the current box.
     modifier border(width: f32, color: color);
 
+    /// Fills the current box with a gradient in place of its background colour.
+    modifier background_gradient(gradient: gradient);
+
+    /// Outlines the current box with a gradient.
+    modifier border_gradient(width: f32, gradient: gradient);
+
+    /// Casts a shadow around the current box, outside its rounded bounds, as CSS box-shadow does.
+    /// Each call adds a shadow beneath the earlier ones.
+    /// @param blur The blur radius; 0 draws a hard edge.
+    /// @param spread How far the shadow reaches past the box before it blurs; negative shrinks it.
+    /// @param x How far right the shadow falls.
+    /// @param y How far down the shadow falls.
+    modifier shadow(blur: f32, spread: f32, x: f32, y: f32, color: color);
+
+    /// Casts a shadow around the current box painted with a gradient, a glow; see [view.shadow].
+    modifier shadow_gradient(blur: f32, spread: f32, x: f32, y: f32, gradient: gradient);
+
     /// Clips the current box's children to its rounded bounds.
     modifier clip_content();
 
@@ -1504,6 +1544,14 @@ scoped class view {
 
     /// Colours the current text, icon, slider, progress bar, spinner, gauge, list item or banner.
     modifier tint(color: color);
+
+    /// Paints the current text or icon with a gradient across its bounds in place of its colour.
+    modifier tint_gradient(gradient: gradient);
+
+    /// Draws a copy of the current text or icon beneath it, offset and in one colour.
+    /// @param x How far right the copy falls.
+    /// @param y How far down the copy falls.
+    modifier text_shadow(x: f32, y: f32, color: color);
 
     /// Sets the current icon's size in logical pixels.
     modifier icon_size(size: f32);

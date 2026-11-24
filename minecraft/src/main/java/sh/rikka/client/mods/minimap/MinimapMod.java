@@ -12,7 +12,6 @@ import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.LightLayer;
 import os.rikka.Align;
-import os.rikka.Color;
 import os.rikka.Element;
 import os.rikka.Justification;
 import os.rikka.View;
@@ -23,6 +22,7 @@ import sh.rikka.client.events.InputAction;
 import sh.rikka.client.events.KeyInputEvent;
 import sh.rikka.client.events.ResourceReloadEvent;
 import sh.rikka.client.events.TickEvent;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.mod.HudCanvas;
 import sh.rikka.client.mod.OverlayHudMod;
 import sh.rikka.client.render.GuiMesh;
@@ -41,14 +41,12 @@ public final class MinimapMod extends OverlayHudMod {
 	private static final float ZOOM_MILLIS = 80.0F;
 	private static final float ZOOM_EPSILON = 0.001F;
 	private static final float INSET = 2.0F;
-	private static final float BORDER_WIDTH = 1.0F;
 	private static final float COORDINATES_GAP = 4.0F;
 	private static final float COORDINATES_HEIGHT = 18.0F;
 	private static final float COORDINATES_SIZE = 11.0F;
 	private static final float COORDINATES_RADIUS = 7.0F;
 	private static final int CAVE_HEADROOM = 2;
 	private static final int CAVE_HYSTERESIS = 4;
-	private static final Color BORDER = new Color(1.0F, 1.0F, 1.0F, 0.18F);
 	private static final String[] CARDINALS = {"north", "east", "south", "west"};
 
 	private final IntSetting size = integer("size", 160, 80, 320);
@@ -132,26 +130,27 @@ public final class MinimapMod extends OverlayHudMod {
 	}
 
 	@Override
-	protected void view(View view) {
+	protected void view(View view, HudLook look) {
 		float side = this.size.get();
 		float mapHeight = mapHeight();
 		Element frame = view.box(() -> {
-		}).position(0.0F, 0.0F).width(side).height(mapHeight).cornerRadius(this.shape.get().cornerRadius(side, mapHeight));
+		}).position(0.0F, 0.0F).width(side).height(mapHeight);
 		if (this.background.get()) {
-			frame.glass().background(BACKDROP).border(BORDER_WIDTH, BORDER);
+			look.panel(frame, this.shape.get().cornerRadius(side, mapHeight));
+		} else {
+			frame.cornerRadius(this.shape.get().cornerRadius(side, mapHeight));
 		}
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (this.coordinates.get() && player != null) {
 			BlockPos pos = player.blockPosition();
 			String text = String.format(Locale.ROOT, "%d, %d, %d", pos.getX(), pos.getY(), pos.getZ());
 			view.row(() -> {
-				Element pill = view.box(() -> view.row(() -> view.text(text).textSize(COORDINATES_SIZE).textNoWrap()).fillHeight().alignItems(Align.CENTER))
+				Element pill = view.box(() -> view.row(() -> look.text(view.text(text).textSize(COORDINATES_SIZE).textNoWrap())).fillHeight().alignItems(Align.CENTER))
 					.height(COORDINATES_HEIGHT)
 					.shrink(0.0F)
-					.paddingEdges(0.0F, COORDINATES_RADIUS, 0.0F, COORDINATES_RADIUS)
-					.cornerRadius(COORDINATES_RADIUS);
+					.paddingEdges(0.0F, COORDINATES_RADIUS, 0.0F, COORDINATES_RADIUS);
 				if (this.background.get()) {
-					pill.glass().background(BACKDROP);
+					look.panel(pill, Math.min(look.radius(), COORDINATES_HEIGHT / 2.0F));
 				}
 			}).position(0.0F, mapHeight + COORDINATES_GAP).width(side).justify(Justification.CENTER);
 		}

@@ -50,6 +50,7 @@ __all__ = [
     "FilesCallback",
     "Fit",
     "FontWeight",
+    "Gradient",
     "Image",
     "IndexCallback",
     "ItemCallback",
@@ -1147,6 +1148,44 @@ class Image(_runtime.Counted):
         ))
 
 
+class Gradient(_runtime.Counted):
+    """Colours that blend along a straight line across what they paint, in premultiplied sRGB as in
+    CSS: box fills, outlines and shadows, text and icons. The line runs through the painted
+    element's centre and is long enough that its ends just reach the farthest corners.
+
+    It holds one reference to a native object usable from any thread.
+    """
+
+    __slots__ = ()
+    _release = _native.rk_gradient_unref
+
+    @classmethod
+    def from_linear(cls, angle: float, from_: Color, to: Color) -> Gradient:
+        """A gradient from one colour to another.
+
+        Thread-safe.
+
+        Args:
+            angle: Degrees clockwise from upward, as in CSS: 90 runs from left to right.
+        """
+        return cls._adopt(_native.rk_gradient_new_linear(angle, _to_color(from_), _to_color(to)))
+
+    def with_stop(self, offset: float, color: Color) -> Gradient:
+        """This gradient with one more colour stop, at most 8 in all. A stop at the offset of
+        others goes after them.
+
+        Thread-safe.
+
+        Args:
+            offset: Where the colour sits along the line, from 0 at its start to 1 at its end.
+        """
+        return Gradient._adopt(_native.rk_gradient_with_stop(
+            self._handle,
+            offset,
+            _to_color(color),
+        ))
+
+
 class Sound(_runtime.Counted):
     """A sound or piece of music played from a file: MP3, FLAC, Ogg Vorbis, Opus, WAV, AAC and the
     like. It opens in the background and streams, so long pieces cost little memory. Views that
@@ -2129,6 +2168,16 @@ class EmbeddedSurface(_runtime.Counted):
         turns back from where it is.
         """
         _native.rk_embedded_surface_rejoin(self._handle)
+
+    def set_background(self, background: ThemeBackground) -> None:
+        """Draws this surface over another background than the embedding's, so its glass panes blur
+        or refract differently; :attr:`ThemeBackground.DESKTOP` follows the desktop's.
+        """
+        _native.rk_embedded_surface_set_background(self._handle, ThemeBackground(background))
+
+    def follow_background(self) -> None:
+        """Draws this surface over the embedding's background again."""
+        _native.rk_embedded_surface_follow_background(self._handle)
 
 
 class Context(_runtime.Lent):
@@ -3247,6 +3296,64 @@ class Element:
         _native.rk_border(self._view._current(self._serial), width, _to_color(color))
         return self
 
+    def background_gradient(self: _ElementT, gradient: Gradient) -> _ElementT:
+        """Fills the current box with a gradient in place of its background colour."""
+        _native.rk_background_gradient(
+            self._view._current(self._serial),
+            _runtime.handle_of(gradient, Gradient),
+        )
+        return self
+
+    def border_gradient(self: _ElementT, width: float, gradient: Gradient) -> _ElementT:
+        """Outlines the current box with a gradient."""
+        _native.rk_border_gradient(
+            self._view._current(self._serial),
+            width,
+            _runtime.handle_of(gradient, Gradient),
+        )
+        return self
+
+    def shadow(
+        self: _ElementT,
+        blur: float,
+        spread: float,
+        x: float,
+        y: float,
+        color: Color,
+    ) -> _ElementT:
+        """Casts a shadow around the current box, outside its rounded bounds, as CSS box-shadow
+        does. Each call adds a shadow beneath the earlier ones.
+
+        Args:
+            blur: The blur radius; 0 draws a hard edge.
+            spread: How far the shadow reaches past the box before it blurs; negative shrinks it.
+            x: How far right the shadow falls.
+            y: How far down the shadow falls.
+        """
+        _native.rk_shadow(self._view._current(self._serial), blur, spread, x, y, _to_color(color))
+        return self
+
+    def shadow_gradient(
+        self: _ElementT,
+        blur: float,
+        spread: float,
+        x: float,
+        y: float,
+        gradient: Gradient,
+    ) -> _ElementT:
+        """Casts a shadow around the current box painted with a gradient, a glow; see
+        :meth:`Element.shadow`.
+        """
+        _native.rk_shadow_gradient(
+            self._view._current(self._serial),
+            blur,
+            spread,
+            x,
+            y,
+            _runtime.handle_of(gradient, Gradient),
+        )
+        return self
+
     def clip_content(self: _ElementT) -> _ElementT:
         """Clips the current box's children to its rounded bounds."""
         _native.rk_clip_content(self._view._current(self._serial))
@@ -3302,6 +3409,26 @@ class Element:
         banner.
         """
         _native.rk_tint(self._view._current(self._serial), _to_color(color))
+        return self
+
+    def tint_gradient(self: _ElementT, gradient: Gradient) -> _ElementT:
+        """Paints the current text or icon with a gradient across its bounds in place of its
+        colour.
+        """
+        _native.rk_tint_gradient(
+            self._view._current(self._serial),
+            _runtime.handle_of(gradient, Gradient),
+        )
+        return self
+
+    def text_shadow(self: _ElementT, x: float, y: float, color: Color) -> _ElementT:
+        """Draws a copy of the current text or icon beneath it, offset and in one colour.
+
+        Args:
+            x: How far right the copy falls.
+            y: How far down the copy falls.
+        """
+        _native.rk_text_shadow(self._view._current(self._serial), x, y, _to_color(color))
         return self
 
     def icon_size(self: _ElementT, size: float) -> _ElementT:

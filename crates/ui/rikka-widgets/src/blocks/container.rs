@@ -1,7 +1,7 @@
-use rikka_types::{Color, CornerRadii, Key, Modifiers, RoundedRect};
+use rikka_types::{Color, CornerRadii, Gradient, Key, Modifiers, RoundedRect};
 use rikka_ui::{
     Action, Align, Behavior, Command, Corner, Element, Event, EventCtx, Handler, Inset,
-    IntoHandler, Layout, PaintCtx, Quad, Reveal, Style, Styled, View, Widget, motion,
+    IntoHandler, Layout, PaintCtx, Quad, Reveal, Shadow, Style, Styled, View, Widget, motion,
 };
 
 use crate::blocks::springing::spring_height;
@@ -14,8 +14,11 @@ pub struct Container {
     padding: Inset,
     surface: bool,
     background: Option<Color>,
+    background_gradient: Option<Box<Gradient>>,
     radius: Option<CornerRadii>,
     border: Option<(f32, Color)>,
+    border_gradient: Option<(f32, Box<Gradient>)>,
+    shadows: Vec<Shadow>,
     ground: Ground,
     resizing: Option<Align>,
     clips: bool,
@@ -51,8 +54,11 @@ pub fn container(child: impl View) -> Container {
         padding: Inset::NONE,
         surface: false,
         background: None,
+        background_gradient: None,
         radius: None,
         border: None,
+        border_gradient: None,
+        shadows: Vec::new(),
         ground: Ground::default(),
         resizing: None,
         clips: false,
@@ -77,6 +83,13 @@ impl Container {
 
     pub fn background(mut self, color: Color) -> Self {
         self.background = Some(color);
+        self.background_gradient = None;
+        self
+    }
+
+    pub fn background_gradient(mut self, gradient: Gradient) -> Self {
+        self.background_gradient = Some(Box::new(gradient));
+        self.background = None;
         self
     }
 
@@ -92,6 +105,18 @@ impl Container {
 
     pub fn border(mut self, width: f32, color: Color) -> Self {
         self.border = Some((width, color));
+        self.border_gradient = None;
+        self
+    }
+
+    pub fn border_gradient(mut self, width: f32, gradient: Gradient) -> Self {
+        self.border_gradient = Some((width, Box::new(gradient)));
+        self.border = None;
+        self
+    }
+
+    pub fn shadow(mut self, shadow: Shadow) -> Self {
+        self.shadows.push(shadow);
         self
     }
 
@@ -191,6 +216,13 @@ impl Container {
         self
     }
 
+    fn border_width(&self) -> f32 {
+        match (&self.border, &self.border_gradient) {
+            (Some((width, _)), _) | (None, Some((width, _))) => *width,
+            (None, None) => 0.0,
+        }
+    }
+
     fn resize(&self, state: &mut ContainerState, ctx: &mut PaintCtx<'_>) {
         if self.resizing.is_none() {
             return;
@@ -246,33 +278,49 @@ impl Widget for Container {
         self.resize(state, ctx);
         let bounds = ctx.bounds();
         if self.resizing.is_some() || self.clips {
-            let inset = self.border.map_or(0.0, |(width, _)| width);
-            ctx.set_children_clip(RoundedRect::new(bounds.inflate(-inset), resting));
+            ctx.set_children_clip(RoundedRect::new(
+                bounds.inflate(-self.border_width()),
+                resting,
+            ));
         }
         let decorated = self.surface
             || self.background.is_some()
+            || self.background_gradient.is_some()
             || self.border.is_some()
+            || self.border_gradient.is_some()
+            || !self.shadows.is_empty()
             || self.ground == Ground::Pane;
         if !decorated && !self.press.is_set() {
             return;
         }
         let radius = ctx.animate_curve("radius", resting, motion::MORPH);
         if decorated {
-            let background = self
-                .background
-                .or_else(|| self.surface.then_some(ctx.theme().palette().surface))
-                .unwrap_or(Color::TRANSPARENT);
-
-            let fill = ctx.animate_curve("background", background, motion::COLOR);
-            let mut quad = Quad::new(bounds).fill(fill).radius(radius);
+            let shape = RoundedRect::new(bounds, radius);
+            for shadow in self.shadows.iter().rev() {
+                ctx.draw_shadow(shape, *shadow);
+            }
+            let mut quad = Quad::new(bounds).radius(radius);
+            quad = match self.background_gradient.as_deref() {
+                Some(gradient) => quad.fill(*gradient),
+                None => {
+                    let background = self
+                        .background
+                        .or_else(|| self.surface.then_some(ctx.theme().palette().surface))
+                        .unwrap_or(Color::TRANSPARENT);
+                    quad.fill(ctx.animate_curve("background", background, motion::COLOR))
+                }
+            };
             if let Some((width, color)) = self.border {
                 quad = quad.stroke(width, ctx.animate_curve("border", color, motion::COLOR));
+            }
+            if let Some((width, gradient)) = &self.border_gradient {
+                quad = quad.stroke(*width, **gradient);
             }
             match self.ground {
                 Ground::Pane => ctx.draw_pane(quad),
                 Ground::Glass => {
                     ctx.draw_quad(quad);
-                    ctx.glass(RoundedRect::new(bounds, radius));
+                    ctx.glass(shape);
                 }
                 Ground::Plain => ctx.draw_quad(quad),
             }
@@ -335,8 +383,11 @@ impl Widget for Container {
         self.padding == other.padding
             && self.surface == other.surface
             && self.background == other.background
+            && self.background_gradient == other.background_gradient
             && self.radius == other.radius
             && self.border == other.border
+            && self.border_gradient == other.border_gradient
+            && self.shadows == other.shadows
             && self.ground == other.ground
             && self.resizing == other.resizing
             && self.clips == other.clips

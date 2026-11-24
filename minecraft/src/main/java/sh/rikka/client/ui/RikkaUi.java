@@ -29,7 +29,7 @@ public final class RikkaUi {
 		wear(preferences);
 		preferences.theme().onChange(slug -> wearPreferences());
 		preferences.background().onChange(background -> wearPreferences());
-		this.hud = new HudLayer(this::open, RikkaClient.mods());
+		this.hud = new HudLayer(this::open, RikkaClient.mods(), preferences.hud());
 		RikkaClient.events().subscribe(this.hud);
 	}
 

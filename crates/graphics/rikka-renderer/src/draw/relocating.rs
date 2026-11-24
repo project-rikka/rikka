@@ -26,7 +26,8 @@ impl RetainedBatch {
             | Shape::Circle
             | Shape::Arc { .. }
             | Shape::Capsule { .. }
-            | Shape::Image { .. } => [node.rect.min_x() - at.x, node.rect.min_y() - at.y],
+            | Shape::Image { .. }
+            | Shape::Shadow { .. } => [node.rect.min_x() - at.x, node.rect.min_y() - at.y],
         };
         self.moves.set(VisibilityTable::place(id.index), shift);
         true

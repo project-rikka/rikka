@@ -558,8 +558,10 @@ fn build_node(prim: &Primitive, z: i32, resolved: Option<TextureId>) -> Node {
         Primitive::Quad {
             rect,
             fill,
+            fill_gradient,
             radii,
             stroke,
+            stroke_gradient,
             blur,
             lens,
             cutout,
@@ -570,14 +572,45 @@ fn build_node(prim: &Primitive, z: i32, resolved: Option<TextureId>) -> Node {
                 .fill(*fill)
                 .opacity(*opacity)
                 .z(z);
+            if let Some(gradient) = fill_gradient {
+                node = node.fill_gradient(**gradient);
+            }
             if let Some((width, color)) = stroke {
                 node = node.stroke(Stroke::new(*width, *color));
+            }
+            if let Some(gradient) = stroke_gradient {
+                node = node.stroke_gradient(**gradient);
             }
             if let Some(sigma) = blur {
                 node = node.backdrop(Blur::new(*sigma));
             }
             if let Some(lens) = lens {
                 node = node.lens(*lens);
+            }
+            if let Some(cutout) = cutout {
+                node = node.cut_out(*cutout);
+            }
+            if let Some(clip) = clip {
+                node = node.clip(*clip);
+            }
+            node
+        }
+        Primitive::Shadow {
+            rect,
+            radii,
+            sigma,
+            color,
+            gradient,
+            cutout,
+            clip,
+            opacity,
+        } => {
+            let mut node = Node::shadow(RoundedRect::new(*rect, *radii), *sigma)
+                .fill(*color)
+                .opacity(*opacity)
+                .z(z);
+            if let Some(gradient) = gradient {
+                node = node.fill_gradient(**gradient);
             }
             if let Some(cutout) = cutout {
                 node = node.cut_out(*cutout);
@@ -608,10 +641,14 @@ fn build_node(prim: &Primitive, z: i32, resolved: Option<TextureId>) -> Node {
             rect,
             paint,
             color,
+            gradient,
             clip,
             ..
         } => {
             let mut node = Node::text(*rect, paint.clone()).fill(*color).z(z);
+            if let Some(gradient) = gradient {
+                node = node.fill_gradient(**gradient);
+            }
             if let Some(clip) = clip {
                 node = node.clip(*clip);
             }
@@ -622,9 +659,13 @@ fn build_node(prim: &Primitive, z: i32, resolved: Option<TextureId>) -> Node {
             spec,
             scale,
             color,
+            gradient,
             clip,
         } => {
             let mut node = Node::icon(*rect, spec.scaled(*scale)).fill(*color).z(z);
+            if let Some(gradient) = gradient {
+                node = node.fill_gradient(**gradient);
+            }
             if let Some(clip) = clip {
                 node = node.clip(*clip);
             }
@@ -633,6 +674,7 @@ fn build_node(prim: &Primitive, z: i32, resolved: Option<TextureId>) -> Node {
         Primitive::Image {
             rect,
             tint,
+            gradient,
             pixelated,
             radii,
             turn,
@@ -641,11 +683,17 @@ fn build_node(prim: &Primitive, z: i32, resolved: Option<TextureId>) -> Node {
             ..
         } => {
             let mut node = match resolved {
-                Some(texture) => Node::image(*rect, texture)
-                    .source(image_source(*pixelated, *mirror))
-                    .radii(*radii)
-                    .rotation(*turn)
-                    .fill(*tint),
+                Some(texture) => {
+                    let image = Node::image(*rect, texture)
+                        .source(image_source(*pixelated, *mirror))
+                        .radii(*radii)
+                        .rotation(*turn)
+                        .fill(*tint);
+                    match gradient {
+                        Some(gradient) => image.fill_gradient(**gradient),
+                        None => image,
+                    }
+                }
                 None => Node::rounded_rect(*rect, CornerRadii::ZERO).fill(Color::TRANSPARENT),
             }
             .z(z);
@@ -685,8 +733,10 @@ fn update_in_place(
             Primitive::Quad {
                 rect,
                 fill,
+                fill_gradient,
                 radii,
                 stroke,
+                stroke_gradient,
                 blur,
                 lens,
                 cutout,
@@ -697,8 +747,10 @@ fn update_in_place(
             let mut node = scene.edit(slot.node);
             node.rect(*rect)
                 .fill(*fill)
+                .fill_gradient(fill_gradient.as_deref().copied())
                 .radii(*radii)
                 .stroke(stroke.map(|(width, color)| Stroke::new(width, color)))
+                .stroke_gradient(stroke_gradient.as_deref().copied())
                 .lens(*lens)
                 .cut_out(*cutout)
                 .clip(*clip)
@@ -709,6 +761,29 @@ fn update_in_place(
                     None => node.clear_backdrop(),
                 };
             }
+            true
+        }
+        (
+            Primitive::Shadow { .. },
+            Primitive::Shadow {
+                rect,
+                radii,
+                sigma,
+                color,
+                gradient,
+                cutout,
+                clip,
+                opacity,
+            },
+        ) => {
+            scene
+                .edit(slot.node)
+                .shadow(RoundedRect::new(*rect, *radii), *sigma)
+                .fill(*color)
+                .fill_gradient(gradient.as_deref().copied())
+                .cut_out(*cutout)
+                .clip(*clip)
+                .opacity(*opacity);
             true
         }
         (
@@ -737,6 +812,7 @@ fn update_in_place(
                 rect,
                 paint,
                 color,
+                gradient,
                 clip,
                 ..
             },
@@ -745,6 +821,7 @@ fn update_in_place(
                 .edit(slot.node)
                 .rect(*rect)
                 .fill(*color)
+                .fill_gradient(gradient.as_deref().copied())
                 .clip(*clip)
                 .text(paint.clone());
             true
@@ -760,11 +837,15 @@ fn update_in_place(
                 spec,
                 scale,
                 color,
+                gradient,
                 clip,
             },
         ) => {
             let mut node = scene.edit(slot.node);
-            node.rect(*rect).fill(*color).clip(*clip);
+            node.rect(*rect)
+                .fill(*color)
+                .fill_gradient(gradient.as_deref().copied())
+                .clip(*clip);
             if old_spec != spec || old_scale != scale {
                 node.icon(spec.scaled(*scale));
             }
@@ -775,6 +856,7 @@ fn update_in_place(
             Primitive::Image {
                 rect,
                 tint,
+                gradient,
                 pixelated,
                 radii,
                 turn,
@@ -793,7 +875,8 @@ fn update_in_place(
                     .source(image_source(*pixelated, *mirror))
                     .radii(*radii)
                     .rotation(*turn)
-                    .fill(*tint);
+                    .fill(*tint)
+                    .fill_gradient(gradient.as_deref().copied());
             }
             true
         }

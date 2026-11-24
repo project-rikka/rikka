@@ -112,6 +112,7 @@ pub(crate) struct Store {
     pub(super) captured: RingTable,
     pub(super) moves: RingTable,
     pub(super) extras: RingTable,
+    pub(super) paints: RingTable,
     pub(super) last_used: Instant,
 }
 
@@ -125,6 +126,7 @@ impl Store {
             captured: RingTable::default(),
             moves: RingTable::default(),
             extras: RingTable::default(),
+            paints: RingTable::default(),
             last_used: now,
         }
     }

@@ -6,6 +6,7 @@ mod drawing;
 mod frame_work;
 mod joined;
 mod occlusion;
+mod paints;
 mod shared_renderer;
 mod spread;
 mod viewers;

@@ -16,9 +16,9 @@ import os.rikka.Color;
 import os.rikka.ColorRole;
 import os.rikka.Element;
 import os.rikka.FontWeight;
-import os.rikka.TextTone;
 import os.rikka.View;
 import sh.rikka.client.RikkaClient;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.mod.HudCanvas;
 import sh.rikka.client.mod.OverlayHudMod;
 import sh.rikka.client.setting.BoolSetting;
@@ -40,7 +40,6 @@ public final class TargetInfoMod extends OverlayHudMod {
 	private static final float BAR_HEIGHT = 5.0F;
 	private static final float BAR_TOP = 22.0F;
 	private static final float DETAIL_TOP = 32.0F;
-	private static final float CORNER_RADIUS = 10.0F;
 	private static final float APPEAR_MILLIS = 70.0F;
 	private static final float HEALTH_MILLIS = 90.0F;
 	private static final float TRAIL_MILLIS = 380.0F;
@@ -94,7 +93,7 @@ public final class TargetInfoMod extends OverlayHudMod {
 	}
 
 	@Override
-	protected void view(View view) {
+	protected void view(View view, HudLook look) {
 		LivingEntity target = target();
 		if (target != null && target != this.shown) {
 			boolean appearing = this.shown == null || this.visibility.value() == 0.0F;
@@ -116,7 +115,7 @@ public final class TargetInfoMod extends OverlayHudMod {
 		float fraction = healthFraction(entity);
 		float shownHealth = this.health.update(fraction);
 		float shownTrail = this.trail.update(fraction);
-		view.column(() -> content(view, entity, shownHealth, Math.max(shownTrail, shownHealth)))
+		view.column(() -> content(view, look, entity, shownHealth, Math.max(shownTrail, shownHealth)))
 			.position(0.0F, 0.0F)
 			.width(WIDTH)
 			.height(HEIGHT)
@@ -124,11 +123,11 @@ public final class TargetInfoMod extends OverlayHudMod {
 			.scale(Mth.lerp(shownVisibility, HIDDEN_SCALE, 1.0F));
 	}
 
-	private void content(View view, LivingEntity entity, float health, float trail) {
+	private void content(View view, HudLook look, LivingEntity entity, float health, float trail) {
 		Element panel = view.box(() -> {
-		}).position(0.0F, 0.0F).width(WIDTH).height(HEIGHT).cornerRadius(CORNER_RADIUS);
+		}).position(0.0F, 0.0F).width(WIDTH).height(HEIGHT);
 		if (this.background.get()) {
-			panel.glass().background(BACKDROP);
+			look.panel(panel);
 		}
 		float left = textLeft();
 		float barWidth = WIDTH - left - PADDING;
@@ -136,7 +135,7 @@ public final class TargetInfoMod extends OverlayHudMod {
 			view.box(() -> {
 			}).position(PADDING, PADDING).width(PORTRAIT).height(PORTRAIT).cornerRadius(PORTRAIT_RADIUS).background(TRACK);
 		}
-		view.box(() -> view.text(name(entity)).textSize(NAME_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap())
+		view.box(() -> look.text(view.text(name(entity)).textSize(NAME_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap()))
 			.position(left, PADDING - 1.0F)
 			.width(barWidth)
 			.clipContent();
@@ -148,20 +147,20 @@ public final class TargetInfoMod extends OverlayHudMod {
 			view.box(() -> {
 			}).position(left, BAR_TOP + BAR_HEIGHT - 1.5F).width(barWidth * absorption).height(1.5F).background(ABSORPTION);
 		}
-		view.row(() -> details(view, entity)).position(left, DETAIL_TOP).width(barWidth).gap(4.0F).alignItems(Align.CENTER);
+		view.row(() -> details(view, look, entity)).position(left, DETAIL_TOP).width(barWidth).gap(4.0F).alignItems(Align.CENTER);
 	}
 
-	private void details(View view, LivingEntity entity) {
+	private void details(View view, HudLook look, LivingEntity entity) {
 		view.icon("favorite").iconSize(DETAIL_ICON).iconFilled().tint(view.paletteColor(ColorRole.DANGER));
-		view.text(String.format(Locale.ROOT, "%.1f", entity.getHealth() + entity.getAbsorptionAmount())).textSize(DETAIL_SIZE).textNoWrap();
+		look.text(view.text(String.format(Locale.ROOT, "%.1f", entity.getHealth() + entity.getAbsorptionAmount())).textSize(DETAIL_SIZE).textNoWrap());
 		if (this.armor.get()) {
 			view.icon("shield").iconSize(DETAIL_ICON).iconFilled().tint(view.paletteColor(ColorRole.TEXT_MUTED)).marginEdges(0.0F, 0.0F, 0.0F, 4.0F);
-			view.text(Integer.toString(entity.getArmorValue())).textSize(DETAIL_SIZE).textNoWrap();
+			look.text(view.text(Integer.toString(entity.getArmorValue())).textSize(DETAIL_SIZE).textNoWrap());
 		}
 		LocalPlayer player = Minecraft.getInstance().player;
 		if (this.distance.get() && player != null && entity != player) {
 			view.spacer();
-			view.text(String.format(Locale.ROOT, "%.1f m", entity.distanceTo(player))).textSize(DETAIL_SIZE).tone(TextTone.MUTED).textNoWrap();
+			look.mutedText(view.text(String.format(Locale.ROOT, "%.1f m", entity.distanceTo(player))).textSize(DETAIL_SIZE).textNoWrap());
 		}
 	}
 

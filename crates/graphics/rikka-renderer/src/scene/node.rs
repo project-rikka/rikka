@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use rikka_text::{IconSpec, TextPaint};
-use rikka_types::{Color, CornerRadii, Lens, Point, Rect, RoundedRect};
+use rikka_types::{Color, CornerRadii, Gradient, Lens, Point, Rect, RoundedRect};
 
 use crate::fx::{BackdropCache, Joined, PostEffect, Recipe};
 use crate::scene::audience::{Audience, Viewer};
@@ -47,6 +47,43 @@ impl Stroke {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) struct Gradients {
+    pub(crate) fill: Option<Gradient>,
+    pub(crate) stroke: Option<Gradient>,
+}
+
+impl Gradients {
+    pub(crate) fn changed(
+        current: Option<&Gradients>,
+        change: impl FnOnce(&mut Gradients),
+    ) -> Option<Gradients> {
+        let mut gradients = current.copied().unwrap_or_default();
+        change(&mut gradients);
+        (gradients != Gradients::default()).then_some(gradients)
+    }
+}
+
+const SHADOW_REACH: f32 = 3.0;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct ShadowExtent {
+    pub(crate) rect: Rect,
+    pub(crate) radii: CornerRadii,
+    pub(crate) sigma: f32,
+}
+
+impl ShadowExtent {
+    pub(crate) fn of(shape: RoundedRect, sigma: f32) -> Self {
+        let sigma = sigma.max(0.0);
+        Self {
+            rect: shape.rect.inflate((sigma * SHADOW_REACH).ceil()),
+            radii: shape.radii.clamp_for_size(shape.rect.size),
+            sigma,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum Shape {
     Rect,
@@ -69,6 +106,10 @@ pub enum Shape {
         radii: CornerRadii,
         rotation: f32,
     },
+    Shadow {
+        radii: CornerRadii,
+        sigma: f32,
+    },
 }
 
 impl Shape {
@@ -85,6 +126,7 @@ pub struct Node {
     pub(crate) shape: Shape,
     pub(crate) rect: Rect,
     pub(crate) fill: Color,
+    pub(crate) gradients: Option<Box<Gradients>>,
     pub(crate) stroke: Option<Stroke>,
     pub(crate) clip: Option<RoundedRect>,
     pub(crate) cutout: Option<Box<RoundedRect>>,
@@ -113,6 +155,7 @@ impl Node {
             shape,
             rect,
             fill: Color::WHITE,
+            gradients: None,
             stroke: None,
             clip: None,
             cutout: None,
@@ -188,6 +231,17 @@ impl Node {
         )
     }
 
+    pub fn shadow(shape: RoundedRect, sigma: f32) -> Self {
+        let extent = ShadowExtent::of(shape, sigma);
+        Self::new(
+            Shape::Shadow {
+                radii: extent.radii,
+                sigma: extent.sigma,
+            },
+            extent.rect,
+        )
+    }
+
     pub fn source(mut self, source: ImageSource) -> Self {
         if let Shape::Image {
             source: current, ..
@@ -219,8 +273,21 @@ impl Node {
         self
     }
 
+    pub fn fill_gradient(self, gradient: Gradient) -> Self {
+        self.with_gradients(|gradients| gradients.fill = Some(gradient))
+    }
+
     pub fn stroke(mut self, stroke: Stroke) -> Self {
         self.stroke = Some(stroke);
+        self
+    }
+
+    pub fn stroke_gradient(self, gradient: Gradient) -> Self {
+        self.with_gradients(|gradients| gradients.stroke = Some(gradient))
+    }
+
+    fn with_gradients(mut self, change: impl FnOnce(&mut Gradients)) -> Self {
+        self.gradients = Gradients::changed(self.gradients.as_deref(), change).map(Box::new);
         self
     }
 
@@ -324,6 +391,13 @@ impl Node {
 
     pub(crate) fn escapes_group_clip(&self) -> bool {
         !self.clipped_by_group && self.group.is_some()
+    }
+
+    pub(crate) fn painted_rect(&self) -> Rect {
+        match self.shape {
+            Shape::Shadow { sigma, .. } => self.rect.inflate(-(sigma * SHADOW_REACH).ceil()),
+            _ => self.rect,
+        }
     }
 
     pub(crate) fn is_textured(&self) -> bool {

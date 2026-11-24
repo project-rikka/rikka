@@ -84,6 +84,9 @@ impl UiTree {
 fn primitive(prim: &Primitive) -> String {
     match prim {
         Primitive::Quad { rect: at, clip, .. } => format!("quad {}{}", rect(*at), clipped(*clip)),
+        Primitive::Shadow { rect: at, clip, .. } => {
+            format!("shadow {}{}", rect(*at), clipped(*clip))
+        }
         Primitive::Arc {
             center,
             radius,

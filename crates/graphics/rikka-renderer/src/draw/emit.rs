@@ -3,8 +3,8 @@ use rikka_text::{GlyphKind, IconKey, LayoutRow, PlacedGlyph, TextPaint};
 use rikka_types::{Color, CornerRadii, Rect};
 
 use crate::draw::instance::{
-    ClipSlots, FLAG_CIRCLE, FLAG_LENS, FLAG_PIXELATED, FLAG_UV_SWAP, GpuInstance, KIND_BACKDROP,
-    KIND_GLYPH_COLOR, KIND_GLYPH_CURVES, KIND_GLYPH_MASK, KIND_SHAPE, KIND_TEXTURED,
+    ExtraSlots, FLAG_CIRCLE, FLAG_LENS, FLAG_PIXELATED, FLAG_SHADOW, FLAG_UV_SWAP, GpuInstance,
+    KIND_BACKDROP, KIND_GLYPH_COLOR, KIND_GLYPH_CURVES, KIND_GLYPH_MASK, KIND_SHAPE, KIND_TEXTURED,
 };
 use crate::scene::{Node, Scene, Shape};
 use crate::text::atlas::{AtlasKey, GlyphAtlas, GlyphRef, GlyphSlot, ImageSlot};
@@ -135,7 +135,7 @@ fn band_within(scene: &Scene, node: &Node, reach: f32) -> Band {
     }
 }
 
-pub(crate) fn glass_instance(node: &Node, clips: ClipSlots) -> GpuInstance {
+pub(crate) fn glass_instance(node: &Node, clips: ExtraSlots) -> GpuInstance {
     let glass = shape_instance(node, KIND_BACKDROP, clips);
     match node.lens {
         Some(_) => glass.with_flags(FLAG_LENS),
@@ -249,14 +249,15 @@ pub(crate) fn emit_node(
     book: &TextureBook,
     glyphs: &[Option<GlyphRef>],
     band: Band,
-    clips: ClipSlots,
+    clips: ExtraSlots,
 ) {
     match &node.shape {
         Shape::Rect
         | Shape::RoundedRect { .. }
         | Shape::Circle
         | Shape::Arc { .. }
-        | Shape::Capsule { .. } => {
+        | Shape::Capsule { .. }
+        | Shape::Shadow { .. } => {
             instances.push(shape_instance(node, KIND_SHAPE, clips));
         }
         Shape::Image {
@@ -422,11 +423,15 @@ fn curve_instance(
         .with_curves(pixels_per_em)
 }
 
-fn shape_instance(node: &Node, kind: u32, clips: ClipSlots) -> GpuInstance {
+fn shape_instance(node: &Node, kind: u32, clips: ExtraSlots) -> GpuInstance {
     let instance = GpuInstance::new(kind, node.rect)
         .with_fill(node.fill, node.opacity)
         .placed(node, clips);
-    apply_stroke(with_geometry(instance, node), node)
+    let shaped = with_geometry(instance, node);
+    match node.shape {
+        Shape::Shadow { .. } => shaped,
+        _ => apply_stroke(shaped, node),
+    }
 }
 
 fn with_geometry(instance: GpuInstance, node: &Node) -> GpuInstance {
@@ -440,6 +445,11 @@ fn with_geometry(instance: GpuInstance, node: &Node) -> GpuInstance {
         Shape::Capsule { rotation } => instance
             .with_radii(CornerRadii::uniform(node.rect.height() * 0.5))
             .with_turn(*rotation),
+        Shape::Shadow { radii, sigma } => {
+            let mut shadow = instance.with_radii(*radii).with_flags(FLAG_SHADOW);
+            shadow.stroke_width = *sigma;
+            shadow
+        }
         _ => instance,
     }
 }

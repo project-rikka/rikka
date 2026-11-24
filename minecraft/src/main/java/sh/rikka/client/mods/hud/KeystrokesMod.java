@@ -17,6 +17,7 @@ import os.rikka.View;
 import sh.rikka.client.event.EventHandler;
 import sh.rikka.client.events.InputAction;
 import sh.rikka.client.events.MouseInputEvent;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.mod.HudMod;
 import sh.rikka.client.setting.BoolSetting;
 import sh.rikka.client.setting.ColorSetting;
@@ -34,7 +35,6 @@ public final class KeystrokesMod extends HudMod {
 	private static final float SPACE_HEIGHT = 20.0F;
 	private static final float SPACE_BAR_WIDTH = 36.0F;
 	private static final float SPACE_BAR_HEIGHT = 2.0F;
-	private static final float CORNER_RADIUS = 7.0F;
 	private static final float KEY_TEXT_SIZE = 14.0F;
 	private static final float MOUSE_TEXT_SIZE = 12.0F;
 	private static final float RATE_TEXT_SIZE = 10.0F;
@@ -46,7 +46,6 @@ public final class KeystrokesMod extends HudMod {
 	private final BoolSetting clickRate = bool("cps", true).visibleWhen(this.mouse::get);
 	private final BoolSetting background = bool("background", true);
 	private final ColorSetting pressedColor = color("pressed_color", 0xD9FFFFFF);
-	private final ColorSetting textColor = color("text_color", 0xFFFFFFFF);
 	private final ColorSetting pressedTextColor = color("pressed_text_color", 0xFF101010);
 	private final IntSetting fadeTime = integer("fade_time", 60, 10, 400);
 	private final ClickRates clicks = new ClickRates();
@@ -129,77 +128,92 @@ public final class KeystrokesMod extends HudMod {
 	}
 
 	@Override
-	protected void view(View view) {
+	protected void view(View view, HudLook look) {
 		float fadeMillis = this.fadeTime.get();
 		Options options = options();
-		keyboardKey(view, this.upKey, options.keyUp, KEY + GAP, 0.0F, fadeMillis);
+		keyboardKey(view, look, this.upKey, options.keyUp, KEY + GAP, 0.0F, fadeMillis);
 		float row = KEY + GAP;
-		keyboardKey(view, this.leftKey, options.keyLeft, 0.0F, row, fadeMillis);
-		keyboardKey(view, this.downKey, options.keyDown, KEY + GAP, row, fadeMillis);
-		keyboardKey(view, this.rightKey, options.keyRight, (KEY + GAP) * 2.0F, row, fadeMillis);
+		keyboardKey(view, look, this.leftKey, options.keyLeft, 0.0F, row, fadeMillis);
+		keyboardKey(view, look, this.downKey, options.keyDown, KEY + GAP, row, fadeMillis);
+		keyboardKey(view, look, this.rightKey, options.keyRight, (KEY + GAP) * 2.0F, row, fadeMillis);
 		float top = row + KEY + GAP;
 		if (this.mouse.get()) {
 			float half = (WIDTH - GAP) / 2.0F;
-			mouseKey(view, this.leftButton, "left", this.clicks.left(), 0.0F, top, half, fadeMillis);
-			mouseKey(view, this.rightButton, "right", this.clicks.right(), half + GAP, top, half, fadeMillis);
+			mouseKey(view, look, this.leftButton, "left", this.clicks.left(), 0.0F, top, half, fadeMillis);
+			mouseKey(view, look, this.rightButton, "right", this.clicks.right(), half + GAP, top, half, fadeMillis);
 			top += mouseHeight() + GAP;
 		}
 		if (this.space.get()) {
-			spaceKey(view, top, fadeMillis);
+			spaceKey(view, look, top, fadeMillis);
 		}
 	}
 
-	private void keyboardKey(View view, Key key, KeyMapping mapping, float x, float y, float fadeMillis) {
+	private void keyboardKey(View view, HudLook look, Key key, KeyMapping mapping, float x, float y, float fadeMillis) {
 		float fade = key.fade(fadeMillis);
-		Color tint = tint(fade);
-		Element element = keyBox(view, () -> {
+		keyBox(view, look, x, y, KEY, KEY, fade, () -> {
 			if (this.labels.get()) {
-				view.text(mapping.getTranslatedKeyMessage().getString()).textSize(KEY_TEXT_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap().tint(tint);
+				label(look, view.text(mapping.getTranslatedKeyMessage().getString()).textSize(KEY_TEXT_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap(), fade);
 			}
-		}, fade);
-		element.position(x, y).width(KEY).height(KEY);
+		});
 	}
 
-	private void mouseKey(View view, Key key, String side, int clicksPerSecond, float x, float y, float width, float fadeMillis) {
+	private void mouseKey(View view, HudLook look, Key key, String side, int clicksPerSecond, float x, float y, float width, float fadeMillis) {
 		float fade = key.fade(fadeMillis);
-		Color tint = tint(fade);
-		Element element = keyBox(view, () -> {
+		keyBox(view, look, x, y, width, mouseHeight(), fade, () -> {
 			if (this.labels.get()) {
-				view.text(I18n.get(translationKey() + "." + side)).textSize(MOUSE_TEXT_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap().tint(tint);
+				label(look, view.text(I18n.get(translationKey() + "." + side)).textSize(MOUSE_TEXT_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap(), fade);
 			}
 			if (this.clickRate.get()) {
-				view.text(I18n.get(translationKey() + ".cps", clicksPerSecond)).textSize(RATE_TEXT_SIZE).textNoWrap().tint(tint);
+				label(look, view.text(I18n.get(translationKey() + ".cps", clicksPerSecond)).textSize(RATE_TEXT_SIZE).textNoWrap(), fade);
 			}
-		}, fade);
-		element.position(x, y).width(width).height(mouseHeight());
+		});
 	}
 
-	private void spaceKey(View view, float y, float fadeMillis) {
+	private void spaceKey(View view, HudLook look, float y, float fadeMillis) {
 		float fade = this.spaceBar.fade(fadeMillis);
-		Color tint = tint(fade);
-		Element element = keyBox(view, () -> {
+		keyBox(view, look, 0.0F, y, WIDTH, SPACE_HEIGHT, fade, () -> {
 			if (this.labels.get()) {
 				view.box(() -> {
-				}).width(SPACE_BAR_WIDTH).height(SPACE_BAR_HEIGHT).cornerRadius(SPACE_BAR_HEIGHT / 2.0F).background(tint);
+				}).width(SPACE_BAR_WIDTH).height(SPACE_BAR_HEIGHT).cornerRadius(SPACE_BAR_HEIGHT / 2.0F).background(pressedText(look, fade));
 			}
-		}, fade);
-		element.position(0.0F, y).width(WIDTH).height(SPACE_HEIGHT);
+		});
 	}
 
-	private Element keyBox(View view, Runnable content, float fade) {
+	private void keyBox(View view, HudLook look, float x, float y, float width, float height, float fade, Runnable content) {
+		float radius = Math.min(look.radius(), Math.min(width, height) / 2.0F);
 		Color pressed = Colors.of(this.pressedColor.argb());
-		Element element = view.box(() -> view.column(content).fillWidth().fillHeight().alignItems(Align.CENTER).justify(Justification.CENTER))
-			.cornerRadius(CORNER_RADIUS);
+		Element element = view.box(() -> {
+				if (fade > 0.0F) {
+					view.box(() -> {
+						})
+						.position(0.0F, 0.0F)
+						.width(width)
+						.height(height)
+						.cornerRadius(radius)
+						.background(Colors.fade(pressed, fade));
+				}
+				view.column(content).fillWidth().fillHeight().alignItems(Align.CENTER).justify(Justification.CENTER);
+			})
+			.position(x, y)
+			.width(width)
+			.height(height);
 		if (this.background.get()) {
-			element.glass().background(Colors.mix(BACKDROP, pressed, fade));
+			look.panel(element, radius);
 		} else {
-			element.background(Colors.withAlpha(pressed, pressed.a() * fade));
+			element.cornerRadius(radius);
 		}
-		return element;
 	}
 
-	private Color tint(float fade) {
-		return Colors.mix(Colors.of(this.textColor.argb()), Colors.of(this.pressedTextColor.argb()), fade);
+	private void label(HudLook look, Element text, float fade) {
+		if (fade <= 0.0F) {
+			look.text(text);
+		} else {
+			text.tint(pressedText(look, fade));
+		}
+	}
+
+	private Color pressedText(HudLook look, float fade) {
+		return Colors.mix(look.ink(), Colors.of(this.pressedTextColor.argb()), fade);
 	}
 
 	private float mouseHeight() {

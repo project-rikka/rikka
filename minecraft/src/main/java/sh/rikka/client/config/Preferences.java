@@ -2,6 +2,7 @@ package sh.rikka.client.config;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import sh.rikka.client.RikkaClient;
+import sh.rikka.client.hud.style.HudStyle;
 import sh.rikka.client.setting.BoolSetting;
 import sh.rikka.client.setting.DoubleSetting;
 import sh.rikka.client.setting.EnumSetting;
@@ -19,6 +20,7 @@ public final class Preferences {
 	private final KeybindSetting hudEditorKey = this.settings.keybind("hud_editor_key");
 	private final StringSetting theme = this.settings.text("theme", "");
 	private final EnumSetting<Background> background = this.settings.choice("background", Background.DESKTOP);
+	private final HudStyle hud = new HudStyle(this.settings);
 	private final KeybindSetting musicPlayKey = this.settings.keybind("music_play_key");
 	private final KeybindSetting musicNextKey = this.settings.keybind("music_next_key");
 	private final KeybindSetting musicPreviousKey = this.settings.keybind("music_previous_key");
@@ -51,6 +53,10 @@ public final class Preferences {
 
 	public EnumSetting<Background> background() {
 		return this.background;
+	}
+
+	public HudStyle hud() {
+		return this.hud;
 	}
 
 	public KeybindSetting musicPlayKey() {

@@ -4,8 +4,8 @@ use rustc_hash::FxHashMap;
 use crate::draw::arena::{Arena, Span};
 use crate::draw::batcher::Work;
 use crate::draw::chunks::{Chunk, Segment};
-use crate::draw::clips::{ClipPool, HeldClips};
 use crate::draw::emit::Band;
+use crate::draw::extras::{ExtraPool, HeldExtras};
 use crate::draw::glyph_refs::GlyphRefs;
 use crate::draw::groups::GroupTables;
 use crate::draw::instance::GpuInstance;
@@ -69,7 +69,7 @@ pub(crate) struct Direct {
     pub(crate) shown: VisibilityTable,
     pub(crate) captured: VisibilityTable,
     pub(crate) moves: Moves,
-    pub(crate) extras: ClipPool,
+    pub(crate) extras: ExtraPool,
     pub(crate) textured: Vec<u32>,
 }
 
@@ -101,7 +101,7 @@ pub(crate) struct RetainedBatch {
     pub(crate) shown: VisibilityTable,
     pub(crate) captured: VisibilityTable,
     pub(crate) moves: Moves,
-    pub(crate) extras: ClipPool,
+    pub(crate) extras: ExtraPool,
     pub(crate) textured: Vec<u32>,
     pub(crate) listings: FxHashMap<TextureId, Option<(u32, [u32; 2])>>,
     pub(crate) book_revision: Option<u64>,
@@ -125,7 +125,7 @@ pub(crate) struct Slot {
     pub(crate) has_backdrop_segment: bool,
     pub(crate) occludes: bool,
     pub(crate) at: Point,
-    pub(crate) clips: HeldClips,
+    pub(crate) clips: HeldExtras,
 }
 
 impl Default for Slot {
@@ -143,7 +143,7 @@ impl Default for Slot {
             has_backdrop_segment: false,
             occludes: false,
             at: Point::ZERO,
-            clips: HeldClips::default(),
+            clips: HeldExtras::default(),
         }
     }
 }
@@ -213,7 +213,7 @@ impl RetainedBatch {
             shown: VisibilityTable::default(),
             captured: VisibilityTable::default(),
             moves: Moves::default(),
-            extras: ClipPool::default(),
+            extras: ExtraPool::default(),
             textured: Vec::new(),
             listings: FxHashMap::default(),
             book_revision: None,

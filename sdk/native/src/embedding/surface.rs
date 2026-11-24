@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use ash::vk::{self, Handle};
 use rikka_app::Sender;
-use rikka_app::embedded::{Embedded, Embedding, SurfaceId};
+use rikka_app::embedded::{Embedded, Embedding, SurfaceBackground, SurfaceId};
 use rikka_renderer::{ExternalImage, Transform};
 use rikka_ui::{Event, Handler, Size};
 
@@ -117,6 +117,10 @@ impl EmbeddedSurface {
 
     pub(crate) fn rejoin(&self) {
         self.embedding.rejoin(self.id);
+    }
+
+    pub(crate) fn set_background(&self, background: SurfaceBackground) {
+        self.embedding.set_surface_background(self.id, background);
     }
 
     pub(crate) fn render(&self, target: ffi::VulkanImage) -> ffi::Status {

@@ -34,7 +34,8 @@ pub use motion::{
 };
 pub use offscreen::{Offscreen, OffscreenRender};
 pub use paint::{
-    DocumentMeasure, MeasureSpec, PaintCtx, Quad, Ring, Sprite, measure_text, text_width,
+    DocumentMeasure, Ink, MeasureSpec, PaintCtx, Quad, Ring, Shadow, Sprite, measure_text,
+    text_width,
 };
 pub use picture::{
     BufferKey, DirectResolver, ImageSource, SourceKey, TextureResolver, Vector, VectorKey,
@@ -61,8 +62,8 @@ pub use task::{
     stream_keyed, with_animation, work_runtime,
 };
 pub use text::{
-    Label, LineEnding, Text, TextColor, TextDocument, TextRole, TextRun, TextStyle, TextStyled,
-    text,
+    Label, LineEnding, Text, TextColor, TextDocument, TextRole, TextRun, TextShadow, TextStyle,
+    TextStyled, text,
 };
 pub use view::{
     Anchor, AnchorEdge, AnchorWidth, Arranged, Behavior, DropdownPlacement, Element, Env, Observed,
@@ -88,6 +89,7 @@ pub use rikka_text::{Align as TextAlign, Family, FontStyle, Weight, Wrap};
 pub use rikka_theme::Corner;
 
 pub use rikka_types::{
-    Color, CornerRadii, CursorShape, Key, KeyCode, KeyLocation, Modifiers, Point, PointerButton,
-    Rect, RoundedRect, ScrollDelta, Size, Stylus, StylusSample, ToolKind, WindowIdentifier,
+    Color, CornerRadii, CursorShape, Gradient, Key, KeyCode, KeyLocation, Modifiers, Point,
+    PointerButton, Rect, RoundedRect, ScrollDelta, Size, Stylus, StylusSample, ToolKind,
+    WindowIdentifier,
 };

@@ -20,9 +20,9 @@ import os.rikka.Element;
 import os.rikka.FontWeight;
 import os.rikka.Image;
 import os.rikka.Rikka;
-import os.rikka.TextTone;
 import os.rikka.View;
 import sh.rikka.client.RikkaClient;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.event.EventHandler;
 import sh.rikka.client.events.ResourceReloadEvent;
 import sh.rikka.client.events.TickEvent;
@@ -41,7 +41,6 @@ public final class PackDisplayMod extends HudMod {
 	private static final float TITLE_SIZE = 13.0F;
 	private static final float DESCRIPTION_SIZE = 11.0F;
 	private static final float MAX_TEXT_WIDTH = 220.0F;
-	private static final float CORNER_RADIUS = 9.0F;
 
 	private final BoolSetting all = bool("all", false);
 	private final BoolSetting icon = bool("icon", true);
@@ -93,18 +92,18 @@ public final class PackDisplayMod extends HudMod {
 	}
 
 	@Override
-	protected void view(View view) {
+	protected void view(View view, HudLook look) {
 		Element panel = view.box(() -> view.column(() -> {
 			for (Entry entry : shown()) {
-				row(view, entry);
+				row(view, look, entry);
 			}
-		}).fillWidth().fillHeight().gap(ROW_GAP)).fillWidth().fillHeight().padding(PADDING).cornerRadius(CORNER_RADIUS);
+		}).fillWidth().fillHeight().gap(ROW_GAP)).fillWidth().fillHeight().padding(PADDING);
 		if (this.background.get()) {
-			panel.glass().background(BACKDROP);
+			look.panel(panel);
 		}
 	}
 
-	private void row(View view, Entry entry) {
+	private void row(View view, HudLook look, Entry entry) {
 		view.row(() -> {
 			Image image = entry.icon();
 			if (this.icon.get() && image != null) {
@@ -116,9 +115,9 @@ public final class PackDisplayMod extends HudMod {
 					.clipContent();
 			}
 			view.box(() -> view.column(() -> {
-				view.text(entry.title()).textSize(TITLE_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap();
+				look.text(view.text(entry.title()).textSize(TITLE_SIZE).textWeight(FontWeight.MEDIUM).textNoWrap());
 				if (this.description.get() && !entry.description().isEmpty()) {
-					view.text(entry.description()).textSize(DESCRIPTION_SIZE).tone(TextTone.MUTED).textNoWrap();
+					look.mutedText(view.text(entry.description()).textSize(DESCRIPTION_SIZE).textNoWrap());
 				}
 			}).fillWidth()).grow(1.0F).clipContent();
 		}).height(rowHeight()).gap(GAP).alignItems(Align.CENTER);

@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use rikka_text::{IconSpec, TextPaint};
-use rikka_types::{Color, CornerRadii, Lens, Rect, RoundedRect};
+use rikka_types::{Color, CornerRadii, Gradient, Lens, Rect, RoundedRect};
 
 use crate::fx::{BackdropCache, Joined, PostEffect};
 use crate::scene::audience::Audience;
 use crate::scene::dirt::{BOUNDS, CONTENT, Dirt, KEPT, LAYER, MOVED, ORDER, SHOWN};
 use crate::scene::image_source::ImageSource;
-use crate::scene::node::{GroupId, LayerId, Node, NodeId, Shape, Stroke};
+use crate::scene::node::{Gradients, GroupId, LayerId, Node, NodeId, ShadowExtent, Shape, Stroke};
 use crate::scene::scene_impl::Scene;
 use rikka_gpu::texture::TextureId;
 
@@ -60,6 +60,34 @@ impl NodeEdit<'_> {
 
     pub fn fill(&mut self, fill: Color) -> &mut Self {
         self.assign(fill, |node| &mut node.fill)
+    }
+
+    pub fn fill_gradient(&mut self, gradient: impl Into<Option<Gradient>>) -> &mut Self {
+        let gradient = gradient.into();
+        self.gradients(|gradients| gradients.fill = gradient)
+    }
+
+    pub fn stroke_gradient(&mut self, gradient: impl Into<Option<Gradient>>) -> &mut Self {
+        let gradient = gradient.into();
+        self.gradients(|gradients| gradients.stroke = gradient)
+    }
+
+    fn gradients(&mut self, change: impl FnOnce(&mut Gradients)) -> &mut Self {
+        self.apply(|node| {
+            let next = Gradients::changed(node.gradients.as_deref(), change);
+            replace_boxed(&mut node.gradients, next)
+        })
+    }
+
+    pub fn shadow(&mut self, shape: RoundedRect, sigma: f32) -> &mut Self {
+        let extent = ShadowExtent::of(shape, sigma);
+        self.rect(extent.rect);
+        self.apply(|node| match &mut node.shape {
+            Shape::Shadow { radii, sigma } => {
+                replace(radii, extent.radii) | replace(sigma, extent.sigma)
+            }
+            _ => false,
+        })
     }
 
     pub fn stroke(&mut self, stroke: impl Into<Option<Stroke>>) -> &mut Self {

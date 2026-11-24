@@ -1,10 +1,14 @@
+mod ink;
 mod measure;
 mod painter;
 mod revealing;
+mod shadow;
 mod sprite;
 
+pub use ink::Ink;
 pub use measure::{DocumentMeasure, MeasureSpec, measure_text, text_width};
 pub use painter::{PaintCtx, Quad, Ring};
+pub use shadow::Shadow;
 pub use sprite::Sprite;
 
 pub(crate) use measure::{limit, measure_key};

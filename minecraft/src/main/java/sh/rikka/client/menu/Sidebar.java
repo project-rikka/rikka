@@ -28,6 +28,7 @@ final class Sidebar implements AutoCloseable {
 		new Item("nav.profiles", "switch_account", new Page.Profiles()),
 		new Header("nav.personalization"),
 		new Item("nav.themes", "palette", new Page.Themes()),
+		new Item("nav.hud", "brush", new Page.Hud()),
 		new Item("nav.preferences", "tune", new Page.Preferences())
 	);
 

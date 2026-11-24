@@ -8,6 +8,7 @@ import os.rikka.Color;
 import os.rikka.Element;
 import os.rikka.FontWeight;
 import os.rikka.View;
+import sh.rikka.client.hud.style.HudLook;
 import sh.rikka.client.mod.HudCanvas;
 import sh.rikka.client.mod.OverlayHudMod;
 import sh.rikka.client.setting.BoolSetting;
@@ -22,7 +23,6 @@ public final class InventoryDisplayMod extends OverlayHudMod {
 	private static final float PADDING = 6.0F;
 	private static final float TITLE_HEIGHT = 20.0F;
 	private static final float TITLE_TEXT_SIZE = 12.0F;
-	private static final float CORNER_RADIUS = 10.0F;
 	private static final float SLOT_RADIUS = 4.0F;
 	private static final float SLOT_INSET = 1.0F;
 	private static final Color SLOT_FILL = new Color(1.0F, 1.0F, 1.0F, 0.07F);
@@ -46,18 +46,18 @@ public final class InventoryDisplayMod extends OverlayHudMod {
 	}
 
 	@Override
-	protected void view(View view) {
+	protected void view(View view, HudLook look) {
 		Element panel = view.box(() -> {
-		}).position(0.0F, 0.0F).width(width()).height(height()).cornerRadius(CORNER_RADIUS);
+		}).position(0.0F, 0.0F).width(width()).height(height());
 		if (this.background.get()) {
-			panel.glass().background(BACKDROP);
+			look.panel(panel);
 		}
 		if (this.title.get()) {
-			view.text(I18n.get(translationKey() + ".title"))
+			look.text(view.text(I18n.get(translationKey() + ".title"))
 				.position(PADDING + SLOT_INSET, PADDING)
 				.textSize(TITLE_TEXT_SIZE)
 				.textWeight(FontWeight.MEDIUM)
-				.textNoWrap();
+				.textNoWrap());
 		}
 		if (this.slots.get()) {
 			for (int row = 0; row < ROWS; row++) {

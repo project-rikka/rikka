@@ -102,6 +102,10 @@ final class Native {
     static final MethodHandle RK_IMAGE_NEW_RGBA = downcall("rk_image_new_rgba", FunctionDescriptor.of(ADDRESS, JAVA_INT, JAVA_INT, ADDRESS, JAVA_LONG));
     static final MethodHandle RK_IMAGE_REF = downcall("rk_image_ref", FunctionDescriptor.of(ADDRESS, ADDRESS));
     static final MethodHandle RK_IMAGE_UNREF = downcall("rk_image_unref", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_GRADIENT_NEW_LINEAR = downcall("rk_gradient_new_linear", FunctionDescriptor.of(ADDRESS, JAVA_FLOAT, COLOR, COLOR));
+    static final MethodHandle RK_GRADIENT_WITH_STOP = downcall("rk_gradient_with_stop", FunctionDescriptor.of(ADDRESS, ADDRESS, JAVA_FLOAT, COLOR));
+    static final MethodHandle RK_GRADIENT_REF = downcall("rk_gradient_ref", FunctionDescriptor.of(ADDRESS, ADDRESS));
+    static final MethodHandle RK_GRADIENT_UNREF = downcall("rk_gradient_unref", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_SOUND_NEW = downcall("rk_sound_new", FunctionDescriptor.of(ADDRESS, STR));
     static final MethodHandle RK_SOUND_PLAY = downcall("rk_sound_play", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_SOUND_PAUSE = downcall("rk_sound_pause", FunctionDescriptor.ofVoid(ADDRESS));
@@ -209,6 +213,8 @@ final class Native {
     static final MethodHandle RK_EMBEDDED_SURFACE_CARET = downcall("rk_embedded_surface_caret", FunctionDescriptor.of(RECT, ADDRESS));
     static final MethodHandle RK_EMBEDDED_SURFACE_LEAVE = downcall("rk_embedded_surface_leave", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_EMBEDDED_SURFACE_REJOIN = downcall("rk_embedded_surface_rejoin", FunctionDescriptor.ofVoid(ADDRESS));
+    static final MethodHandle RK_EMBEDDED_SURFACE_SET_BACKGROUND = downcall("rk_embedded_surface_set_background", FunctionDescriptor.ofVoid(ADDRESS, JAVA_INT));
+    static final MethodHandle RK_EMBEDDED_SURFACE_FOLLOW_BACKGROUND = downcall("rk_embedded_surface_follow_background", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_EMBEDDED_SURFACE_REF = downcall("rk_embedded_surface_ref", FunctionDescriptor.of(ADDRESS, ADDRESS));
     static final MethodHandle RK_EMBEDDED_SURFACE_UNREF = downcall("rk_embedded_surface_unref", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_CONTEXT_WINDOW = downcall("rk_context_window", FunctionDescriptor.of(ADDRESS, ADDRESS));
@@ -322,6 +328,10 @@ final class Native {
     static final MethodHandle RK_GLASS = downcall("rk_glass", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_CORNER_RADIUS = downcall("rk_corner_radius", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT));
     static final MethodHandle RK_BORDER = downcall("rk_border", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, COLOR));
+    static final MethodHandle RK_BACKGROUND_GRADIENT = downcall("rk_background_gradient", FunctionDescriptor.ofVoid(ADDRESS, ADDRESS));
+    static final MethodHandle RK_BORDER_GRADIENT = downcall("rk_border_gradient", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, ADDRESS));
+    static final MethodHandle RK_SHADOW = downcall("rk_shadow", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, COLOR));
+    static final MethodHandle RK_SHADOW_GRADIENT = downcall("rk_shadow_gradient", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, JAVA_FLOAT, ADDRESS));
     static final MethodHandle RK_CLIP_CONTENT = downcall("rk_clip_content", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_TEXT_STYLE = downcall("rk_text_style", FunctionDescriptor.ofVoid(ADDRESS, JAVA_INT));
     static final MethodHandle RK_TONE = downcall("rk_tone", FunctionDescriptor.ofVoid(ADDRESS, JAVA_INT));
@@ -333,6 +343,8 @@ final class Native {
     static final MethodHandle RK_TEXT_MONOSPACE = downcall("rk_text_monospace", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_TEXT_LINE_HEIGHT = downcall("rk_text_line_height", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT));
     static final MethodHandle RK_TINT = downcall("rk_tint", FunctionDescriptor.ofVoid(ADDRESS, COLOR));
+    static final MethodHandle RK_TINT_GRADIENT = downcall("rk_tint_gradient", FunctionDescriptor.ofVoid(ADDRESS, ADDRESS));
+    static final MethodHandle RK_TEXT_SHADOW = downcall("rk_text_shadow", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT, JAVA_FLOAT, COLOR));
     static final MethodHandle RK_ICON_SIZE = downcall("rk_icon_size", FunctionDescriptor.ofVoid(ADDRESS, JAVA_FLOAT));
     static final MethodHandle RK_ICON_FILLED = downcall("rk_icon_filled", FunctionDescriptor.ofVoid(ADDRESS));
     static final MethodHandle RK_ENABLED = downcall("rk_enabled", FunctionDescriptor.ofVoid(ADDRESS, JAVA_BOOLEAN));

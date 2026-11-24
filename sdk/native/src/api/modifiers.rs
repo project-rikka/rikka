@@ -1,11 +1,12 @@
 use rikka_ui::{
-    Anchor, AnchorEdge, Edge, Family, Inset, Length, Point, Space, TextAlign, TextStyled,
-    Transition, fade, fade_scale, pop, slide,
+    Anchor, AnchorEdge, Edge, Family, Ink, Inset, Length, Point, Shadow, Space, TextAlign,
+    TextShadow, TextStyled, Transition, fade, fade_scale, pop, slide,
 };
 use rikka_widgets::{ControlSize, ImageFit};
 
 use crate::abi::violation;
 use crate::api::elements::check_state;
+use crate::api::gradient::Gradient;
 use crate::ffi;
 use crate::values::{
     align, color, edges, extent, finite, px, role, selection as selected_index, symbol, weight,
@@ -260,6 +261,57 @@ pub(crate) fn border(view: &mut View, width: f32, value: ffi::Color) {
     }
 }
 
+pub(crate) fn background_gradient(view: &mut View, gradient: &Gradient) {
+    let gradient = gradient.get();
+    let node = view.current();
+    match &mut node.kind {
+        Kind::Box { container, .. } => {
+            container.edit(move |container| container.background_gradient(gradient));
+        }
+        _ => node.refuse("background gradient"),
+    }
+}
+
+pub(crate) fn border_gradient(view: &mut View, width: f32, gradient: &Gradient) {
+    let width = extent(width, "border width");
+    let gradient = gradient.get();
+    let node = view.current();
+    match &mut node.kind {
+        Kind::Box { container, .. } => {
+            container.edit(move |container| container.border_gradient(width, gradient));
+        }
+        _ => node.refuse("border gradient"),
+    }
+}
+
+pub(crate) fn shadow(view: &mut View, blur: f32, spread: f32, x: f32, y: f32, value: ffi::Color) {
+    cast_shadow(view, blur, spread, x, y, Ink::Solid(color(value)));
+}
+
+pub(crate) fn shadow_gradient(
+    view: &mut View,
+    blur: f32,
+    spread: f32,
+    x: f32,
+    y: f32,
+    gradient: &Gradient,
+) {
+    cast_shadow(view, blur, spread, x, y, Ink::Gradient(gradient.get()));
+}
+
+fn cast_shadow(view: &mut View, blur: f32, spread: f32, x: f32, y: f32, ink: Ink) {
+    let blur = extent(blur, "shadow blur");
+    let offset = |value: f32, what: &str| finite(f64::from(value), what) as f32;
+    let shadow = Shadow::new(blur, ink)
+        .spread(offset(spread, "shadow spread"))
+        .offset(offset(x, "shadow offset"), offset(y, "shadow offset"));
+    let node = view.current();
+    match &mut node.kind {
+        Kind::Box { container, .. } => container.edit(move |container| container.shadow(shadow)),
+        _ => node.refuse("shadow"),
+    }
+}
+
 pub(crate) fn clip_content(view: &mut View) {
     let node = view.current();
     match &mut node.kind {
@@ -345,6 +397,27 @@ pub(crate) fn tint(view: &mut View, value: ffi::Color) {
         Kind::Banner(banner) => banner.edit(move |banner| banner.tint(value)),
         Kind::StatusPage(status) => status.edit(move |status| status.tint(value)),
         _ => node.refuse("tint"),
+    }
+}
+
+pub(crate) fn tint_gradient(view: &mut View, gradient: &Gradient) {
+    let gradient = gradient.get();
+    let node = view.current();
+    match &mut node.kind {
+        Kind::Text(text) => text.edit(move |text| text.gradient(gradient)),
+        Kind::Icon(icon) => icon.edit(move |icon| icon.gradient(gradient)),
+        _ => node.refuse("tint gradient"),
+    }
+}
+
+pub(crate) fn text_shadow(view: &mut View, x: f32, y: f32, value: ffi::Color) {
+    let offset = |value: f32| finite(f64::from(value), "text shadow offset") as f32;
+    let shadow = TextShadow::new(offset(x), offset(y), color(value));
+    let node = view.current();
+    match &mut node.kind {
+        Kind::Text(text) => text.edit(move |text| text.shadow(shadow)),
+        Kind::Icon(icon) => icon.edit(move |icon| icon.shadow(shadow)),
+        _ => node.refuse("text shadow"),
     }
 }
 
