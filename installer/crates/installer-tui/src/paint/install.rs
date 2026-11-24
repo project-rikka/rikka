@@ -10,15 +10,10 @@ use crate::{app::App, paint::Painter, progress::StageState};
 pub(super) fn draw(painter: &mut Painter<'_, '_>, area: Rect, app: &mut App) {
     let stages = app.install().stages().len().max(1) as u16;
 
-    let [list, bar, log] = Layout::vertical([
-        Constraint::Length(stages + 1),
-        Constraint::Length(2),
-        Constraint::Min(3),
-    ])
-    .areas(area);
+    let [list, log] =
+        Layout::vertical([Constraint::Length(stages + 1), Constraint::Min(3)]).areas(area);
 
     stage_list(painter, list, app);
-    progress_bar(painter, bar, app);
     log_pane(painter, log, app);
 }
 
@@ -51,40 +46,6 @@ fn stage_list(painter: &mut Painter<'_, '_>, area: Rect, app: &App) {
         .collect();
 
     painter.render(Paragraph::new(lines), area);
-}
-
-fn progress_bar(painter: &mut Painter<'_, '_>, area: Rect, app: &App) {
-    let theme = painter.theme();
-    let glyphs = painter.glyphs();
-    let view = app.install();
-    let elapsed = view.elapsed().as_secs();
-    let clock = format!("{:02}:{:02}", elapsed / 60, elapsed % 60);
-    let percent = (view.progress() * 100.0).round() as u32;
-
-    let room = area.width.saturating_sub(4 + 5 + 6 + 2) as usize;
-    let full = (view.progress() * room as f32).round() as usize;
-    let (colour, label) = match view.outcome() {
-        Some(Ok(())) => (theme.ok, "done".to_owned()),
-        Some(Err(_)) => (theme.danger, "failed".to_owned()),
-        None => (theme.accent, format!("{percent:>3}%")),
-    };
-
-    painter.render(
-        Paragraph::new(Line::from(vec![
-            Span::raw("  "),
-            Span::styled(glyphs.bar_full.repeat(full), Style::new().fg(colour)),
-            Span::styled(
-                glyphs.bar_empty.repeat(room.saturating_sub(full)),
-                Style::new().fg(theme.border),
-            ),
-            Span::styled(
-                format!("  {label}"),
-                Style::new().fg(colour).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(format!("  {clock}"), Style::new().fg(theme.muted)),
-        ])),
-        area,
-    );
 }
 
 fn log_pane(painter: &mut Painter<'_, '_>, area: Rect, app: &mut App) {

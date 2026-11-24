@@ -14,7 +14,6 @@ pub enum Event {
     Planned(Vec<Stage>),
     Entered(Stage),
     Log(String),
-    Progress(f32),
     Finished,
     Failed(String),
 }
@@ -35,17 +34,12 @@ pub fn install(host: &dyn Host, answers: &Answers, report: &mut dyn FnMut(Event)
         host,
         answers,
         plan,
-        total: stages.iter().map(|stage| u32::from(stage.weight())).sum(),
-        done: 0,
         acquired: Acquired::default(),
         report,
     };
 
     match run.all(&stages) {
-        Ok(()) => {
-            run.report(Event::Progress(1.0));
-            run.report(Event::Finished);
-        }
+        Ok(()) => run.report(Event::Finished),
         Err(error) => {
             run.roll_back();
             run.report(Event::Failed(error.to_string()));
@@ -57,8 +51,6 @@ struct Run<'a> {
     host: &'a dyn Host,
     answers: &'a Answers,
     plan: PartitionPlan,
-    total: u32,
-    done: u32,
     acquired: Acquired,
     report: &'a mut dyn FnMut(Event),
 }
@@ -84,10 +76,6 @@ impl Run<'_> {
                 Stage::Install => self.nixos_install()?,
                 Stage::Finish => self.finish()?,
             }
-            self.done += u32::from(stage.weight());
-            let done = self.done;
-            let total = self.total;
-            self.report(Event::Progress(done as f32 / total as f32));
         }
         Ok(())
     }
@@ -356,21 +344,9 @@ impl Run<'_> {
         self.log(format!("$ {command}"));
         self.log("Building the system; this can take a long time".to_owned());
 
-        let base = self.done as f32 / self.total as f32;
-        let span = f32::from(Stage::Install.weight()) / self.total as f32;
-        let mut lines = 0u32;
-        let mut shown = u32::MAX;
         let report = &mut *self.report;
 
         self.host.run_logged(&command, &mut |line| {
-            lines += 1;
-            let completion = 1.0 - 0.995_f32.powi(lines as i32);
-            let fraction = base + span * completion;
-            let percent = (fraction * 100.0) as u32;
-            if percent != shown {
-                shown = percent;
-                report(Event::Progress(fraction));
-            }
             report(Event::Log(line.to_owned()));
         })?;
         Ok(())

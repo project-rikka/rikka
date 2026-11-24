@@ -15,8 +15,6 @@ pub struct Glyphs {
     pub mask: &'static str,
     pub ellipsis: &'static str,
     pub separator: &'static str,
-    pub bar_full: &'static str,
-    pub bar_empty: &'static str,
     pub spinner: &'static [&'static str],
     pub border: BorderType,
 }
@@ -35,8 +33,6 @@ const UNICODE: Glyphs = Glyphs {
     mask: "•",
     ellipsis: "…",
     separator: " · ",
-    bar_full: "█",
-    bar_empty: "░",
     spinner: &["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
     border: BorderType::Rounded,
 };
@@ -55,8 +51,6 @@ const ASCII: Glyphs = Glyphs {
     mask: "*",
     ellipsis: "...",
     separator: " | ",
-    bar_full: "#",
-    bar_empty: ".",
     spinner: &["|", "/", "-", "\\"],
     border: BorderType::Plain,
 };

@@ -43,14 +43,4 @@ impl Stage {
             Self::Finish => "Finish",
         }
     }
-
-    #[must_use]
-    pub fn weight(self) -> u16 {
-        match self {
-            Self::Install => 60,
-            Self::Encrypt => 8,
-            Self::Format | Self::Scan => 4,
-            Self::Partition | Self::Mount | Self::Configure | Self::Finish => 1,
-        }
-    }
 }

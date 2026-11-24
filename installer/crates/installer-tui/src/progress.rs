@@ -1,7 +1,5 @@
 mod log;
 
-use std::time::{Duration, Instant};
-
 use installer_sys::{Event, Stage};
 
 pub use log::Log;
@@ -19,32 +17,25 @@ pub struct InstallView {
     stages: Vec<Stage>,
     current: Option<Stage>,
     done: Vec<Stage>,
-    progress: f32,
     log: Log,
     outcome: Option<Result<(), String>>,
-    started: Option<Instant>,
     frame: usize,
 }
 
 impl InstallView {
     pub fn apply(&mut self, event: Event) {
         match event {
-            Event::Planned(stages) => {
-                self.stages = stages;
-                self.started = Some(Instant::now());
-            }
+            Event::Planned(stages) => self.stages = stages,
             Event::Entered(stage) => {
                 if let Some(previous) = self.current.replace(stage) {
                     self.done.push(previous);
                 }
             }
             Event::Log(line) => self.log.push(&line),
-            Event::Progress(fraction) => self.progress = fraction.clamp(0.0, 1.0),
             Event::Finished => {
                 if let Some(stage) = self.current.take() {
                     self.done.push(stage);
                 }
-                self.progress = 1.0;
                 self.outcome = Some(Ok(()));
             }
             Event::Failed(message) => {
@@ -88,11 +79,6 @@ impl InstallView {
     }
 
     #[must_use]
-    pub fn progress(&self) -> f32 {
-        self.progress
-    }
-
-    #[must_use]
     pub fn frame(&self) -> usize {
         self.frame
     }
@@ -110,10 +96,5 @@ impl InstallView {
     #[must_use]
     pub fn failed(&self) -> bool {
         matches!(self.outcome, Some(Err(_)))
-    }
-
-    #[must_use]
-    pub fn elapsed(&self) -> Duration {
-        self.started.map(|at| at.elapsed()).unwrap_or_default()
     }
 }
