@@ -29,7 +29,14 @@ public enum MapShape {
 	float[] outline(float centerX, float centerY, float halfWidth, float halfHeight, float feather) {
 		return switch (this) {
 			case CIRCLE -> GuiMesh.circle(centerX, centerY, halfWidth, GuiMesh.segments(halfWidth, feather));
-			case SQUARE, WIDE -> roundedRectangle(centerX, centerY, halfWidth, halfHeight, cornerRadius(halfWidth * 2.0F, halfHeight * 2.0F));
+			case SQUARE, WIDE -> GuiMesh.roundedRectangle(
+				centerX,
+				centerY,
+				halfWidth,
+				halfHeight,
+				cornerRadius(halfWidth * 2.0F, halfHeight * 2.0F),
+				CORNER_SEGMENTS
+			);
 		};
 	}
 
@@ -55,24 +62,5 @@ public enum MapShape {
 				Math.abs(directionY) > 0.0F ? halfHeight / Math.abs(directionY) : Float.POSITIVE_INFINITY
 			);
 		};
-	}
-
-	private static float[] roundedRectangle(float centerX, float centerY, float halfWidth, float halfHeight, float radius) {
-		float[] outline = new float[4 * (CORNER_SEGMENTS + 1) * 2];
-		float innerX = halfWidth - radius;
-		float innerY = halfHeight - radius;
-		int[][] corners = {{1, 1}, {-1, 1}, {-1, -1}, {1, -1}};
-		int index = 0;
-		for (int corner = 0; corner < corners.length; corner++) {
-			float cornerX = centerX + corners[corner][0] * innerX;
-			float cornerY = centerY + corners[corner][1] * innerY;
-			float start = corner * Mth.HALF_PI;
-			for (int step = 0; step <= CORNER_SEGMENTS; step++) {
-				float angle = start + Mth.HALF_PI * step / CORNER_SEGMENTS;
-				outline[index++] = cornerX + Mth.cos(angle) * radius;
-				outline[index++] = cornerY + Mth.sin(angle) * radius;
-			}
-		}
-		return outline;
 	}
 }

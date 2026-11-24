@@ -27,6 +27,8 @@
 		"KeyboardHandlerMixin",
 		"KeyboardInputMixin",
 		"LayerRenderStateAccessor",
+		"LevelExtractorInvoker",
+		"LevelExtractorMixin",
 		"LevelRendererMixin",
 		"LightmapRenderStateExtractorMixin",
 		"LivingEntityMixin",

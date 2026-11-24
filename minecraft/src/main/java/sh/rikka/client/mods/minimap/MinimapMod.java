@@ -8,6 +8,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.util.ARGB;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.LightLayer;
 import os.rikka.Align;
@@ -201,7 +202,7 @@ public final class MinimapMod extends OverlayHudMod {
 
 		TerrainAtlas atlas = this.terrain.atlas();
 		float feather = canvas.pixel();
-		int tint = (Mth.floor(this.opacity.getFloat() * 255.0F) << 24) | 0xFFFFFF;
+		int tint = ARGB.white(this.opacity.getFloat());
 		GuiMesh.textured(canvas.graphics(), atlas.view(), atlas.sampler())
 			.convex(shownShape.outline(projection.centerX(), projection.centerY(), halfWidth, halfHeight, feather), tint, feather, projection)
 			.submit(canvas.graphics());

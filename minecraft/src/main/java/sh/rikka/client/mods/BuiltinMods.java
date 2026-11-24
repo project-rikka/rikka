@@ -36,6 +36,7 @@ import sh.rikka.client.mods.mechanic.NoJumpDelayMod;
 import sh.rikka.client.mods.mechanic.SnapTapMod;
 import sh.rikka.client.mods.minimap.MinimapMod;
 import sh.rikka.client.mods.motionblur.MotionBlurMod;
+import sh.rikka.client.mods.rearview.RearviewMod;
 import sh.rikka.client.mods.visual.BloodParticleMod;
 import sh.rikka.client.mods.visual.CrosshairMod;
 import sh.rikka.client.mods.visual.ForceMainHandMod;
@@ -96,6 +97,7 @@ public final class BuiltinMods {
 		mods.register(new NameDisplayMod(right(8)));
 		mods.register(new HealthDisplayMod(right(9)));
 		mods.register(new MinimapMod(new ScreenPosition(Anchor.TOP_RIGHT, -MARGIN, MARGIN)));
+		mods.register(new RearviewMod(new ScreenPosition(Anchor.TOP_RIGHT, -MARGIN, MARGIN)));
 		mods.register(new KeystrokesMod(new ScreenPosition(Anchor.CENTER_LEFT, MARGIN, 0.0)));
 		mods.register(new MouseStrokesMod(new ScreenPosition(Anchor.CENTER_LEFT, MOUSE_STROKES_LEFT, 0.0)));
 		mods.register(new TargetInfoMod(new ScreenPosition(Anchor.CENTER, 0.0, TARGET_INFO_BELOW_CENTER)));

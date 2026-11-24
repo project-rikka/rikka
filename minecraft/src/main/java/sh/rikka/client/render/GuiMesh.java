@@ -24,6 +24,8 @@ public final class GuiMesh implements GuiElementRenderState {
 	private static final int CORNERS = 4;
 	private static final int[] FORWARD = {0, 1, 2, 3};
 	private static final int[] REVERSED = {0, 3, 2, 1};
+	private static final float[] CORNER_SIGN_X = {1.0F, -1.0F, -1.0F, 1.0F};
+	private static final float[] CORNER_SIGN_Y = {1.0F, 1.0F, -1.0F, -1.0F};
 
 	private final RenderPipeline pipeline;
 	private final TextureSetup textureSetup;
@@ -58,7 +60,11 @@ public final class GuiMesh implements GuiElementRenderState {
 	}
 
 	public static GuiMesh textured(GuiGraphicsExtractor graphics, GpuTextureView texture, GpuSampler sampler) {
-		return new GuiMesh(RenderPipelines.GUI_TEXTURED, TextureSetup.singleTexture(texture, sampler), true, new Matrix3x2f(graphics.pose()));
+		return textured(graphics, RenderPipelines.GUI_TEXTURED, texture, sampler);
+	}
+
+	public static GuiMesh textured(GuiGraphicsExtractor graphics, RenderPipeline pipeline, GpuTextureView texture, GpuSampler sampler) {
+		return new GuiMesh(pipeline, TextureSetup.singleTexture(texture, sampler), true, new Matrix3x2f(graphics.pose()));
 	}
 
 	public GuiMesh rect(float x0, float y0, float x1, float y1, int argb) {
@@ -200,6 +206,24 @@ public final class GuiMesh implements GuiElementRenderState {
 			float angle = Mth.TWO_PI * i / segments;
 			outline[i * 2] = centerX + Mth.cos(angle) * radius;
 			outline[i * 2 + 1] = centerY + Mth.sin(angle) * radius;
+		}
+		return outline;
+	}
+
+	public static float[] roundedRectangle(float centerX, float centerY, float halfWidth, float halfHeight, float radius, int cornerSegments) {
+		float[] outline = new float[CORNERS * (cornerSegments + 1) * 2];
+		float innerX = halfWidth - radius;
+		float innerY = halfHeight - radius;
+		int index = 0;
+		for (int corner = 0; corner < CORNERS; corner++) {
+			float start = corner * Mth.HALF_PI;
+			float cornerX = centerX + CORNER_SIGN_X[corner] * innerX;
+			float cornerY = centerY + CORNER_SIGN_Y[corner] * innerY;
+			for (int step = 0; step <= cornerSegments; step++) {
+				float angle = start + Mth.HALF_PI * step / cornerSegments;
+				outline[index++] = cornerX + Mth.cos(angle) * radius;
+				outline[index++] = cornerY + Mth.sin(angle) * radius;
+			}
 		}
 		return outline;
 	}

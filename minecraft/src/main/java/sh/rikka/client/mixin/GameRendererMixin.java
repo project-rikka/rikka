@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import sh.rikka.client.events.ClientHooks;
 import sh.rikka.client.mods.motionblur.MotionBlurHooks;
+import sh.rikka.client.mods.rearview.RearviewHooks;
 
 @Mixin(GameRenderer.class)
 abstract class GameRendererMixin {
@@ -44,8 +45,13 @@ abstract class GameRendererMixin {
 	}
 
 	@Inject(method = "renderLevel", at = @At(value = "INVOKE", target = LEVEL_RENDER, shift = At.Shift.AFTER))
-	private void rikka$levelDrawn(CallbackInfo callback) {
+	private void rikka$levelDrawn(
+		CallbackInfo callback,
+		@Local(name = "cameraState") CameraRenderState cameraState,
+		@Local(name = "shouldCreateBossFog") boolean shouldCreateBossFog
+	) {
 		MotionBlurHooks.levelDrawn(this.mainRenderTarget);
+		RearviewHooks.levelDrawn(cameraState, !shouldCreateBossFog);
 	}
 
 	@Inject(method = "renderLevel", at = @At("TAIL"))

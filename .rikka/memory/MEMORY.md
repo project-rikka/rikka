@@ -999,6 +999,10 @@
 
 - [Rikka Client Motion Blur mod (velocity, frame blending, accumulation)](minecraft-motion-blur.md) — mods/motionblur: motion blur on own RenderPipelines; hook points, passes, frame history, uniforms.
 
+## minecraft/src/main/java/sh/rikka/client/mods/rearview
+
+- [Rikka Client Rearview mod (second world view behind the player)](minecraft-rearview.md) — mods/rearview: 16:9 HUD mirror rendered from vanilla parts; hooks, section sharing, compile scheduling, state save.
+
 ## nix/dist
 
 - [Binary distribution (project-rikka/packages, nix/dist, release workflow)](distribution.md) — How Rikka ships prebuilt: portable builds, xtask release, the generated packages flake and its NixOS module.
