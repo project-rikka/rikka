@@ -48,6 +48,7 @@ import sh.rikka.client.mods.visual.ParticlesMod;
 import sh.rikka.client.mods.visual.ProjectileTrailMod;
 import sh.rikka.client.mods.visual.TargetIndicatorMod;
 import sh.rikka.client.mods.visual.TimeChangerMod;
+import sh.rikka.client.mods.weather.WeatherChangerMod;
 import sh.rikka.client.setting.Anchor;
 import sh.rikka.client.setting.ScreenPosition;
 
@@ -65,6 +66,7 @@ public final class BuiltinMods {
 		mods.register(new ForceMainHandMod());
 		mods.register(new FullbrightMod());
 		mods.register(new TimeChangerMod());
+		mods.register(new WeatherChangerMod());
 		mods.register(new MotionBlurMod());
 		mods.register(new CrosshairMod());
 		mods.register(new HitColorMod());

@@ -1013,7 +1013,7 @@
 
 ## minecraft/src/main/java/sh/rikka/client/music
 
-- [Rikka Client music player (local files, ModMenu page, Now Playing HUD)](minecraft-music.md) — sh.rikka.client.music: watched <gameDir>/rikka/music library, SoundTags covers, MusicPlayer queue, keys, HUD.
+- [Rikka Client music player (local files, ModMenu page, Music Info HUD)](minecraft-music.md) — sh.rikka.client.music: watched <gameDir>/rikka/music library, SoundTags covers, MusicPlayer queue, keys, HUD.
 
 ## nix/dist
 
