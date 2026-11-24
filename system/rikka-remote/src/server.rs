@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use rikka_remote_link::{ServerIdentity, server_endpoint};
 use rikka_remote_wire::EndReason;
+use rikka_seam::SeamClient;
 use rikka_session::remote::{Address, Reach, Serving};
 use tokio::sync::{oneshot, watch};
 use tokio::task::AbortHandle;
@@ -39,6 +40,7 @@ pub(crate) struct Hub {
     pub(crate) access: Access,
     pub(crate) notices: Notices,
     pub(crate) status: StatusSink,
+    pub(crate) compositor: SeamClient,
     options: watch::Sender<MediaOptions>,
     live: tokio::sync::Mutex<Option<Live>>,
     next: AtomicU64,
@@ -119,6 +121,7 @@ impl Server {
         options: &Options,
         runtime: &tokio::runtime::Handle,
         status: StatusSink,
+        compositor: SeamClient,
     ) -> Result<Server> {
         let identity = Identity::current()?;
         let certificate = ServerIdentity::load_or_create(&identity.certificate(), &identity.host)
@@ -134,6 +137,7 @@ impl Server {
             identity,
             notices,
             status,
+            compositor,
             options: watch::Sender::new(options.media.clone()),
             live: tokio::sync::Mutex::new(None),
             next: AtomicU64::new(1),

@@ -8,7 +8,8 @@ use std::sync::Arc;
 
 use rikka_remote_link::Pin;
 use rikka_remote_wire::{
-    CursorShape, Display, EndReason, InputEvent, Position, Refusal, Stats, Stream, Viewport,
+    CursorShape, Display, EndReason, InputEvent, PointerMode, Position, Refusal, Stats, Stream,
+    Viewport,
 };
 use rikka_ui::Feed;
 use rikka_worker::{Stop, Worker};
@@ -67,6 +68,7 @@ pub(crate) enum Report {
         x: i32,
         y: i32,
     },
+    PointerMode(PointerMode),
     Stats(Stats),
     FileSaved(String),
     FileFailed(String),

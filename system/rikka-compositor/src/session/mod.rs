@@ -8,6 +8,7 @@ mod gestures;
 mod kind;
 mod lock;
 mod nice;
+mod pointer;
 mod priority;
 mod publish;
 mod seam;
@@ -26,8 +27,8 @@ use rikka_session::profile::Profile;
 use rikka_session::shortcuts::Shortcut;
 use rikka_session::{
     activation as activation_seam, display_power as display_power_seam, gestures as gestures_seam,
-    lock as lock_seam, shortcuts as shortcuts_seam, switcher as switcher_seam,
-    toplevels as toplevels_seam, workspaces as workspaces_seam,
+    lock as lock_seam, pointer as pointer_seam, shortcuts as shortcuts_seam,
+    switcher as switcher_seam, toplevels as toplevels_seam, workspaces as workspaces_seam,
 };
 
 pub(crate) use announced::Announced;
@@ -51,6 +52,7 @@ use desktop::DesktopService;
 use display_power::DisplayPowerService;
 use gestures::GesturesService;
 use lock::LockService;
+use pointer::PointerService;
 use shortcuts::ShortcutsService;
 use switcher::SwitcherService;
 use toplevels::ToplevelsService;
@@ -65,6 +67,7 @@ pub(crate) struct Session {
     pub(crate) swipes: Option<Swipes>,
     pub(crate) guarded: Guarded,
     pub(crate) slumber: Slumber,
+    pub(crate) pointing: pointer::Pointing,
     desktop: Desktop,
     pub(crate) standing: SessionKind,
 }
@@ -121,6 +124,10 @@ impl Session {
         if let Some(context) = seam.register(display_power_seam::CAPABILITY, DisplayPowerService) {
             slumber.attach(context.publisher().clone());
         }
+        let mut pointing = pointer::Pointing::new(pointer_seam::CHANGED);
+        if let Some(context) = seam.register(pointer_seam::CAPABILITY, PointerService) {
+            pointing.attach(context.publisher().clone());
+        }
         Ok(Self {
             seam,
             workspaces,
@@ -128,6 +135,7 @@ impl Session {
             switches,
             swipes,
             guarded,
+            pointing,
             slumber,
             standing,
             desktop,

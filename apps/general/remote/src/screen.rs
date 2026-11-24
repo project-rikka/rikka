@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::sync::Arc;
 
 use rikka_picture::RefreshRate;
-use rikka_remote_wire::{Button, InputEvent, POSITION_EXTENT, Position, Viewport};
+use rikka_remote_wire::{Button, InputEvent, POSITION_EXTENT, PointerMode, Position, Viewport};
 use rikka_types::{
     Color, CursorShape, Modifiers, Point, PointerButton, Rect, SCROLL_LINE, ScrollDelta, Size,
 };
@@ -35,11 +35,26 @@ pub(crate) struct Sprite {
     pub(crate) pixels: Arc<[u8]>,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Hold {
+    #[default]
+    Free,
+    Declined,
+    Chosen,
+    Followed,
+}
+
+impl Hold {
+    fn locks(self) -> bool {
+        matches!(self, Hold::Chosen | Hold::Followed)
+    }
+}
+
 #[derive(Debug, Default)]
 pub(crate) struct ScreenState {
     pressed: BTreeSet<u32>,
     buttons: BTreeSet<u8>,
-    locked: bool,
+    hold: Hold,
     viewport: Option<Viewport>,
 }
 
@@ -52,6 +67,7 @@ pub(crate) struct Screen {
     cursor: CursorShape,
     sprite: Option<Sprite>,
     pointer: Option<Point>,
+    pointer_mode: PointerMode,
     on_escape: Action<(Escape,)>,
     #[style]
     layout: Style,
@@ -65,6 +81,7 @@ pub(crate) fn screen(feed: &Feed, commands: UnboundedSender<Command>) -> Screen 
         cursor: CursorShape::Default,
         sprite: None,
         pointer: None,
+        pointer_mode: PointerMode::Absolute,
         on_escape: Action::default(),
         layout: Style::default(),
     }
@@ -84,6 +101,11 @@ impl Screen {
     pub(crate) fn drawn_cursor(mut self, sprite: Option<Sprite>, pointer: Option<Point>) -> Self {
         self.sprite = sprite;
         self.pointer = pointer;
+        self
+    }
+
+    pub(crate) fn pointer_mode(mut self, mode: PointerMode) -> Self {
+        self.pointer_mode = mode;
         self
     }
 
@@ -177,7 +199,7 @@ impl Screen {
         if pressed && modifiers.control && modifiers.alt && modifiers.shift {
             let escape = match code {
                 KEY_M => {
-                    self.lock(state, ctx, !state.locked);
+                    self.toggle_hold(state, ctx);
                     return;
                 }
                 KEY_F => Some(Escape::Fullscreen),
@@ -205,19 +227,54 @@ impl Screen {
         }
     }
 
-    fn lock(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>, locked: bool) {
-        state.locked = locked;
-        match locked {
+    fn hold(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>, hold: Hold) {
+        if state.hold == hold {
+            return;
+        }
+        let locked = state.hold.locks();
+        state.hold = hold;
+        if hold.locks() == locked {
+            return;
+        }
+        match hold.locks() {
             true => ctx.lock_pointer(),
             false => ctx.release_pointer(),
         }
         ctx.request_paint();
-        self.send(Command::PointerLock(locked));
+        self.send(Command::PointerLock(hold.locks()));
+    }
+
+    fn toggle_hold(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>) {
+        let next = match (state.hold.locks(), self.pointer_mode) {
+            (false, _) => Hold::Chosen,
+            (true, PointerMode::Relative) => Hold::Declined,
+            (true, PointerMode::Absolute) => Hold::Free,
+        };
+        self.hold(state, ctx, next);
+    }
+
+    fn follow_mode(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>) {
+        let next = match (self.pointer_mode, state.hold) {
+            (PointerMode::Absolute, Hold::Declined | Hold::Followed) => Hold::Free,
+            (PointerMode::Relative, Hold::Free) if ctx.focused() => Hold::Followed,
+            (_, hold) => hold,
+        };
+        self.hold(state, ctx, next);
+    }
+
+    fn recapture(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>) {
+        ctx.set_handled();
+        ctx.request_focus();
+        self.hold(state, ctx, Hold::Followed);
+    }
+
+    fn draws_sprite(&self, state: &ScreenState) -> bool {
+        state.hold == Hold::Chosen && self.pointer_mode == PointerMode::Absolute
     }
 
     fn release_all(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>) {
-        if state.locked {
-            self.lock(state, ctx, false);
+        if state.hold.locks() {
+            self.hold(state, ctx, Hold::Free);
         }
         if !state.pressed.is_empty() || !state.buttons.is_empty() {
             state.pressed.clear();
@@ -237,7 +294,9 @@ impl Screen {
         ctx.set_handled();
         if pressed {
             ctx.request_focus();
-            ctx.capture_pointer();
+            if !state.hold.locks() {
+                ctx.capture_pointer();
+            }
         }
         if let Some(button) = wire_button(button) {
             let bit = button.to_wire();
@@ -253,7 +312,7 @@ impl Screen {
                 }));
             }
         }
-        if !pressed && state.buttons.is_empty() && !state.locked {
+        if !pressed && state.buttons.is_empty() && !state.hold.locks() {
             ctx.release_pointer();
         }
     }
@@ -307,7 +366,7 @@ impl Widget for Screen {
         let bounds = ctx.bounds();
         ctx.draw_quad(Quad::new(bounds).fill(Color::BLACK));
         ctx.draw_image(self.picture(bounds), ImageSource::Feed(self.feed.clone()));
-        if state.locked {
+        if self.draws_sprite(state) {
             self.paint_sprite(ctx, bounds);
         }
         let scale = ctx.scale();
@@ -324,6 +383,11 @@ impl Widget for Screen {
     }
 
     fn event(&self, state: &mut ScreenState, event: &Event, ctx: &mut EventCtx<'_>) {
+        if let Event::FocusLost = event {
+            self.release_all(state, ctx);
+            return;
+        }
+        self.follow_mode(state, ctx);
         match *event {
             Event::KeyPressed {
                 code, modifiers, ..
@@ -335,15 +399,18 @@ impl Widget for Screen {
             } => {
                 self.key(state, ctx, code.evdev(), modifiers, false);
             }
-            Event::PointerMoved(at) if !state.locked => {
+            Event::PointerMoved(at) if !state.hold.locks() => {
                 self.send(Command::Motion(self.position(ctx.bounds(), at)));
             }
-            Event::PointerTravelled(delta) if state.locked => {
+            Event::PointerTravelled(delta) if state.hold.locks() => {
                 let scale = self.remote_scale(ctx.bounds());
                 self.send(Command::Input(InputEvent::Relative {
                     dx: delta.x * scale,
                     dy: delta.y * scale,
                 }));
+            }
+            Event::PointerPressed { .. } if state.hold == Hold::Declined => {
+                self.recapture(state, ctx)
             }
             Event::PointerPressed {
                 position, button, ..
@@ -352,7 +419,6 @@ impl Widget for Screen {
                 position, button, ..
             } => self.button(state, ctx, position, button, false),
             Event::Scroll { delta, source, .. } => self.scroll(ctx, delta, source),
-            Event::FocusLost => self.release_all(state, ctx),
             Event::DragMoved { ref offer, .. } => {
                 if offer.first_of(&[URI_LIST]).is_some() {
                     ctx.accept_drag(Accept::copy(URI_LIST));
@@ -368,7 +434,7 @@ impl Widget for Screen {
     }
 
     fn cursor(&self, state: &ScreenState, _bounds: Rect, _point: Point) -> Option<CursorShape> {
-        Some(match state.locked {
+        Some(match state.hold.locks() {
             true => CursorShape::Hidden,
             false => self.cursor,
         })

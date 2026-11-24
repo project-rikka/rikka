@@ -5,8 +5,8 @@ use rikka_app::prelude::*;
 use rikka_input::cursor::{CursorPicture, define_cursor, forget_cursor};
 use rikka_remote_link::Pin;
 use rikka_remote_wire::{
-    CURSOR_SHAPES, Codec, CursorShape as RemoteCursor, EndReason, HIDDEN_CURSOR, Refusal, Stats,
-    Stream,
+    CURSOR_SHAPES, Codec, CursorShape as RemoteCursor, EndReason, HIDDEN_CURSOR, PointerMode,
+    Refusal, Stats, Stream,
 };
 use rikka_types::CursorImage;
 use rikka_ui::Feed;
@@ -57,6 +57,7 @@ pub(crate) struct Live {
     cursor: CursorShape,
     sprite: Option<Sprite>,
     pointer: Option<Point>,
+    pointer_mode: PointerMode,
     pub(crate) password: TextDocument,
     pub(crate) remember: bool,
     notice: Option<String>,
@@ -80,6 +81,7 @@ impl Live {
             cursor: CursorShape::Default,
             sprite: None,
             pointer: None,
+            pointer_mode: PointerMode::Absolute,
             password: TextDocument::new(""),
             remember: true,
             notice: None,
@@ -112,6 +114,7 @@ impl Live {
             Report::CursorShape(shape) => self.define(shape),
             Report::Cursor(serial) => self.show_cursor(serial),
             Report::Pointer { x, y } => self.pointer = Some(Point::new(x as f32, y as f32)),
+            Report::PointerMode(mode) => self.pointer_mode = mode,
             Report::Stats(stats) => self.stats = Some(stats),
             Report::FileSaved(name) => {
                 self.notice = Some(tr!("remote.saved", name = name.as_str()).to_string());
@@ -338,6 +341,7 @@ fn streaming(live: &Live, fullscreen: bool) -> impl View {
             .display(live.display)
             .cursor(live.cursor)
             .drawn_cursor(live.sprite.clone(), live.pointer)
+            .pointer_mode(live.pointer_mode)
             .on_escape(|viewer: &mut Viewer, escape: Escape| viewer.escape(escape))
             .fill();
     }

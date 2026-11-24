@@ -76,7 +76,12 @@ fn run() -> Result<()> {
     });
 
     let mut language = Language::follow(compositor.clone(), runtime.handle(), sender.clone());
-    let mut controller = Controller::new(settings, runtime.handle().clone(), sender.clone());
+    let mut controller = Controller::new(
+        settings,
+        compositor.clone(),
+        runtime.handle().clone(),
+        sender.clone(),
+    );
     let mut seam = Seam::new(MessageDispatcher(sender));
     let context = seam.register(RemoteService)?;
     controller.publish_with(context.publisher().clone());

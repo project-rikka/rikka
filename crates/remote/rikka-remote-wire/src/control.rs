@@ -1,7 +1,8 @@
 use crate::bytes::{Reader, Writer};
 use crate::error::DecodeError;
 use crate::types::{
-    Chroma, Codec, CursorShape, Decoder, Display, EndReason, Refusal, Stats, Stream, Viewport,
+    Chroma, Codec, CursorShape, Decoder, Display, EndReason, PointerMode, Refusal, Stats, Stream,
+    Viewport,
 };
 
 pub const HEADER_BYTES: usize = 5;
@@ -30,6 +31,7 @@ const PONG: u8 = 0x8A;
 const ENDED: u8 = 0x8B;
 const FILE_SAVED: u8 = 0x8C;
 const FILE_FAILED: u8 = 0x8D;
+const POINTER_MODE: u8 = 0x8E;
 
 const PASSWORD: u8 = 0;
 const TOKEN: u8 = 1;
@@ -231,6 +233,7 @@ pub enum ServerMessage {
         id: u32,
         reason: String,
     },
+    PointerMode(PointerMode),
 }
 
 impl ServerMessage {
@@ -308,6 +311,9 @@ impl ServerMessage {
             }),
             ServerMessage::FileFailed { id, reason } => framed(FILE_FAILED, |writer| {
                 writer.u32(*id).str(reason);
+            }),
+            ServerMessage::PointerMode(mode) => framed(POINTER_MODE, |writer| {
+                writer.u8(mode.to_wire());
             }),
         }
     }
@@ -390,6 +396,7 @@ impl ServerMessage {
                 id: reader.u32()?,
                 reason: reader.str()?.to_owned(),
             },
+            POINTER_MODE => ServerMessage::PointerMode(PointerMode::from_wire(reader.u8()?)?),
             other => return Err(DecodeError::UnknownType(other)),
         };
         reader.finish()?;

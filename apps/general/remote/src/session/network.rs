@@ -573,6 +573,7 @@ impl Live {
             }
             ServerMessage::CursorShape(shape) => (self.reports)(Report::CursorShape(shape)),
             ServerMessage::Cursor(serial) => (self.reports)(Report::Cursor(serial)),
+            ServerMessage::PointerMode(mode) => (self.reports)(Report::PointerMode(mode)),
             ServerMessage::Clipboard { mime, data } => {
                 if mime == CLIPBOARD_TEXT
                     && let (Ok(text), Some(clipboard)) = (String::from_utf8(data), &self.clipboard)

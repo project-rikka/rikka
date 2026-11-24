@@ -33,6 +33,7 @@ pub(crate) struct ShellRecord {
     pub(crate) locked: bool,
     pub(crate) lock_configured: Vec<(u32, u32, u32)>,
     pub(crate) pointer_on: Option<u32>,
+    pub(crate) pointer_entered: Option<u32>,
     pub(crate) pointer_at: Option<(f64, f64)>,
     pub(crate) scrolled: Vec<Scrolled>,
     pub(crate) keyboard_on: Option<u32>,
@@ -440,12 +441,13 @@ fn on_wl_pointer(
     let shell = &mut recorded.shell;
     match event {
         wl_pointer::Event::Enter {
+            serial,
             surface,
             surface_x,
             surface_y,
-            ..
         } => {
             shell.pointer_on = Some(surface.id());
+            shell.pointer_entered = Some(serial);
             shell.pointer_at = Some((surface_x, surface_y));
         }
         wl_pointer::Event::Leave { .. } => shell.pointer_on = None,
