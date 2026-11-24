@@ -7,6 +7,7 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonInfo;
+import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.PacketListener;
@@ -32,6 +33,8 @@ public final class ClientHooks {
 	private static final EventChannel<ChunkLoadEvent> CHUNK_LOAD = RikkaClient.events().channel(ChunkLoadEvent.class);
 	private static final EventChannel<BlockUpdateEvent> BLOCK_UPDATE = RikkaClient.events().channel(BlockUpdateEvent.class);
 	private static final EventChannel<ResourceReloadEvent> RESOURCE_RELOAD = RikkaClient.events().channel(ResourceReloadEvent.class);
+	private static final EventChannel<ServerConnectEvent> SERVER_CONNECT = RikkaClient.events().channel(ServerConnectEvent.class);
+	private static final EventChannel<DisconnectEvent> DISCONNECT = RikkaClient.events().channel(DisconnectEvent.class);
 	private static final HudRenderEvent HUD_RENDER_EVENT = new HudRenderEvent();
 	private static final LookEvent LOOK_EVENT = new LookEvent();
 
@@ -67,6 +70,16 @@ public final class ClientHooks {
 
 	public static void resourcesReloaded() {
 		RESOURCE_RELOAD.post(ResourceReloadEvent.INSTANCE);
+	}
+
+	public static void serverConnect(ServerAddress address, boolean transfer) {
+		if (SERVER_CONNECT.hasListeners()) {
+			SERVER_CONNECT.post(new ServerConnectEvent(address.getHost(), address.getPort(), transfer));
+		}
+	}
+
+	public static void disconnected() {
+		DISCONNECT.post(DisconnectEvent.INSTANCE);
 	}
 
 	public static void localPlayerJump(LocalPlayer player) {

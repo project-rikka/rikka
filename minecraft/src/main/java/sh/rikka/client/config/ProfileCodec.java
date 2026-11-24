@@ -1,11 +1,14 @@
 package sh.rikka.client.config;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,7 @@ final class ProfileCodec {
 	private static final String MODS = "mods";
 	private static final String ENABLED = "enabled";
 	private static final String SETTINGS = "settings";
+	private static final String SERVERS = "servers";
 
 	private ProfileCodec() {
 	}
@@ -44,6 +48,34 @@ final class ProfileCodec {
 			boolean enabled = decode(Codec.BOOL, modObject.get(ENABLED), mod.id() + "." + ENABLED, false);
 			mod.setEnabled(persistsEnabled(mod) && enabled);
 		}
+	}
+
+	static List<ServerPattern> servers(JsonObject document, String profile) {
+		JsonElement element = document.get(SERVERS);
+		if (element == null) {
+			return List.of();
+		}
+		if (!(element instanceof JsonArray array)) {
+			LOGGER.warn("ignoring {} of profile {}: expected an array", SERVERS, profile);
+			return List.of();
+		}
+		List<ServerPattern> servers = new ArrayList<>();
+		for (JsonElement entry : array) {
+			Optional<ServerPattern> pattern = ServerPattern.CODEC.parse(JsonOps.INSTANCE, entry)
+				.resultOrPartial(error -> LOGGER.warn("ignoring server of profile {}: {}", profile, error));
+			pattern.filter(server -> !servers.contains(server)).ifPresent(servers::add);
+		}
+		return List.copyOf(servers);
+	}
+
+	static JsonObject withServers(JsonObject document, List<ServerPattern> servers) {
+		JsonObject updated = document.deepCopy();
+		if (servers.isEmpty()) {
+			updated.remove(SERVERS);
+		} else {
+			updated.add(SERVERS, ServerPattern.CODEC.listOf().encodeStart(JsonOps.INSTANCE, servers).getOrThrow());
+		}
+		return updated;
 	}
 
 	static boolean persistsEnabled(Mod mod) {

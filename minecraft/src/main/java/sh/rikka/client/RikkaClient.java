@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sh.rikka.client.config.Preferences;
 import sh.rikka.client.config.ProfileManager;
+import sh.rikka.client.config.ServerProfiles;
 import sh.rikka.client.event.Event;
 import sh.rikka.client.event.EventBus;
 import sh.rikka.client.events.CombatTracker;
@@ -48,6 +49,7 @@ public final class RikkaClient implements ClientModInitializer {
 		EVENTS.subscribe(new HudOverlays(mods));
 		EVENTS.subscribe(new KeyPresses(new MenuKeys(preferences)));
 		EVENTS.subscribe(new KeyPresses(new MusicKeys(preferences, music)));
+		EVENTS.subscribe(new ServerProfiles(profiles));
 		services = new Services(mods, preferences, profiles, music);
 		LOGGER.info("{} initialized with profile {}", NAME, profiles.active());
 	}

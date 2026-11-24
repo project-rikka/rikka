@@ -81,6 +81,11 @@ abstract class MinecraftMixin {
 		RikkaClient.shutdown();
 	}
 
+	@Inject(method = "disconnect(Lnet/minecraft/client/gui/screens/Screen;ZZ)V", at = @At("HEAD"))
+	private void rikka$disconnect(CallbackInfo callback) {
+		ClientHooks.disconnected();
+	}
+
 	@WrapOperation(
 		method = "startUseItem",
 		at = @At(
