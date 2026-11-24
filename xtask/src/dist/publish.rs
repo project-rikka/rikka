@@ -12,7 +12,7 @@ pub(crate) const FLAKE_SOURCES: &str = "nix/dist";
 
 const TEMPLATES: &str = "templates";
 
-pub(crate) const LOCK: &str = "flake.lock";
+const LOCK: &str = "flake.lock";
 
 const NIXPKGS: &str = "nixpkgs";
 
@@ -92,14 +92,6 @@ pub(crate) fn write_flake(workspace: &Path, release: &Release, into: &Path) -> R
     }
     mirror(&sources.join(TEMPLATES), &into.join(TEMPLATES), &[])?;
     write_lock(workspace, &into.join(LOCK))
-}
-
-pub(crate) fn nixpkgs_pin(lock: &Path) -> Result<Option<Value>> {
-    if !lock.exists() {
-        return Ok(None);
-    }
-    let locked: Value = read_json(lock)?;
-    Ok(locked.pointer(&format!("/nodes/{NIXPKGS}/locked")).cloned())
 }
 
 fn fragments(entries: &Path) -> Result<Vec<Fragment>> {

@@ -14,14 +14,18 @@ use anyhow::{Context, Result, bail};
 pub(crate) use self::version::{Bump, Version};
 
 use self::checkout::Checkout;
+use self::store::{State, Tagged};
 use crate::bazel::{self, Profile};
 use crate::components::COMPONENTS;
 use crate::dist::{
-    self, FLAKE_SOURCES, Fragment, GECKO_PACKAGE, GeckoPin, Installer, Order, Placement, Release,
-    SYSTEM,
+    self, FLAKE_SOURCES, Fragment, GECKO_PACKAGE, GeckoPin, Order, Placement, Release, SYSTEM,
 };
 use crate::host;
-use crate::shipped::{Component, Program, named};
+use crate::shipped::{Program, named};
+
+const SOURCE: &str = "project-rikka/rikka";
+
+const PRODUCT: &str = "Rikka";
 
 const WORK: &str = ".bazel/release";
 
@@ -29,13 +33,9 @@ const KEPT_GENERATIONS: usize = 10;
 
 const INSTALLER: Program = named("//installer:rikka-installer", "rikka-installer");
 
-const INSTALLER_SUBJECT: &str = "installer";
+const GECKO_TAG_PREFIX: &str = "gecko-";
 
-#[derive(Clone, Debug)]
-pub(crate) enum Selection {
-    All,
-    Named(Vec<String>),
-}
+const GECKO_NOTES: &str = "The Gecko web engine that the Rikka distribution links.";
 
 struct Work {
     checkout: PathBuf,
@@ -56,99 +56,60 @@ impl Work {
     }
 }
 
-pub(crate) fn components(workspace: &Path, selection: &Selection, bump: &Bump) -> Result<()> {
+pub(crate) fn release(workspace: &Path, bump: &Bump) -> Result<()> {
     source::require_published(workspace)?;
     let work = Work::new(workspace);
     let checkout = Checkout::fresh(&work.checkout)?;
-    let published = checkout.release()?;
-
-    let mut orders = Vec::new();
-    for component in selected(selection)? {
-        let entry = published.components.get(component.id);
-        let version = bump
-            .apply(component.id, entry.map(|entry| entry.version.as_str()))?
-            .to_string();
-        let build = match entry {
-            Some(entry) if entry.version == version => entry.build + 1,
-            _ => 1,
-        };
-        orders.push(Order {
-            component,
-            version,
-            build,
-        });
-    }
-    if nixpkgs_moved(workspace, &checkout)? {
-        let chosen: BTreeSet<&str> = orders.iter().map(|order| order.component.id).collect();
-        let rest = rebuilds(&published)?
-            .into_iter()
-            .filter(|order| !chosen.contains(order.component.id))
-            .collect::<Vec<_>>();
-        if !rest.is_empty() {
-            println!(
-                "nixpkgs moved since the last release; rebuilding every other component as well"
-            );
+    let version = bump.apply(PRODUCT, checkout.release()?.version())?;
+    let tagged = Tagged::new(SOURCE, version.tag());
+    match tagged.state()? {
+        State::Absent => {}
+        State::Draft => {
+            println!("discarding the draft {tagged} that an unfinished release left");
+            tagged.discard_draft()?;
         }
-        orders.extend(rest);
+        State::Published => bail!("{tagged} is already released"),
     }
-    publish(workspace, &work, &checkout, published, &orders)
-}
+    let revision = dist::revision(workspace)?;
 
-pub(crate) fn rebuild(workspace: &Path) -> Result<()> {
-    source::require_published(workspace)?;
-    let work = Work::new(workspace);
-    let checkout = Checkout::fresh(&work.checkout)?;
-    let published = checkout.release()?;
-    let orders = rebuilds(&published)?;
-    if orders.is_empty() {
-        bail!("nothing is published yet; release components first");
-    }
-    publish(workspace, &work, &checkout, published, &orders)
-}
-
-pub(crate) fn installer(workspace: &Path, bump: &Bump) -> Result<()> {
-    source::require_published(workspace)?;
-    let work = Work::new(workspace);
-    let checkout = Checkout::fresh(&work.checkout)?;
-    let mut published = checkout.release()?;
-    let version = bump.apply(
-        INSTALLER_SUBJECT,
-        published
-            .installer
-            .as_ref()
-            .map(|installer| installer.version.as_str()),
-    )?;
-
-    let built = bazel::build(workspace, Profile::Installer, [INSTALLER.target])?;
     host::reset_dir(&work.archives)?;
-    let name = format!("{}-{SYSTEM}", INSTALLER.installed);
-    let binary = work.archives.join(&name);
-    host::copy(built.program(&INSTALLER)?, &binary)?;
-    host::set_mode(&binary, 0o755)?;
-    let checksum = work.archives.join(format!("{name}.sha256"));
-    host::write(
-        &checksum,
-        format!("{}  {name}\n", dist::sha256_hex(&binary)?),
-    )?;
+    let orders: Vec<Order> = COMPONENTS
+        .iter()
+        .map(|component| Order {
+            component,
+            version: version.to_string(),
+        })
+        .collect();
+    let fragments = dist::build(workspace, &orders, &work.archives)?;
+    let installer = installer(workspace, &work.archives)?;
+    let windows = dist::windows(workspace, version, &work.archives)?;
+    verify::verify(workspace, &fragments, &work.archives, &work.verify)?;
 
+    let files: Vec<PathBuf> = archives_of(&fragments, &work.archives)
+        .into_iter()
+        .chain(installer)
+        .chain(windows)
+        .collect();
     checkout.ensure_started()?;
-    store::ensure()?;
-    store::upload(&[binary.clone(), checksum])?;
-    published.installer = Some(Installer {
-        version: version.to_string(),
-        revision: dist::revision(workspace)?,
-        url: format!("{}/{name}", store::DOWNLOAD),
-        hash: dist::sri(&binary)?,
-    });
-    published.write(checkout.root())?;
-    let message = format!(
-        "installer {version}\n\nFrom project-rikka/rikka@{}",
-        dist::revision(workspace)?
-    );
+    tagged.create_draft(&revision, &format!("{PRODUCT} {version}"))?;
+    tagged.upload(&files)?;
+    tagged.publish_latest()?;
+
+    let mut release = Release::empty();
+    dist::merge(
+        &mut release,
+        &fragments,
+        Placement::Downloaded {
+            prefix: &tagged.download_prefix(),
+        },
+        checkout.root(),
+    )?;
+    dist::write_flake(workspace, &release, checkout.root())?;
+    let message = format!("{PRODUCT} {version}\n\nFrom {SOURCE}@{revision}");
     if checkout.publish(&message)? {
-        println!("published the installer {version}");
+        println!("published {PRODUCT} {version} as {tagged}");
     }
-    Ok(())
+    prune(workspace, &checkout)
 }
 
 pub(crate) fn gecko(workspace: &Path) -> Result<()> {
@@ -166,13 +127,22 @@ pub(crate) fn gecko(workspace: &Path) -> Result<()> {
     let checkout = Checkout::fresh(&work.checkout)?;
     let published = checkout.release()?;
     checkout.ensure_started()?;
-    store::ensure()?;
-    if !store::assets()?.contains(&file) {
-        store::upload(std::slice::from_ref(&archive))?;
+    let tagged = Tagged::new(SOURCE, format!("{GECKO_TAG_PREFIX}{version}"));
+    match tagged.state()? {
+        State::Absent => tagged.create_not_latest(
+            &dist::revision(workspace)?,
+            &format!("Gecko {version}"),
+            GECKO_NOTES,
+        )?,
+        State::Draft => bail!("{tagged} is a draft; publish or delete it first"),
+        State::Published => {}
+    }
+    if !tagged.assets()?.contains(&file) {
+        tagged.upload(std::slice::from_ref(&archive))?;
     }
     let pin = GeckoPin {
         version: version.clone(),
-        url: format!("{}/{file}", store::DOWNLOAD),
+        url: tagged.download(&file),
         hash: dist::sri(&archive)?,
     };
     let flake_sources = workspace.join(FLAKE_SOURCES);
@@ -183,9 +153,8 @@ pub(crate) fn gecko(workspace: &Path) -> Result<()> {
     if !stale.is_empty() {
         println!(
             "the Gecko protocol changed since {} were published; once the pin is committed and \
-             pushed, ship the engine with them: bazel run //xtask -- release components {} --patch",
-            stale.join(", "),
-            stale.join(" ")
+             pushed, ship the engine with the next release: bazel run //xtask -- release --patch",
+            stale.join(", ")
         );
         return Ok(());
     }
@@ -195,7 +164,7 @@ pub(crate) fn gecko(workspace: &Path) -> Result<()> {
     )?;
     pin.write(checkout.root())?;
     let message = format!(
-        "gecko {version}\n\nFrom project-rikka/rikka@{}",
+        "gecko {version}\n\nFrom {SOURCE}@{}",
         dist::revision(workspace)?
     );
     if checkout.publish(&message)? {
@@ -204,132 +173,57 @@ pub(crate) fn gecko(workspace: &Path) -> Result<()> {
     Ok(())
 }
 
-fn selected(selection: &Selection) -> Result<Vec<&'static Component>> {
-    match selection {
-        Selection::All => Ok(COMPONENTS.iter().collect()),
-        Selection::Named(ids) => ids.iter().map(|id| dist::find(id)).collect(),
-    }
-}
-
-fn rebuilds(published: &Release) -> Result<Vec<Order>> {
-    published
-        .components
-        .iter()
-        .map(|(id, entry)| {
-            Ok(Order {
-                component: dist::find(id)?,
-                version: entry.version.clone(),
-                build: entry.build + 1,
-            })
-        })
-        .collect()
-}
-
-fn nixpkgs_moved(workspace: &Path, checkout: &Checkout) -> Result<bool> {
-    let published = dist::nixpkgs_pin(&checkout.root().join(dist::LOCK))?;
-    let current = dist::nixpkgs_pin(&workspace.join(dist::LOCK))?
-        .context("this repository's flake.lock pins no nixpkgs")?;
-    Ok(published.is_some_and(|published| published != current))
-}
-
-fn publish(
-    workspace: &Path,
-    work: &Work,
-    checkout: &Checkout,
-    published: Release,
-    orders: &[Order],
-) -> Result<()> {
-    host::reset_dir(&work.archives)?;
-    let fragments = dist::build(workspace, orders, &work.archives)?;
-    verify::verify(
-        workspace,
-        &published,
-        &fragments,
-        &work.archives,
-        &work.verify,
+fn installer(workspace: &Path, out: &Path) -> Result<[PathBuf; 2]> {
+    let built = bazel::build(workspace, Profile::Installer, [INSTALLER.target])?;
+    let name = format!("{}-{SYSTEM}", INSTALLER.installed);
+    let binary = out.join(&name);
+    host::copy(built.program(&INSTALLER)?, &binary)?;
+    host::set_mode(&binary, 0o755)?;
+    let checksum = out.join(format!("{name}.sha256"));
+    host::write(
+        &checksum,
+        format!("{}  {name}\n", dist::sha256_hex(&binary)?),
     )?;
-
-    let present = {
-        checkout.ensure_started()?;
-        store::ensure()?;
-        store::assets()?
-    };
-    store::upload(&new_archives(&fragments, &present, &work.archives))?;
-
-    let mut release = published;
-    dist::merge(
-        &mut release,
-        &fragments,
-        Placement::Downloaded {
-            prefix: store::DOWNLOAD,
-        },
-        checkout.root(),
-    )?;
-    dist::write_flake(workspace, &release, checkout.root())?;
-    let summary: Vec<String> = orders
-        .iter()
-        .map(|order| {
-            format!(
-                "{} {} (build {})",
-                order.component.id, order.version, order.build
-            )
-        })
-        .collect();
-    let message = format!(
-        "{}\n\nFrom project-rikka/rikka@{}",
-        summary.join(", "),
-        dist::revision(workspace)?
-    );
-    if checkout.publish(&message)? {
-        println!("published {}", summary.join(", "));
-    }
-    prune(workspace, checkout)
+    Ok([binary, checksum])
 }
 
-fn new_archives(
-    fragments: &[Fragment],
-    present: &BTreeSet<String>,
-    archives: &Path,
-) -> Vec<PathBuf> {
+fn archives_of(fragments: &[Fragment], archives: &Path) -> Vec<PathBuf> {
     let files: BTreeSet<&str> = fragments
         .iter()
         .flat_map(|fragment| {
             std::iter::once(fragment.packed.file.as_str())
                 .chain(fragment.assets.values().map(|packed| packed.file.as_str()))
         })
-        .filter(|file| !present.contains(*file))
         .collect();
     files.into_iter().map(|file| archives.join(file)).collect()
 }
 
 fn prune(workspace: &Path, checkout: &Checkout) -> Result<()> {
-    let mut kept: BTreeSet<String> = BTreeSet::new();
+    let mut downloads: Vec<String> = Vec::new();
     for release in checkout.history(KEPT_GENERATIONS)? {
-        kept.extend(release.downloads().filter_map(file_of));
-        if let Some(installer) = &release.installer {
-            kept.extend(file_of(&installer.url));
-            kept.extend(file_of(&installer.url).map(|file| format!("{file}.sha256")));
-        }
+        downloads.extend(release.downloads().map(str::to_owned));
     }
     let pinned = GeckoPin::read(&workspace.join(FLAKE_SOURCES))?;
     for pin in checkout
         .gecko_history(KEPT_GENERATIONS)?
-        .iter()
-        .chain([&pinned])
+        .into_iter()
+        .chain([pinned])
     {
-        kept.extend(file_of(&pin.url));
+        downloads.push(pin.url);
     }
-    for asset in store::assets()? {
-        if !kept.contains(&asset) {
-            println!("removing {asset}, which the last {KEPT_GENERATIONS} releases no longer name");
-            store::delete(&asset)?;
+    let kept: BTreeSet<Tagged> = downloads
+        .iter()
+        .filter_map(|url| Tagged::of_download(url))
+        .collect();
+    for repository in [SOURCE, checkout::REPOSITORY] {
+        for tagged in Tagged::list_published(repository)? {
+            if !kept.contains(&tagged) {
+                println!(
+                    "removing {tagged}, which the last {KEPT_GENERATIONS} releases no longer name"
+                );
+                tagged.delete()?;
+            }
         }
     }
     Ok(())
-}
-
-fn file_of(url: &str) -> Option<String> {
-    url.strip_prefix(store::DOWNLOAD)?
-        .strip_prefix('/')
-        .map(str::to_owned)
 }

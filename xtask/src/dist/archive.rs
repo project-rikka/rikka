@@ -44,6 +44,10 @@ pub(crate) fn pack_named(tree: &Path, top: &str, stem: &str, out: &Path) -> Resu
     })
 }
 
+pub(crate) fn pack_as(tree: &Path, top: &str, file: &str, out: &Path) -> Result<Packed> {
+    Ok(pack(tree, top, &out.join(file))?.packed)
+}
+
 fn pack(tree: &Path, top: &str, file: &Path) -> Result<Archived> {
     let output =
         File::create(file).with_context(|| format!("failed to create {}", file.display()))?;

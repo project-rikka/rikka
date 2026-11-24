@@ -51,11 +51,9 @@ stdenv.mkDerivation {
 
   passthru = {
     inherit (entry)
-      build
       offer
       pam
       portal
-      requires
       revision
       ;
     providedSessions = lib.optional (id == "base") "rikka";

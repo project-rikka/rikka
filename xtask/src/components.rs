@@ -15,8 +15,6 @@ const SYSTEM_BUS_SERVICES: &str = "share/dbus-1/system-services";
 
 const SYSTEM_UNITS: &str = "lib/systemd/system";
 
-const FIRST_BASE: Option<&str> = Some("0.1.0");
-
 pub(crate) const COMPONENTS: &[Component] = &[
     BASE,
     FILES,
@@ -97,7 +95,8 @@ pub(crate) const COMPONENTS: &[Component] = &[
             APPLICATIONS_DIRECTORY,
         )],
         &[icon("rikka-cut", "movie_edit")],
-    ),
+    )
+    .on_windows("//apps/general/cut:rikka-cut_windows_zip"),
     application(
         "music",
         Offer::Selected,
@@ -117,7 +116,8 @@ pub(crate) const COMPONENTS: &[Component] = &[
             APPLICATIONS_DIRECTORY,
         )],
         &[icon("rikka-paint", "brush")],
-    ),
+    )
+    .on_windows("//apps/general/paint:rikka-paint_windows_zip"),
     application(
         "ade",
         Offer::Offered,
@@ -143,7 +143,8 @@ pub(crate) const COMPONENTS: &[Component] = &[
             data_file("apps/general/animate/rikka-animate.xml", MIME_PACKAGES),
         ],
         &[icon("rikka-animate", "sprint")],
-    ),
+    )
+    .on_windows("//apps/general/animate:rikka-animate_windows_zip"),
     application(
         "discord",
         Offer::Offered,
@@ -179,7 +180,8 @@ pub(crate) const COMPONENTS: &[Component] = &[
             APPLICATIONS_DIRECTORY,
         )],
         &[icon("rikka-remote-viewer", "connected_tv")],
-    ),
+    )
+    .on_windows("//apps/general/remote:rikka-remote-viewer_windows_zip"),
     REMOTE,
     REPLAY,
     SDK,
@@ -196,7 +198,7 @@ const fn application(
         id,
         about: About::Entry,
         offer,
-        requires: FIRST_BASE,
+        windows: None,
         pam: &[],
         session: Contents {
             programs,
@@ -215,7 +217,7 @@ const BASE: Component = Component {
         summary: "The compositor, shell, keyring, screen sharing and system services",
     },
     offer: Offer::Required,
-    requires: None,
+    windows: None,
     pam: &["rikka-lock"],
     session: Contents {
         programs: &[
@@ -323,7 +325,7 @@ const FILES: Component = Component {
     id: "files",
     about: About::Entry,
     offer: Offer::Required,
-    requires: FIRST_BASE,
+    windows: None,
     pam: &[],
     session: Contents {
         programs: &[
@@ -421,7 +423,7 @@ const REMOTE: Component = Component {
         summary: "Serves this session to Rikka Remote Viewer over QUIC",
     },
     offer: Offer::Offered,
-    requires: FIRST_BASE,
+    windows: None,
     pam: &["rikka-remote"],
     session: Contents {
         programs: &[named("//system/rikka-remote:rikka-remote", "rikka-remote")],
@@ -441,7 +443,7 @@ const REPLAY: Component = Component {
         summary: "Keeps the last minutes of the screen in memory to save as a clip",
     },
     offer: Offer::Offered,
-    requires: FIRST_BASE,
+    windows: None,
     pam: &[],
     session: Contents {
         programs: &[named("//system/rikka-replay:rikka-replay", "rikka-replay")],
@@ -461,7 +463,7 @@ const SDK: Component = Component {
         summary: "librikka with C and C++ headers and Go, C#, Java and Python bindings",
     },
     offer: Offer::Offered,
-    requires: FIRST_BASE,
+    windows: None,
     pam: &[],
     session: Contents {
         data: &[

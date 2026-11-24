@@ -28,7 +28,6 @@ exports_files(
 rikka_application(
     name = "rikka-animate",
     product = "Animate",
-    visibility = ["//apps/general:__pkg__"],
     deps = [
         "//apps/general/animate/crates/animate-assistant",
         "//apps/general/animate/crates/animate-body",

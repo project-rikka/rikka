@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::{ArgGroup, Args, Parser, Subcommand};
 
 use crate::bazel::Profile;
-use crate::release::{Bump, Selection, Version};
+use crate::release::{Bump, Version};
 
 mod bazel;
 mod components;
@@ -43,10 +43,12 @@ enum Task {
     )]
     Dist(DistTask),
     #[command(
-        subcommand,
-        about = "release new versions to project-rikka/packages (needs write access there)"
+        about = "release a new version as a GitHub release of project-rikka/rikka and the \
+                 project-rikka/packages flake (needs write access to both)",
+        args_conflicts_with_subcommands = true,
+        subcommand_negates_reqs = true
     )]
-    Release(ReleaseTask),
+    Release(ReleaseArgs),
     #[command(about = "assemble, build and package the Gecko engine and follow Firefox releases")]
     Gecko(GeckoArgs),
     #[command(
@@ -105,8 +107,6 @@ enum DistTask {
         components: Vec<String>,
         #[arg(long, help = "the components' version")]
         version: String,
-        #[arg(long, default_value_t = 1, help = "the build of this version")]
-        build: u32,
         #[arg(long, help = "folder that receives the archives and the entries")]
         out: PathBuf,
     },
@@ -117,36 +117,28 @@ enum DistTask {
         #[arg(long, help = "clone of the distribution flake to update")]
         into: PathBuf,
     },
-    #[command(about = "build the portable Windows ZIP of the general applications")]
+    #[command(about = "build the portable Windows ZIP of every application that runs on Windows")]
     Windows {
         #[arg(
             long,
             help = "the version written into the programs, MAJOR.MINOR.PATCH"
         )]
         version: String,
-        #[arg(long, help = "folder that receives the archive")]
+        #[arg(long, help = "folder that receives the archives")]
         out: PathBuf,
     },
 }
 
+#[derive(Args)]
+struct ReleaseArgs {
+    #[command(subcommand)]
+    task: Option<ReleaseTask>,
+    #[command(flatten)]
+    bump: BumpArgs,
+}
+
 #[derive(Subcommand)]
 enum ReleaseTask {
-    #[command(about = "build, verify and publish new versions of components")]
-    Components {
-        #[arg(required_unless_present = "all", conflicts_with = "all")]
-        components: Vec<String>,
-        #[arg(long, help = "every component")]
-        all: bool,
-        #[command(flatten)]
-        bump: BumpArgs,
-    },
-    #[command(about = "publish every component again as its next build, after nixpkgs moved")]
-    Rebuild,
-    #[command(about = "build and publish the static installer")]
-    Installer {
-        #[command(flatten)]
-        bump: BumpArgs,
-    },
     #[command(about = "publish the Gecko engine that CI built for HEAD and pin it in nix/dist")]
     Gecko,
 }
@@ -250,7 +242,6 @@ fn main() -> Result<()> {
         Task::Dist(DistTask::Build {
             components,
             version,
-            build,
             out,
         }) => {
             let orders = components
@@ -259,7 +250,6 @@ fn main() -> Result<()> {
                     Ok(dist::Order {
                         component: dist::find(id)?,
                         version: version.clone(),
-                        build,
                     })
                 })
                 .collect::<Result<Vec<_>>>()?;
@@ -274,23 +264,15 @@ fn main() -> Result<()> {
             &workspace,
             Version::parse(&version)?,
             &bazel::invoked_at(&out)?,
-        ),
-        Task::Release(ReleaseTask::Components {
-            components,
-            all,
-            bump,
-        }) => {
-            let selection = match all {
-                true => Selection::All,
-                false => Selection::Named(components),
-            };
-            release::components(&workspace, &selection, &bump.bump()?)
+        )
+        .map(drop),
+        Task::Release(ReleaseArgs {
+            task: Some(ReleaseTask::Gecko),
+            ..
+        }) => release::gecko(&workspace),
+        Task::Release(ReleaseArgs { task: None, bump }) => {
+            release::release(&workspace, &bump.bump()?)
         }
-        Task::Release(ReleaseTask::Rebuild) => release::rebuild(&workspace),
-        Task::Release(ReleaseTask::Installer { bump }) => {
-            release::installer(&workspace, &bump.bump()?)
-        }
-        Task::Release(ReleaseTask::Gecko) => release::gecko(&workspace),
         Task::Gecko(GeckoArgs { work, task }) => {
             let work = work.map(|work| bazel::invoked_at(&work)).transpose()?;
             let engine = gecko::Engine::new(&workspace, work);

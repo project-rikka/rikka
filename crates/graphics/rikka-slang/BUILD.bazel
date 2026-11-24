@@ -1,7 +1,12 @@
 load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//bazel/windows:defs.bzl", "windows_runtime")
 
 rikka_library(
     name = "rikka-slang",
+    data = select({
+        "@platforms//os:windows": [":windows_runtime"],
+        "//conditions:default": [],
+    }),
     visibility = [
         "//visibility:public",
     ],
@@ -13,6 +18,22 @@ rikka_library(
         "@crates//:serde",
         "@crates//:thiserror",
     ],
+)
+
+windows_runtime(
+    name = "windows_runtime",
+    libraries = [
+        "SPIRV-Tools-shared.dll",
+        "slang.dll",
+        "slang-compiler.dll",
+        "slang-glsl-module.dll",
+        "slang-glslang.dll",
+    ],
+    licenses = [
+        "slang",
+        "spirv-tools",
+    ],
+    target_compatible_with = ["@platforms//os:windows"],
 )
 
 rikka_test(

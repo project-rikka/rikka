@@ -87,7 +87,7 @@ pub(crate) struct Component {
     pub(crate) id: &'static str,
     pub(crate) about: About,
     pub(crate) offer: Offer,
-    pub(crate) requires: Option<&'static str>,
+    pub(crate) windows: Option<&'static str>,
     pub(crate) pam: &'static [&'static str],
     pub(crate) session: Contents,
     pub(crate) system: Contents,
@@ -98,6 +98,13 @@ impl Component {
 
     pub(crate) fn contents(&self) -> [Contents; 2] {
         [self.session, self.system]
+    }
+
+    pub(crate) const fn on_windows(self, zip: &'static str) -> Component {
+        Component {
+            windows: Some(zip),
+            ..self
+        }
     }
 }
 

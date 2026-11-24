@@ -3,7 +3,6 @@ load("//bazel/windows:defs.bzl", "rikka_application")
 rikka_application(
     name = "rikka-cut",
     product = "Cut",
-    visibility = ["//apps/general:__pkg__"],
     deps = [
         "//apps/general/cut/crates/cut-export",
         "//apps/general/cut/crates/cut-filmstrip",

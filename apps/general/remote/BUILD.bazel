@@ -3,7 +3,6 @@ load("//bazel/windows:defs.bzl", "rikka_application")
 rikka_application(
     name = "rikka-remote-viewer",
     product = "Remote Desktop",
-    visibility = ["//apps/general:__pkg__"],
     deps = [
         "//apps/general/remote/crates/viewer-hosts",
         "//crates/desktop/rikka-clipboard",

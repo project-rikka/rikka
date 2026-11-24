@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 use crate::host;
-use crate::shipped::Offer;
+use crate::shipped::{Component, Offer};
 
 pub(crate) const SYSTEM: &str = "x86_64-linux";
 
@@ -30,9 +30,7 @@ pub(crate) struct Entry {
     pub(crate) summary: String,
     pub(crate) offer: Offer,
     pub(crate) version: String,
-    pub(crate) build: u32,
     pub(crate) revision: String,
-    pub(crate) requires: Option<String>,
     pub(crate) pam: Vec<String>,
     pub(crate) portal: bool,
     pub(crate) templates: Vec<String>,
@@ -50,20 +48,10 @@ pub(crate) struct Fragment {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub(crate) struct Installer {
-    pub(crate) version: String,
-    pub(crate) revision: String,
-    pub(crate) url: String,
-    pub(crate) hash: String,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct Release {
     pub(crate) system: String,
     pub(crate) assets: BTreeMap<String, Source>,
     pub(crate) components: BTreeMap<String, Entry>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub(crate) installer: Option<Installer>,
 }
 
 impl Release {
@@ -83,8 +71,13 @@ impl Release {
             system: SYSTEM.to_owned(),
             assets: BTreeMap::new(),
             components: BTreeMap::new(),
-            installer: None,
         }
+    }
+
+    pub(crate) fn version(&self) -> Option<&str> {
+        self.components
+            .get(Component::BASE)
+            .map(|entry| entry.version.as_str())
     }
 
     pub(crate) fn downloads(&self) -> impl Iterator<Item = &str> {

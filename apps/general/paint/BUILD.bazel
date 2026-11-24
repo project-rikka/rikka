@@ -23,7 +23,6 @@ exports_files(
 rikka_application(
     name = "rikka-paint",
     product = "Paint",
-    visibility = ["//apps/general:__pkg__"],
     deps = [
         "//apps/general/paint/crates/paint-assistant",
         "//apps/general/paint/crates/paint-document",

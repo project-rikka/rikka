@@ -40,12 +40,6 @@ let
     '';
   };
 
-  outdated = lib.filter (
-    id:
-    components.${id}.requires != null
-    && lib.versionOlder components.base.version components.${id}.requires
-  ) chosen;
-
   autologin = "rikka-autologin";
 
   console = "getty@tty1.service";
@@ -109,22 +103,17 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       {
-        assertions =
-          map (id: {
-            assertion = false;
-            message = "Rikka ${id} ${components.${id}.version} needs the Rikka desktop ${components.${id}.requires} or newer, but this distribution has ${components.base.version}.";
-          }) outdated
-          ++ [
-            {
-              assertion =
-                cfg.configuration.flake == null
-                || (
-                  cfg.configuration.modules != null
-                  && lib.hasPrefix "${cfg.configuration.flake}/" cfg.configuration.modules
-                );
-              message = "rikka.configuration.modules (${toString cfg.configuration.modules}) must be inside rikka.configuration.flake (${cfg.configuration.flake}).";
-            }
-          ];
+        assertions = [
+          {
+            assertion =
+              cfg.configuration.flake == null
+              || (
+                cfg.configuration.modules != null
+                && lib.hasPrefix "${cfg.configuration.flake}/" cfg.configuration.modules
+              );
+            message = "rikka.configuration.modules (${toString cfg.configuration.modules}) must be inside rikka.configuration.flake (${cfg.configuration.flake}).";
+          }
+        ];
 
         environment.systemPackages = [
           (lib.hiPrio pamHelper)

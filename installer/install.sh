@@ -18,7 +18,7 @@ set -eu
 
 REPO=${RIKKA_REPO:-project-rikka/rikka}
 REF=${RIKKA_REF:-main}
-RELEASES=${RIKKA_RELEASES:-https://github.com/project-rikka/packages/releases/download/binaries}
+RELEASES=${RIKKA_RELEASES:-https://github.com/$REPO/releases/latest/download}
 GUIDE=https://github.com/project-rikka/rikka/blob/main/docs/en/installation.md#add-rikka-to-an-existing-nixos
 SYSTEM=x86_64-linux
 

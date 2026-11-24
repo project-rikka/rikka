@@ -1,78 +1,186 @@
-use std::collections::BTreeSet;
 use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
+use serde::Deserialize;
 
 use crate::host;
-use crate::release::checkout::REPOSITORY;
 use crate::release::github::gh;
 
-const TAG: &str = "binaries";
+const HOST: &str = "https://github.com";
 
-pub(crate) const DOWNLOAD: &str =
-    "https://github.com/project-rikka/packages/releases/download/binaries";
+const LISTED_RELEASES: &str = "1000";
 
-pub(crate) fn ensure() -> Result<()> {
-    let exists = gh()?
-        .args(["release", "view", TAG, "--repo", REPOSITORY])
-        .output()
-        .context("failed to run gh release view")?
-        .status
-        .success();
-    if exists {
-        return Ok(());
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) struct Tagged {
+    repository: String,
+    tag: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum State {
+    Absent,
+    Draft,
+    Published,
+}
+
+#[derive(Deserialize)]
+struct Listed {
+    #[serde(rename = "tagName")]
+    tag: String,
+    #[serde(rename = "isDraft")]
+    draft: bool,
+}
+
+impl Tagged {
+    pub(crate) fn new(repository: &str, tag: impl Into<String>) -> Tagged {
+        Tagged {
+            repository: repository.to_owned(),
+            tag: tag.into(),
+        }
     }
-    host::run(gh()?.args([
-        "release",
-        "create",
-        TAG,
-        "--repo",
-        REPOSITORY,
-        "--title",
-        "Binaries",
-        "--notes",
-        "The archives release.json names.",
-    ]))
-}
 
-pub(crate) fn assets() -> Result<BTreeSet<String>> {
-    let listed = host::output(gh()?.args([
-        "release",
-        "view",
-        TAG,
-        "--repo",
-        REPOSITORY,
-        "--json",
-        "assets",
-        "--jq",
-        ".assets[].name",
-    ]))?;
-    Ok(listed
-        .lines()
-        .filter(|line| !line.is_empty())
-        .map(str::to_owned)
-        .collect())
-}
-
-pub(crate) fn upload(files: &[PathBuf]) -> Result<()> {
-    if files.is_empty() {
-        return Ok(());
+    pub(crate) fn of_download(url: &str) -> Option<Tagged> {
+        let rest = url.strip_prefix(HOST)?.strip_prefix('/')?;
+        let mut parts = rest.split('/');
+        let owner = parts.next()?;
+        let name = parts.next()?;
+        if parts.next()? != "releases" || parts.next()? != "download" {
+            return None;
+        }
+        let tag = parts.next()?;
+        Some(Tagged::new(&format!("{owner}/{name}"), tag))
     }
-    host::run(
-        gh()?
-            .args(["release", "upload", TAG, "--repo", REPOSITORY, "--clobber"])
-            .args(files),
-    )
+
+    pub(crate) fn list_published(repository: &str) -> Result<Vec<Tagged>> {
+        let listed = host::output(gh()?.args([
+            "release",
+            "list",
+            "--repo",
+            repository,
+            "--limit",
+            LISTED_RELEASES,
+            "--json",
+            "tagName,isDraft",
+        ]))?;
+        let releases: Vec<Listed> =
+            serde_json::from_str(&listed).context("gh release list printed unexpected JSON")?;
+        Ok(releases
+            .into_iter()
+            .filter(|release| !release.draft)
+            .map(|release| Tagged::new(repository, release.tag))
+            .collect())
+    }
+
+    pub(crate) fn download_prefix(&self) -> String {
+        format!("{HOST}/{}/releases/download/{}", self.repository, self.tag)
+    }
+
+    pub(crate) fn download(&self, file: &str) -> String {
+        format!("{}/{file}", self.download_prefix())
+    }
+
+    pub(crate) fn state(&self) -> Result<State> {
+        let viewed = gh()?
+            .args(["release", "view", &self.tag, "--repo", &self.repository])
+            .args(["--json", "isDraft", "--jq", ".isDraft"])
+            .output()
+            .context("failed to run gh release view")?;
+        if !viewed.status.success() {
+            return Ok(State::Absent);
+        }
+        match String::from_utf8_lossy(&viewed.stdout).trim() {
+            "true" => Ok(State::Draft),
+            "false" => Ok(State::Published),
+            printed => bail!("gh release view printed {printed:?} for {self}"),
+        }
+    }
+
+    pub(crate) fn create_draft(&self, target: &str, title: &str) -> Result<()> {
+        host::run(
+            gh()?
+                .args(["release", "create", &self.tag, "--repo", &self.repository])
+                .args(["--target", target, "--title", title])
+                .args(["--generate-notes", "--draft"]),
+        )
+    }
+
+    pub(crate) fn create_not_latest(&self, target: &str, title: &str, notes: &str) -> Result<()> {
+        host::run(
+            gh()?
+                .args(["release", "create", &self.tag, "--repo", &self.repository])
+                .args(["--target", target, "--title", title, "--notes", notes])
+                .arg("--latest=false"),
+        )
+    }
+
+    pub(crate) fn publish_latest(&self) -> Result<()> {
+        host::run(gh()?.args([
+            "release",
+            "edit",
+            &self.tag,
+            "--repo",
+            &self.repository,
+            "--draft=false",
+            "--latest",
+        ]))
+    }
+
+    pub(crate) fn assets(&self) -> Result<Vec<String>> {
+        let listed = host::output(gh()?.args([
+            "release",
+            "view",
+            &self.tag,
+            "--repo",
+            &self.repository,
+            "--json",
+            "assets",
+            "--jq",
+            ".assets[].name",
+        ]))?;
+        Ok(listed
+            .lines()
+            .filter(|line| !line.is_empty())
+            .map(str::to_owned)
+            .collect())
+    }
+
+    pub(crate) fn upload(&self, files: &[PathBuf]) -> Result<()> {
+        if files.is_empty() {
+            return Ok(());
+        }
+        host::run(
+            gh()?
+                .args(["release", "upload", &self.tag, "--repo", &self.repository])
+                .args(files),
+        )
+    }
+
+    pub(crate) fn delete(&self) -> Result<()> {
+        host::run(gh()?.args([
+            "release",
+            "delete",
+            &self.tag,
+            "--repo",
+            &self.repository,
+            "--cleanup-tag",
+            "--yes",
+        ]))
+    }
+
+    pub(crate) fn discard_draft(&self) -> Result<()> {
+        host::run(gh()?.args([
+            "release",
+            "delete",
+            &self.tag,
+            "--repo",
+            &self.repository,
+            "--yes",
+        ]))
+    }
 }
 
-pub(crate) fn delete(name: &str) -> Result<()> {
-    host::run(gh()?.args([
-        "release",
-        "delete-asset",
-        TAG,
-        name,
-        "--repo",
-        REPOSITORY,
-        "--yes",
-    ]))
+impl std::fmt::Display for Tagged {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "{}@{}", self.repository, self.tag)
+    }
 }

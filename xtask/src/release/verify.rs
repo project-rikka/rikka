@@ -1,35 +1,27 @@
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 
 use crate::dist::{self, Fragment, Placement, Release};
 use crate::host;
-use crate::shipped::Component;
 
 const MODULE_CHECK: &str = "checks.x86_64-linux.module.drvPath";
 
 pub(crate) fn verify(
     workspace: &Path,
-    published: &Release,
     fragments: &[Fragment],
     archives: &Path,
     dir: &Path,
 ) -> Result<()> {
     host::reset_dir(dir)?;
-    let mut release = published.clone();
+    let mut release = Release::empty();
     dist::merge(
         &mut release,
         fragments,
         Placement::Copied { from: archives },
         dir,
     )?;
-    if !release.components.contains_key(Component::BASE) {
-        bail!(
-            "the distribution has no {} component yet; release it first",
-            Component::BASE
-        );
-    }
     dist::write_flake(workspace, &release, dir)?;
 
     let flake = format!("path:{}", dir.display());

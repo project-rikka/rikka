@@ -6,9 +6,8 @@ use serde::Deserialize;
 use crate::dist::{Release, SYSTEM};
 use crate::gecko::{ENGINE, PACKAGE};
 use crate::host;
+use crate::release::SOURCE as REPOSITORY;
 use crate::release::github::gh;
-
-const REPOSITORY: &str = "project-rikka/rikka";
 
 const WORKFLOW: &str = "gecko.yml";
 

@@ -7,7 +7,7 @@ use memchr::memmem;
 use crate::bazel::{self, Profile};
 use crate::components::COMPONENTS;
 use crate::dist::about;
-use crate::dist::archive::{ARCHIVE_SUFFIX, pack_named};
+use crate::dist::archive::{ARCHIVE_SUFFIX, pack_as, pack_named};
 use crate::dist::release::{Entry, Fragment, Packed, SYSTEM, Source, write_json};
 use crate::host;
 use crate::shipped::{Component, Contents, Distributed, PORTALS, SHARED, Shared};
@@ -19,10 +19,11 @@ const STORE: &[u8] = b"/nix/store/";
 
 const STAGE: &str = ".stage";
 
+pub(crate) const FILE_PREFIX: &str = "rikka-";
+
 pub(crate) struct Order {
     pub(crate) component: &'static Component,
     pub(crate) version: String,
-    pub(crate) build: u32,
 }
 
 pub(crate) fn find(id: &str) -> Result<&'static Component> {
@@ -69,8 +70,8 @@ pub(crate) fn build(workspace: &Path, orders: &[Order], out: &Path) -> Result<Ve
         let fragment = pack_component(workspace, &built, order, &revision, &stage, out)?;
         write_json(&out.join(format!("{}.json", fragment.id)), &fragment)?;
         println!(
-            "packed {} {} (build {}) into {}",
-            fragment.id, order.version, order.build, fragment.packed.file
+            "packed {} {} into {}",
+            fragment.id, order.version, fragment.packed.file
         );
         fragments.push(fragment);
     }
@@ -116,20 +117,18 @@ fn pack_component(
         links.insert(shared.into.to_owned(), name);
     }
 
-    let stem = format!(
-        "{}-{}-{}-{SYSTEM}",
-        component.id, order.version, order.build
+    let file = format!(
+        "{FILE_PREFIX}{}-{}-{SYSTEM}{ARCHIVE_SUFFIX}",
+        component.id, order.version
     );
-    let packed = pack_named(&tree, component.id, &stem, out)?;
+    let packed = pack_as(&tree, component.id, &file, out)?;
     let described = about::describe(workspace, component)?;
     let entry = Entry {
         name: described.name,
         summary: described.summary,
         offer: component.offer,
         version: order.version.clone(),
-        build: order.build,
         revision: revision.to_owned(),
-        requires: component.requires.map(str::to_owned),
         pam: component
             .pam
             .iter()

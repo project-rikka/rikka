@@ -89,6 +89,8 @@ windows_resource = rule(
 def rikka_application(name, product, **kwargs):
     """A desktop application's executable; on Windows it carries a manifest and version.
 
+    It also declares `<name>_windows_zip`, the application's portable Windows ZIP.
+
     Args:
         name: target name and the built executable's file name.
         product: the application's name after `Rikka`, such as `Paint`.
@@ -114,22 +116,97 @@ def rikka_application(name, product, **kwargs):
         }),
         **kwargs
     )
+    windows_zip(
+        name = name + "_windows_zip",
+        out = name + "-windows-x86_64.zip",
+        program = ":" + name,
+        files = _NOTICES,
+        tags = ["manual"],
+        target_compatible_with = [_WINDOWS],
+    )
+
+_NOTICES = {
+    Label("//:LICENSE"): "licenses/rikka/LICENSE",
+    Label("//:crates/graphics/THIRD_PARTY.md"): "licenses/rikka/third-party/graphics.md",
+    Label("//:crates/media/THIRD_PARTY.md"): "licenses/rikka/third-party/media.md",
+    Label("//:crates/model/THIRD_PARTY.md"): "licenses/rikka/third-party/model.md",
+    Label("//:crates/physics/THIRD_PARTY.md"): "licenses/rikka/third-party/physics.md",
+    Label("//:crates/text/THIRD_PARTY.md"): "licenses/rikka/third-party/text.md",
+    Label("//crates/physics/rikka-physics-fluid:THIRD_PARTY.md"): "licenses/rikka/third-party/physics-fluid.md",
+}
+
+WindowsRuntimeInfo = provider(
+    doc = "Parts of the Windows runtime that a library loads or embeds.",
+    fields = {
+        "files": "depset of `FILE=ENTRY` placements",
+        "trees": "depset of `DIRECTORY=ENTRY` placements",
+    },
+)
+
+def _windows_runtime_impl(ctx):
+    runtime = NIX["windows_runtime"]
+    files = ["{}/bin/{}={}".format(runtime, library, library) for library in ctx.attr.libraries]
+    files += [
+        "{}/{}={}".format(NIX["icon_fonts"], name, entry)
+        for name, entry in ctx.attr.icon_font_licenses.items()
+    ]
+    trees = ["{}/share/licenses/{}=licenses/{}".format(runtime, name, name) for name in ctx.attr.licenses]
+    return [WindowsRuntimeInfo(files = depset(files), trees = depset(trees))]
+
+windows_runtime = rule(
+    implementation = _windows_runtime_impl,
+    doc = """What a library needs beside the program on Windows, from `NIX["windows_runtime"]`.
+
+    A library lists it in its `data`; every application's Windows ZIP that reaches the library
+    ships these DLLs and licences.
+    """,
+    attrs = {
+        "icon_font_licenses": attr.string_dict(doc = "licence files of the icon fonts and their entries"),
+        "libraries": attr.string_list(doc = "DLLs in the runtime's `bin`, placed at the archive root"),
+        "licenses": attr.string_list(doc = "folders in the runtime's `share/licenses`, placed in `licenses/`"),
+    },
+)
+
+_ShippedInfo = provider(
+    doc = "The Windows runtime parts a target and its dependencies need.",
+    fields = {
+        "files": "depset of `FILE=ENTRY` placements",
+        "trees": "depset of `DIRECTORY=ENTRY` placements",
+    },
+)
+
+_SHIPPED_ATTRIBUTES = ["deps", "data"]
+
+def _shipped_impl(target, ctx):
+    files = []
+    trees = []
+    if WindowsRuntimeInfo in target:
+        files.append(target[WindowsRuntimeInfo].files)
+        trees.append(target[WindowsRuntimeInfo].trees)
+    for attribute in _SHIPPED_ATTRIBUTES:
+        dependencies = getattr(ctx.rule.attr, attribute, [])
+        if type(dependencies) != "list":
+            continue
+        for dependency in dependencies:
+            if _ShippedInfo in dependency:
+                files.append(dependency[_ShippedInfo].files)
+                trees.append(dependency[_ShippedInfo].trees)
+    return [_ShippedInfo(files = depset(transitive = files), trees = depset(transitive = trees))]
+
+_shipped = aspect(
+    implementation = _shipped_impl,
+    attr_aspects = _SHIPPED_ATTRIBUTES,
+)
 
 def _windows_zip_impl(ctx):
-    runtime = NIX["windows_runtime"]
-    icon_fonts = NIX["icon_fonts"]
+    executable = ctx.attr.program[DefaultInfo].files_to_run.executable
+    shipped = ctx.attr.program[_ShippedInfo]
     args = ctx.actions.args()
     args.add("--objdump", NIX["windows"]["objdump"])
     args.add("--output", ctx.outputs.out)
-    programs = []
-    for program in ctx.attr.programs:
-        executable = program[DefaultInfo].files_to_run.executable
-        programs.append(executable)
-        args.add("--program", "{}={}".format(executable.path, executable.basename))
-    args.add("--tree", runtime + "/bin=")
-    args.add("--tree", runtime + "/share/licenses=licenses")
-    for name, entry in ctx.attr.icon_font_licenses.items():
-        args.add("--file", "{}/{}={}".format(icon_fonts, name, entry))
+    args.add("--program", "{}={}".format(executable.path, executable.basename))
+    args.add_all(shipped.files, before_each = "--file")
+    args.add_all(shipped.trees, before_each = "--tree")
     files = []
     for target, entry in ctx.attr.files.items():
         file = target.files.to_list()
@@ -140,7 +217,7 @@ def _windows_zip_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._package,
         arguments = [args],
-        inputs = programs + files,
+        inputs = [executable] + files,
         outputs = [ctx.outputs.out],
         mnemonic = "WindowsZip",
         progress_message = "Packing %{output}",
@@ -149,17 +226,20 @@ def _windows_zip_impl(ctx):
 
 windows_zip = rule(
     implementation = _windows_zip_impl,
-    doc = """The portable Windows distribution as a deterministic ZIP.
+    doc = """One application's portable Windows distribution as a deterministic ZIP.
 
-    The programs and the DLLs they load sit at the archive root, the fonts are compiled into the
-    programs, and the licences are in `licenses/`. Packing fails when a program or DLL imports a
-    library that neither Windows nor the archive provides.
+    The program and the DLLs its libraries load sit at the archive root, the fonts are compiled
+    into the program, and the licences are in `licenses/`. Packing fails when the program or a DLL
+    imports a library that neither Windows nor the archive provides.
     """,
     attrs = {
         "files": attr.label_keyed_string_dict(allow_files = True, doc = "more files and their entries"),
-        "icon_font_licenses": attr.string_dict(doc = "licence files of the icon fonts and their entries"),
         "out": attr.output(mandatory = True),
-        "programs": attr.label_list(mandatory = True, doc = "the executables placed at the archive root"),
+        "program": attr.label(
+            mandatory = True,
+            aspects = [_shipped],
+            doc = "the executable placed at the archive root",
+        ),
         "_package": attr.label(
             default = Label("//xtask/windows/package:windows-package"),
             executable = True,

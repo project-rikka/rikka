@@ -33,6 +33,10 @@ impl Version {
             patch: number(patch)?,
         })
     }
+
+    pub(crate) fn tag(&self) -> String {
+        format!("v{self}")
+    }
 }
 
 impl fmt::Display for Version {

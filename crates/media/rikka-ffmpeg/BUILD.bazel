@@ -1,8 +1,13 @@
 load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/windows:defs.bzl", "windows_runtime")
 
 rikka_library(
     name = "rikka-ffmpeg",
     cranelift = False,
+    data = select({
+        "@platforms//os:windows": [":windows_runtime"],
+        "//conditions:default": [],
+    }),
     visibility = [
         "//benchmarks:__subpackages__",
         "//crates:__subpackages__",
@@ -12,4 +17,17 @@ rikka_library(
         "@crates//:libloading",
         "@crates//:thiserror",
     ],
+)
+
+windows_runtime(
+    name = "windows_runtime",
+    libraries = [
+        "avcodec-63.dll",
+        "avformat-63.dll",
+        "avutil-61.dll",
+        "swresample-7.dll",
+        "swscale-10.dll",
+    ],
+    licenses = ["ffmpeg"],
+    target_compatible_with = ["@platforms//os:windows"],
 )
