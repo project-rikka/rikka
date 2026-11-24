@@ -62,17 +62,22 @@ pub(crate) fn panel(cut: &Cut) -> impl View {
             )
             .padding(Inset::xy(Space::NORMAL, Space::SNUG))
             .fill_width();
-            scrollable(
-                column! {
-                    if let Some(body) = body {
-                        body;
+            page_stack(
+                side,
+                scrollable(
+                    column! {
+                        if let Some(body) = body {
+                            body;
+                        }
                     }
-                }
-                .gap(Space::NORMAL)
-                .padding(Space::NORMAL)
-                .fill_width(),
+                    .gap(Space::NORMAL)
+                    .padding(Space::NORMAL)
+                    .fill_width(),
+                )
+                .fill(),
             )
-            .fill();
+            .grow(1.0)
+            .fill_width();
             if let Some(popup) = popup {
                 popup;
             }
