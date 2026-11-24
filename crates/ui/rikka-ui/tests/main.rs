@@ -16,3 +16,4 @@ mod tooltips;
 mod transitions;
 mod view_rebuilds;
 mod waking;
+mod window_views;
