@@ -41,6 +41,7 @@ wire_enum!(EndReason as "end reason" {
 });
 wire_enum!(StreamKind as "stream kind" { Input = 1, File = 2 });
 wire_enum!(Button as "button" { Primary = 0, Middle = 1, Secondary = 2, Back = 3, Forward = 4 });
+wire_enum!(PointerMode as "pointer mode" { Absolute = 0, Relative = 1 });
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Chromas(u8);

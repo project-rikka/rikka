@@ -533,7 +533,7 @@ impl CaptureCtx<'_> {
 impl Cursor {
     fn cursor_in(&mut self, view: View) -> Option<CursorPlacement> {
         let position = self.position();
-        if !view.area.to_f64().contains(position) {
+        if self.hidden() || !view.area.to_f64().contains(position) {
             return None;
         }
         let scale = view.scale;

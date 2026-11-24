@@ -1,8 +1,10 @@
 use rikka_compositor_input::PointerRestrictions;
 use rikka_compositor_seat::{
-    ConstraintState, CursorImage, KeyFilter, Keystroke, SeatEvent, SeatHost, SeatId, Seats,
+    ConstraintKind, ConstraintState, CursorImage, KeyFilter, Keystroke, SeatEvent, SeatHost,
+    SeatId, Seats,
 };
 use rikka_compositor_server::DisplayHandle;
+use rikka_session::pointer::PointerMode;
 
 use crate::context::InputCtx;
 use crate::context::{input_ctx, parts, switcher_ctx, windows_ctx};
@@ -93,6 +95,7 @@ impl InputCtx<'_> {
                     PointerRestrictions::CONSTRAINED,
                     state != ConstraintState::Released,
                 );
+                self.announce_pointer_mode();
             }
             SeatEvent::CursorHint { location, .. } | SeatEvent::Warp { location, .. } => {
                 self.warp_pointer(location);
@@ -123,8 +126,26 @@ impl InputCtx<'_> {
             return;
         }
         self.restrain(PointerRestrictions::HIDDEN, image == CursorImage::Hidden);
+        self.announce_pointer_mode();
         self.backend.cursor_changed(&mut parts!(self));
         self.frames.request_all();
+    }
+
+    fn announce_pointer_mode(&mut self) {
+        let hidden = self
+            .input
+            .restrictions
+            .contains(PointerRestrictions::HIDDEN);
+        let constraint = self
+            .seats
+            .get(self.input.seat)
+            .and_then(|seat| seat.pointer().constraint());
+        let mode = match constraint {
+            Some((_, ConstraintKind::Lock)) => PointerMode::Relative,
+            Some((_, ConstraintKind::Confine)) if hidden => PointerMode::Relative,
+            Some((_, ConstraintKind::Confine)) | None => PointerMode::Absolute,
+        };
+        self.session.pointing.publish(mode);
     }
 
     fn restrain(&mut self, restraint: PointerRestrictions, on: bool) {

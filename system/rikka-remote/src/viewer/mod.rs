@@ -8,11 +8,13 @@ mod streams;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+use futures_util::StreamExt;
 use rikka_remote_link::LinkError;
 use rikka_remote_wire::{
     CLIPBOARD_TEXT, Chroma, ClientMessage, Decoder, Display, EndReason, LONGEST_CLIPBOARD,
-    ServerMessage, SignIn, Stream, VERSION,
+    PointerMode, ServerMessage, SignIn, Stream, VERSION,
 };
+use rikka_session::pointer;
 use rikka_session::remote::{Encoding, Viewer};
 use rikka_vulkan_video::Codec;
 use tokio::sync::mpsc;
@@ -20,8 +22,8 @@ use tokio::task::JoinHandle;
 
 use crate::access::Admission;
 use crate::media::{
-    Backlog, InputCommand, InputWorker, Media, MediaError, MediaEvent, MediaSetup, Size,
-    VideoCommand, VideoSetup, Viewport, codecs,
+    Backlog, InputCommand, InputHandle, InputWorker, Media, MediaError, MediaEvent, MediaSetup,
+    Size, VideoCommand, VideoSetup, Viewport, codecs,
 };
 use crate::server::{Claim, Hub};
 use crate::status::StatusChange;
@@ -335,6 +337,7 @@ async fn live(
     };
     hub.status
         .report(StatusChange::Viewer(Some(viewer.clone())));
+    let mut modes = std::pin::pin!(pointer::modes(&hub.compositor));
     let ended = loop {
         let now = Instant::now();
         let wake = tokio::time::Instant::from_std(sender.wake(now));
@@ -386,12 +389,15 @@ async fn live(
             },
             message = messages.recv() => match message {
                 Some(message) => {
-                    if let Some(reason) = control(message, &mut media, &writer) {
+                    if let Some(reason) = control(message, &mut media, &input_handle, &writer) {
                         break Some(reason);
                     }
                 }
                 None => break None,
             },
+            Some(mode) = modes.next() => {
+                writer.send(ServerMessage::PointerMode(wire_pointer_mode(mode)));
+            }
             report = reports.recv() => {
                 if let Some(report) = report {
                     sender.feedback(&report, Instant::now());
@@ -437,13 +443,28 @@ async fn live(
     Ok(())
 }
 
-fn control(message: ClientMessage, media: &mut Media, writer: &ControlWriter) -> Option<EndReason> {
+fn wire_pointer_mode(mode: pointer::PointerMode) -> PointerMode {
+    match mode {
+        pointer::PointerMode::Absolute => PointerMode::Absolute,
+        pointer::PointerMode::Relative => PointerMode::Relative,
+    }
+}
+
+fn control(
+    message: ClientMessage,
+    media: &mut Media,
+    input: &InputHandle,
+    writer: &ControlWriter,
+) -> Option<EndReason> {
     match message {
         ClientMessage::Viewport(viewport) => {
             media.tell(VideoCommand::Viewport(Viewport::from_wire(viewport)))
         }
         ClientMessage::Keyframe => media.tell(VideoCommand::Keyframe),
-        ClientMessage::PointerLock(locked) => media.tell(VideoCommand::PointerLock(locked)),
+        ClientMessage::PointerLock(locked) => {
+            input.send(InputCommand::PointerLock(locked));
+            media.tell(VideoCommand::PointerLock(locked));
+        }
         ClientMessage::Clipboard { mime, data } => {
             if mime == CLIPBOARD_TEXT && data.len() <= LONGEST_CLIPBOARD {
                 match String::from_utf8(data) {

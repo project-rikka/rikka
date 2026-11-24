@@ -12,6 +12,7 @@ const THREAD: &str = "rikka-remote-input";
 pub(crate) enum InputCommand {
     Event(InputEvent),
     Move(Position),
+    PointerLock(bool),
     Show(DisplayInfo),
     Stop,
 }
@@ -46,6 +47,7 @@ fn serve(mut injector: Injector, commands: &CommandReceiver<InputCommand>) {
             match command {
                 InputCommand::Event(event) => injector.apply(event),
                 InputCommand::Move(at) => injector.move_to(at),
+                InputCommand::PointerLock(locked) => injector.locked = locked,
                 InputCommand::Show(display) => injector.show(&display),
                 InputCommand::Stop => return,
             }
@@ -75,6 +77,7 @@ struct Injector {
     pointer: Pointer,
     output: Option<String>,
     held: Vec<PointerButton>,
+    locked: bool,
 }
 
 impl Injector {
@@ -87,6 +90,7 @@ impl Injector {
             seat,
             output: None,
             held: Vec::new(),
+            locked: false,
         })
     }
 
@@ -127,7 +131,9 @@ impl Injector {
                 pressed,
                 at,
             } => {
-                self.move_to(at);
+                if !self.locked {
+                    self.move_to(at);
+                }
                 self.button(pointer_button(button), pressed);
             }
             InputEvent::Wheel { dx, dy } => report(self.pointer.scroll_value120(dx, dy)),

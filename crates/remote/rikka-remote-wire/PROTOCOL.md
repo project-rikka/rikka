@@ -1,4 +1,4 @@
-# Rikka Remote Protocol, version 1
+# Rikka Remote Protocol, version 2
 
 A client shows and drives one desktop session of a Rikka machine. This document is the
 whole wire contract; any client that follows it interoperates with `rikka-remote`.
@@ -61,6 +61,7 @@ Server to client:
 | `0x8B` | Ended | `u8 reason` |
 | `0x8C` | FileSaved | `u32 id`, `str name` |
 | `0x8D` | FileFailed | `u32 id`, `str reason` |
+| `0x8E` | PointerMode | `u8 mode`: 0 absolute, 1 relative |
 
 `Viewport` is `u32 width`, `u32 height` (physical pixels of the area showing the
 desktop) and `u32 refresh_mhz`. `Decoder` is `u8 codec`, `u8 chroma` (mask: bit 0
@@ -77,6 +78,18 @@ Cursor serials start at 1 and are never reused. The client keeps at least the 32
 most recently defined or shown shapes; the server sends a shape again, under a new
 serial, once it has fallen out of its own list of the 32 most recent.
 
+PointerLock tells the server whether the client holds a pointer lock: while it does,
+the client sends Relative motion instead of Motion, and the server presses buttons
+where the desktop's pointer is instead of at the position a Button carries.
+
+PointerMode says how the desktop takes pointer motion. In absolute mode the client
+sends Motion and positioned buttons. Relative mode means an application on the desktop
+holds the pointer (locked, or confined while the cursor is hidden): while its window
+has focus the client holds a pointer lock of its own, shows no cursor, sends Relative
+events and draws no cursor from Pointer datagrams, until the server sends absolute
+mode again. The person can release that lock; a click into the picture takes it again
+and is not forwarded.
+
 Clipboard text travels as `text/plain;charset=utf-8`, at most 1 MiB; either side
 ignores larger or non-UTF-8 text. In Stats, `estimate_bps` is the throughput the
 client acknowledged recently, 0 until it is known. The server encodes no larger
@@ -88,9 +101,10 @@ than the `max_width` and `max_height` of the decoder it chose.
    or Ended (5) when it does not speak the version.
 2. The client sends SignIn until the server answers SignedIn. Refused leaves the
    connection open for another attempt.
-3. The client sends Start. The server answers Display, Stream and the cursor state,
-   then sends media datagrams. A new Stream (another `stream` number) follows every
-   change of codec or picture size; the next frame of a new stream is intra.
+3. The client sends Start. The server answers Display, Stream, the cursor state and the
+   pointer mode, then sends media datagrams. A new Stream (another `stream` number)
+   follows every change of codec or picture size; the next frame of a new stream is
+   intra.
 4. Either side may close the connection; the server sends Ended first when it ends
    the session.
 
@@ -210,7 +224,8 @@ many bytes of Opus packet follow, and the rest is the previous packet again
 ### Pointer
 
 `u8 type`, `u32 seq`, `i32 x`, `i32 y`: the desktop's pointer position in display
-pixels, sent while the client holds a pointer lock and draws the cursor itself.
+pixels, sent while the client holds a pointer lock, for a client that draws the cursor
+itself.
 
 ### Motion
 

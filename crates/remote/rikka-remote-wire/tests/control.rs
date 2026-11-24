@@ -1,6 +1,7 @@
 use rikka_remote_wire::{
     Chroma, Chromas, ClientMessage, Codec, CursorShape, DecodeError, Decoder, Depths, Display,
-    EndReason, HEADER_BYTES, Header, Refusal, ServerMessage, SignIn, Stats, Stream, Viewport,
+    EndReason, HEADER_BYTES, Header, PointerMode, Refusal, ServerMessage, SignIn, Stats, Stream,
+    Viewport,
 };
 
 fn split(framed: &[u8]) -> (Header, &[u8]) {
@@ -127,6 +128,7 @@ fn server_messages_round_trip() {
             id: 3,
             reason: "the disk is full".into(),
         },
+        ServerMessage::PointerMode(PointerMode::Relative),
     ];
     for message in messages {
         let framed = message.encode();

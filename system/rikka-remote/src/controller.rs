@@ -1,6 +1,6 @@
 use std::sync::mpsc::Sender;
 
-use rikka_seam::{Call, Publisher};
+use rikka_seam::{Call, Publisher, SeamClient};
 use rikka_session::remote::{CHANGED, RemoteStatus};
 use rikka_settings::seam::{Announcement, Settings};
 
@@ -19,6 +19,7 @@ pub(crate) enum Message {
 pub(crate) struct Controller {
     settings: Settings,
     options: Options,
+    compositor: SeamClient,
     runtime: tokio::runtime::Handle,
     messages: Sender<Message>,
     server: Option<Server>,
@@ -29,6 +30,7 @@ pub(crate) struct Controller {
 impl Controller {
     pub(crate) fn new(
         settings: Settings,
+        compositor: SeamClient,
         runtime: tokio::runtime::Handle,
         messages: Sender<Message>,
     ) -> Controller {
@@ -36,6 +38,7 @@ impl Controller {
         let mut controller = Controller {
             settings,
             options: options.clone(),
+            compositor,
             runtime,
             messages,
             server: None,
@@ -109,7 +112,7 @@ impl Controller {
             return;
         }
         let status = StatusSink::new(self.messages.clone());
-        match Server::start(options, &self.runtime, status) {
+        match Server::start(options, &self.runtime, status, self.compositor.clone()) {
             Ok(server) => {
                 self.status.serving = Some(server.serving());
                 self.status.problem = None;

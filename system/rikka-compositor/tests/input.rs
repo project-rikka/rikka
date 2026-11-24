@@ -9,6 +9,7 @@ use rikka_seam::Request;
 use rikka_session::agent::{
     AgentPlacement, CAPABILITY, Idle, PLACEMENT, SEAT, SHOW, WAIT_IDLE, WaitIdleRequest,
 };
+use rikka_session::pointer::{self, PointerMode};
 use rikka_session::shortcuts::Shortcut;
 use rikka_wayland::{Host, Serial, SerialKind};
 use rikka_wayland_client::wl_pointer::ButtonState;
@@ -426,6 +427,30 @@ fn locked_pointer_reports_relative_motion() {
         recorded.input.travelled.contains(&(0.0, -12.0))
     });
     assert_eq!(client.received.shell.pointer_on, Some(id));
+}
+
+#[test]
+fn pointer_mode_follows_pointer_lock() {
+    let harness = Harness::headless(EXTENT);
+    let mut client = harness.client();
+    let devices = client.devices();
+    let window = mapped(&mut client, 1, (60, 60), GREEN);
+    let id = window.surface.id();
+    let mode = || harness.ask::<PointerMode>(Request::new(pointer::CAPABILITY, pointer::STATE));
+
+    harness.inject(&[Injected::PointerTo { x: 52.0, y: 52.0 }]);
+    client.until("pointer focus on window", |recorded| {
+        recorded.shell.pointer_on == Some(id)
+    });
+    assert_eq!(mode(), PointerMode::Absolute);
+
+    let locked = client.lock_pointer(&window.surface, &devices.pointer);
+    client.until("pointer locked", |recorded| recorded.input.locked == [true]);
+    assert_eq!(mode(), PointerMode::Relative);
+
+    locked.destroy();
+    client.roundtrip();
+    assert_eq!(mode(), PointerMode::Absolute);
 }
 
 #[test]

@@ -7,7 +7,7 @@ use rikka_wayland_client::wl_shm;
 
 use rikka_wayland_client::zwlr_layer_surface_v1::Anchor;
 
-use crate::common::Harness;
+use crate::common::{Harness, mapped};
 
 const EXTENT: Extent = Extent {
     width: 128,
@@ -162,6 +162,39 @@ fn cursor_capture_follows_pointer() {
 
     let plain = copy_of(&mut client, &copies, &source, Options::empty(), 2);
     assert!(!marked(&plain, (60, 40)), "cursor omitted");
+}
+
+#[test]
+fn cursor_capture_leaves_while_cursor_hidden() {
+    let harness = Harness::headless(EXTENT);
+    let mut client = harness.client();
+    let devices = client.devices();
+    let output = client.output();
+    let sources: ExtOutputImageCaptureSourceManagerV1 = client.global(1);
+    let copies: ExtImageCopyCaptureManagerV1 = client.global(1);
+    let source = sources.create_source(&output);
+    let window = mapped(&mut client, 1, (60, 60), GREEN_ARGB);
+    let id = window.surface.id();
+
+    harness.inject(&[Injected::PointerTo { x: 56.0, y: 56.0 }]);
+    client.until("pointer focus on window", |recorded| {
+        recorded.shell.pointer_on == Some(id)
+    });
+    let _cursor = copies.create_pointer_cursor_session(&source, &devices.pointer);
+    client.until("cursor session entered", |recorded| {
+        recorded.captured.cursor_entered
+    });
+
+    let serial = client.received.shell.pointer_entered.unwrap();
+    devices.pointer.set_cursor(serial, None, 0, 0);
+    client.until("hidden cursor leaves", |recorded| {
+        !recorded.captured.cursor_entered
+    });
+
+    harness.inject(&[Injected::PointerTo { x: 4.0, y: 4.0 }]);
+    client.until("shown cursor enters again", |recorded| {
+        recorded.captured.cursor_entered && recorded.captured.cursor_at == Some((4, 4))
+    });
 }
 
 #[test]

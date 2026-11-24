@@ -6,6 +6,7 @@ pub mod environment;
 pub mod following;
 pub mod gestures;
 pub mod lock;
+pub mod pointer;
 pub mod profile;
 pub mod protocol;
 pub mod remote;
