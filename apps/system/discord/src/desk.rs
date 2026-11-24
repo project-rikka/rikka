@@ -8,7 +8,7 @@ use crate::chat::{Chat, Stage};
 use crate::voice::talk_area;
 use crate::{
     banner, conversation, friends, member_menu, members, profile, rail, screen, settings, sidebar,
-    signing, switcher, voice,
+    signing, space_sheet, switcher, voice,
 };
 
 pub(crate) const BODY: &str = "discord-desk";
@@ -42,6 +42,9 @@ fn desk(chat: &Chat) -> Element {
     let mut layers = vec![body.build().keyed(BODY)];
     if chat.profiles().full().is_some() {
         layers.push(profile::scrim());
+    }
+    if chat.space_sheet().is_open() {
+        layers.push(space_sheet::scrim());
     }
     layers.push(component(|chat: &Chat| chat, overlays).any());
     layers.push(
@@ -103,6 +106,7 @@ fn overlays(chat: &Chat) -> Element {
             incoming,
             screen::golive_view(chat),
             Some(component(|chat: &Chat| chat, profile::full).any()),
+            Some(component(|chat: &Chat| chat, space_sheet::view).any()),
             Some(component(|chat: &Chat| chat, profile::popout).any()),
             member_menu::view(chat),
         ]

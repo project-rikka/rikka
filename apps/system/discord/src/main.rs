@@ -17,6 +17,7 @@ mod screen;
 mod settings;
 mod sidebar;
 mod signing;
+mod space_sheet;
 mod switcher;
 mod voice;
 mod widgets;

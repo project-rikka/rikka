@@ -140,6 +140,47 @@ fn unchanged_component_is_not_rebuilt() {
     assert_eq!(spent.components, 1);
 }
 
+#[derive(Default, State)]
+struct Lobby {
+    open: Tracked<bool>,
+    #[state]
+    hall: Hall,
+}
+
+#[derive(Default, State)]
+struct Hall {
+    guests: Tracked<u32>,
+}
+
+fn lobby(lobby: &Lobby) -> impl View {
+    let mut rows = vec![component(|lobby: &Lobby| &lobby.hall, hall)];
+    if *lobby.open {
+        rows.push(text("open").build());
+    }
+    pile(rows)
+}
+
+fn hall(_: &Hall) -> impl View {
+    component(|hall: &Hall| hall, room)
+}
+
+fn room(hall: &Hall) -> impl View {
+    text(format!("{} guests", *hall.guests))
+}
+
+#[test]
+fn component_returning_component_is_kept() {
+    let mut harness = Harness::new(TypedUi::new(Lobby::default(), lobby, Theme::dark()));
+
+    harness.ui.start(|lobby: &mut Lobby| lobby.open.set(true));
+    harness.frame();
+    assert!(harness.shows("open"));
+
+    harness.ui.start(|hall: &mut Hall| hall.guests.set(2));
+    harness.frame();
+    assert!(harness.shows("2 guests"));
+}
+
 #[derive(State)]
 struct Inbox {
     letters: TrackedVec<String>,

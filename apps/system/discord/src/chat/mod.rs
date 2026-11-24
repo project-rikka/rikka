@@ -7,6 +7,7 @@ mod nav;
 mod people;
 mod screens;
 mod signing;
+mod spaces;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -28,6 +29,7 @@ use crate::screen::Screens;
 use crate::settings::Settings;
 use crate::sidebar::Sidebar;
 use crate::signing::Signing;
+use crate::space_sheet::SpaceSheet;
 use crate::switcher::Switcher;
 use crate::voice::Calls;
 
@@ -80,6 +82,8 @@ pub(crate) struct Chat {
     #[state]
     switcher: Switcher,
     #[state]
+    space_sheet: SpaceSheet,
+    #[state]
     settings: Settings,
 }
 
@@ -116,6 +120,7 @@ impl Chat {
             member_menu: MemberMenu::new(),
             friends: Friends::new(),
             switcher: Switcher::new(),
+            space_sheet: SpaceSheet::new(),
             settings: Settings::new(),
         }
     }
@@ -171,6 +176,7 @@ impl Chat {
         self.close_profiles();
         self.member_menu.close();
         self.sidebar.close_menu();
+        self.space_sheet.close();
         self.switcher.toggle();
     }
 
@@ -179,11 +185,16 @@ impl Chat {
         self.member_menu.close();
         self.sidebar.close_menu();
         self.switcher.close();
+        self.space_sheet.close();
     }
 
     pub(crate) fn escape(&mut self) {
         if self.settings.is_open() {
             self.close_settings();
+            return;
+        }
+        if self.space_sheet.is_open() {
+            self.space_sheet.close();
             return;
         }
         if self.member_menu.shown().is_some() {

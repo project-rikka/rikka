@@ -5,8 +5,9 @@ use std::sync::Arc;
 
 use base64::Engine as _;
 use discord_core::{
-    Channel, ChannelId, DISCORD_EPOCH_MS, Draft, Emoji, Focus, ForumPage, ForumPost, Limits,
-    Message, MessageId, Page, Profile, Progress, SpaceId, Status, StreamKey, TagId, Update, UserId,
+    Channel, ChannelId, DISCORD_EPOCH_MS, Draft, Emoji, Focus, ForumPage, ForumPost, InviteCode,
+    Limits, Message, MessageId, Page, Profile, Progress, SpaceDraft, SpaceId, SpaceTemplate,
+    Status, StreamKey, TagId, Update, UserId,
 };
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use serde_json::{Value, json};
@@ -59,6 +60,17 @@ fn reaction_key(emoji: &Emoji) -> String {
         None => emoji.name.clone(),
     };
     utf8_percent_encode(&key, REACTION_KEY).to_string()
+}
+
+fn template_code(template: SpaceTemplate) -> &'static str {
+    match template {
+        SpaceTemplate::Blank => "2TffvPucqHkN",
+        SpaceTemplate::Friends => "hgM48av5Q69A",
+        SpaceTemplate::StudyGroup => "FbwUwRp4j8Es",
+        SpaceTemplate::SchoolClub => "Ctg7PUHcQmZu",
+        SpaceTemplate::LocalCommunity => "64UDvRNCC52Y",
+        SpaceTemplate::Creators => "6exdzMgjZgah",
+    }
 }
 
 fn days_since_epoch() -> i64 {
@@ -485,6 +497,64 @@ impl Client {
                     request = request.query("silent", false);
                 }
                 request.done().await
+            })
+            .await?)
+    }
+
+    pub async fn create_space(&self, draft: &SpaceDraft) -> discord_core::Result<SpaceId> {
+        let icon = draft.png_icon.as_ref().map(|png| {
+            format!(
+                "data:image/png;base64,{}",
+                base64::engine::general_purpose::STANDARD.encode(png)
+            )
+        });
+        let body = json!({
+            "name": draft.name.trim(),
+            "icon": icon,
+            "channels": [],
+            "system_channel_id": null,
+            "guild_template_code": template_code(draft.template),
+        });
+        Ok(self
+            .session
+            .work(move |session| async move {
+                let guild: wire::Guild = session.rest().post("/guilds").json(body).parse().await?;
+                Ok(snowflake::id::<SpaceId>(guild.id.as_str()))
+            })
+            .await?)
+    }
+
+    pub async fn join_space(&self, invite: &InviteCode) -> discord_core::Result<SpaceId> {
+        let code = invite.to_string();
+        Ok(self
+            .session
+            .work(move |session| async move {
+                let path = format!("/invites/{code}");
+                let invite: wire::Invite = session
+                    .rest()
+                    .get(path.as_str())
+                    .query("inputValue", &code)
+                    .query("with_counts", true)
+                    .query("with_expiration", true)
+                    .parse()
+                    .await?;
+                let Some(space) = invite.space().map(str::to_owned) else {
+                    return Err(Error::Missing(format!("server of invite {code}")));
+                };
+                let channel = invite.channel.unwrap_or_default();
+                session
+                    .rest()
+                    .post(path)
+                    .context(&json!({
+                        "location": "Join Guild",
+                        "location_guild_id": space,
+                        "location_channel_id": channel.id,
+                        "location_channel_type": channel.kind,
+                    }))
+                    .json(json!({}))
+                    .done()
+                    .await?;
+                Ok(snowflake::id::<SpaceId>(space.as_str()))
             })
             .await?)
     }

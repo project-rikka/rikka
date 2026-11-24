@@ -21,7 +21,9 @@ use crate::runtime::table::{CULLED, PAINT, Table};
 use crate::runtime::walk::Outputs;
 use crate::style::{Layout, Length, Style};
 use crate::view::observe::{log, reads};
-use crate::view::{Anchor, AnyWidget, Behavior, Element, Env, Scoped, State, StateAccess, Store};
+use crate::view::{
+    Anchor, AnyWidget, Behavior, Element, Env, Scoped, Source, State, StateAccess, Store,
+};
 
 const MATCH_AHEAD: usize = 4;
 
@@ -337,42 +339,51 @@ fn view(cx: &mut ReconcileCx<'_>, element: &mut Element, parent_env: &Env) -> Bo
         .expect("component element without source");
     let identity = first.identity();
     let built = log::now();
-    let mut source = first;
-    let mut outermost = None;
-    let mut reads = Vec::new();
-    loop {
-        let chain: Vec<Rc<Scoped>> = cx.chain.iter().chain(&element.scopes).cloned().collect();
-        let theme = cx.theme;
-        let state = &mut *cx.state;
-        let (mut output, keys) = reads::recorded(|| {
-            crate::stats::component_viewed();
-            crate::ambient::with_env(theme, *parent_env, || {
-                source.view(&mut StateAccess::new(state, &chain))
-            })
-        });
-        reads.extend(keys);
-        adopt_outer(&mut output, element);
-        *element = output;
-        let inner = element.source.take();
-        if outermost.is_none() {
-            outermost = Some(source);
-        }
-        match inner {
-            Some(inner) => source = inner,
-            None => break,
-        }
-    }
-    reads.sort_unstable();
-    reads.dedup();
+    let reads = unfold(cx, element, &*first, parent_env);
     Box::new(ComponentSlot {
         identity,
-        source: outermost,
+        source: Some(first),
         built,
         reads,
         outer,
         env: *parent_env,
         dirty: false,
     })
+}
+
+pub(crate) fn unfold(
+    cx: &mut ReconcileCx<'_>,
+    element: &mut Element,
+    first: &dyn Source,
+    parent_env: &Env,
+) -> Vec<u64> {
+    let mut reads = view_once(cx, element, first, parent_env);
+    while let Some(inner) = element.source.take() {
+        reads.extend(view_once(cx, element, &*inner, parent_env));
+    }
+    reads.sort_unstable();
+    reads.dedup();
+    reads
+}
+
+fn view_once(
+    cx: &mut ReconcileCx<'_>,
+    element: &mut Element,
+    source: &dyn Source,
+    parent_env: &Env,
+) -> Vec<u64> {
+    let chain: Vec<Rc<Scoped>> = cx.chain.iter().chain(&element.scopes).cloned().collect();
+    let theme = cx.theme;
+    let state = &mut *cx.state;
+    let (mut output, keys) = reads::recorded(|| {
+        crate::stats::component_viewed();
+        crate::ambient::with_env(theme, *parent_env, || {
+            source.view(&mut StateAccess::new(state, &chain))
+        })
+    });
+    adopt_outer(&mut output, element);
+    *element = output;
+    keys
 }
 
 fn adopt_outer(inner: &mut Element, outer: &mut Element) {

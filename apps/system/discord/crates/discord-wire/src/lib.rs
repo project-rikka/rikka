@@ -3,6 +3,7 @@ mod events;
 mod flex;
 mod gateway;
 mod guild;
+mod invite;
 mod message;
 mod preloaded;
 mod profile;
@@ -24,6 +25,7 @@ pub use events::{
 };
 pub use gateway::{Closing, Frame, Hello, ReadySession};
 pub use guild::{Emoji, Guild, Member, Properties, Role, RoleColors, Sticker};
+pub use invite::Invite;
 pub use message::{
     Attachment, CallInfo, Embed, EmbedAuthor, EmbedField, EmbedFooter, EmbedMedia, EmbedProvider,
     Message, Reaction, Reference, Snapshot, StickerItem, flags as message_flags,

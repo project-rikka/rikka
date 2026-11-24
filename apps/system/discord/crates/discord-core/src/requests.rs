@@ -5,6 +5,23 @@ use crate::id::{ChannelId, MessageId, SpaceId, StickerId};
 use crate::model::channel::Channel;
 use crate::model::message::Message;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum SpaceTemplate {
+    Blank,
+    Friends,
+    StudyGroup,
+    SchoolClub,
+    LocalCommunity,
+    Creators,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SpaceDraft {
+    pub name: String,
+    pub png_icon: Option<Arc<[u8]>>,
+    pub template: SpaceTemplate,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Limits {
     pub upload_bytes: u64,

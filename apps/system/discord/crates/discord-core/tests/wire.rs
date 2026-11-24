@@ -1,4 +1,4 @@
-use discord_core::{ChannelId, MessageId, SpaceId, StreamKey, UserId};
+use discord_core::{ChannelId, InviteCode, MessageId, SpaceId, StreamKey, UserId};
 
 #[test]
 fn snowflake_encodes_creation_time() {
@@ -40,5 +40,36 @@ fn stream_key_round_trips() {
     assert_eq!("call:4:5".parse(), Ok(call));
     for broken in ["test:5", "guild:a:2:3", "call:1:2:3"] {
         assert!(broken.parse::<StreamKey>().is_err(), "{broken}");
+    }
+}
+
+#[test]
+fn invite_codes_come_from_links_or_bare_codes() {
+    for (input, code) in [
+        ("hTKzmak", Some("hTKzmak")),
+        ("  hTKzmak ", Some("hTKzmak")),
+        ("https://discord.gg/hTKzmak", Some("hTKzmak")),
+        ("discord.gg/cool-people", Some("cool-people")),
+        ("HTTPS://Discord.GG/hTKzmak/", Some("hTKzmak")),
+        (
+            "https://discord.com/invite/hTKzmak?event=1",
+            Some("hTKzmak"),
+        ),
+        (
+            "https://canary.discord.com/invite/hTKzmak#top",
+            Some("hTKzmak"),
+        ),
+        ("https://discordapp.com/invite/hTKzmak", Some("hTKzmak")),
+        ("", None),
+        ("https://discord.gg/", None),
+        ("https://discord.gg/a/b", None),
+        ("https://example.com/hTKzmak", None),
+        ("../users/@me", None),
+    ] {
+        assert_eq!(
+            InviteCode::parse(input).as_ref().map(InviteCode::as_str),
+            code,
+            "{input}"
+        );
     }
 }

@@ -153,6 +153,10 @@ impl Chat {
             Update::Ready(ready) => Some(ready.me.clone()),
             _ => None,
         };
+        let arrived = match &update {
+            Update::Space(space) => Some(space.id),
+            _ => None,
+        };
         let Some(linked) = self.linked_mut(key) else {
             return;
         };
@@ -162,6 +166,9 @@ impl Chat {
         }
         if self.current.as_deref() == Some(key) && areas.contains(&Area::Everything) {
             self.arrive();
+        }
+        if let Some(space) = arrived {
+            self.space_arrived(key, &space);
         }
     }
 

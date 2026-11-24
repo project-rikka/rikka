@@ -1,10 +1,8 @@
-use std::rc::Rc;
-
 use crate::runtime::layout::{Layouts, Node};
-use crate::runtime::reconcile::ReconcileCx;
+use crate::runtime::reconcile::{ReconcileCx, unfold};
 use crate::runtime::table::Table;
-use crate::view::observe::{log, reads};
-use crate::view::{Element, Env, Scoped, StateAccess};
+use crate::view::observe::log;
+use crate::view::{Element, Env};
 
 pub(crate) fn verify(cx: &mut ReconcileCx<'_>, node: Node, mut element: Element, env: &Env) {
     if !cfg!(any(debug_assertions, test)) || log::now() != cx.taken_at {
@@ -13,19 +11,12 @@ pub(crate) fn verify(cx: &mut ReconcileCx<'_>, node: Node, mut element: Element,
     let Some(source) = element.source.take() else {
         return;
     };
-    let chain: Vec<Rc<Scoped>> = cx.chain.iter().chain(&element.scopes).cloned().collect();
-    let output = {
+    {
         let _quiet = log::Quiet::enter();
         let _muted = crate::stats::MutedGuard::enter();
-        let state = &mut *cx.state;
-        let (output, _) = reads::recorded(|| {
-            crate::ambient::with_env(cx.theme, *env, || {
-                source.view(&mut StateAccess::new(state, &chain))
-            })
-        });
-        output
-    };
-    if let Some(difference) = differs(cx.table, cx.layouts, node, &output, true) {
+        unfold(cx, &mut element, &*source, env);
+    }
+    if let Some(difference) = differs(cx.table, cx.layouts, node, &element, true) {
         let name = cx
             .table
             .get(node)

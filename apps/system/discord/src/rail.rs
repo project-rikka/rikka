@@ -34,7 +34,7 @@ impl Target {
             Target::Home => chat.open_home(),
             Target::Space(space) => chat.open_space(space),
             Target::Folder(folder) => chat.toggle_folder(folder),
-            Target::Add => chat.add_account(),
+            Target::Add => chat.open_space_sheet(),
         }
     }
 }
@@ -126,7 +126,7 @@ pub(crate) fn view(chat: &Chat) -> Element {
                 .background(palette().surface)
                 .size(Length::px(TILE), Length::px(TILE))
                 .any(),
-            tr!("discord.accounts.add").to_string(),
+            tr!("discord.rail.add-server").to_string(),
             Look::default(),
         );
     }
