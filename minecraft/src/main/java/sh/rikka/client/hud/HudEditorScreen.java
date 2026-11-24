@@ -55,19 +55,19 @@ public final class HudEditorScreen extends RikkaScreen implements HudEditing {
 	private @Nullable Grab grab;
 	private Snapping.Snap guides = Snapping.Snap.free(0.0F, 0.0F);
 
-	private HudEditorScreen(MenuState menu, Optional<HudMod> focus, boolean returnsToMenu) {
+	private HudEditorScreen(MenuState menu, boolean returnsToMenu) {
 		super(Component.translatable(RikkaClient.MOD_ID + ".menu.hud.title"));
 		this.menu = menu;
-		this.selected = focus;
+		this.selected = Optional.empty();
 		this.returnsToMenu = returnsToMenu;
 	}
 
 	public static HudEditorScreen standalone(MenuState menu) {
-		return new HudEditorScreen(menu, Optional.empty(), false);
+		return new HudEditorScreen(menu, false);
 	}
 
-	public static HudEditorScreen fromMenu(MenuState menu, Optional<HudMod> focus) {
-		return new HudEditorScreen(menu, focus, true);
+	public static HudEditorScreen fromMenu(MenuState menu) {
+		return new HudEditorScreen(menu, true);
 	}
 
 	private record Grab(HudMod mod, float offsetX, float offsetY) {

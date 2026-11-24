@@ -1,7 +1,6 @@
 package sh.rikka.client.menu;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import java.util.Optional;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -18,7 +17,6 @@ import sh.rikka.client.hud.HudEditorScreen;
 import sh.rikka.client.menu.settings.KeyCapture;
 import sh.rikka.client.menu.settings.SettingControls;
 import sh.rikka.client.menu.settings.SettingRows;
-import sh.rikka.client.mod.HudMod;
 import sh.rikka.client.ui.RikkaScreen;
 import sh.rikka.client.ui.style.Colors;
 
@@ -35,7 +33,7 @@ public final class ModMenuScreen extends RikkaScreen {
 	private final MenuState state;
 	private final SettingControls controls = new SettingControls();
 	private final Sidebar sidebar = new Sidebar();
-	private final ModPage modPage = new ModPage(this.controls, hud -> editHud(Optional.of(hud)));
+	private final ModPage modPage = new ModPage(this.controls);
 	private final ProfilesPage profiles = new ProfilesPage(this.controls::forgetAll);
 	private final ThemesPage themes = new ThemesPage();
 	private final PreferencesPage preferences = new PreferencesPage(new SettingRows(this.controls));
@@ -72,7 +70,7 @@ public final class ModMenuScreen extends RikkaScreen {
 		Color background = view.paletteColor(ColorRole.BACKGROUND);
 		Color surface = view.paletteColor(ColorRole.SURFACE);
 		view.box(() -> view.row(() -> {
-					view.box(() -> this.sidebar.view(view, this.state, height, canEditHud(), () -> editHud(Optional.empty())))
+					view.box(() -> this.sidebar.view(view, this.state, height, canEditHud(), this::editHud))
 						.background(Colors.mix(background, surface, SIDEBAR_TINT))
 						.height(height);
 					view.verticalDivider();
@@ -137,7 +135,7 @@ public final class ModMenuScreen extends RikkaScreen {
 	private void page(View view, Page page) {
 		switch (page) {
 			case Page.Mods _ -> ModsPage.view(view, this.state);
-			case Page.ModSettings settings -> this.modPage.view(view, settings.mod(), canEditHud());
+			case Page.ModSettings settings -> this.modPage.view(view, settings.mod());
 			case Page.Profiles _ -> this.profiles.view(view);
 			case Page.Themes _ -> this.themes.view(view);
 			case Page.Preferences _ -> this.preferences.view(view);
@@ -168,8 +166,8 @@ public final class ModMenuScreen extends RikkaScreen {
 		return this.minecraft.level != null;
 	}
 
-	private void editHud(Optional<HudMod> focus) {
-		leaveTo(HudEditorScreen.fromMenu(this.state, focus));
+	private void editHud() {
+		leaveTo(HudEditorScreen.fromMenu(this.state));
 	}
 
 	@Override
