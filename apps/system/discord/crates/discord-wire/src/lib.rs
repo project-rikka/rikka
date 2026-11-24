@@ -16,7 +16,10 @@ mod voice;
 pub mod commands;
 pub mod snowflake;
 
-pub use channel::{Channel, Overwrite, Tag, ThreadMetadata, kind as channel_kind};
+pub use channel::{
+    Channel, DefaultReaction, Overwrite, Tag, ThreadMetadata, flags as channel_flags, forum_layout,
+    kind as channel_kind, sort_order, tag_setting,
+};
 pub use events::{
     ChannelRecipient, GuildDelete, GuildEmojis, GuildRole, GuildRoleDelete, GuildStickers,
     ListGroup, ListItem, ListOp, MemberListUpdate, MemberRemove, MembersChunk, MessageDelete,

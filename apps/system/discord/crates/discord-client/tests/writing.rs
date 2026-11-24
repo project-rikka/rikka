@@ -21,7 +21,7 @@ fn channel(space: Option<u64>) -> Channel {
         slowmode: 0,
         last_activity: None,
         thread: None,
-        tags: Vec::new(),
+        forum: None,
         bitrate: None,
         user_limit: None,
     }

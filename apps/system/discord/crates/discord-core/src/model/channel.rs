@@ -1,6 +1,6 @@
 use crate::id::{ChannelId, SpaceId, TagId, UserId};
 use crate::model::picture::Picture;
-use crate::model::rich::Emoji;
+use crate::model::rich::{Emoji, Rich};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Channel {
@@ -8,7 +8,7 @@ pub struct Channel {
     pub space: Option<SpaceId>,
     pub kind: ChannelKind,
     pub name: String,
-    pub topic: Option<String>,
+    pub topic: Option<Rich>,
     pub parent: Option<ChannelId>,
     pub position: i32,
     pub icon: Option<Picture>,
@@ -19,7 +19,7 @@ pub struct Channel {
     pub slowmode: u32,
     pub last_activity: Option<i64>,
     pub thread: Option<Thread>,
-    pub tags: Vec<ForumTag>,
+    pub forum: Option<ForumSettings>,
     pub bitrate: Option<u32>,
     pub user_limit: Option<u32>,
 }
@@ -67,6 +67,7 @@ pub struct Thread {
     pub owner: Option<UserId>,
     pub archived: bool,
     pub locked: bool,
+    pub pinned: bool,
     pub joined: bool,
     pub messages: u32,
     pub members: u32,
@@ -80,6 +81,41 @@ pub struct ForumTag {
     pub name: String,
     pub emoji: Option<Emoji>,
     pub moderated: bool,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ForumSettings {
+    pub tags: Vec<ForumTag>,
+    pub sort: PostSort,
+    pub layout: PostLayout,
+    pub tag_match: TagMatch,
+    pub requires_tag: bool,
+    pub reaction: Option<Emoji>,
+}
+
+impl ForumSettings {
+    pub const MAX_POST_TAGS: usize = 5;
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum PostSort {
+    #[default]
+    Activity,
+    Created,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum PostLayout {
+    #[default]
+    List,
+    Gallery,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum TagMatch {
+    #[default]
+    Some,
+    All,
 }
 
 #[derive(Clone, Copy, Default, PartialEq, Eq, Hash)]

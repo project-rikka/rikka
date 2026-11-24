@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Duration;
 
-use discord_core::{ChannelId, UserId};
+use discord_core::{ChannelId, ForumSettings, PostLayout, PostSort, UserId};
 use discord_stream::{FrameRate, Quality, Resolution};
 use discord_voice::{InputMode, MAX_VOLUME, NoiseSuppression, VoiceSettings};
 use rikka_app::prelude::Key as Keyboard;
@@ -37,6 +37,8 @@ const ANIMATED: &str = "animated-emoji";
 const STREAM_RESOLUTION: &str = "stream-resolution";
 const STREAM_FRAME_RATE: &str = "stream-frame-rate";
 const STREAM_SOUND: &str = "stream-sound";
+const FORUM_SORTS: &str = "forum-sorts";
+const FORUM_LAYOUTS: &str = "forum-layouts";
 
 const VOICE_ACTIVITY: &str = "voice-activity";
 const PUSH_TO_TALK: &str = "push-to-talk";
@@ -58,6 +60,22 @@ pub(crate) struct Alerts {
     pub(crate) enabled: bool,
     pub(crate) directs: bool,
     pub(crate) mentions: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ForumView {
+    pub(crate) sort: Option<PostSort>,
+    pub(crate) layout: Option<PostLayout>,
+}
+
+impl ForumView {
+    pub(crate) fn sort_in(self, settings: &ForumSettings) -> PostSort {
+        self.sort.unwrap_or(settings.sort)
+    }
+
+    pub(crate) fn layout_in(self, settings: &ForumSettings) -> PostLayout {
+        self.layout.unwrap_or(settings.layout)
+    }
 }
 
 #[derive(Debug)]
@@ -146,6 +164,58 @@ impl Preferences {
             .get::<PerAccount<BTreeMap<UserId, f32>>>(USER_VOLUMES);
         if volumes.remove(account).is_some() {
             self.0.set(USER_VOLUMES, volumes);
+        }
+        for key in [FORUM_SORTS, FORUM_LAYOUTS] {
+            let mut chosen = self.0.get::<PerAccount<BTreeMap<ChannelId, String>>>(key);
+            if chosen.remove(account).is_some() {
+                self.0.set(key, chosen);
+            }
+        }
+    }
+
+    pub(crate) fn forum_view(&self, account: &str, forum: &ChannelId) -> ForumView {
+        ForumView {
+            sort: self
+                .forum_choice(FORUM_SORTS, account, forum)
+                .as_deref()
+                .and_then(sort_named),
+            layout: self
+                .forum_choice(FORUM_LAYOUTS, account, forum)
+                .as_deref()
+                .and_then(layout_named),
+        }
+    }
+
+    pub(crate) fn set_forum_view(&mut self, account: &str, forum: &ChannelId, view: ForumView) {
+        self.set_forum_choice(FORUM_SORTS, account, forum, view.sort.map(sort_name));
+        self.set_forum_choice(FORUM_LAYOUTS, account, forum, view.layout.map(layout_name));
+    }
+
+    fn forum_choice(&self, key: &str, account: &str, forum: &ChannelId) -> Option<String> {
+        self.0
+            .get::<PerAccount<BTreeMap<ChannelId, String>>>(key)
+            .remove(account)?
+            .remove(forum)
+    }
+
+    fn set_forum_choice(
+        &mut self,
+        key: &str,
+        account: &str,
+        forum: &ChannelId,
+        choice: Option<&str>,
+    ) {
+        let mut per_account = self.0.get::<PerAccount<BTreeMap<ChannelId, String>>>(key);
+        let chosen = per_account.entry(account.to_owned()).or_default();
+        let changed = match choice {
+            Some(choice) => chosen.insert(*forum, choice.to_owned()).as_deref() != Some(choice),
+            None => chosen.remove(forum).is_some(),
+        };
+        if chosen.is_empty() {
+            per_account.remove(account);
+        }
+        if changed {
+            self.0.set(key, per_account);
         }
     }
 
@@ -394,4 +464,38 @@ fn schema() -> Schema {
             Key::bool(STREAM_SOUND, false)
                 .summary("Whether a shared screen carries the whole desktop's sound"),
         )
+        .key(
+            Key::table(FORUM_SORTS, Values::new())
+                .summary("Post order chosen in each forum, per account"),
+        )
+        .key(
+            Key::table(FORUM_LAYOUTS, Values::new())
+                .summary("Post layout chosen in each forum, per account"),
+        )
+}
+
+fn sort_name(sort: PostSort) -> &'static str {
+    match sort {
+        PostSort::Activity => "activity",
+        PostSort::Created => "created",
+    }
+}
+
+fn sort_named(name: &str) -> Option<PostSort> {
+    [PostSort::Activity, PostSort::Created]
+        .into_iter()
+        .find(|sort| sort_name(*sort) == name)
+}
+
+fn layout_name(layout: PostLayout) -> &'static str {
+    match layout {
+        PostLayout::List => "list",
+        PostLayout::Gallery => "gallery",
+    }
+}
+
+fn layout_named(name: &str) -> Option<PostLayout> {
+    [PostLayout::List, PostLayout::Gallery]
+        .into_iter()
+        .find(|layout| layout_name(*layout) == name)
 }

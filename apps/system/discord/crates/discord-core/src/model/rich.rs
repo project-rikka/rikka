@@ -41,6 +41,14 @@ impl Rich {
     }
 
     #[must_use]
+    pub fn one_line(&self) -> String {
+        self.plain_text()
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+
+    #[must_use]
     pub fn plain_text(&self) -> String {
         let mut out = String::new();
         for (at, block) in self.0.iter().enumerate() {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::id::MessageId;
-use crate::model::message::{Delivery, Embed, Message, Reaction};
+use crate::model::message::{Delivery, Embed, Message};
 use crate::requests::Page;
 use crate::update::ReactionKind;
 
@@ -157,7 +157,7 @@ impl Timeline {
     }
 
     pub(crate) fn react(&mut self, id: &MessageId, kind: ReactionKind) -> bool {
-        self.edit(id, |message| react(&mut message.reactions, kind))
+        self.edit(id, |message| kind.apply(&mut message.reactions))
     }
 
     fn edit(&mut self, id: &MessageId, change: impl FnOnce(&mut Message)) -> bool {
@@ -190,50 +190,6 @@ impl Timeline {
         {
             Ok(at) => self.messages[at] = message,
             Err(at) => self.messages.insert(at, message),
-        }
-    }
-}
-
-fn react(reactions: &mut Vec<Reaction>, kind: ReactionKind) {
-    match kind {
-        ReactionKind::Added { emoji, me } => {
-            match reactions
-                .iter_mut()
-                .find(|reaction| reaction.emoji.same(&emoji))
-            {
-                Some(reaction) => {
-                    if !(me && reaction.me) {
-                        reaction.count += 1;
-                    }
-                    reaction.me |= me;
-                }
-                None => reactions.push(Reaction {
-                    emoji,
-                    count: 1,
-                    me,
-                }),
-            }
-        }
-        ReactionKind::Removed { emoji, me } => {
-            if let Some(at) = reactions
-                .iter()
-                .position(|reaction| reaction.emoji.same(&emoji))
-            {
-                let reaction = &mut reactions[at];
-                if !me || reaction.me {
-                    reaction.count = reaction.count.saturating_sub(1);
-                }
-                if me {
-                    reaction.me = false;
-                }
-                if reaction.count == 0 {
-                    reactions.remove(at);
-                }
-            }
-        }
-        ReactionKind::Cleared(None) => reactions.clear(),
-        ReactionKind::Cleared(Some(emoji)) => {
-            reactions.retain(|reaction| !reaction.emoji.same(&emoji));
         }
     }
 }

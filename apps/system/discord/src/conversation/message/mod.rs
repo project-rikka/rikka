@@ -24,6 +24,8 @@ use extras::GUTTER;
 use hover::Allowed;
 use rich::{Reveal, Shaping};
 
+pub(crate) use reactions::reaction_chip;
+
 const FACE: f32 = 40.0;
 const EDIT_SHORTEST: f32 = 22.0;
 const EDIT_TALLEST: f32 = 320.0;

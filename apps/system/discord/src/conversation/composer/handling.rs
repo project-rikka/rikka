@@ -5,9 +5,9 @@ use rikka_app::prelude::*;
 use rikka_clipboard::URI_LIST;
 use rikka_ui::{DragAction, DragOffer};
 
-use super::Replying;
-use super::complete::{self, Offers, Picked};
+use super::complete::{self, Offers};
 use super::uploads::{self, Attach, PickedFiles};
+use super::{Replying, write_emoji};
 use crate::chat::Chat;
 
 const TYPING_EVERY: Duration = Duration::from_secs(8);
@@ -96,15 +96,8 @@ impl Chat {
     }
 
     pub(crate) fn insert_emoji(&mut self, emoji: &Emoji) {
-        let display = match emoji.is_custom() {
-            true => format!(":{}:", emoji.name),
-            false => emoji.name.clone(),
-        };
         let composer = &mut self.conversation_mut().composer;
-        composer.draft.insert(&display);
-        if emoji.is_custom() {
-            composer.pick(display, Picked::Emoji(emoji.clone()));
-        }
+        write_emoji(&composer.draft, &mut composer.picked, emoji);
     }
 
     pub(crate) fn reply_to(&mut self, message: &MessageId) {

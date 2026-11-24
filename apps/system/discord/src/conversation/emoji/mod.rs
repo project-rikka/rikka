@@ -138,7 +138,7 @@ pub(crate) fn picker(
             })
             .fill_width(),
         ),
-        PickerTarget::React(_) => None,
+        PickerTarget::Post | PickerTarget::React(_) => None,
     };
     popover(
         column! {
@@ -339,6 +339,7 @@ impl Chat {
         self.save_recents();
         match picker_target {
             PickerTarget::Composer => self.insert_emoji(emoji),
+            PickerTarget::Post => self.insert_post_emoji(emoji),
             PickerTarget::React(message) => {
                 self.conversation_mut().overlay.close();
                 self.react(message, emoji, true);

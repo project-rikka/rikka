@@ -4,7 +4,7 @@ use std::rc::Rc;
 use rikka_types::{Point, Rect};
 use rikka_ui::{
     Accept, Action, Behavior, Corner, DragAction, DragOffer, Element, Event, EventCtx, IntoHandler,
-    Layout, Length, PaintCtx, Quad, Style, View, Widget, motion,
+    Layout, Length, PaintCtx, Quad, Style, Styled, View, Watchers, Widget, motion,
 };
 
 const TINT: f32 = 0.18;
@@ -13,22 +13,36 @@ const RIM: f32 = 2.0;
 type Accepts = Rc<dyn Fn(&DragOffer) -> Option<Accept>>;
 
 #[must_use]
-#[derive(Widget)]
 pub struct DropZone {
-    content: Cell<Option<Element>>,
+    content: Element,
     accepts: Option<Accepts>,
     on_drop: Action<(DragOffer, DragAction)>,
     content_first: bool,
-    #[style]
+    lit: Rc<Lit>,
     style: Style,
+}
+
+#[derive(Default)]
+struct Lit {
+    hovered: Cell<bool>,
+    watchers: Watchers,
+}
+
+impl Lit {
+    fn show(&self, hovered: bool) {
+        if self.hovered.replace(hovered) != hovered {
+            self.watchers.repaint();
+        }
+    }
 }
 
 pub fn drop_zone(content: impl View) -> DropZone {
     DropZone {
-        content: Cell::new(Some(content.build())),
+        content: content.build(),
         accepts: None,
         on_drop: Action::default(),
         content_first: false,
+        lit: Rc::default(),
         style: Style::default(),
     }
 }
@@ -58,11 +72,34 @@ impl DropZone {
     }
 }
 
+impl Styled for DropZone {
+    fn style_mut(&mut self) -> &mut Style {
+        &mut self.style
+    }
+}
+
+impl View for DropZone {
+    fn build(mut self) -> Element {
+        let content = std::mem::replace(&mut self.content, Element::empty());
+        let glow = Element::new(Glow {
+            lit: Rc::clone(&self.lit),
+        });
+        Element::with_children(self, vec![content, glow])
+    }
+}
+
+impl std::fmt::Debug for DropZone {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DropZone")
+            .field("content_first", &self.content_first)
+            .finish_non_exhaustive()
+    }
+}
+
 #[derive(Debug, Default)]
 #[doc(hidden)]
 pub struct DropZoneState {
     hovered: bool,
-    shown: bool,
 }
 
 impl Widget for DropZone {
@@ -72,19 +109,8 @@ impl Widget for DropZone {
         Layout::column().with(&self.style)
     }
 
-    fn build(&self, state: &mut DropZoneState) -> Vec<Element> {
-        state.shown = state.hovered;
-        let content = self.content.take().expect("content already taken");
-        match state.hovered {
-            true => vec![content, Glow.build()],
-            false => vec![content],
-        }
-    }
-
-    fn paint(&self, state: &mut DropZoneState, ctx: &mut PaintCtx<'_>) {
-        if state.shown != state.hovered {
-            ctx.request_view();
-        }
+    fn paint(&self, state: &mut DropZoneState, _ctx: &mut PaintCtx<'_>) {
+        self.lit.show(state.hovered);
     }
 
     fn event(&self, state: &mut DropZoneState, event: &Event, ctx: &mut EventCtx<'_>) {
@@ -97,17 +123,17 @@ impl Widget for DropZone {
                 ctx.set_handled();
                 if !state.hovered {
                     state.hovered = true;
-                    ctx.request_paint();
+                    self.lit.show(true);
                 }
             }
             Event::DragLeft => {
                 if std::mem::take(&mut state.hovered) {
-                    ctx.request_paint();
+                    self.lit.show(false);
                 }
             }
             Event::DragDropped { offer, action, .. } => {
                 state.hovered = false;
-                ctx.request_paint();
+                self.lit.show(false);
                 if self.answer(offer).is_none() {
                     return;
                 }
@@ -121,10 +147,15 @@ impl Widget for DropZone {
     fn behavior(&self, _state: &DropZoneState) -> Behavior {
         Behavior::CATCHES_DROPS.when(!self.content_first)
     }
+
+    fn debug_name(&self) -> &'static str {
+        "DropZone"
+    }
 }
 
-#[derive(Widget)]
-struct Glow;
+struct Glow {
+    lit: Rc<Lit>,
+}
 
 impl Widget for Glow {
     type State = ();
@@ -136,8 +167,16 @@ impl Widget for Glow {
     }
 
     fn paint(&self, _state: &mut (), ctx: &mut PaintCtx<'_>) {
+        self.lit.watchers.watch(ctx.handle());
+        let target = match self.lit.hovered.get() {
+            true => 1.0,
+            false => 0.0,
+        };
+        let shown = ctx.animate_curve("shown", target, motion::HOVER);
+        if shown <= 0.0 {
+            return;
+        }
         let bounds = ctx.bounds();
-        let shown = ctx.play("shown", motion::HOVER);
         let (selection, accent) = {
             let palette = ctx.palette();
             (palette.selection, palette.accent)
@@ -154,5 +193,15 @@ impl Widget for Glow {
 
     fn hit_test(&self, _bounds: Rect, _point: Point) -> bool {
         false
+    }
+
+    fn debug_name(&self) -> &'static str {
+        "DropZoneGlow"
+    }
+}
+
+impl std::fmt::Debug for Glow {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Glow").finish_non_exhaustive()
     }
 }

@@ -7,7 +7,7 @@ mod view;
 use std::collections::HashMap;
 use std::time::Instant;
 
-use discord_core::MessageId;
+use discord_core::{Emoji, MessageId};
 use rikka_app::prelude::*;
 
 use crate::conversation::Seat;
@@ -15,6 +15,22 @@ use crate::conversation::Seat;
 pub(crate) use complete::{Offers, Picked};
 use uploads::Pending;
 pub(crate) use view::{EMOJI_BUTTON, preview, sendable, view};
+
+pub(crate) fn write_emoji(draft: &TextDocument, picked: &mut Vec<(String, Picked)>, emoji: &Emoji) {
+    let display = match emoji.is_custom() {
+        true => format!(":{}:", emoji.name),
+        false => emoji.name.clone(),
+    };
+    draft.insert(&display);
+    if emoji.is_custom() {
+        remember(picked, display, Picked::Emoji(emoji.clone()));
+    }
+}
+
+fn remember(picked: &mut Vec<(String, Picked)>, display: String, value: Picked) {
+    picked.retain(|(known, _)| *known != display);
+    picked.push((display, value));
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Replying {
@@ -149,8 +165,7 @@ impl Composer {
     }
 
     pub(crate) fn pick(&mut self, display: String, picked: Picked) {
-        self.picked.retain(|(known, _)| *known != display);
-        self.picked.push((display, picked));
+        remember(&mut self.picked, display, picked);
     }
 
     pub(crate) fn picked(&self) -> &[(String, Picked)] {

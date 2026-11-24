@@ -19,7 +19,10 @@ pub use id::{
     ChannelId, DISCORD_EPOCH_MS, EmojiId, MessageId, RoleId, SpaceId, StickerId, TagId, UserId,
 };
 pub use invite::InviteCode;
-pub use model::channel::{Abilities, Channel, ChannelKind, ForumTag, Thread};
+pub use model::channel::{
+    Abilities, Channel, ChannelKind, ForumSettings, ForumTag, PostLayout, PostSort, TagMatch,
+    Thread,
+};
 pub use model::message::{
     Attachment, AttachmentKind, Delivery, Embed, EmbedField, EmbedKind, EmbedLine, EmbedMedia,
     Message, MessageKind, Quoted, Reaction, Reply, Sticker, StickerFormat, SystemEvent,
@@ -31,8 +34,8 @@ pub use model::space::{Folder, Member, Role, Space};
 pub use model::user::{Activity, ActivityKind, Bond, Friend, Presence, Status, User};
 pub use model::voice::{NotAStreamKey, StreamKey, VoiceState};
 pub use requests::{
-    Draft, Focus, ForumPage, ForumPost, Limits, Page, Progress, ReplyTo, SpaceDraft, SpaceTemplate,
-    Upload, UploadSource, unwatched,
+    Draft, Focus, ForumPage, ForumPost, Limits, Page, PostQuery, Progress, ReplyTo, SpaceDraft,
+    SpaceTemplate, Upload, UploadSource, unwatched,
 };
 pub use store::{Area, RailItem, Row, Section, Store, Timeline, Unseen};
 pub use update::{

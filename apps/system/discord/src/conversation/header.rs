@@ -1,14 +1,16 @@
-use discord_core::{Channel, ChannelId, ChannelKind, Update};
+use discord_core::{Channel, ChannelId, ChannelKind, Rich, Update};
 use rikka_app::prelude::*;
 use rikka_ui::Element;
 use rikka_widgets::row;
 
 use crate::chat::Chat;
 use crate::conversation::Conversation;
+use crate::conversation::overlay::{Overlay, Shown};
 
 const HEIGHT: f32 = 48.0;
 pub(crate) const PINS: &str = "discord-header-pins";
 pub(crate) const THREADS: &str = "discord-header-threads";
+pub(crate) const TOPIC: &str = "discord-header-topic";
 
 pub(crate) fn symbol_of(kind: ChannelKind) -> MaterialSymbol {
     match kind {
@@ -42,8 +44,15 @@ pub(crate) fn view(chat: &Chat, channel: &ChannelId) -> Element {
     };
     let conversation = chat.conversation();
     let title = linked.channel_title(channel_info);
-    let topic = channel_info.topic.clone().filter(|topic| !topic.is_empty());
-    let bare = topic.is_none();
+    let forum = channel_info.kind == ChannelKind::Forum;
+    let guidelines = forum && channel_info.topic.is_some();
+    let inline_topic = channel_info
+        .topic
+        .as_ref()
+        .filter(|_| !forum)
+        .map(Rich::one_line)
+        .filter(|topic| !topic.is_empty());
+    let bare = inline_topic.is_none();
     let parent = match channel_info.kind {
         ChannelKind::Thread => channel_info
             .parent
@@ -64,11 +73,10 @@ pub(crate) fn view(chat: &Chat, channel: &ChannelId) -> Element {
         .filter(|thread| !thread.joined && !thread.archived)
         .map(|_| channel_info.clone());
     let shown_members = conversation.members_shown();
-    let (overlay_pins, overlay_threads) = match conversation.overlay().shown() {
-        Some(crate::conversation::overlay::Shown::Pins) => (true, false),
-        Some(crate::conversation::overlay::Shown::Threads) => (false, true),
-        _ => (false, false),
-    };
+    let shown = conversation.overlay().shown();
+    let overlay_pins = matches!(shown, Some(Shown::Pins));
+    let overlay_threads = matches!(shown, Some(Shown::Threads));
+    let overlay_topic = matches!(shown, Some(Shown::Topic));
     let called = *channel;
     container(
         row! {
@@ -87,9 +95,15 @@ pub(crate) fn view(chat: &Chat, channel: &ChannelId) -> Element {
             }
             icon(symbol_of(channel_info.kind)).extent(Length::px(22.0)).color(palette().text_muted);
             text(title).label().semibold().no_wrap().min_width(0.0);
-            if let Some(topic) = topic {
+            if let Some(topic) = inline_topic {
                 rule_upright().height(Length::px(20.0));
-                text(topic).caption().muted().no_wrap().grow(1.0).min_width(0.0);
+                container(text(topic).caption().muted().no_wrap().fill_width())
+                    .focusless()
+                    .on_press(|overlay: &mut Overlay| overlay.toggle(Shown::Topic))
+                    .grow(1.0)
+                    .min_width(0.0)
+                    .build()
+                    .keyed(TOPIC);
             }
             if bare {
                 spacer().grow(1.0);
@@ -110,10 +124,18 @@ pub(crate) fn view(chat: &Chat, channel: &ChannelId) -> Element {
                     .build()
                     .keyed(THREADS);
             }
-            tool(MaterialSymbol::PUSH_PIN, overlay_pins)
-                .on_press(|chat: &mut Chat| chat.show_pins())
-                .build()
-                .keyed(PINS);
+            if guidelines {
+                tool(MaterialSymbol::INFO, overlay_topic)
+                    .on_press(|overlay: &mut Overlay| overlay.toggle(Shown::Topic))
+                    .build()
+                    .keyed(TOPIC);
+            }
+            if !forum {
+                tool(MaterialSymbol::PUSH_PIN, overlay_pins)
+                    .on_press(|chat: &mut Chat| chat.show_pins())
+                    .build()
+                    .keyed(PINS);
+            }
             if !matches!(channel_info.kind, ChannelKind::Direct) {
                 tool(MaterialSymbol::GROUP, shown_members)
                     .on_press(|conversation: &mut Conversation| conversation.toggle_members());

@@ -10,7 +10,8 @@ tags: [discord, architecture]
 - Messages sort by `MessageId`; there is no separate order. `MessageId::minted_at(ms)` makes a nonce-shaped id; `DISCORD_EPOCH_MS` is the one epoch constant.
 - A pending send is a `Message` whose id and `nonce` are the `Draft.nonce` the client minted; the echo replaces it by nonce. `Store::pend(channel, draft)`, `fail(channel, nonce)`, `withdraw(channel, nonce)`.
 - `Store::apply(Update) -> Vec<Area>` owns state rules (rail from folders, sections per space, timelines capped at 1000 with pending/failed sends, reactions, typing expiry, unread with mutes, voice states, calls). Areas are as narrow as views need.
-- Requests vocabulary lives in `requests.rs`: `Draft`, `Page`, `Focus`, `Limits`, `Upload`, `ForumPage`, `Progress`.
+- Requests vocabulary lives in `requests.rs`: `Draft`, `Page`, `Focus`, `Limits`, `Upload`, `ForumPage`, `PostQuery`, `Progress`.
+- `Channel::topic` is parsed `Rich`; forum and media channels carry `Channel::forum: ForumSettings` (tags, default `PostSort`/`PostLayout`, `TagMatch`, required tag, default reaction) and threads carry `Thread::pinned`.
 - Voice: `VoiceEvent`/`VoiceSink`/`VoicePacket`/`Privacy` plus Discord's fixed format constants `SAMPLE_RATE`, `VOICE_CHANNELS`, `VOICE_FRAME`, `VOICE_BITRATE`.
 - The app keeps a `rikka_account_book::Accounts<SavedAccount>` book (`accounts.json`): `SavedAccount { key, account: Account { id: UserId, name, avatar } }` is its `Record`, one 0700 folder per account; signing in to the same user again replaces it; forgetting the current account makes the first remaining one current. `account_secret(folder)` is the account's `FolderSecret` (schema `os.rikka.Discord`, no kind). `Emoji::custom(id, name, animated)` builds a custom emoji with its CDN picture.
 - `Error` is the public failure vocabulary; `Refused` means Discord signed the account out.

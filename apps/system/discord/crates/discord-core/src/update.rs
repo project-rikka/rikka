@@ -6,7 +6,7 @@ use futures_channel::mpsc;
 
 use crate::id::{ChannelId, MessageId, SpaceId, UserId};
 use crate::model::channel::Channel;
-use crate::model::message::{Embed, Message, Sticker};
+use crate::model::message::{Embed, Message, Reaction, Sticker};
 use crate::model::rich::Emoji;
 use crate::model::space::{Folder, Member, Role, Space};
 use crate::model::user::{Friend, Presence, User};
@@ -132,6 +132,52 @@ pub enum ReactionKind {
     Added { emoji: Emoji, me: bool },
     Removed { emoji: Emoji, me: bool },
     Cleared(Option<Emoji>),
+}
+
+impl ReactionKind {
+    pub fn apply(self, reactions: &mut Vec<Reaction>) {
+        match self {
+            ReactionKind::Added { emoji, me } => {
+                match reactions
+                    .iter_mut()
+                    .find(|reaction| reaction.emoji.same(&emoji))
+                {
+                    Some(reaction) => {
+                        if !(me && reaction.me) {
+                            reaction.count += 1;
+                        }
+                        reaction.me |= me;
+                    }
+                    None => reactions.push(Reaction {
+                        emoji,
+                        count: 1,
+                        me,
+                    }),
+                }
+            }
+            ReactionKind::Removed { emoji, me } => {
+                if let Some(at) = reactions
+                    .iter()
+                    .position(|reaction| reaction.emoji.same(&emoji))
+                {
+                    let reaction = &mut reactions[at];
+                    if !me || reaction.me {
+                        reaction.count = reaction.count.saturating_sub(1);
+                    }
+                    if me {
+                        reaction.me = false;
+                    }
+                    if reaction.count == 0 {
+                        reactions.remove(at);
+                    }
+                }
+            }
+            ReactionKind::Cleared(None) => reactions.clear(),
+            ReactionKind::Cleared(Some(emoji)) => {
+                reactions.retain(|reaction| !reaction.emoji.same(&emoji));
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

@@ -6,8 +6,8 @@ use std::sync::Arc;
 use base64::Engine as _;
 use discord_core::{
     Channel, ChannelId, DISCORD_EPOCH_MS, Draft, Emoji, Focus, ForumPage, ForumPost, InviteCode,
-    Limits, Message, MessageId, Page, Profile, Progress, SpaceDraft, SpaceId, SpaceTemplate,
-    Status, StreamKey, TagId, Update, UserId,
+    Limits, Message, MessageId, Page, PostQuery, PostSort, Profile, Progress, SpaceDraft, SpaceId,
+    SpaceTemplate, Status, StreamKey, TagId, TagMatch, Update, UserId,
 };
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 use serde_json::{Value, json};
@@ -25,6 +25,7 @@ use crate::voice::{Call, Voice};
 
 const PAGE_SIZE: u32 = 50;
 const SEARCH_PAGE: u32 = 25;
+const SEARCH_NAME_CHARS: usize = 100;
 const MAX_THREADS: u32 = 100;
 const INDEX_TRIES: u32 = 5;
 const ACKS_PER_REQUEST: usize = 100;
@@ -635,22 +636,42 @@ impl Client {
     pub async fn forum_posts(
         &self,
         forum: &ChannelId,
+        query: &PostQuery,
         offset: u32,
     ) -> discord_core::Result<ForumPage> {
         let forum = forum.to_string();
+        let mut search = vec![
+            (
+                "sort_by",
+                match query.sort {
+                    PostSort::Activity => "last_message_time",
+                    PostSort::Created => "creation_time",
+                }
+                .to_owned(),
+            ),
+            ("sort_order", "desc".to_owned()),
+            ("limit", SEARCH_PAGE.to_string()),
+            (
+                "tag_setting",
+                match query.tag_match {
+                    TagMatch::Some => "match_some",
+                    TagMatch::All => "match_all",
+                }
+                .to_owned(),
+            ),
+        ];
+        search.extend(query.tags.iter().map(|tag| ("tag", tag.to_string())));
+        let name: String = query.name.trim().chars().take(SEARCH_NAME_CHARS).collect();
+        if !name.is_empty() {
+            search.push(("name", name));
+        }
+        if offset > 0 {
+            search.push(("offset", offset.to_string()));
+        }
         Ok(self
             .session
             .work(move |session| async move {
-                let mut query = vec![
-                    ("sort_by", "last_message_time".to_owned()),
-                    ("sort_order", "desc".to_owned()),
-                    ("limit", SEARCH_PAGE.to_string()),
-                    ("tag_setting", "match_some".to_owned()),
-                ];
-                if offset > 0 {
-                    query.push(("offset", offset.to_string()));
-                }
-                let results = search_threads(&session, &forum, &query).await?;
+                let results = search_threads(&session, &forum, &search).await?;
                 let mut starters: std::collections::HashMap<String, wire::Message> = results
                     .first_messages
                     .iter()

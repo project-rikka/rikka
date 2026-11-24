@@ -4,6 +4,7 @@ use discord_core::{ChannelId, Focus, SpaceId};
 
 use super::Chat;
 use crate::account::{LinkedAccount, Location, Scope};
+use crate::preferences::ForumView;
 
 impl Chat {
     pub(crate) fn open_home(&mut self) {
@@ -70,6 +71,14 @@ impl Chat {
         };
         let collapsed = self.is_collapsed(category);
         self.preferences.set_collapsed(&key, category, !collapsed);
+    }
+
+    pub(crate) fn forum_view(&self, key: &str, forum: &ChannelId) -> ForumView {
+        self.preferences.forum_view(key, forum)
+    }
+
+    pub(crate) fn remember_forum_view(&mut self, key: &str, forum: &ChannelId, view: ForumView) {
+        self.preferences.set_forum_view(key, forum, view);
     }
 
     pub(crate) fn open_dm(&mut self, channel: ChannelId) {

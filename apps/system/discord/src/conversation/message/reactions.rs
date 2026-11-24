@@ -1,6 +1,6 @@
 use discord_core::{MessageId, Reaction};
 use rikka_app::prelude::*;
-use rikka_ui::Element;
+use rikka_ui::{Element, Handler};
 use rikka_widgets::row;
 
 use crate::chat::Chat;
@@ -43,6 +43,14 @@ pub(crate) fn view(message: &MessageId, reactions: &[Reaction], reacting: bool) 
 }
 
 fn chip(message: &MessageId, reaction: &Reaction, reacting: bool) -> Element {
+    let (id, emoji, on) = (*message, reaction.emoji.clone(), !reaction.me);
+    reaction_chip(
+        reaction,
+        reacting.then(|| Handler::new(move |chat: &mut Chat| chat.react(&id, &emoji, on))),
+    )
+}
+
+pub(crate) fn reaction_chip(reaction: &Reaction, toggle: Option<Handler<()>>) -> Element {
     let (fill, edge, ink) = match reaction.me {
         true => (
             palette().accent.with_alpha(0.16),
@@ -54,7 +62,9 @@ fn chip(message: &MessageId, reaction: &Reaction, reacting: bool) -> Element {
     let body = container(
         row! {
             face(&reaction.emoji, 18.0);
-            text(reaction.count.to_string()).caption().semibold().color(ink).no_wrap();
+            if reaction.count > 0 {
+                text(reaction.count.to_string()).caption().semibold().color(ink).no_wrap();
+            }
         }
         .gap(Space::TIGHT)
         .align_items(Align::Center),
@@ -63,11 +73,8 @@ fn chip(message: &MessageId, reaction: &Reaction, reacting: bool) -> Element {
     .background(fill)
     .border(1.0, edge)
     .radius(Corner::Item);
-    if !reacting {
-        return body.any();
+    match toggle {
+        Some(toggle) => body.focusless().on_press(toggle).any(),
+        None => body.any(),
     }
-    let (id, emoji, on) = (*message, reaction.emoji.clone(), !reaction.me);
-    body.focusless()
-        .on_press(move |chat: &mut Chat| chat.react(&id, &emoji, on))
-        .any()
 }

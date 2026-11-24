@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::id::{ChannelId, MessageId, SpaceId, StickerId};
-use crate::model::channel::Channel;
+use crate::id::{ChannelId, MessageId, SpaceId, StickerId, TagId};
+use crate::model::channel::{Channel, PostSort, TagMatch};
 use crate::model::message::Message;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -89,6 +89,14 @@ pub type Progress = Arc<dyn Fn(u64, u64) + Send + Sync>;
 #[must_use]
 pub fn unwatched() -> Progress {
     Arc::new(|_, _| {})
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct PostQuery {
+    pub sort: PostSort,
+    pub tags: Vec<TagId>,
+    pub tag_match: TagMatch,
+    pub name: String,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

@@ -98,3 +98,51 @@ fn dropped_text_is_inserted() {
     assert_eq!(ui.state().document.text(), "dropped words");
     assert!(ui.state().attached.is_empty());
 }
+
+fn hover_view(_: &Desk) -> Element {
+    component(|desk: &Desk| desk, hover_zone)
+}
+
+fn hover_zone(_: &Desk) -> Element {
+    drop_zone(local_state(false, |hovered: bool, set: Setter<bool>| {
+        container(text(match hovered {
+            true => "hovered",
+            false => "resting",
+        }))
+        .on_hover(move |over: bool| {
+            set(over);
+            skip_view();
+        })
+        .size(Length::FILL, Length::FILL)
+    }))
+    .accepts(|offer: &DragOffer| offer.has_uris().then(|| Accept::copy("text/uri-list")))
+    .on_drop(|desk: &mut Desk, offer: DragOffer, _: DragAction| {
+        desk.attached.extend(offer.uris());
+    })
+    .size(Length::FILL, Length::FILL)
+    .build()
+}
+
+#[test]
+fn content_with_its_own_state_updates_inside_drop_zone() {
+    let mut ui = TypedUi::new(
+        Desk {
+            document: TextDocument::new(""),
+            attached: Vec::new(),
+        },
+        hover_view,
+        Theme::dark(),
+    );
+    let mut scene = Scene::new();
+    ui.set_viewport(VIEW, 1.0);
+    settle(&mut ui, &mut scene);
+
+    ui.handle_event(Event::PointerMoved(INSIDE));
+    settle(&mut ui, &mut scene);
+
+    let shown = ui.dump();
+    assert!(
+        shown.contains("hovered"),
+        "content kept stale state:\n{shown}"
+    );
+}

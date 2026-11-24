@@ -2,6 +2,7 @@ mod confirm;
 mod menu;
 mod pins;
 mod threads;
+mod topic;
 
 use std::sync::Arc;
 
@@ -10,8 +11,8 @@ use rikka_app::prelude::*;
 use rikka_ui::Element;
 
 use crate::chat::Chat;
-use crate::conversation::emoji;
 use crate::conversation::lightbox::{Gallery, Shot};
+use crate::conversation::{emoji, forum};
 use rikka_emoji::Group;
 
 pub(crate) const MARK: &str = "discord-menu-mark";
@@ -25,6 +26,7 @@ pub(crate) enum Tab {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum PickerTarget {
     Composer,
+    Post,
     React(MessageId),
 }
 
@@ -33,6 +35,7 @@ pub(crate) enum OverlayAnchor {
     At(Point),
     Below(MessageId),
     Composer,
+    Post,
 }
 
 impl OverlayAnchor {
@@ -47,6 +50,8 @@ impl OverlayAnchor {
                 AnchorEdge::AboveEnd,
             )
             .offset(0.0, -Space::SNUG.px()),
+            OverlayAnchor::Post => Anchor::new(forum::EMOJI_BUTTON, AnchorEdge::BelowStart)
+                .offset(0.0, Space::TIGHT.px()),
         }
     }
 }
@@ -70,6 +75,8 @@ pub(crate) enum Shown {
     },
     Pins,
     Threads,
+    Topic,
+    SortView,
     NewThread {
         from: Option<MessageId>,
     },
@@ -158,6 +165,13 @@ impl Overlay {
         self.zoom(false);
     }
 
+    pub(crate) fn toggle(&mut self, shown: Shown) {
+        match self.shown.as_ref() == Some(&shown) {
+            true => self.close(),
+            false => self.shown.set(Some(shown)),
+        }
+    }
+
     pub(crate) fn set_menu_target(&mut self, message: MessageId, shift: bool) {
         self.menu_target = Some((message, shift));
     }
@@ -198,6 +212,7 @@ impl Overlay {
     pub(crate) fn open_picker(&mut self, picker_target: PickerTarget, tab: Tab) {
         let anchor = match (&picker_target, self.shown.as_ref()) {
             (PickerTarget::Composer, _) => OverlayAnchor::Composer,
+            (PickerTarget::Post, _) => OverlayAnchor::Post,
             (PickerTarget::React(_), Some(Shown::Menu { anchor, .. })) => anchor.clone(),
             (PickerTarget::React(message), _) => OverlayAnchor::Below(*message),
         };
@@ -343,6 +358,8 @@ pub(crate) fn view(chat: &Chat) -> Element {
         } => Some(emoji::picker(chat, picker_target, *tab, anchor)),
         Shown::Pins => Some(pins::view(chat)),
         Shown::Threads => Some(threads::view(chat)),
+        Shown::Topic => topic::view(chat),
+        Shown::SortView => forum::sort_menu(chat),
         Shown::NewThread { from } => Some(threads::naming(chat, from.as_ref())),
         Shown::Viewer(_) => None,
         Shown::Delete(message) => confirm::view(chat, message),

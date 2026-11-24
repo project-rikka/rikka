@@ -34,6 +34,12 @@ pub struct Channel {
     pub applied_tags: Vec<String>,
     #[serde(deserialize_with = "flex::list")]
     pub available_tags: Vec<Tag>,
+    pub default_sort_order: Option<u8>,
+    pub default_forum_layout: Option<u8>,
+    pub default_tag_setting: Option<String>,
+    pub default_reaction_emoji: Option<DefaultReaction>,
+    #[serde(deserialize_with = "flex::number")]
+    pub flags: u64,
     pub bitrate: Option<u32>,
     pub user_limit: Option<u32>,
     pub member: Option<serde_json::Value>,
@@ -73,6 +79,32 @@ pub mod kind {
     pub const STAGE: u8 = 13;
     pub const FORUM: u8 = 15;
     pub const MEDIA: u8 = 16;
+}
+
+pub mod flags {
+    pub const PINNED: u64 = 1 << 1;
+    pub const REQUIRE_TAG: u64 = 1 << 4;
+}
+
+pub mod sort_order {
+    pub const CREATION_DATE: u8 = 1;
+}
+
+pub mod forum_layout {
+    pub const LIST_VIEW: u8 = 1;
+    pub const GALLERY_VIEW: u8 = 2;
+}
+
+pub mod tag_setting {
+    pub const MATCH_ALL: &str = "match_all";
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct DefaultReaction {
+    #[serde(deserialize_with = "flex::id")]
+    pub emoji_id: Option<String>,
+    pub emoji_name: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
