@@ -76,6 +76,8 @@ pub(crate) struct UiTree {
     glass: Vec<RoundedRect>,
     opaque: Vec<RoundedRect>,
     windows: Vec<WindowView>,
+    glass_synced: Vec<RoundedRect>,
+    windows_synced: Vec<WindowView>,
     pub(super) has_anchors: bool,
     autofocus: Vec<u64>,
     claimed: Option<u64>,
@@ -162,6 +164,8 @@ impl UiTree {
             glass: Vec::new(),
             opaque: Vec::new(),
             windows: Vec::new(),
+            glass_synced: Vec::new(),
+            windows_synced: Vec::new(),
             has_anchors: false,
             autofocus: Vec::new(),
             claimed: None,
@@ -875,7 +879,7 @@ impl UiTree {
         if self.settle_tips(root, clock.now) {
             self.needs_frame = true;
         }
-        self.collect_hosted(background);
+        self.collect_hosted(scene, background);
         self.settle_caret();
     }
 
@@ -983,7 +987,7 @@ impl UiTree {
         }
     }
 
-    fn collect_hosted(&mut self, background: Color) {
+    fn collect_hosted(&mut self, scene: &mut Scene, background: Color) {
         let mut hosting = std::mem::take(&mut self.hosting_order);
         hosting.clear();
         hosting.extend(
@@ -1009,6 +1013,10 @@ impl UiTree {
             self.windows.extend_from_slice(&outputs.windows);
         }
         self.hosting_order = hosting;
+        damage_changed(scene, &self.glass_synced, &self.glass, |pane| pane.rect);
+        damage_changed(scene, &self.windows_synced, &self.windows, |view| view.rect);
+        self.glass_synced.clone_from(&self.glass);
+        self.windows_synced.clone_from(&self.windows);
         if self.scale > 0.0 {
             let unscale = 1.0 / self.scale;
             for pane in self.glass.iter_mut().chain(&mut self.opaque) {
@@ -1024,6 +1032,22 @@ impl UiTree {
         }
         if background.a >= 1.0 {
             self.opaque.push(whole);
+        }
+    }
+}
+
+fn damage_changed<T: PartialEq>(
+    scene: &mut Scene,
+    synced: &[T],
+    current: &[T],
+    area: impl Fn(&T) -> Rect,
+) {
+    for index in 0..synced.len().max(current.len()) {
+        let (was, is) = (synced.get(index), current.get(index));
+        if was != is {
+            for item in was.into_iter().chain(is) {
+                scene.damage_rect(area(item));
+            }
         }
     }
 }
