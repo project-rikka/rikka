@@ -1,22 +1,28 @@
 package sh.rikka.client.menu;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import java.nio.file.Path;
+import java.util.List;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import org.jspecify.annotations.Nullable;
 import os.rikka.Align;
 import os.rikka.Color;
 import os.rikka.ColorRole;
 import os.rikka.Justification;
 import os.rikka.Rikka;
+import os.rikka.TextDocument;
 import os.rikka.TextRole;
 import os.rikka.TransitionStyle;
 import os.rikka.View;
 import sh.rikka.client.RikkaClient;
+import sh.rikka.client.event.Subscription;
 import sh.rikka.client.hud.HudEditorScreen;
 import sh.rikka.client.menu.settings.KeyCapture;
 import sh.rikka.client.menu.settings.SettingControls;
 import sh.rikka.client.menu.settings.SettingRows;
+import sh.rikka.client.music.MusicChangeEvent;
 import sh.rikka.client.ui.RikkaScreen;
 import sh.rikka.client.ui.style.Colors;
 
@@ -28,15 +34,17 @@ public final class ModMenuScreen extends RikkaScreen {
 	private static final float SEARCH_WIDTH = 240.0F;
 	private static final float SIDEBAR_TINT = 0.5F;
 	private static final float BORDER_ALPHA = 0.4F;
-	private static final int FIRST_MOD_PAGE = 4;
+	private static final int FIRST_MOD_PAGE = 5;
 
 	private final MenuState state;
 	private final SettingControls controls = new SettingControls();
 	private final Sidebar sidebar = new Sidebar();
 	private final ModPage modPage = new ModPage(this.controls);
+	private final MusicPage music = new MusicPage();
 	private final ProfilesPage profiles = new ProfilesPage(this.controls::forgetAll);
 	private final ThemesPage themes = new ThemesPage();
 	private final PreferencesPage preferences = new PreferencesPage(new SettingRows(this.controls));
+	private @Nullable Subscription musicChanges;
 	private Page shown;
 
 	public ModMenuScreen(MenuState state) {
@@ -91,12 +99,7 @@ public final class ModMenuScreen extends RikkaScreen {
 	private void content(View view, Page page) {
 		topBar(view, page);
 		view.divider();
-		view.pageStack(pageNumber(page), () -> view.scroll(() -> view.column(() -> page(view, page))
-						.gap(Rikka.SPACE_ROOMY)
-						.padding(Rikka.SPACE_LOOSE)
-						.fillWidth())
-					.fillWidth()
-					.fillHeight())
+		view.pageStack(pageNumber(page), () -> page(view, page))
 			.grow(1.0F)
 			.fillWidth();
 	}
@@ -113,13 +116,14 @@ public final class ModMenuScreen extends RikkaScreen {
 					.onPress(context -> this.state.forward());
 				view.text(title(page)).textStyle(TextRole.HEADING).textNoWrap().grow(1.0F).shrink(1.0F);
 				if (page instanceof Page.Mods) {
-					view.textField(this.state.search())
-						.placeholder(Labels.of("search"))
-						.width(SEARCH_WIDTH)
-						.key("search")
+					search(view, this.state.search(), "search");
+				} else if (page instanceof Page.Music) {
+					search(view, this.state.musicSearch(), "music:search");
+					view.iconButton("folder_open")
+						.tooltip(Labels.of("music.open_folder"))
+						.key("music:folder")
 						.transition(TransitionStyle.FADE)
-						.onChange(context -> {
-						});
+						.onPress(context -> MusicPage.openFolder());
 				}
 				view.iconButton("close")
 					.tooltip(Labels.of("close"))
@@ -132,20 +136,41 @@ public final class ModMenuScreen extends RikkaScreen {
 			.fillWidth();
 	}
 
+	private static void search(View view, TextDocument document, String key) {
+		view.textField(document)
+			.placeholder(Labels.of("search"))
+			.width(SEARCH_WIDTH)
+			.key(key)
+			.transition(TransitionStyle.FADE)
+			.onChange(context -> {
+			});
+	}
+
 	private void page(View view, Page page) {
 		switch (page) {
-			case Page.Mods _ -> ModsPage.view(view, this.state);
-			case Page.ModSettings settings -> this.modPage.view(view, settings.mod());
-			case Page.Profiles _ -> this.profiles.view(view);
-			case Page.Themes _ -> this.themes.view(view);
-			case Page.Preferences _ -> this.preferences.view(view);
+			case Page.Mods _ -> scrolled(view, () -> ModsPage.view(view, this.state));
+			case Page.ModSettings settings -> scrolled(view, () -> this.modPage.view(view, settings.mod()));
+			case Page.Music _ -> this.music.view(view, this.state);
+			case Page.Profiles _ -> scrolled(view, () -> this.profiles.view(view));
+			case Page.Themes _ -> scrolled(view, () -> this.themes.view(view));
+			case Page.Preferences _ -> scrolled(view, () -> this.preferences.view(view));
 		}
+	}
+
+	private static void scrolled(View view, Runnable content) {
+		view.scroll(() -> view.column(content)
+				.gap(Rikka.SPACE_ROOMY)
+				.padding(Rikka.SPACE_LOOSE)
+				.fillWidth())
+			.fillWidth()
+			.fillHeight();
 	}
 
 	private static String title(Page page) {
 		return switch (page) {
 			case Page.Mods _ -> Labels.of("nav.mods");
 			case Page.ModSettings settings -> settings.mod().name().getString();
+			case Page.Music _ -> Labels.of("nav.music");
 			case Page.Profiles _ -> Labels.of("nav.profiles");
 			case Page.Themes _ -> Labels.of("nav.themes");
 			case Page.Preferences _ -> Labels.of("nav.preferences");
@@ -155,9 +180,10 @@ public final class ModMenuScreen extends RikkaScreen {
 	private static int pageNumber(Page page) {
 		return switch (page) {
 			case Page.Mods _ -> 0;
-			case Page.Profiles _ -> 1;
-			case Page.Themes _ -> 2;
-			case Page.Preferences _ -> 3;
+			case Page.Music _ -> 1;
+			case Page.Profiles _ -> 2;
+			case Page.Themes _ -> 3;
+			case Page.Preferences _ -> 4;
 			case Page.ModSettings settings -> FIRST_MOD_PAGE + RikkaClient.mods().all().indexOf(settings.mod());
 		};
 	}
@@ -197,8 +223,26 @@ public final class ModMenuScreen extends RikkaScreen {
 	}
 
 	@Override
+	public void onFilesDrop(List<Path> files) {
+		if (this.state.page() instanceof Page.Music && !isLeaving()) {
+			RikkaClient.music().importFiles(files);
+		}
+	}
+
+	@Override
+	public void added() {
+		super.added();
+		this.musicChanges = RikkaClient.events().listen(MusicChangeEvent.class, event -> refresh());
+	}
+
+	@Override
 	public void removed() {
 		super.removed();
+		Subscription changes = this.musicChanges;
+		this.musicChanges = null;
+		if (changes != null) {
+			changes.unsubscribe();
+		}
 		this.controls.close();
 		this.profiles.close();
 		this.sidebar.close();

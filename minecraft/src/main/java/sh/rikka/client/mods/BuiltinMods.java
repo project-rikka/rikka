@@ -19,6 +19,7 @@ import sh.rikka.client.mods.hud.JumpResetIndicatorMod;
 import sh.rikka.client.mods.hud.KeystrokesMod;
 import sh.rikka.client.mods.hud.MemoryUsageMod;
 import sh.rikka.client.mods.hud.MouseStrokesMod;
+import sh.rikka.client.mods.hud.MusicInfoMod;
 import sh.rikka.client.mods.hud.NameDisplayMod;
 import sh.rikka.client.mods.hud.PackDisplayMod;
 import sh.rikka.client.mods.hud.PingDisplayMod;
@@ -105,6 +106,7 @@ public final class BuiltinMods {
 		mods.register(new TargetInfoMod(new ScreenPosition(Anchor.CENTER, 0.0, TARGET_INFO_BELOW_CENTER)));
 		mods.register(new InventoryDisplayMod(new ScreenPosition(Anchor.BOTTOM_RIGHT, -MARGIN, -MARGIN)));
 		mods.register(new PackDisplayMod(new ScreenPosition(Anchor.BOTTOM_LEFT, MARGIN, -MARGIN)));
+		mods.register(new MusicInfoMod(left(8)));
 	}
 
 	private static ScreenPosition left(int row) {

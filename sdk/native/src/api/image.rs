@@ -22,6 +22,16 @@ pub(crate) struct Image {
 }
 
 impl Image {
+    pub(crate) fn rgba(width: u32, height: u32, pixels: Arc<[u8]>) -> Arc<Image> {
+        Arc::new(Image {
+            picture: Picture::Rgba {
+                width,
+                height,
+                pixels,
+            },
+        })
+    }
+
     pub(crate) fn source(&self) -> ImageSource {
         match &self.picture {
             Picture::File(path) => ImageSource::file(Arc::clone(path)),
@@ -64,11 +74,5 @@ pub(crate) fn image_new_rgba(width: u32, height: u32, pixels: &[u8]) -> Arc<Imag
             pixels.len()
         ));
     }
-    Arc::new(Image {
-        picture: Picture::Rgba {
-            width,
-            height,
-            pixels: Arc::from(pixels),
-        },
-    })
+    Image::rgba(width, height, Arc::from(pixels))
 }

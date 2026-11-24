@@ -11,7 +11,7 @@ use crate::error::{Error, Result};
 use crate::id3;
 use crate::normalize;
 use crate::tags::Tags;
-use music_core::Codec;
+use rikka_audio_decode::Codec;
 
 const SNIFF_LEN: usize = 16;
 const ASF: [u8; 16] = [

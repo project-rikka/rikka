@@ -8,7 +8,6 @@ rikka_library(
     ],
     deps = [
         "//apps/system/music/crates/music-core",
-        "//apps/system/music/crates/music-tags",
         "//crates/foundation/rikka-dirs",
         "//crates/foundation/rikka-fs",
         "//crates/foundation/rikka-sync",
@@ -17,6 +16,7 @@ rikka_library(
         "//crates/foundation/rikka-worker",
         "//crates/graphics/rikka-image",
         "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-audio-tags",
         "@crates//:rusqlite",
         "@crates//:rustix",
         "@crates//:sha2",

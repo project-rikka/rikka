@@ -41,7 +41,7 @@ fn id3v1_legacy_encoding_is_detected() {
             ],
         );
         support::save(&path, &tag);
-        let tags = music_tags::read(&path)
+        let tags = rikka_audio_tags::read(&path)
             .unwrap_or_else(|error| panic!("{name}: {error}"))
             .tags;
         assert_eq!(tags.artists, [expected[0]], "{name}");

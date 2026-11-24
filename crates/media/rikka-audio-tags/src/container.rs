@@ -17,7 +17,7 @@ use lofty::wavpack::{WavPackFile, WavPackProperties};
 
 use crate::audio::Audio;
 use crate::error::{Error, Result};
-use music_core::Codec;
+use rikka_audio_decode::Codec;
 
 const WAVE_MP3: u16 = 0x0055;
 const PREFERRED_TAGS: [TagType; 7] = [
@@ -59,7 +59,7 @@ pub(crate) fn read<R: Read + Seek>(reader: &mut R, file_type: FileType) -> Resul
             Some(Mp4Codec::FLAC) => (Codec::Flac, true),
             Some(Mp4Codec::MP3) => (Codec::Mp3, false),
             Some(Mp4Codec::AAC) => (Codec::Aac, false),
-            _ => (Codec::Other, false),
+            _ => (Codec::Other("MP4"), false),
         }),
         FileType::Wav => open::<WavFile, _>(reader, |properties: &WavProperties| match properties
             .format()
@@ -67,7 +67,7 @@ pub(crate) fn read<R: Read + Seek>(reader: &mut R, file_type: FileType) -> Resul
             WavFormat::PCM => (Codec::Pcm, true),
             WavFormat::IEEE_FLOAT => (Codec::FloatPcm, true),
             WavFormat::Other(WAVE_MP3) => (Codec::Mp3, false),
-            WavFormat::Other(_) => (Codec::Other, false),
+            WavFormat::Other(_) => (Codec::Other("WAV"), false),
         }),
         FileType::Aiff => {
             open::<AiffFile, _>(reader, |properties: &AiffProperties| {
@@ -80,7 +80,7 @@ pub(crate) fn read<R: Read + Seek>(reader: &mut R, file_type: FileType) -> Resul
                         | AiffCompressionType::fl64
                         | AiffCompressionType::FL32,
                     ) => (Codec::FloatPcm, true),
-                    Some(_) => (Codec::Other, false),
+                    Some(_) => (Codec::Other("AIFF"), false),
                 }
             })
         }

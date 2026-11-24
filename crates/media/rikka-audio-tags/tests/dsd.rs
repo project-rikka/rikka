@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use lofty::tag::ItemKey;
-use music_core::Codec;
+use rikka_audio_decode::Codec;
 
 use crate::support;
 
@@ -44,7 +44,7 @@ fn dsd_headers_give_format_and_tags() {
         ),
     ];
     for (name, path, rate, duration, tagged) in cases {
-        let read = music_tags::read(&path).unwrap_or_else(|error| panic!("{name}: {error}"));
+        let read = rikka_audio_tags::read(&path).unwrap_or_else(|error| panic!("{name}: {error}"));
         assert_eq!(read.audio.codec, Codec::Dsd, "{name}");
         assert!(read.audio.lossless, "{name}");
         assert_eq!(read.audio.sample_rate, Some(rate), "{name}");
@@ -57,7 +57,7 @@ fn dsd_headers_give_format_and_tags() {
             assert_eq!(read.tags.artists, ["Miles Davis"], "{name}");
             assert_eq!(read.tags.track.number, Some(2), "{name}");
         } else {
-            assert_eq!(read.tags, music_tags::Tags::default(), "{name}");
+            assert_eq!(read.tags, rikka_audio_tags::Tags::default(), "{name}");
         }
     }
 }
@@ -68,7 +68,7 @@ fn truncated_dsd_header_is_unreadable() {
     let path = dir.path().join("cut.dsf");
     std::fs::write(&path, b"DSD \x1c\0\0\0\0\0\0\0").unwrap();
     assert!(matches!(
-        music_tags::read(&path),
-        Err(music_tags::Error::Unreadable(_))
+        rikka_audio_tags::read(&path),
+        Err(rikka_audio_tags::Error::Unreadable(_))
     ));
 }

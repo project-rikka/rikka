@@ -1,5 +1,5 @@
-use music_core::Codec;
-use music_tags::{Audio, Error as TagError, Tagged, Tags};
+use rikka_audio_decode::Codec;
+use rikka_audio_tags::{Audio, Error as TagError, Tagged, Tags};
 
 use crate::artwork::ArtworkCache;
 use crate::index::{Record, Stat};
@@ -10,12 +10,12 @@ pub(crate) enum Outcome {
 }
 
 pub(crate) fn read(stat: Stat, artwork: &ArtworkCache) -> Outcome {
-    let tagged = match music_tags::read(&stat.path) {
+    let tagged = match rikka_audio_tags::read(&stat.path) {
         Ok(tagged) => Some(tagged),
         Err(error) => {
             let codec = match error {
-                TagError::Unsupported(codec) => codec,
-                _ => Codec::Other,
+                TagError::Unsupported(codec) => Some(codec),
+                _ => None,
             };
             if !error.is_unsupported() {
                 tracing::debug!("{}: {error}", stat.path.display());
@@ -38,12 +38,12 @@ pub(crate) fn read(stat: Stat, artwork: &ArtworkCache) -> Outcome {
     }))
 }
 
-fn probed(stat: &Stat, guessed: Codec) -> Option<Tagged> {
+fn probed(stat: &Stat, guessed: Option<Codec>) -> Option<Tagged> {
     let info = rikka_audio_decode::read(stat.path.as_path()).probe().ok()?;
     let encoding = info.encoding;
-    let codec = match Codec::from(encoding.codec) {
-        Codec::Other => guessed,
-        known => known,
+    let codec = match (encoding.codec, guessed) {
+        (Codec::Other(_), Some(guessed)) => guessed,
+        (probed, _) => probed,
     };
     let rate = match encoding.dsd_rate {
         Some(dsd) => dsd,

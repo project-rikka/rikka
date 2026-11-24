@@ -1784,6 +1784,223 @@ public sealed unsafe class Sound : IDisposable, IEquatable<Sound>
 
 /// <summary>
 /// <para>
+/// The tags a sound file carries: its title, artists, album and cover, from ID3, Vorbis comments, MP4, APE or
+/// RIFF tags. Reading them reads the file and decodes the cover, so read them on a background thread.
+/// </para>
+/// <para>
+/// It holds one reference to a native object usable from any thread; disposing it or the finalizer drops the
+/// reference.
+/// </para>
+/// </summary>
+
+public sealed unsafe class SoundTags : IDisposable, IEquatable<SoundTags>
+{
+    internal readonly NativeHandle handle;
+
+    private SoundTags(NativeHandle handle) => this.handle = handle;
+
+    internal static SoundTags Adopt(nint raw) => new(Handle(raw));
+
+    private static NativeHandle Handle(nint raw) => new(raw, &Native.rk_sound_tags_unref, false, nameof(SoundTags));
+
+    /// <summary>
+    /// <para>
+    /// Reads the tags of a sound file. A file without tags reads as empty ones.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <param name="coverSize">
+    /// The largest width and height of the cover in pixels; a larger cover is scaled down to fit. 0 skips the
+    /// cover.
+    /// </param>
+    public SoundTags(string path, uint coverSize)
+    {
+        Span<byte> pathUtf8 = Interop.Utf8(path, stackalloc byte[Interop.StackLimit], nameof(path));
+        fixed (byte* pathBytes = pathUtf8)
+        {
+            handle = Handle(Native.rk_sound_tags_new(new Str(pathBytes, (nuint)pathUtf8.Length), coverSize));
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// Its title; empty when the file names none.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public string Title
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Interop.Take(Native.rk_sound_tags_title(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// Its artists, joined with commas; empty when the file names none.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public string Artist
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Interop.Take(Native.rk_sound_tags_artist(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// The album it belongs to; empty when the file names none.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public string Album
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Interop.Take(Native.rk_sound_tags_album(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// The album's artists, joined with commas; empty when the file names none.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public string AlbumArtist
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Interop.Take(Native.rk_sound_tags_album_artist(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// Its place on its disc, counting from 1; 0 when unknown.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public uint TrackNumber
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Native.rk_sound_tags_track_number(self.Raw);
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// Its length in seconds; 0 when unknown.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public double Duration
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Native.rk_sound_tags_duration(self.Raw);
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// Whether it has a cover that could be decoded.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public bool HasCover
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Native.rk_sound_tags_has_cover(self.Raw) != 0;
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// Its front cover, or the first picture it carries, scaled down to the size asked for. Read it only when
+    /// <see cref="SoundTags.HasCover"/> is true.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public Image Cover
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Image.Adopt(Native.rk_sound_tags_cover(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// <para>
+    /// Why the file's tags cannot be read; empty when they were read.
+    /// </para>
+    /// <para>
+    /// Thread-safe.
+    /// </para>
+    /// </summary>
+    public string ErrorMessage
+    {
+        get
+        {
+            using var self = handle.Lease();
+            return Interop.Take(Native.rk_sound_tags_error_message(self.Raw));
+        }
+    }
+
+    /// <summary>
+    /// Releases the native object now; a disposed or handed-over object refuses further use.
+    /// </summary>
+    public void Dispose() => handle.Dispose();
+
+    /// <summary>
+    /// Whether both hold the same native object.
+    /// </summary>
+    /// <param name="other">The object to compare with.</param>
+    /// <returns>Whether they are the same object.</returns>
+    public bool Equals(SoundTags? other) =>
+        other is not null && other.handle.DangerousGetHandle() == handle.DangerousGetHandle();
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as SoundTags);
+
+    /// <inheritdoc/>
+    public override int GetHashCode() => handle.DangerousGetHandle().GetHashCode();
+}
+
+/// <summary>
+/// <para>
 /// A video played from a file, such as MP4, WebM or Matroska, with its sound, shown by <see
 /// cref="View.VideoView"/>. It opens once a view shows it. Views that read its state or position run again as
 /// it plays. A playing video keeps playing after its last reference is gone, until it pauses or ends.

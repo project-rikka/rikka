@@ -8,7 +8,7 @@ use crate::ids::TrackId;
 use crate::index::record::{Record, Stat};
 use crate::model::Summary;
 use crate::paths;
-use music_core::fold;
+use music_core::{Codec, fold};
 
 pub(crate) const ROLE_ARTIST: i64 = 0;
 pub(crate) const ROLE_ALBUM_ARTIST: i64 = 1;
@@ -375,7 +375,7 @@ fn insert(transaction: &Transaction<'_>, id: TrackId, root: &Path, record: &Reco
             track_peak,
             album_gain,
             album_peak,
-            audio.codec.as_str(),
+            Codec::from(audio.codec).as_str(),
             audio.lossless,
             record.duration_ms(),
             audio.sample_rate,

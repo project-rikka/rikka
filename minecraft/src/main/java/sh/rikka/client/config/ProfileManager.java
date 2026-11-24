@@ -26,7 +26,7 @@ public final class ProfileManager implements AutoCloseable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProfileManager.class);
 	private static final Duration SAVE_DELAY = Duration.ofMillis(500);
-	private static final String SAVER_THREAD = "rikka-client-profiles";
+	private static final String SAVER_THREAD = "rikka-profiles";
 	private static final String PREFERENCES = "preferences";
 
 	private final ProfileStore store;

@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 
-use music_core::Codec;
-use music_tags::Error;
-use rikka_audio_decode::WavDepth;
+use rikka_audio_decode::{Codec, WavDepth};
+use rikka_audio_tags::Error;
 
 use crate::support::{self, Sample};
 
@@ -94,7 +93,7 @@ fn containers_report_codec_and_resolution() {
     ];
     let dir = support::folder();
     for case in cases {
-        let read = music_tags::read((case.make)(dir.path()))
+        let read = rikka_audio_tags::read((case.make)(dir.path()))
             .unwrap_or_else(|error| panic!("{}: {error}", case.name));
         let audio = read.audio;
         assert_eq!(audio.codec, case.codec, "{}", case.name);
@@ -130,7 +129,7 @@ fn untagged_formats_are_named() {
     for (name, bytes, expected) in cases {
         let path = dir.path().join(name);
         std::fs::write(&path, bytes).unwrap();
-        let error = music_tags::read(&path).expect_err(name);
+        let error = rikka_audio_tags::read(&path).expect_err(name);
         assert_eq!(error, expected, "{name}");
         assert!(error.is_unsupported(), "{name}");
     }
@@ -141,5 +140,5 @@ fn damaged_file_returns_error() {
     let dir = support::folder();
     let path = dir.path().join("broken.flac");
     std::fs::write(&path, b"fLaC\x80\0\0\x22tiny").unwrap();
-    assert!(music_tags::read(&path).is_err());
+    assert!(rikka_audio_tags::read(&path).is_err());
 }

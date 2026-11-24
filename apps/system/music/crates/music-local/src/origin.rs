@@ -1,7 +1,7 @@
 use music_core::Id;
 use music_library::Library;
 use music_stream::{Located, Origin};
-use music_tags::{Gain, ReplayGain};
+use rikka_audio_tags::{Gain, ReplayGain};
 use rikka_hifi::{Gains, Loudness};
 
 use crate::items::track_id;

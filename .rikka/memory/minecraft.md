@@ -5,7 +5,7 @@ about: minecraft
 tags: [minecraft, build]
 ---
 
-- `minecraft/` is the Rikka Client Fabric mod (mod id `rikka-client`, Java package `sh.rikka.client`, client-only, Mixin, no Fabric API). Sources in `src/main/java`, resources in `src/main/resources`; `fabric.mod.json` expands `${version}`, `${minecraft_version}`, `${loader_version}`, `${java_release}`.
+- `minecraft/` is the Rikka Client Fabric mod (mod id and asset namespace `rikka`, Bazel target `//minecraft:rikka`, Java package `sh.rikka.client`, display name "Rikka Client", client-only, Mixin, no Fabric API). Sources in `src/main/java`, resources in `src/main/resources`; `fabric.mod.json` expands `${version}`, `${minecraft_version}`, `${loader_version}`, `${java_release}`. On disk it uses `config/rikka/` and `<gameDir>/rikka/` (music folder).
 - Minecraft 26.x ships unobfuscated (Mojang names, LVT, parameters), so there is no remapping, no refmap and no Mixin annotation processor, as in Loom's non-remap mode. Mixins target Mojang names directly; MixinExtras is on the compile classpath.
 - `minecraft/minecraft.lock.json` pins the client jar, its Linux libraries, JVM arguments, asset index, Fabric Loader with its libraries, and Vineflower, each with sha256. `bazel run //xtask -- minecraft [--version V] [--loader V]` rewrites it from Mojang's and Fabric's metadata, verifying upstream checksums.
 - `//bazel/minecraft:extension.bzl` (included through `minecraft/minecraft.MODULE.bazel`) makes `@minecraft` (filegroups `client`, `libraries`, `fabric_loader`, `fabric_loader_development`, `vineflower`, plus `versions.bzl`) and `@minecraft_assets` (index + sha1-verified objects, fetched only when the client runs).

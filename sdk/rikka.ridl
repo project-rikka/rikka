@@ -710,6 +710,54 @@ shared class sound {
     readonly property error_message: string;
 }
 
+/// The tags a sound file carries: its title, artists, album and cover, from ID3, Vorbis comments,
+/// MP4, APE or RIFF tags. Reading them reads the file and decodes the cover, so read them on a
+/// background thread.
+shared class sound_tags {
+    /// Reads the tags of a sound file. A file without tags reads as empty ones.
+    /// @param cover_size The largest width and height of the cover in pixels; a larger cover is
+    /// scaled down to fit. 0 skips the cover.
+    @thread_safe
+    constructor(path: string, cover_size: u32);
+
+    /// Its title; empty when the file names none.
+    @thread_safe
+    readonly property title: string;
+
+    /// Its artists, joined with commas; empty when the file names none.
+    @thread_safe
+    readonly property artist: string;
+
+    /// The album it belongs to; empty when the file names none.
+    @thread_safe
+    readonly property album: string;
+
+    /// The album's artists, joined with commas; empty when the file names none.
+    @thread_safe
+    readonly property album_artist: string;
+
+    /// Its place on its disc, counting from 1; 0 when unknown.
+    @thread_safe
+    readonly property track_number: u32;
+
+    /// Its length in seconds; 0 when unknown.
+    @thread_safe
+    readonly property duration: f64;
+
+    /// Whether it has a cover that could be decoded.
+    @thread_safe
+    readonly property has_cover: bool;
+
+    /// Its front cover, or the first picture it carries, scaled down to the size asked for. Read
+    /// it only when [sound_tags.has_cover] is true.
+    @thread_safe
+    readonly property cover: image;
+
+    /// Why the file's tags cannot be read; empty when they were read.
+    @thread_safe
+    readonly property error_message: string;
+}
+
 /// A video played from a file, such as MP4, WebM or Matroska, with its sound, shown by
 /// [view.video_view]. It opens once a view shows it. Views that read its state or position run
 /// again as it plays. A playing video keeps playing after its last reference is gone, until it

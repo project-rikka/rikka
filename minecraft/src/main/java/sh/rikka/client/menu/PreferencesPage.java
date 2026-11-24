@@ -17,5 +17,7 @@ final class PreferencesPage {
 		Preferences preferences = RikkaClient.preferences();
 		Heading.view(view, Labels.of("preferences.keys"));
 		this.rows.grid(view, List.of(preferences.menuKey(), preferences.hudEditorKey()));
+		Heading.view(view, Labels.of("preferences.music"));
+		this.rows.grid(view, List.of(preferences.musicPlayKey(), preferences.musicNextKey(), preferences.musicPreviousKey()));
 	}
 }

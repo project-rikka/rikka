@@ -1,0 +1,13 @@
+---
+title: Rikka Client music player (local files, ModMenu page, Music Info HUD)
+description: sh.rikka.client.music: watched <gameDir>/rikka/music library, SoundTags covers, MusicPlayer queue, keys, HUD.
+about: minecraft/src/main/java/sh/rikka/client/music
+tags: [minecraft, music]
+---
+
+- `MusicPlayer` (`RikkaClient.music()`, opened in `onInitializeClient`, closed in `shutdown` before profiles) is confined to the main thread; playback is the SDK `Sound`, tags and covers the SDK `SoundTags` (sdk note), so the mod carries no audio or tag code of its own.
+- `MusicLibrary` owns `<gameDir>/rikka/music` (recreated when missing): a `rikka-music-scan` thread walks it (symlinks followed, hidden entries skipped, depth 8), re-reads only files whose size or mtime changed on `rikka-music-tags-N`, sorts by title (`Collator`), shares one cover `Image` per album, and hands a snapshot to the main thread through `Minecraft.execute` only when it differs from the last one. A `rikka-music-watch` `WatchService` key per directory (re-registered when invalid) schedules a rescan after a 750 ms settle delay; `importFiles` copies dropped audio files in under a free name.
+- `TrackReader.isAudio` is the extension table and `FileName` the one stem/extension split; untaggable files list by file name. Covers are read at 128 px. Track identity is its path; the persisted key is the path relative to the folder.
+- `MusicPlayer` holds one sealed `Cue`: `Stopped(track, at)` or `Started(track, Sound)`. `PlayOrder` is the queue (library order, or a shuffle with the current track first, reshuffled only on toggling; rescans keep the shuffled order and drop new tracks in at random), stepping with optional wrap past tracks that failed. Ends and failures are noticed on `TickEvent.Post` from the `Sound` state: repeat ONE uses `Sound.looping`, ALL wraps, OFF stops on the first track; a failed track is remembered with its message and skipped. Previous restarts the track past 3 s. A stopped track whose file disappears is dropped.
+- Volume is a 0..1 preference mapped to gain by a cubic taper. The last track and position restore paused on the first scan; position is stored on start, pause, seek while paused and close.
+- Every change posts `MusicChangeEvent`. `MusicKeys` (play/next/previous preference keys) and `menu/MenuKeys` are `events/KeyPresses.Handler`s: `KeyPresses` takes presses in game only and cancels those a handler used. `mods/hud/MusicInfoMod` (id `music_info`) shows the current track (cover, artist, progress), and a "Not Playing" placeholder only while editing with nothing current; `ui/CoverArt` draws covers for the menu and the HUD. `MenuState.shownTracks` caches the filtered list per query and library snapshot.

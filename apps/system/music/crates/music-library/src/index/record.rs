@@ -2,7 +2,7 @@ use std::fs::Metadata;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
-use music_tags::{Audio, Tags};
+use rikka_audio_tags::{Audio, Tags};
 
 use crate::artwork::Stored;
 use music_core::fold;

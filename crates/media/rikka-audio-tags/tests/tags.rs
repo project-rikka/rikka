@@ -1,6 +1,6 @@
 use lofty::picture::PictureType;
 use lofty::tag::{ItemKey, TagType};
-use music_tags::{Date, Gain, PictureKind, Position};
+use rikka_audio_tags::{Date, Gain, PictureKind, Position};
 
 use crate::support;
 
@@ -48,7 +48,7 @@ fn vorbis_comments_keep_all_values() {
     tag.push_picture(support::picture(PictureType::CoverFront, b"front"));
     support::save(&path, &tag);
 
-    let tags = music_tags::read(&path).unwrap().tags;
+    let tags = rikka_audio_tags::read(&path).unwrap().tags;
     assert_eq!(tags.title.as_deref(), Some("Bridge Over Troubled Water"));
     assert_eq!(tags.artists, ["Simon & Garfunkel", "Guest, Featured"]);
     assert_eq!(tags.album_artists, ["Simon & Garfunkel"]);
@@ -134,7 +134,7 @@ fn id3v2_splits_multi_value_frames() {
     tag.push_picture(support::picture(PictureType::Other, b"unspecified"));
     support::save(&path, &tag);
 
-    let tags = music_tags::read(&path).unwrap().tags;
+    let tags = rikka_audio_tags::read(&path).unwrap().tags;
     assert_eq!(tags.artists, ["AC/DC", "Guest"]);
     assert_eq!(tags.album_artists, ["AC/DC"]);
     assert_eq!(
@@ -249,7 +249,7 @@ fn replay_gain_read_from_all_tag_families() {
     ];
     for (name, path, tag, track, album) in cases {
         support::save(&path, &tag);
-        let tags = music_tags::read(&path)
+        let tags = rikka_audio_tags::read(&path)
             .unwrap_or_else(|error| panic!("{name}: {error}"))
             .tags;
         assert!(tags.title.is_some(), "{name}");
@@ -282,7 +282,7 @@ fn mp4_freeform_names_are_case_insensitive() {
     }
     ilst.save_to_path(&path, WriteOptions::default()).unwrap();
 
-    let tags = music_tags::read(&path).unwrap().tags;
+    let tags = rikka_audio_tags::read(&path).unwrap().tags;
     assert_eq!(
         tags.gain.track,
         Some(Gain {
