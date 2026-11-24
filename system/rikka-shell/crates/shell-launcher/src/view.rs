@@ -30,6 +30,8 @@ const RESULTS: &str = "launcher.results";
 
 const ENTER_FROM: f32 = 0.93;
 
+const CHIP_FROM: f32 = 0.85;
+
 const LIFT: f32 = 10.0;
 
 const ARRIVAL: Curve = Curve::Tween {
@@ -92,7 +94,12 @@ fn on_key(launcher: &mut Launcher, key: Key, modifiers: Modifiers) -> bool {
 
 fn contents(launcher: &Launcher) -> impl View {
     let palette = palette();
-    let showing = (RESULTS, launcher.layout(), launcher.triggered());
+    let showing = (
+        RESULTS,
+        launcher.layout(),
+        launcher.triggered(),
+        launcher.shown().next().is_some(),
+    );
     container(
         column! {
             search(launcher);
@@ -129,11 +136,12 @@ fn search(launcher: &Launcher) -> impl View {
             .on_change(Launcher::search)
             .on_submit(move |launcher: &mut Launcher| launcher.activate(selected))
             .grow(1.0);
-        if let Some(info) = launcher
-            .triggered()
-            .and_then(|index| launcher.provider(index))
+        if let Some(index) = launcher.triggered()
+            && let Some(info) = launcher.provider(index)
         {
-            chip(info.label());
+            chip(info.label())
+                .transition((fade() + scale(CHIP_FROM)).enter(ARRIVAL))
+                .keyed(index);
         }
     }
     .gap(Space::NORMAL)
@@ -196,7 +204,7 @@ fn lines(launcher: &Launcher) -> impl View {
             }),
         };
         let item = list_item(hit.title())
-            .keyed((ranked.provider, hit.id()))
+            .keyed((ranked.provider, hit.key()))
             .icon(drawn)
             .tint(palette.accent);
         match hit.second_line() {
@@ -208,6 +216,7 @@ fn lines(launcher: &Launcher) -> impl View {
     list(rows)
         .selected(launcher.selected())
         .control_size(ControlSize::Large)
+        .glides(false)
         .activates_on_press(true)
         .on_select(|launcher: &mut Launcher, index| launcher.select(index))
         .on_activate(|launcher: &mut Launcher, index| launcher.activate(index))

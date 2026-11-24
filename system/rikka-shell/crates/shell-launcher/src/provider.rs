@@ -12,6 +12,8 @@ pub(crate) const CERTAIN: Score = Score::new(1_000.0);
 
 pub(crate) const LAST_RESORT: Score = Score::new(-1_000.0);
 
+const ECHO_KEY: &str = "";
+
 pub(super) type ChangeStream = BoxStream<'static, ()>;
 
 pub(super) trait Provider: 'static {
@@ -245,6 +247,7 @@ pub(crate) struct Hit {
     preview: Option<Preview>,
     completion: Option<Box<str>>,
     in_use: bool,
+    echo: bool,
     arrival: Option<u64>,
     score: Score,
 }
@@ -260,9 +263,16 @@ impl Hit {
             preview: None,
             completion: None,
             in_use: false,
+            echo: false,
             arrival: None,
             score: Score::NEUTRAL,
         }
+    }
+
+    #[must_use]
+    pub(super) fn echo(mut self) -> Hit {
+        self.echo = true;
+        self
     }
 
     #[must_use]
@@ -309,6 +319,13 @@ impl Hit {
 
     pub(crate) fn id(&self) -> &str {
         &self.id
+    }
+
+    pub(super) fn key(&self) -> &str {
+        match self.echo {
+            true => ECHO_KEY,
+            false => &self.id,
+        }
     }
 
     pub(crate) fn title(&self) -> &str {

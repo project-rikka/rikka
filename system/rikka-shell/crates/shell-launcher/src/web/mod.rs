@@ -46,6 +46,7 @@ impl Provider for WebProvider {
                     Hit::new(destination.url().as_str(), text)
                         .subtitle(tr!("shell.launcher.web.open"))
                         .icon(MaterialSymbol::PUBLIC)
+                        .echo()
                         .score(CERTAIN),
                 ]
             }
@@ -62,5 +63,6 @@ impl Provider for WebProvider {
 fn searching(search: &Search, text: &str) -> Hit {
     Hit::new(search.url().as_str(), text)
         .subtitle(tr!("shell.launcher.web.search"))
+        .echo()
         .score(LAST_RESORT)
 }

@@ -52,6 +52,7 @@ impl RemoteSearch for CalcProvider {
         vec![
             Hit::new(result.clone(), result)
                 .subtitle(expression)
+                .echo()
                 .score(CERTAIN),
         ]
     }

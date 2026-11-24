@@ -40,7 +40,12 @@ impl Provider for RunProvider {
             return Vec::new();
         }
 
-        let mut hits = vec![Hit::new(line, line).subtitle(tr!(COMMAND)).score(CERTAIN)];
+        let mut hits = vec![
+            Hit::new(line, line)
+                .subtitle(tr!(COMMAND))
+                .echo()
+                .score(CERTAIN),
+        ];
 
         if !line.contains(char::is_whitespace) {
             hits.extend(
