@@ -331,7 +331,7 @@ pub(crate) fn view(chat: &Chat, props: &Props) -> Element {
             .opacity(opacity)
             .build()
             .keyed(row_key(&id));
-        context_row(open_menu, row)
+        context_row(open_menu, row).fill_width()
     })
 }
 
