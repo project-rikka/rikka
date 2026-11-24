@@ -17,13 +17,6 @@ pub(crate) const TIMEOUT: Duration = Duration::from_secs(10);
 
 pub(crate) const POLL_INTERVAL: Duration = Duration::from_millis(20);
 
-pub(crate) const COPY_PASTE: Modifiers = Modifiers {
-    shift: true,
-    control: true,
-    alt: false,
-    logo: false,
-};
-
 static ALONE: Mutex<()> = Mutex::new(());
 
 pub(crate) fn alone() -> MutexGuard<'static, ()> {
@@ -167,18 +160,22 @@ impl Running {
     pub(crate) fn swept(&mut self, modifiers: Modifiers) -> String {
         let first = Point::new(0.5, 0.5);
         let last = Point::new(self.view.width - 1.0, self.view.height - 1.0);
-        self.ui.handle_event(Event::PointerPressed {
-            position: first,
-            button: PointerButton::Primary,
-            modifiers,
-        });
-        self.ui.handle_event(Event::PointerMoved(last));
-        self.ui.handle_event(Event::PointerReleased {
-            position: last,
-            button: PointerButton::Primary,
-            modifiers,
-        });
+        self.drag(first, last, modifiers);
         self.session.selected_text().unwrap_or_default()
+    }
+
+    pub(crate) fn drag(&mut self, from: Point, to: Point, modifiers: Modifiers) {
+        self.ui.handle_event(Event::PointerPressed {
+            position: from,
+            button: PointerButton::Primary,
+            modifiers,
+        });
+        self.ui.handle_event(Event::PointerMoved(to));
+        self.ui.handle_event(Event::PointerReleased {
+            position: to,
+            button: PointerButton::Primary,
+            modifiers,
+        });
     }
 
     pub(crate) fn wait_for(&mut self, expected: &str, modifiers: Modifiers) -> String {

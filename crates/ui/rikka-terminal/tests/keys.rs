@@ -20,7 +20,8 @@ fn keys_encode_like_xterm() {
         (Key::Delete, Modifiers::NONE, "^[[3~"),
         (Key::Tab, Modifiers::SHIFT, "^[[Z"),
         (Key::Backspace, Modifiers::NONE, "^?"),
-        (Key::Backspace, Modifiers::CONTROL, "^H"),
+        (Key::Backspace, Modifiers::CONTROL, "^W"),
+        (Key::Delete, Modifiers::CONTROL, "^[d"),
         (Key::Enter, Modifiers::NONE, "^M"),
     ];
     for (key, modifiers, _) in keys {

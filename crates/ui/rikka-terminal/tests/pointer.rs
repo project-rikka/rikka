@@ -129,3 +129,44 @@ fn double_click_selects_code_words_and_whole_links() {
         "a link wrapped onto the next row is selected whole"
     );
 }
+
+#[test]
+fn alt_drag_selects_a_block() {
+    let _alone = alone();
+    let mut running = Running::start(
+        "read _; set -- $(stty size); \
+         printf '\\033[2J\\033[Habcdef\\r\\nghijkl\\r\\n[%s %s]\\r\\n' \"$1\" \"$2\"; sleep 30",
+    );
+    running.chord(Key::Enter, Modifiers::NONE);
+    let shown = running.wait_for("]", Modifiers::NONE);
+    let size: Vec<f32> = shown
+        .split('[')
+        .nth(1)
+        .and_then(|rest| rest.split(']').next())
+        .map(|inside| {
+            inside
+                .split(' ')
+                .filter_map(|count| count.parse().ok())
+                .collect()
+        })
+        .unwrap_or_default();
+    let [lines, columns] = size[..] else {
+        panic!("no size in {shown:?}");
+    };
+    let area = running.session.pixel_size();
+    let cell = Size::new(area.width / columns, area.height / lines);
+    let at = |column: f32, line: f32| Point::new(column * cell.width, line * cell.height);
+
+    running.drag(at(1.25, 0.5), at(3.75, 1.5), Modifiers::ALT);
+
+    assert_eq!(running.session.selected_text().as_deref(), Some("bcd\nhij"));
+
+    running.drag(at(3.75, 0.5), at(1.25, 1.5), Modifiers::ALT);
+    assert_eq!(running.session.selected_text().as_deref(), Some("bcd\nhij"));
+    running.chord(Key::ArrowLeft, Modifiers::SHIFT);
+    assert_eq!(
+        running.session.selected_text().as_deref(),
+        Some("abcd\nghij"),
+        "the block keeps its anchor corner"
+    );
+}

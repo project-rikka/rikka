@@ -1,18 +1,22 @@
 use std::ops::Range;
 use std::rc::Rc;
 
-use rikka_input::Chord as Binding;
-use rikka_types::{Key, KeyLocation, Modifiers, Point, PointerButton, Rect, ScrollDelta, Size};
+use rikka_types::{
+    Key, KeyLocation, Modifiers, Point, PointerButton, Rect, SCROLL_LINE, ScrollDelta, Size,
+};
 use rikka_ui::{Command, Event as Input, EventCtx, Selection};
 use rikka_widgets::{ContextMenu, MenuItem, command_item, menu_separator};
 
+use alacritty_terminal::Term;
 use alacritty_terminal::grid::Dimensions;
 use alacritty_terminal::index::Point as GridPoint;
-use alacritty_terminal::term::TermMode;
+use alacritty_terminal::term::{TermMode, viewport_to_point};
 
 use crate::clipboard;
 use crate::font::{Faces, Font};
+use crate::link::Link;
 use crate::mouse::{Button, Motion};
+use crate::screen::chords::{self, Chord, Selected};
 use crate::screen::cursor::CursorCell;
 use crate::screen::grid::Grid;
 use crate::screen::layer::{LayerCell, Sketch};
@@ -24,8 +28,12 @@ pub struct ScreenState {
     pub(crate) measured: Option<FontMetrics>,
     pub(crate) room: Option<Size>,
     pointer: Pointer,
-    modifiers: Modifiers,
+    pub(crate) modifiers: Modifiers,
     caret: Option<Rect>,
+    hover: Option<GridPoint<usize>>,
+    pub(crate) link: Option<Link>,
+    linked: Option<Linked>,
+    zoom_travel: f32,
     pub(crate) cursor: Rc<CursorCell>,
     pub(crate) found: crate::find::Found,
     pub(crate) snapshot: crate::screen::Snapshot,
@@ -68,9 +76,50 @@ impl ScreenState {
         self.modifiers = modifiers;
     }
 
-    fn cell(&self) -> Option<Size> {
+    pub(crate) fn cell(&self) -> Option<Size> {
         Some(self.measured.as_ref()?.cell)
     }
+
+    pub(crate) fn relink<T>(&mut self, term: &Term<T>, generation: u64) -> bool {
+        let reports = reports_pointer(*term.mode(), self.modifiers);
+        let hovered = self.hover.filter(|_| !reports);
+        let stamp = Linked {
+            generation,
+            display_offset: term.grid().display_offset(),
+            columns: term.columns(),
+            hovered,
+        };
+        let previous = self.linked.replace(stamp);
+        if previous == Some(stamp) {
+            return false;
+        }
+        let display_offset = stamp.display_offset;
+        let within = previous.is_some_and(|previous| {
+            Linked {
+                hovered,
+                ..previous
+            } == stamp
+        }) && hovered
+            .zip(self.link.as_ref())
+            .is_some_and(|(at, link)| link.cells.contains(&viewport_to_point(display_offset, at)));
+        if within {
+            return false;
+        }
+        let link = hovered.and_then(|at| link_under(term, at));
+        if self.link == link {
+            return false;
+        }
+        self.link = link;
+        true
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Linked {
+    generation: u64,
+    display_offset: usize,
+    columns: usize,
+    hovered: Option<GridPoint<usize>>,
 }
 
 #[derive(Debug)]
@@ -110,6 +159,10 @@ impl Screen {
         location: KeyLocation,
         modifiers: Modifiers,
     ) {
+        if key.is_modifier() {
+            self.modifiers_changed(state, ctx, held(key, true, modifiers));
+            return;
+        }
         state.hold(modifiers);
         if !self.session.composition().is_empty() {
             ctx.set_handled();
@@ -119,25 +172,48 @@ impl Screen {
             ctx.set_handled();
             return;
         }
-        if let Some(chord) = chord(key, modifiers) {
+        let selected = chords::selected(key, modifiers, self.session.is_marking());
+        if selected.is_some_and(|selected| self.act_on_selection(selected)) {
+            ctx.request_paint();
+            ctx.set_handled();
+            return;
+        }
+        if let Some(chord) = chords::chord(key, modifiers) {
             self.answer(chord);
+            ctx.request_paint();
             ctx.set_handled();
             return;
         }
         if Command::for_key(key, modifiers) == Some(Command::ContextMenu) {
             return;
         }
-        if let Some(pages) = paged(key, modifiers) {
-            let screen = self.session.layout().screen_lines() as i32;
-            self.session.scroll(pages * screen.max(1));
-            ctx.request_paint();
-            ctx.set_handled();
-            return;
-        }
         if self.session.key(key, location, modifiers) {
             self.session.clear_selection();
             ctx.request_paint();
             ctx.set_handled();
+        }
+    }
+
+    pub(super) fn key_released(
+        &self,
+        state: &mut ScreenState,
+        ctx: &mut EventCtx<'_>,
+        key: Key,
+        modifiers: Modifiers,
+    ) {
+        self.modifiers_changed(state, ctx, held(key, false, modifiers));
+    }
+
+    pub(super) fn modifiers_changed(
+        &self,
+        state: &mut ScreenState,
+        ctx: &mut EventCtx<'_>,
+        modifiers: Modifiers,
+    ) {
+        let shifted = state.modifiers.shift != modifiers.shift;
+        state.hold(modifiers);
+        if shifted {
+            self.hover_link(state, ctx);
         }
     }
 
@@ -150,36 +226,61 @@ impl Screen {
         match command {
             Command::Copy => self.answer(Chord::Copy(Selection::Clipboard)),
             Command::Paste => self.answer(Chord::Paste(Selection::Clipboard)),
-            Command::SelectAll => {
-                self.session.select_all();
-                ctx.request_paint();
-            }
+            Command::SelectAll => self.answer(Chord::SelectAll),
             Command::ContextMenu => state
                 .menu
                 .open_by_keys(self.menu_items(), state.caret(), ctx),
             _ => return,
         }
+        ctx.request_paint();
         ctx.set_handled();
     }
 
     fn menu_items(&self) -> Vec<MenuItem> {
         vec![
             command_item(Command::Copy)
-                .shortcut(copying().to_string())
+                .shortcut(chords::copying().to_string())
                 .enabled(self.session.selected_text().is_some()),
             command_item(Command::Paste)
-                .shortcut(pasting().to_string())
+                .shortcut(chords::pasting().to_string())
                 .enabled(rikka_ui::clipboard::has_text()),
             menu_separator(),
-            command_item(Command::SelectAll).no_shortcut(),
+            command_item(Command::SelectAll).shortcut(chords::selecting_all().to_string()),
         ]
     }
 
     fn answer(&self, chord: Chord) {
         match chord {
-            Chord::Copy(selection) => self.copy(selection),
-            Chord::Paste(selection) => self.session.paste_from(selection),
+            Chord::Copy(selection) => {
+                self.copy(selection);
+                self.session.clear_selection();
+            }
+            Chord::Paste(selection) => {
+                self.session.clear_selection();
+                self.session.paste_from(selection);
+            }
+            Chord::SelectAll => self.session.select_all(),
+            Chord::Mark => self.session.toggle_marking(),
+            Chord::Scroll(scroll) => self.session.scroll(scroll),
         }
+    }
+
+    fn act_on_selection(&self, selected: Selected) -> bool {
+        match selected {
+            Selected::Copy => {
+                let Some(text) = self.session.selected_text() else {
+                    return false;
+                };
+                clipboard::write(Selection::Clipboard, &text);
+                self.session.clear_selection();
+            }
+            Selected::Dismiss | Selected::Move { .. } if !self.session.has_selection() => {
+                return false;
+            }
+            Selected::Dismiss => self.session.clear_selection(),
+            Selected::Move { movement, extend } => self.session.move_selection(movement, extend),
+        }
+        true
     }
 
     fn copy(&self, selection: Selection) {
@@ -216,6 +317,11 @@ impl Screen {
         state.hold(modifiers);
         ctx.set_handled();
         let content = delta.content();
+        if modifiers.control && self.on_zoom.is_set() {
+            self.zoom(state, ctx, content.y);
+            return;
+        }
+        state.zoom_travel = 0.0;
         let across = detents(content.x, cell.width);
         let up = detents(content.y, cell.height);
         let at = cell_at(ctx.bounds(), cell, self.session.layout(), position);
@@ -223,8 +329,19 @@ impl Screen {
             .session
             .wheel(across, up, at.column.0, at.line, modifiers)
         {
+            self.hover_link(state, ctx);
             ctx.request_paint();
         }
+    }
+
+    fn zoom(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>, travel: f32) {
+        state.zoom_travel += travel;
+        let steps = (state.zoom_travel / SCROLL_LINE).trunc();
+        if steps == 0.0 {
+            return;
+        }
+        state.zoom_travel -= steps * SCROLL_LINE;
+        ctx.act(&self.on_zoom, (steps as i32,));
     }
 
     pub(super) fn pressed(
@@ -256,11 +373,20 @@ impl Screen {
             return;
         }
 
+        if button == PointerButton::Primary
+            && modifiers.control
+            && let Some(link) = link_under(&self.session.term().lock(), at)
+        {
+            link.open();
+            return;
+        }
+
         match button {
             PointerButton::Middle => self.answer(Chord::Paste(Selection::Primary)),
             PointerButton::Secondary => state.menu.open(self.menu_items(), position, ctx),
             PointerButton::Primary => {
                 let granularity = match ctx.presses() {
+                    1 if modifiers.alt => Granularity::Block,
                     1 => Granularity::Cell,
                     2 => Granularity::Word,
                     _ => Granularity::Line,
@@ -272,6 +398,8 @@ impl Screen {
                     self.session.select(granularity, at.column.0, at.line, side);
                 }
                 state.pointer = Pointer::Selecting;
+                state.hover = None;
+                state.link = None;
                 ctx.capture_pointer();
                 ctx.request_paint();
             }
@@ -297,6 +425,9 @@ impl Screen {
             }
             Pointer::Reporting { button, at: was } => {
                 state.pointer = Pointer::Reporting { button, at };
+                if button.is_none() {
+                    self.hover(state, ctx, Some(at));
+                }
                 if was != at {
                     let mode = self.session.mode();
                     self.report(Motion::Moved(button), at, state.modifiers, mode);
@@ -304,6 +435,7 @@ impl Screen {
                 ctx.set_handled();
             }
             Pointer::Idle if ctx.hovered() => {
+                self.hover(state, ctx, Some(at));
                 let mode = self.session.mode();
                 if !mode.contains(TermMode::MOUSE_MOTION) {
                     return;
@@ -312,7 +444,7 @@ impl Screen {
                 self.report(Motion::Moved(None), at, state.modifiers, mode);
                 ctx.set_handled();
             }
-            Pointer::Idle => {}
+            Pointer::Idle => self.hover(state, ctx, None),
         }
     }
 
@@ -351,9 +483,25 @@ impl Screen {
         }
     }
 
-    pub(super) fn left(&self, state: &mut ScreenState) {
+    pub(super) fn left(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>) {
         if matches!(state.pointer, Pointer::Reporting { button: None, .. }) {
             state.pointer = Pointer::Idle;
+        }
+        self.hover(state, ctx, None);
+    }
+
+    fn hover(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>, at: Option<GridPoint<usize>>) {
+        if state.hover == at {
+            return;
+        }
+        state.hover = at;
+        self.hover_link(state, ctx);
+    }
+
+    fn hover_link(&self, state: &mut ScreenState, ctx: &mut EventCtx<'_>) {
+        let relinked = state.relink(&self.session.term().lock(), self.session.generation());
+        if relinked {
+            ctx.request_paint();
         }
     }
 
@@ -361,6 +509,21 @@ impl Screen {
         self.session
             .report(motion, at.column.0, at.line, modifiers, mode);
     }
+}
+
+fn link_under<T>(term: &Term<T>, at: GridPoint<usize>) -> Option<Link> {
+    Link::at(term, viewport_to_point(term.grid().display_offset(), at))
+}
+
+fn held(key: Key, pressed: bool, mut modifiers: Modifiers) -> Modifiers {
+    match key {
+        Key::ShiftLeft | Key::ShiftRight => modifiers.shift = pressed,
+        Key::ControlLeft | Key::ControlRight => modifiers.control = pressed,
+        Key::AltLeft | Key::AltRight => modifiers.alt = pressed,
+        Key::MetaLeft | Key::MetaRight => modifiers.logo = pressed,
+        _ => {}
+    }
+    modifiers
 }
 
 fn reports_pointer(mode: TermMode, modifiers: Modifiers) -> bool {
@@ -371,49 +534,5 @@ fn detents(travel: f32, cell: f32) -> i32 {
     match (travel / cell).round() as i32 {
         0 if travel != 0.0 => travel.signum() as i32,
         steps => steps,
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Chord {
-    Copy(Selection),
-    Paste(Selection),
-}
-
-fn chord(key: Key, modifiers: Modifiers) -> Option<Chord> {
-    if modifiers.alt || modifiers.logo {
-        return None;
-    }
-    if key == Key::Insert {
-        return match (modifiers.control, modifiers.shift) {
-            (true, false) => Some(Chord::Copy(Selection::Clipboard)),
-            (false, true) => Some(Chord::Paste(Selection::Primary)),
-            _ => None,
-        };
-    }
-    if copying().matches(modifiers, key) {
-        return Some(Chord::Copy(Selection::Clipboard));
-    }
-    pasting()
-        .matches(modifiers, key)
-        .then_some(Chord::Paste(Selection::Clipboard))
-}
-
-fn copying() -> Binding {
-    Binding::new(Modifiers::CONTROL_SHIFT, Key::Char('c'))
-}
-
-fn pasting() -> Binding {
-    Binding::new(Modifiers::CONTROL_SHIFT, Key::Char('v'))
-}
-
-fn paged(key: Key, modifiers: Modifiers) -> Option<i32> {
-    if !modifiers.shift || modifiers.control || modifiers.alt {
-        return None;
-    }
-    match key {
-        Key::PageUp => Some(1),
-        Key::PageDown => Some(-1),
-        _ => None,
     }
 }

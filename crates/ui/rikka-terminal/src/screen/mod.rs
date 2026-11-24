@@ -1,3 +1,4 @@
+mod chords;
 mod cursor;
 mod grid;
 mod input;
@@ -7,11 +8,11 @@ mod row;
 
 use std::rc::Rc;
 
-use rikka_types::{Color, Key, Modifiers, Point, Rect, Size};
+use rikka_types::{Color, CursorShape as PointerShape, Key, Modifiers, Point, Rect, Size};
 use rikka_ui::search::{Marking, Search, Step};
 use rikka_ui::{
     Accept, Action, Arranged, Behavior, Element, Event as Input, EventCtx, IntoHandler, PaintCtx,
-    Quad, Style, URI_LIST, Widget, palette,
+    Quad, Style, Tooltip, URI_LIST, Widget, palette,
 };
 
 use alacritty_terminal::Term;
@@ -24,6 +25,7 @@ use alacritty_terminal::vte::ansi::{Color as AnsiColor, CursorShape, NamedColor}
 
 use crate::font::{Faces, Font};
 use crate::layout::Layout;
+use crate::link::Link;
 use crate::palette::Palette;
 use crate::screen::row::{CellStyle, Decoration, Row, Span};
 use crate::session::{Proxy, Session};
@@ -52,6 +54,7 @@ pub struct Screen {
     active: bool,
     on_key: Action<(Key, Modifiers), bool>,
     on_activate: Action,
+    on_zoom: Action<(i32,)>,
     search: Option<Search>,
     #[style]
     layout: Style,
@@ -64,6 +67,7 @@ pub fn screen(session: Rc<Session>, font: Font) -> Screen {
         active: true,
         on_key: Action::default(),
         on_activate: Action::default(),
+        on_zoom: Action::default(),
         search: None,
         layout: Style::default(),
     }
@@ -85,6 +89,11 @@ impl Screen {
 
     pub fn on_activate<Marker>(mut self, on_activate: impl IntoHandler<(), (), Marker>) -> Self {
         self.on_activate = Action::new(on_activate);
+        self
+    }
+
+    pub fn on_zoom<Marker>(mut self, on_zoom: impl IntoHandler<(i32,), (), Marker>) -> Self {
+        self.on_zoom = Action::new(on_zoom);
         self
     }
 
@@ -129,25 +138,30 @@ impl Screen {
         let marking = Marking::from_palette(palette());
         for (current, hit) in found.on_screen() {
             let ink = marking.color(current);
-            let (start, end) = (*hit.start(), *hit.end());
-            for step in 0..=(end.line - start.line).0.max(0) {
-                let line = start.line + step;
-                let from = match line == start.line {
-                    true => start.column.0,
-                    false => 0,
-                };
-                let to = match line == end.line {
-                    true => end.column.0 + 1,
-                    false => layout.columns(),
-                };
-                let Some(point) =
-                    point_to_viewport(display_offset, GridPoint::new(line, Column(from)))
-                else {
-                    continue;
-                };
-                let rect = frame.cell_rect(point.line, Span::from(point.column.0..to));
-                sketch.fill(rect, ink);
+            for (line, span) in spans(*hit.start(), *hit.end(), display_offset, layout) {
+                sketch.fill(frame.cell_rect(line, span), ink);
             }
+        }
+    }
+
+    fn draw_link(
+        link: &Link,
+        sketch: &mut Sketch,
+        frame: &Frame<'_>,
+        snapshot: &Snapshot,
+        layout: Layout,
+    ) {
+        let ink = frame
+            .palette
+            .resolve(AnsiColor::Named(NamedColor::Foreground), &snapshot.colors);
+        let (start, end) = (*link.cells.start(), *link.cells.end());
+        for (line, span) in spans(start, end, snapshot.display_offset, layout) {
+            draw_rules(
+                sketch,
+                frame.cell_rect(line, span),
+                Decoration::Underline,
+                ink,
+            );
         }
     }
 
@@ -329,6 +343,7 @@ impl Widget for Screen {
         let regrown = {
             let mut term = self.session.term().lock();
             self.find(state, ctx, &mut term);
+            state.relink(&term, self.session.generation());
             state.snapshot.fill(&term);
             state.grid.copy(&mut term)
         };
@@ -344,6 +359,7 @@ impl Widget for Screen {
             sketch,
             found,
             cursor,
+            link,
             ..
         } = state;
         let measured = measured.as_ref().expect("screen not measured yet");
@@ -378,6 +394,9 @@ impl Widget for Screen {
         }
 
         Self::draw_found(found, sketch, &frame, snapshot.display_offset, layout);
+        if let Some(link) = link {
+            Self::draw_link(link, sketch, &frame, snapshot, layout);
+        }
         if let Some(placed) = &placed {
             paint_composition(sketch, &frame, placed, &snapshot.colors, &mut text);
         }
@@ -411,7 +430,10 @@ impl Widget for Screen {
     fn event(&self, state: &mut ScreenState, event: &Input, ctx: &mut EventCtx<'_>) {
         match event {
             Input::FocusGained => self.focus(true),
-            Input::FocusLost => self.focus(false),
+            Input::FocusLost => {
+                self.focus(false);
+                self.modifiers_changed(state, ctx, Modifiers::NONE);
+            }
             _ => {}
         }
         if state.menu.event(event, ctx) {
@@ -425,7 +447,9 @@ impl Widget for Screen {
                 modifiers,
                 ..
             } => self.key(state, ctx, key, location, modifiers),
-            Input::KeyReleased { modifiers, .. } => state.hold(modifiers),
+            Input::KeyReleased { key, modifiers, .. } => {
+                self.key_released(state, ctx, key, modifiers);
+            }
             Input::Command(command) if ctx.focused() => self.handle_command(state, ctx, command),
             Input::Scroll {
                 position,
@@ -444,7 +468,7 @@ impl Widget for Screen {
                 button,
                 modifiers,
             } => self.released(state, ctx, position, button, modifiers),
-            Input::PointerExited => self.left(state),
+            Input::PointerExited => self.left(state, ctx),
             Input::Preedit {
                 ref text,
                 ref cursor,
@@ -467,6 +491,31 @@ impl Widget for Screen {
 
     fn caret(&self, state: &ScreenState) -> Option<Rect> {
         state.caret()
+    }
+
+    fn cursor(&self, state: &ScreenState, _bounds: Rect, _point: Point) -> Option<PointerShape> {
+        match state.link {
+            Some(_) if state.modifiers.control => Some(PointerShape::Pointer),
+            _ => Some(PointerShape::Text),
+        }
+    }
+
+    fn tooltip_at(
+        &self,
+        state: &ScreenState,
+        bounds: Rect,
+        point: Point,
+    ) -> Option<(Tooltip, Rect)> {
+        let link = state.link.as_ref().filter(|link| link.declared)?;
+        let cell = state.cell()?;
+        let at = cell_at(bounds, cell, self.session.layout(), point);
+        let spot = Rect::new(
+            bounds.origin.x + at.column.0 as f32 * cell.width,
+            bounds.origin.y + at.line as f32 * cell.height,
+            cell.width,
+            cell.height,
+        );
+        Some((Tooltip::new(link.uri.clone()), spot))
     }
 }
 
@@ -539,6 +588,27 @@ fn rules(rect: Rect, decoration: Decoration) -> [Option<Rect>; 2] {
             None,
         ],
     }
+}
+
+fn spans(
+    start: GridPoint,
+    end: GridPoint,
+    display_offset: usize,
+    layout: Layout,
+) -> impl Iterator<Item = (usize, Span)> {
+    (0..=(end.line - start.line).0.max(0)).filter_map(move |step| {
+        let line = start.line + step;
+        let from = match line == start.line {
+            true => start.column.0,
+            false => 0,
+        };
+        let to = match line == end.line {
+            true => end.column.0 + 1,
+            false => layout.columns(),
+        };
+        let point = point_to_viewport(display_offset, GridPoint::new(line, Column(from)))?;
+        Some((point.line, Span::from(point.column.0..to)))
+    })
 }
 
 fn cell_at(bounds: Rect, cell: Size, layout: Layout, at: Point) -> GridPoint<usize> {

@@ -11,11 +11,23 @@ const OPENERS: &[char] = &['(', '[', '{', '<', '"', '\'', '`'];
 const TRAILERS: &[char] = &['.', ',', ';', ':', '!', '?', '"', '\'', '`'];
 const PAIRS: &[(char, char)] = &[('(', ')'), ('[', ']'), ('{', '}'), ('<', '>')];
 
+pub(crate) const REACH_LINES: usize = 100;
+
 pub(crate) fn word_cells<T>(term: &Term<T>, point: Point) -> RangeInclusive<Point> {
     let line = LogicalLine::around(term, point);
     let at = line.byte_of(point);
     let word = word_at(&line.text, at);
     line.cell_at(word.start)..=line.cell_at(word.end.max(word.start + 1) - 1)
+}
+
+pub(crate) fn url_at<T>(term: &Term<T>, point: Point) -> Option<(RangeInclusive<Point>, String)> {
+    let line = LogicalLine::around(term, point);
+    let link = link_at(&line.text, line.byte_of(point))?;
+    let url = &line.text[link.clone()];
+    (scheme_start(url) == Some(0)).then(|| {
+        let cells = line.cell_at(link.start)..=line.cell_at(link.end - 1);
+        (cells, url.to_owned())
+    })
 }
 
 pub(crate) fn word_at(text: &str, at: usize) -> Range<usize> {
@@ -103,12 +115,14 @@ impl LogicalLine {
         let grid = term.grid();
         let last = term.last_column();
         let wraps = |line: Line| grid[line][last].flags.contains(Flags::WRAPLINE);
+        let top = term.topmost_line().max(point.line - REACH_LINES);
+        let bottom = term.bottommost_line().min(point.line + REACH_LINES);
         let mut first = point.line;
-        while first > term.topmost_line() && wraps(first - 1) {
+        while first > top && wraps(first - 1) {
             first -= 1;
         }
         let mut final_line = point.line;
-        while final_line < term.bottommost_line() && wraps(final_line) {
+        while final_line < bottom && wraps(final_line) {
             final_line += 1;
         }
 
