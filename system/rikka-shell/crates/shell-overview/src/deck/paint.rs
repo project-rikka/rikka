@@ -4,7 +4,7 @@ use std::time::Duration;
 use overview_layout::{Spacing, arrange};
 use rikka_theme::Theme;
 use rikka_types::{CornerRadii, Point, Rect, RoundedRect, Size, WindowView};
-use rikka_ui::{Curve, IconGlyph, MaterialSymbol, PaintCtx, Quad, Spring, is_exiting, theme};
+use rikka_ui::{Curve, PaintCtx, Quad, Spring, is_exiting, theme};
 use shell_wallpaper::stage::{CARD_RADIUS, RING_WIDTH, THUMB_RADIUS, draw_fitted_image, lerp_rect};
 
 use super::frame::{COLUMN_SPACING, Frame, ROW_SPACING, from_unit, unit_of};
@@ -12,19 +12,13 @@ use super::input::Spot;
 use super::strip::SETTLE;
 use super::{Deck, DeckState, Hit, Hits, Pane, Space};
 
-const PLATE: f32 = 6.0;
-const PLATE_RADIUS: f32 = 16.0;
-const HOVER_GROW: f32 = 0.025;
+const LIFT: f32 = 0.025;
 const SHRUNK: f32 = 0.88;
 const HELD_MOST: f32 = 320.0;
 const LOST: Duration = Duration::from_millis(600);
 
-const CLOSE_DIAMETER: f32 = 26.0;
-pub(super) const CLOSE_LIFT: f32 = 8.0;
-const CLOSE_GLYPH: f32 = 16.0;
-
 const GLIDE: Curve = Curve::Spring(Spring::DEFAULT_SPATIAL);
-const HOVERING: Curve = Curve::Spring(Spring::new(1.0, 900.0));
+const LIFTING: Curve = Curve::Spring(Spring::new(1.0, 900.0));
 
 struct Painting<'a> {
     frame: Frame,
@@ -239,32 +233,9 @@ impl Deck {
             rect,
             current,
         } = placed;
-        let palette = painting.theme.palette();
-        let hovered = current
-            && state.settled
-            && state.drag.is_none()
-            && matches!(&state.over, Some(Spot::Window(id) | Spot::Close(id)) if *id == pane.id);
-        let grow = ctx.animate_curve(
-            ("grow", &*pane.id),
-            if hovered { 1.0 } else { 0.0 },
-            HOVERING,
-        );
-        let rect = scaled(rect, 1.0 + HOVER_GROW * grow);
-        let selected =
-            current && self.board.keyed && self.board.selected.as_ref() == Some(&pane.id);
-        if state.settled && (selected || grow > 0.0) {
-            let fill = match selected {
-                true => palette.accent.with_alpha(0.55),
-                false => palette.text.with_alpha(0.14 * grow),
-            };
-            chrome(painting, ctx, |ctx| {
-                ctx.draw_quad(
-                    Quad::new(rect.inflate(PLATE))
-                        .radius(PLATE_RADIUS)
-                        .fill(fill),
-                );
-            });
-        }
+        let lifted = self.lifted(state) == Some(&pane.id);
+        let lift = ctx.animate_curve(("lift", &*pane.id), if lifted { 1.0 } else { 0.0 }, LIFTING);
+        let rect = scaled(rect, 1.0 + LIFT * lift);
         let opacity = match pane.minimized {
             true => painting.spread,
             false => 1.0,
@@ -276,13 +247,6 @@ impl Deck {
                 number,
                 rect,
             });
-        }
-        if hovered {
-            let close = closes(rect);
-            chrome(painting, ctx, |ctx| {
-                close_button(close, painting.theme, ctx)
-            });
-            state.hits.closes.push((Arc::clone(&pane.id), close));
         }
     }
 
@@ -379,35 +343,6 @@ fn scaled(rect: Rect, by: f32) -> Rect {
         rect.center(),
         Size::new(rect.width() * by, rect.height() * by),
     )
-}
-
-fn chrome(painting: &Painting<'_>, ctx: &mut PaintCtx<'_>, draw: impl FnOnce(&mut PaintCtx<'_>)) {
-    let stage = painting.frame.stage;
-    ctx.topmost(|ctx| ctx.clipped(stage, draw));
-}
-
-pub(super) fn closes(window: Rect) -> Rect {
-    Rect::new(
-        window.max_x() - CLOSE_DIAMETER,
-        window.min_y() - CLOSE_LIFT - CLOSE_DIAMETER,
-        CLOSE_DIAMETER,
-        CLOSE_DIAMETER,
-    )
-}
-
-fn close_button(at: Rect, theme: &Theme, ctx: &mut PaintCtx<'_>) {
-    let palette = theme.palette();
-    ctx.draw_circle(at.center(), CLOSE_DIAMETER, palette.surface);
-    ctx.draw_quad(
-        Quad::new(at)
-            .radius(CLOSE_DIAMETER / 2.0)
-            .stroke(1.0, palette.outline),
-    );
-    ctx.draw_icon(
-        Rect::from_center(at.center(), Size::new(CLOSE_GLYPH, CLOSE_GLYPH)),
-        IconGlyph::from(MaterialSymbol::CLOSE).spec(CLOSE_GLYPH),
-        palette.text,
-    );
 }
 
 struct Placed<'p> {

@@ -211,7 +211,6 @@ impl Stage {
             .unwrap_or(0);
         Board {
             selected: self.chosen(&spaces[showing_at]),
-            keyed: self.selected.is_some(),
             spaces,
             showing: showing_at,
             output: Arc::from(self.place.name.as_str()),

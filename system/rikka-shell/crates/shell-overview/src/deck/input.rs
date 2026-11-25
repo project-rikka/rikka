@@ -4,8 +4,7 @@ use std::time::{Duration, Instant};
 use rikka_types::{Key, Modifiers, Point, PointerButton, Rect, ScrollDelta};
 use rikka_ui::{DRAG_SLOP, Event, EventCtx, ScrollPhase, ScrollSource};
 
-use super::paint::CLOSE_LIFT;
-use super::{Deck, DeckState, Hit};
+use super::{Deck, DeckState, Hit, Lead};
 use crate::stage::Stage;
 use crate::swipe::{self, Sampler};
 
@@ -14,7 +13,6 @@ const WHEEL_REST: Duration = Duration::from_millis(160);
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Spot {
     Window(Arc<str>),
-    Close(Arc<str>),
     Card(usize),
     Thumb(usize),
 }
@@ -95,7 +93,7 @@ impl Deck {
                 ..
             } => {
                 ctx.set_handled();
-                if let Some(Spot::Window(id) | Spot::Close(id)) = self.spot_at(state, *position) {
+                if let Some(Spot::Window(id)) = self.spot_at(state, *position) {
                     ctx.run(move |stage: &mut Stage| stage.close(Arc::clone(&id)));
                 }
             }
@@ -124,9 +122,13 @@ impl Deck {
     }
 
     fn moved(&self, state: &mut DeckState, position: Point, ctx: &mut EventCtx<'_>) {
+        let led = state.pointer != Some(position) && state.lead != Lead::Pointer;
+        if led {
+            state.lead = Lead::Pointer;
+        }
         state.pointer = Some(position);
         let over = self.spot_at(state, position);
-        let changed = state.over != over;
+        let changed = led || state.over != over;
         state.over = over;
         if let Some(drag) = &mut state.drag {
             drag.at = position;
@@ -192,9 +194,6 @@ impl Deck {
             Some(Spot::Window(id)) => {
                 ctx.run(move |stage: &mut Stage| stage.activate(Arc::clone(&id)));
             }
-            Some(Spot::Close(id)) => {
-                ctx.run(move |stage: &mut Stage| stage.close(Arc::clone(&id)));
-            }
             Some(Spot::Card(number)) if number == self.showing_number() => {
                 ctx.run(Stage::shut);
             }
@@ -247,7 +246,7 @@ impl Deck {
         modifiers: Modifiers,
         ctx: &mut EventCtx<'_>,
     ) -> bool {
-        let selected = self.board.selected.clone();
+        let chosen = self.lifted(state).or(self.board.selected.as_ref()).cloned();
         match key {
             Key::Escape => match state.drag.take() {
                 Some(drag) => {
@@ -265,12 +264,12 @@ impl Deck {
                 }
             },
             Key::Enter | Key::Space => {
-                if let Some(id) = selected {
+                if let Some(id) = chosen {
                     ctx.run(move |stage: &mut Stage| stage.activate(Arc::clone(&id)));
                 }
             }
             Key::Delete => {
-                if let Some(id) = selected {
+                if let Some(id) = chosen {
                     ctx.run(move |stage: &mut Stage| stage.close(Arc::clone(&id)));
                 }
             }
@@ -314,38 +313,27 @@ impl Deck {
         ctx.request_paint();
     }
 
-    fn cycle(&self, state: &DeckState, by: i32, ctx: &mut EventCtx<'_>) {
-        let windows = &state.hits.windows;
-        if windows.is_empty() {
+    fn cycle(&self, state: &mut DeckState, by: i32, ctx: &mut EventCtx<'_>) {
+        let Some(from) = self.navigated_from(state, ctx) else {
             return;
-        }
-        let at = self
-            .board
-            .selected
-            .as_ref()
-            .and_then(|id| windows.iter().position(|hit| hit.id == *id))
+        };
+        let windows = &state.hits.windows;
+        let at = windows
+            .iter()
+            .position(|hit| hit.id == from.id)
             .unwrap_or(0) as i32;
-        let by = if self.board.keyed { by } else { 0 };
         let next = (at + by).rem_euclid(windows.len() as i32) as usize;
         select(&windows[next], ctx);
     }
 
-    fn walk(&self, state: &DeckState, toward: Point, ctx: &mut EventCtx<'_>) {
-        let windows = &state.hits.windows;
-        let Some(from) = self
-            .board
-            .selected
-            .as_ref()
-            .and_then(|id| windows.iter().find(|hit| hit.id == *id))
-            .or_else(|| windows.first())
-        else {
+    fn walk(&self, state: &mut DeckState, toward: Point, ctx: &mut EventCtx<'_>) {
+        let Some(from) = self.navigated_from(state, ctx) else {
             return;
         };
-        if !self.board.keyed {
-            return select(from, ctx);
-        }
         let origin = from.rect.center();
-        let nearest = windows
+        let nearest = state
+            .hits
+            .windows
             .iter()
             .filter(|hit| hit.id != from.id)
             .filter_map(|hit| {
@@ -360,15 +348,23 @@ impl Deck {
         }
     }
 
+    fn navigated_from(&self, state: &mut DeckState, ctx: &mut EventCtx<'_>) -> Option<Hit> {
+        let windows = &state.hits.windows;
+        let from = self
+            .lifted(state)
+            .or(self.board.selected.as_ref())
+            .and_then(|id| windows.iter().find(|hit| hit.id == *id))
+            .or_else(|| windows.first())?
+            .clone();
+        if std::mem::replace(&mut state.lead, Lead::Keyboard) == Lead::Keyboard {
+            return Some(from);
+        }
+        select(&from, ctx);
+        None
+    }
+
     fn spot_at(&self, state: &DeckState, point: Point) -> Option<Spot> {
         let hits = &state.hits;
-        if state.settled && state.drag.is_none() {
-            for (id, button) in &hits.closes {
-                if reach_of(*button).contains(point) {
-                    return Some(Spot::Close(Arc::clone(id)));
-                }
-            }
-        }
         if let Some(hit) = hits.windows.iter().rev().find(|hit| {
             hit.rect.contains(point) && state.drag.as_ref().is_none_or(|drag| drag.id != hit.id)
         }) {
@@ -383,15 +379,6 @@ impl Deck {
             .find(|(_, rect)| rect.contains(point))
             .map(|(number, _)| Spot::Card(*number))
     }
-}
-
-fn reach_of(button: Rect) -> Rect {
-    Rect::new(
-        button.min_x(),
-        button.min_y(),
-        button.width(),
-        button.height() + CLOSE_LIFT,
-    )
 }
 
 fn select(hit: &Hit, ctx: &mut EventCtx<'_>) {

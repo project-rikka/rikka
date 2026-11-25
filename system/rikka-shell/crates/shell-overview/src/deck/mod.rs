@@ -24,7 +24,6 @@ pub(crate) struct Board {
     pub(crate) spaces: Vec<Space>,
     pub(crate) showing: usize,
     pub(crate) selected: Option<Arc<str>>,
-    pub(crate) keyed: bool,
     pub(crate) output: Arc<str>,
     pub(crate) backdrop: Backdrop,
     pub(super) swipes: Swipes,
@@ -87,11 +86,19 @@ pub(crate) struct DeckState {
     aim: Option<Aim>,
     over: Option<Spot>,
     pointer: Option<Point>,
+    lead: Lead,
     press: Option<Press>,
     drag: Option<Drag>,
     dropped: Option<Dropped>,
     scrolling: Option<Scrolling>,
     wheeled: Option<Instant>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+enum Lead {
+    #[default]
+    Pointer,
+    Keyboard,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -103,7 +110,6 @@ struct Aim {
 #[derive(Debug, Default)]
 struct Hits {
     windows: Vec<Hit>,
-    closes: Vec<(Arc<str>, Rect)>,
     cards: Vec<(usize, Rect)>,
     thumbs: Vec<(usize, Rect)>,
     pitch: f32,
@@ -146,6 +152,19 @@ impl Deck {
             .spaces
             .get(self.board.showing)
             .map_or(1, |space| space.number)
+    }
+
+    fn lifted<'a>(&'a self, state: &'a DeckState) -> Option<&'a Arc<str>> {
+        if !state.settled || state.drag.is_some() {
+            return None;
+        }
+        match state.lead {
+            Lead::Pointer => match &state.over {
+                Some(Spot::Window(id)) => Some(id),
+                _ => None,
+            },
+            Lead::Keyboard => self.board.selected.as_ref(),
+        }
     }
 }
 
