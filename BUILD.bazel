@@ -7,7 +7,7 @@ exports_files(
         "crates/physics/THIRD_PARTY.md",
         "crates/text/THIRD_PARTY.md",
     ],
-    visibility = ["//apps/general:__subpackages__"],
+    visibility = ["//bazel/windows:__pkg__"],
 )
 
 filegroup(

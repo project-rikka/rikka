@@ -13,6 +13,13 @@ import {{ import }};
      * major &lt;&lt; 22 | minor &lt;&lt; 12 | patch.
      */
     public static final int BINDING_VERSION = {{ version }};
+
+    /**
+     * The system property naming the native library file to load, such as an absolute path to
+     * {{ dll }}; unset, the platform's library search finds {{ dll }} on Windows and {{ soname }}
+     * elsewhere. Set it before the first use of this binding.
+     */
+    public static final String LIBRARY_PROPERTY = "{{ header.package }}.library";
 {%- for constant in constants %}
 
 {{ constant }}

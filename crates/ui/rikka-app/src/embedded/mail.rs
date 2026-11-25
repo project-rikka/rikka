@@ -1,17 +1,23 @@
 use std::sync::mpsc::{self, Receiver, Sender};
 
+use rikka_appearance::Appearance;
+use rikka_theme::Theme;
 use rikka_ui::RuntimeMessage;
 use rikka_ui_host::TaskSink;
 
 use crate::embedded::SurfaceId;
-use crate::wayland::settings::SessionChange;
 
 pub(crate) enum Mail {
     Message {
         surface: SurfaceId,
         inbound: RuntimeMessage,
     },
-    Session(SessionChange),
+    Appearance {
+        appearance: Box<Appearance>,
+        theme: Option<Box<Theme>>,
+    },
+    #[cfg(unix)]
+    Language,
 }
 
 #[derive(Clone)]

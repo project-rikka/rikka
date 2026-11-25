@@ -227,7 +227,7 @@
 
 ## bazel/windows
 
-- [Windows executables and the portable Windows ZIP](windows-distribution.md) — rikka_application embeds manifest and version; windows_zip packs the general apps and checks DLL imports.
+- [Windows executables, DLLs and the portable Windows ZIPs](windows-distribution.md) — rikka_application/rikka_native_library embed version resources; windows_zip packs apps, the SDK and mod natives.
 
 ## benchmarks
 

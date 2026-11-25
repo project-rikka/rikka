@@ -9,8 +9,8 @@ import java.lang.ref.Reference;
 import java.util.Objects;
 
 /**
- * The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
- * and the system's and the person's, Rikka's own first.
+ * The themes installed on the desktop: the built-in ones, those generated from the wallpaper
+ * (from the accent colour on Windows), and the system's and the person's, Rikka's own first.
  *
  * <p>It holds one reference to a native object usable from any thread; closing it, or a cleaner
  * once it is unreachable, drops the reference.

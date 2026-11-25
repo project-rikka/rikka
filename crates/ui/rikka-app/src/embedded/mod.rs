@@ -1,3 +1,4 @@
+mod desktop;
 mod look;
 mod mail;
 mod surface;
@@ -17,13 +18,13 @@ use rustc_hash::FxHashMap;
 use crate::error::Result;
 use crate::preload;
 use crate::sender::{Route, Sender, WindowAlive};
-use crate::wayland::settings::{self, SessionChange};
 
 pub use look::SurfaceBackground;
 pub(crate) use mail::{Mail, Post};
 pub use rikka_settings::session::appearance::Background;
 pub use surface::Embedded;
 
+use desktop::Following;
 use look::Look;
 use mail::Mailbox;
 use surface::Handlers;
@@ -73,24 +74,19 @@ pub struct Embedding {
     mailbox: Mailbox,
     look: RefCell<Look>,
     next: Cell<u64>,
+    _following: Following,
 }
 
 impl Embedding {
     pub fn new(device: ExternalDevice, i18n: I18nBuilder) -> Result<Embedding> {
         rikka_log::install("warn");
         i18n.embedded(rikka_widgets::CATALOGS).build()?.install();
-        settings::apply_session_locale();
         let renderer = Renderer::new(&rikka_gpu::Gpu::builder().external(device).build()?)?;
         let (post, mailbox) = mail::mailbox();
         let session = Appearance::current();
         let look = Look::new(session.clone());
         preload::fonts(look.worn());
-        let following = post.clone();
-        settings::follow(
-            move |change| following.send(Mail::Session(change)),
-            Some(session),
-            true,
-        );
+        let following = desktop::follow(post.clone(), session);
         match Clipboard::connect() {
             Ok(clipboard) => rikka_ui::clipboard::install_session(clipboard),
             Err(error) => tracing::warn!("failed to open session clipboard: {error}"),
@@ -105,6 +101,7 @@ impl Embedding {
             mailbox,
             look: RefCell::new(look),
             next: Cell::new(1),
+            _following: following,
         })
     }
 
@@ -285,7 +282,7 @@ impl Embedding {
         while let Some(mail) = self.mailbox.take() {
             match mail {
                 Mail::Message { surface, inbound } => live.composer.deliver(&surface, inbound),
-                Mail::Session(SessionChange::Appearance { appearance, theme }) => {
+                Mail::Appearance { appearance, theme } => {
                     let changed = self
                         .look
                         .borrow_mut()
@@ -294,7 +291,8 @@ impl Embedding {
                         wear(live, &self.look.borrow());
                     }
                 }
-                Mail::Session(SessionChange::Language) => {}
+                #[cfg(unix)]
+                Mail::Language => {}
             }
         }
     }

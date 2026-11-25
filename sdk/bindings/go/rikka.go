@@ -32,7 +32,6 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
-	"syscall"
 	"unsafe"
 )
 
@@ -147,7 +146,8 @@ type Status uint32
 const (
 	// It succeeded.
 	StatusOK Status = 0
-	// No Wayland compositor could be reached.
+	// The window system is unavailable: no Wayland compositor could be reached, or Windows refused
+	// to open a window.
 	StatusNoDisplay Status = 1
 	// The GPU or its driver failed.
 	StatusGPU Status = 2
@@ -1227,7 +1227,7 @@ func (x *App) take() *C.rk_app {
 // NewApp makes an application.
 //
 //   - id: The reverse-DNS application id, such as org.example.notes; it names the desktop entry and
-//     the bus name.
+//     the bus name on Linux, and the AppUserModelID and instance pipe on Windows.
 func NewApp(id string) *App {
 	return newApp(C.rk_app_new(cStr(id)))
 }
@@ -2195,7 +2195,7 @@ func newTextDocument(raw *C.rk_text_document) *TextDocument {
 	}
 	value := &TextDocument{raw: raw}
 	drainReleases()
-	owner := syscall.Gettid()
+	owner := osThread()
 	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_text_document) {
 		releaseOn(owner, func() { C.rk_text_document_unref(raw) })
 	}, raw)
@@ -2405,7 +2405,8 @@ func (v *VulkanDevice) Features(features uint64) *VulkanDevice {
 }
 
 // ThemeCatalog is the themes installed on the desktop: the built-in ones, those generated from
-// the wallpaper, and the system's and the person's, Rikka's own first.
+// the wallpaper (from the accent colour on Windows), and the system's and the person's, Rikka's
+// own first.
 //
 // It holds one reference to a native object usable from any goroutine; the garbage collector
 // drops the reference.
@@ -2494,7 +2495,7 @@ func newEmbedding(raw *C.rk_embedding) *Embedding {
 	}
 	value := &Embedding{raw: raw}
 	drainReleases()
-	owner := syscall.Gettid()
+	owner := osThread()
 	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_embedding) {
 		releaseOn(owner, func() { C.rk_embedding_unref(raw) })
 	}, raw)
@@ -2658,7 +2659,7 @@ func newEmbeddedSurface(raw *C.rk_embedded_surface) *EmbeddedSurface {
 	}
 	value := &EmbeddedSurface{raw: raw}
 	drainReleases()
-	owner := syscall.Gettid()
+	owner := osThread()
 	value.cleanup = runtime.AddCleanup(value, func(raw *C.rk_embedded_surface) {
 		releaseOn(owner, func() { C.rk_embedded_surface_unref(raw) })
 	}, raw)

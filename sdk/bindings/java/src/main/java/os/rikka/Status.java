@@ -11,7 +11,8 @@ public enum Status {
      */
     OK(0),
     /**
-     * No Wayland compositor could be reached.
+     * The window system is unavailable: no Wayland compositor could be reached, or Windows
+     * refused to open a window.
      */
     NO_DISPLAY(1),
     /**

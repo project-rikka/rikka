@@ -1,12 +1,11 @@
-1 24 "@MANIFEST@"
-
+@MANIFEST@
 1 VERSIONINFO
 FILEVERSION @VERSION_COMMAS@
 PRODUCTVERSION @VERSION_COMMAS@
 FILEFLAGSMASK 0x3F
 FILEFLAGS 0x0
 FILEOS 0x40004
-FILETYPE 0x1
+FILETYPE @FILE_TYPE@
 FILESUBTYPE 0x0
 BEGIN
   BLOCK "StringFileInfo"
@@ -16,9 +15,9 @@ BEGIN
       VALUE "CompanyName", "Project Rikka"
       VALUE "FileDescription", "@DESCRIPTION@"
       VALUE "FileVersion", "@VERSION@"
-      VALUE "InternalName", "@EXECUTABLE@"
+      VALUE "InternalName", "@INTERNAL_NAME@"
       VALUE "LegalCopyright", "Licensed under the GNU General Public License version 3 or later"
-      VALUE "OriginalFilename", "@EXECUTABLE@.exe"
+      VALUE "OriginalFilename", "@FILE_NAME@"
       VALUE "ProductName", "Rikka"
       VALUE "ProductVersion", "@VERSION@"
     END

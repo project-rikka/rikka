@@ -22,6 +22,13 @@ _MIXIN_REMAP_TYPE = "static"
 
 _JAR_DATE = "1980-01-01T00:00:02Z"
 
+_DIGEST_SUFFIX = ".sha256"
+
+_DIGEST = """set -eu
+export PATH="$1"
+sha256sum "$2" | cut -c1-64 > "$3"
+"""
+
 _NATIVES_PLACEHOLDER = "${natives_directory}"
 
 _LAUNCHER_PLACEHOLDERS = {
@@ -101,6 +108,22 @@ def _fabric_mod_impl(ctx):
         resources.append(struct(file = resource, path = path))
     if _MOD_METADATA not in [resource.path for resource in resources]:
         fail("a Fabric mod needs a {} at the root of its resources".format(_MOD_METADATA))
+    for target, path in ctx.attr.natives.items():
+        archive = target.files.to_list()
+        if len(archive) != 1:
+            fail("{} must be exactly one archive".format(target.label))
+        digest = ctx.actions.declare_file("{}/{}{}".format(ctx.label.name, path, _DIGEST_SUFFIX))
+        ctx.actions.run(
+            executable = NIX["bash"],
+            outputs = [digest],
+            inputs = archive,
+            arguments = ["-c", _DIGEST, "digest", NIX["language_path"], archive[0].path, digest.path],
+            mnemonic = "NativesDigest",
+            progress_message = "Hashing %{input}",
+            use_default_shell_env = False,
+        )
+        resources.append(struct(file = archive[0], path = path))
+        resources.append(struct(file = digest, path = path + _DIGEST_SUFFIX))
 
     manifest = ctx.actions.declare_file(ctx.label.name + ".MF")
     ctx.actions.write(manifest, _MANIFEST.format(
@@ -145,6 +168,10 @@ fabric_mod = rule(
     exec_compatible_with = LANGUAGES,
     doc = "A Fabric mod jar compiled against the pinned Minecraft client and Fabric Loader.",
     attrs = _game_attrs() | {
+        "natives": attr.label_keyed_string_dict(
+            allow_files = [".zip"],
+            doc = "Archives of native libraries, such as a `windows_zip`, and their jar paths; each gets its SHA-256 beside it as `<path>.sha256`.",
+        ),
         "srcs": attr.label_list(allow_files = [".java"], mandatory = True),
         "deps": attr.label_list(
             providers = [RikkaJavaInfo],

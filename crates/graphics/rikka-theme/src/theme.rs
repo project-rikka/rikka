@@ -106,6 +106,10 @@ impl Theme {
         self.variant.is_dark()
     }
 
+    pub(crate) fn variant(&self) -> Variant {
+        self.variant
+    }
+
     #[inline]
     #[must_use]
     pub fn palette(&self) -> Palette {
@@ -148,6 +152,12 @@ impl Theme {
 
     pub fn with_translucency(mut self, session: Translucency) -> Self {
         self.translucency = self.translucency.combine(session);
+        self.update_palette()
+    }
+
+    pub(crate) fn glazed(mut self, translucency: Translucency, outline: Color) -> Self {
+        self.opaque_palette.outline = outline;
+        self.translucency = translucency;
         self.update_palette()
     }
 

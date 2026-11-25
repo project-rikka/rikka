@@ -19,22 +19,33 @@ pub(crate) const AVFORMAT: &str = "avformat-63.dll";
 pub(crate) const SWSCALE: &str = "swscale-10.dll";
 
 #[cfg(unix)]
-unsafe fn load(soname: &str) -> Result<Library, libloading::Error> {
+unsafe fn load(soname: &str) -> Result<Library, String> {
     unsafe { Library::new(soname) }
+        .map_err(|error| format!("{soname} could not be opened: {error}"))
 }
 
 #[cfg(windows)]
-unsafe fn load(soname: &str) -> Result<Library, libloading::Error> {
+const BESIDE: rikka_shipped::Shipped = rikka_shipped::Shipped {
+    variable: "RIKKA_FFMPEG_PATH",
+    installed: "",
+};
+
+#[cfg(windows)]
+unsafe fn load(soname: &str) -> Result<Library, String> {
     use libloading::os::windows::{
-        LOAD_LIBRARY_SEARCH_APPLICATION_DIR, LOAD_LIBRARY_SEARCH_SYSTEM32,
+        LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR, LOAD_LIBRARY_SEARCH_SYSTEM32, Library as WindowsLibrary,
     };
-    let flags = LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32;
-    unsafe { libloading::os::windows::Library::load_with_flags(soname, flags) }.map(Library::from)
+    let path = BESIDE
+        .find(soname)
+        .ok_or_else(|| format!("{soname} is not beside the program or the library loading it"))?;
+    let flags = LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32;
+    unsafe { WindowsLibrary::load_with_flags(&path, flags) }
+        .map(Library::from)
+        .map_err(|error| format!("{} could not be opened: {error}", path.display()))
 }
 
 pub(crate) fn open(soname: &str) -> Result<&'static Library, String> {
-    let library = unsafe { load(soname) }
-        .map_err(|error| format!("{soname} could not be opened: {error}"))?;
+    let library = unsafe { load(soname) }?;
     Ok(Box::leak(Box::new(library)))
 }
 

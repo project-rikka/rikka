@@ -13,15 +13,20 @@ pub(crate) fn check(objdump: &Path, entries: &Entries) -> Result<()> {
     let shipped: BTreeSet<String> = entries.shipped_libraries().collect();
     let mut strays = Vec::new();
     for binary in entries.binaries() {
+        let folder = binary.name.rsplit_once('/').map(|(folder, _)| folder);
         for library in imported(objdump, &binary.source)? {
-            if !shipped.contains(&library) && !system::provides(&library) {
+            let beside = match folder {
+                Some(folder) => format!("{}/{library}", folder.to_ascii_lowercase()),
+                None => library.clone(),
+            };
+            if !shipped.contains(&beside) && !system::provides(&library) {
                 strays.push(format!("{} imports {library}", binary.name));
             }
         }
     }
     if !strays.is_empty() {
         bail!(
-            "the package needs libraries that neither Windows nor the package provide:\n  {}",
+            "the package needs libraries that neither Windows nor the binary's folder provide:\n  {}",
             strays.join("\n  ")
         );
     }

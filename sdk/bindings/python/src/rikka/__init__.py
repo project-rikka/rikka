@@ -221,7 +221,8 @@ class Status(enum.IntEnum):
 
     #: It succeeded.
     OK = 0
-    #: No Wayland compositor could be reached.
+    #: The window system is unavailable: no Wayland compositor could be reached, or Windows refused
+    #: to open a window.
     NO_DISPLAY = 1
     #: The GPU or its driver failed.
     GPU = 2
@@ -705,7 +706,7 @@ class App(_runtime.Handle):
 
         Args:
             id: The reverse-DNS application id, such as org.example.notes; it names the desktop
-                entry and the bus name.
+                entry and the bus name on Linux, and the AppUserModelID and instance pipe on Windows.
             single_instance: Makes later starts hand their arguments to the running instance's
                 :meth:`WindowBuilder.on_launch` callback instead of starting anew.
         """
@@ -1793,8 +1794,8 @@ class VulkanDevice(_runtime.Handle):
 
 
 class ThemeCatalog(_runtime.Counted):
-    """The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
-    and the system's and the person's, Rikka's own first.
+    """The themes installed on the desktop: the built-in ones, those generated from the wallpaper
+    (from the accent colour on Windows), and the system's and the person's, Rikka's own first.
 
     It holds one reference to a native object usable from any thread.
     """

@@ -21,6 +21,7 @@ import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -30,7 +31,7 @@ import java.util.Set;
 @SuppressWarnings("restricted")
 final class Native {
     static final Linker LINKER = Linker.nativeLinker();
-    static final SymbolLookup LIBRARY = SymbolLookup.libraryLookup("librikka.so.0", Arena.global());
+    static final SymbolLookup LIBRARY = lookup();
     static final StructLayout STR =
             MemoryLayout.structLayout(ADDRESS.withName("data"), JAVA_LONG.withName("length")).withName("rk_str");
     static final StructLayout STRING =
@@ -399,9 +400,18 @@ final class Native {
 
     private Native() {}
 
+    private static SymbolLookup lookup() {
+        String path = System.getProperty(Rikka.LIBRARY_PROPERTY);
+        if (path != null) {
+            return SymbolLookup.libraryLookup(Path.of(path), Arena.global());
+        }
+        boolean windows = System.getProperty("os.name").startsWith("Windows");
+        return SymbolLookup.libraryLookup(windows ? "rikka.dll" : "librikka.so.0", Arena.global());
+    }
+
     private static MethodHandle downcall(String name, FunctionDescriptor descriptor) {
         MemorySegment symbol = LIBRARY.find(name)
-                .orElseThrow(() -> new UnsatisfiedLinkError("rikka: librikka.so.0 has no " + name));
+                .orElseThrow(() -> new UnsatisfiedLinkError("rikka: the library has no " + name));
         return LINKER.downcallHandle(symbol, descriptor);
     }
 

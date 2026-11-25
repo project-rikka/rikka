@@ -463,12 +463,17 @@ const SDK: Component = Component {
         summary: "librikka with C and C++ headers and Go, C#, Java and Python bindings",
     },
     offer: Offer::Offered,
-    windows: None,
+    windows: Some("//sdk:windows_zip"),
     pam: &[],
     session: Contents {
         data: &[
             data_file("sdk/bindings/c/include/rikka/rikka.h", "include/rikka"),
             data_file("sdk/bindings/cpp/include/rikka/rikka.hpp", "include/rikka"),
+            data_file("sdk/bindings/c/cmake/RikkaConfig.cmake", "lib/cmake/Rikka"),
+            data_file(
+                "sdk/bindings/c/cmake/RikkaConfigVersion.cmake",
+                "lib/cmake/Rikka",
+            ),
         ],
         templates: &[data_file("sdk/bindings/c/rikka.pc.in", "lib/pkgconfig")],
         libraries: &[Library {

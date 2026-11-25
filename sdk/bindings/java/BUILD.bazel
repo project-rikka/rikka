@@ -86,6 +86,7 @@ rikka_bindings(
 filegroup(
     name = "package",
     srcs = OUTS,
+    visibility = ["//sdk:__pkg__"],
 )
 
 rikka_java_library(

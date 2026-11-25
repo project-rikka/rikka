@@ -2,7 +2,6 @@ load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
 
 rikka_library(
     name = "rikka-audio-tags",
-    target_compatible_with = ["@platforms//os:linux"],
     visibility = [
         "//visibility:public",
     ],

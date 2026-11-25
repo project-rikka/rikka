@@ -48,6 +48,7 @@ impl Language for Python {
                 &Runtime {
                     library: &api.name,
                     soname: projection::soname(api),
+                    dll: projection::dll(api),
                 },
             )?,
             Output::render(
@@ -112,6 +113,7 @@ struct Typed;
 struct Runtime<'a> {
     library: &'a str,
     soname: String,
+    dll: String,
 }
 
 struct Prototype {

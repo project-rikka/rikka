@@ -102,7 +102,7 @@ impl Entries {
     pub(crate) fn shipped_libraries(&self) -> impl Iterator<Item = String> {
         self.iter().filter_map(|entry| {
             let lower = entry.name.to_ascii_lowercase();
-            (!lower.contains('/') && lower.ends_with(LIBRARY_EXTENSION)).then_some(lower)
+            lower.ends_with(LIBRARY_EXTENSION).then_some(lower)
         })
     }
 

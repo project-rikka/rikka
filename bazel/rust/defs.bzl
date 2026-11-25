@@ -141,15 +141,22 @@ def rikka_binary(name, cranelift = True, **kwargs):
 def rikka_shared_library(name, soname, cranelift = True, **kwargs):
     """A C-ABI shared library linked with the session's RUNPATH.
 
-    Its sources are `src/**/*.rs` with `src/lib.rs` as the crate root unless named.
+    Its sources are `src/**/*.rs` with `src/lib.rs` as the crate root unless named. On Windows
+    it is `<crate name>.dll` beside its COFF import library `<crate name>.dll.lib`, which both
+    MSVC and MinGW linkers read.
 
     Args:
         name: target name; the crate name replaces `-` with `_` unless `crate_name` says otherwise.
-        soname: the `DT_SONAME` the library is loaded by, such as `librikka.so.0`.
+        soname: the ELF `DT_SONAME` the library is loaded by, such as `librikka.so.0`.
         cranelift: whether development builds use the Cranelift backend.
         **kwargs: passed to `rust_shared_library`.
     """
-    rustc_flags = kwargs.pop("rustc_flags", []) + ["-Clink-arg=-Wl,-soname," + soname]
+    crate_name = kwargs.get("crate_name", name.replace("-", "_"))
+    import_library = "$(BINDIR)/{}/{}.dll.lib".format(native.package_name(), crate_name)
+    rustc_flags = kwargs.pop("rustc_flags", []) + select({
+        "@platforms//os:windows": ["-Clink-arg=-Wl,--out-implib=" + import_library],
+        "//conditions:default": ["-Clink-arg=-Wl,-soname," + soname],
+    })
     kwargs = _layout(kwargs | {"rustc_flags": rustc_flags}, "src", "src/lib.rs")
     rust_shared_library(name = name, **_crate(kwargs, cranelift, linkage(executable = False, prefix = _LINK_ARG)))
 

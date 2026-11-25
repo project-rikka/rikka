@@ -1,6 +1,11 @@
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//sdk/codegen:defs.bzl", "rikka_bindings")
 
+exports_files(
+    ["include/rikka/rikka.hpp"],
+    visibility = ["//sdk:__pkg__"],
+)
+
 rikka_bindings(
     name = "generated",
     language = "cpp",

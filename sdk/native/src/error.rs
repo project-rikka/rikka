@@ -20,7 +20,10 @@ pub(crate) fn last() -> ffi::Str {
 
 pub(crate) fn app_status(error: &rikka_app::Error) -> ffi::Status {
     match error {
+        #[cfg(unix)]
         rikka_app::Error::NoDisplay | rikka_app::Error::Display(_) => ffi::Status::NoDisplay,
+        #[cfg(windows)]
+        rikka_app::Error::Win32(_) => ffi::Status::NoDisplay,
         rikka_app::Error::Renderer(_) => ffi::Status::Gpu,
         rikka_app::Error::Runtime(_) => ffi::Status::System,
         rikka_app::Error::I18n(_) => ffi::Status::Failed,

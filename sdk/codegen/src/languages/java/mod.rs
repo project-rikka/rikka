@@ -430,6 +430,8 @@ struct Statics<'a> {
     doc: String,
     name: String,
     version: u32,
+    soname: String,
+    dll: String,
     constants: Vec<String>,
     functions: Vec<String>,
     imports: Vec<&'static str>,
@@ -473,6 +475,8 @@ impl<'a> Statics<'a> {
             doc: javadoc("", &spelling.body(&api.doc.body)),
             name: spelling.statics(),
             version: api.version.packed(),
+            soname: projection::soname(api),
+            dll: projection::dll(api),
             constants,
             imports: imports(&functions),
             functions,
@@ -520,7 +524,9 @@ struct ErrorItem {
 #[template(path = "java/Native.java.j2", escape = "none")]
 struct Native<'a> {
     header: &'a Header,
+    statics: String,
     soname: String,
+    dll: String,
     prefix: String,
     layouts: Vec<Layout>,
     handles: Vec<String>,
@@ -663,7 +669,9 @@ impl<'a> Native<'a> {
         });
         Self {
             header,
+            statics: spelling.statics(),
             soname: projection::soname(api),
+            dll: projection::dll(api),
             prefix: api.abi_prefix.clone(),
             layouts,
             handles,

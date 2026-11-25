@@ -3,6 +3,7 @@ use rikka_settings::session::appearance::{self, Background};
 use rikka_theme::{MaterialYou, Result, Theme, ThemeRegistry, ThemeSpec, Translucency};
 use rikka_types::Lens;
 
+use crate::dress;
 use crate::session::read;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -57,12 +58,10 @@ impl Appearance {
     }
 
     fn spec(&self) -> ThemeSpec {
-        let spec = ThemeRegistry::named(&self.slug, self.material);
-        match self.background {
-            Background::Solid => spec,
-            Background::Glass => spec.glass(),
-            Background::Liquid => spec.liquid(),
-        }
+        dress::dressed(
+            ThemeRegistry::named(&self.slug, self.material),
+            self.background,
+        )
     }
 
     pub fn slug(&self) -> &str {

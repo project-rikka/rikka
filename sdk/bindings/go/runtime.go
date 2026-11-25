@@ -6,6 +6,24 @@ package rikka
 #include <rikka/rikka.h>
 #include <stdint.h>
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+
+static inline uintptr_t rikka_thread(void) {
+    return (uintptr_t)GetCurrentThreadId();
+}
+#elif defined(__linux__)
+#include <sys/syscall.h>
+#include <unistd.h>
+
+static inline uintptr_t rikka_thread(void) {
+    return (uintptr_t)syscall(SYS_gettid);
+}
+#else
+#error "rikka runs on Linux and Windows"
+#endif
+
 static inline void *rikka_userdata(uintptr_t handle) {
     return (void *)handle;
 }
@@ -20,12 +38,15 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"unsafe"
 )
 
 func init() {
 	runtime.LockOSThread()
+}
+
+func osThread() uintptr {
+	return uintptr(C.rikka_thread())
 }
 
 func cStr(value string) C.rk_str {
@@ -85,7 +106,7 @@ func expired(kind string) string {
 }
 
 type pendingRelease struct {
-	thread  int
+	thread  uintptr
 	release func()
 }
 
@@ -95,8 +116,8 @@ var deferred struct {
 	count   atomic.Int64
 }
 
-func releaseOn(thread int, release func()) {
-	if syscall.Gettid() == thread {
+func releaseOn(thread uintptr, release func()) {
+	if osThread() == thread {
 		release()
 		return
 	}
@@ -110,7 +131,7 @@ func drainReleases() {
 	if deferred.count.Load() == 0 {
 		return
 	}
-	thread := syscall.Gettid()
+	thread := osThread()
 	var due []func()
 	deferred.Lock()
 	kept := deferred.pending[:0]

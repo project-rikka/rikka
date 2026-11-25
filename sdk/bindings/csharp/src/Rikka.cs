@@ -204,7 +204,8 @@ public enum Status : uint
     /// </summary>
     OK = 0,
     /// <summary>
-    /// No Wayland compositor could be reached.
+    /// The window system is unavailable: no Wayland compositor could be reached, or Windows refused to open a
+    /// window.
     /// </summary>
     NoDisplay = 1,
     /// <summary>
@@ -864,8 +865,8 @@ public sealed unsafe class App : IDisposable
     /// Makes an application.
     /// </summary>
     /// <param name="id">
-    /// The reverse-DNS application id, such as org.example.notes; it names the desktop entry and the bus
-    /// name.
+    /// The reverse-DNS application id, such as org.example.notes; it names the desktop entry and the bus name
+    /// on Linux, and the AppUserModelID and instance pipe on Windows.
     /// </param>
     public App(string id)
     {
@@ -2716,8 +2717,8 @@ public sealed unsafe class VulkanDevice : IDisposable
 
 /// <summary>
 /// <para>
-/// The themes installed on the desktop: the built-in ones, those generated from the wallpaper, and the
-/// system's and the person's, Rikka's own first.
+/// The themes installed on the desktop: the built-in ones, those generated from the wallpaper (from the
+/// accent colour on Windows), and the system's and the person's, Rikka's own first.
 /// </para>
 /// <para>
 /// It holds one reference to a native object usable from any thread; disposing it or the finalizer drops the
