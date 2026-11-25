@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "launcher-install",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/launcher/crates/launcher-meta",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-types",
+        "@crates//:futures-util",
+        "@crates//:sha1",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": ["//crates/foundation/rikka-shipped"],
+        "@platforms//os:windows": [],
+    }),
+)

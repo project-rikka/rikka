@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "launcher-game",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/launcher/crates/launcher-install",
+        "//apps/general/launcher/crates/launcher-meta",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": ["@crates//:rustix"],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":launcher-game",
+        "//apps/general/launcher/crates/launcher-install",
+        "//apps/general/launcher/crates/launcher-meta",
+    ],
+)

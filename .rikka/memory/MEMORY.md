@@ -90,6 +90,10 @@
 
 - [Cut timeline key lanes, graph editor and preset wedges](cut-keyframing-ui.md) — Cut timeline key lanes and value/speed graph (timeline/keys), animation-preset wedges, keyframe selection.
 
+## apps/general/launcher
+
+- [Minecraft launcher (rikka-launcher)](launcher-app.md) — apps/general/launcher: Modrinth-style launcher pinned to Rikka's Minecraft/Fabric version; crates, auth, install, Java,…
+
 ## apps/general/paint
 
 - [Paint application](paint-app.md) — rikka-paint is the beginner-friendly image editor: tabbed documents, PSD-native model, tool rail, layers, GPU canvas.

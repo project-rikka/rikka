@@ -162,6 +162,7 @@ let
     builtins.toJSON {
       minecraft_library_path = lib.makeLibraryPath env.minecraftLibraries;
       gecko = env.shipped.RIKKA_GECKO;
+      minecraft_runtime = env.shipped.RIKKA_MINECRAFT;
       rust_analyzer = "${env.analyzerToolchain}";
     }
   );

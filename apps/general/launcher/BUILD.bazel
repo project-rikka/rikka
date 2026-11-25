@@ -1,0 +1,44 @@
+load("@minecraft//:versions.bzl", "FABRIC_LOADER", "MINECRAFT")
+load("//bazel/windows:defs.bzl", "rikka_application")
+
+_LOGO = "//minecraft:src/main/resources/assets/rikka/textures/gui/project-rikka.jpg"
+
+rikka_application(
+    name = "rikka-launcher",
+    product = "Launcher",
+    compile_data = [_LOGO],
+    rustc_env = {
+        "RIKKA_FABRIC_LOADER_VERSION": FABRIC_LOADER.version,
+        "RIKKA_LAUNCHER_LOGO": "$(execpath %s)" % _LOGO,
+        "RIKKA_MINECRAFT_VERSION": MINECRAFT.version,
+    },
+    deps = [
+        "//apps/general/launcher/crates/launcher-auth",
+        "//apps/general/launcher/crates/launcher-content",
+        "//apps/general/launcher/crates/launcher-game",
+        "//apps/general/launcher/crates/launcher-install",
+        "//apps/general/launcher/crates/launcher-instance",
+        "//apps/general/launcher/crates/launcher-meta",
+        "//apps/general/launcher/crates/launcher-modrinth",
+        "//crates/desktop/rikka-dialog",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-sync",
+        "//crates/graphics/rikka-image",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-markdown",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "@crates//:jiff",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:tokio",
+        "@crates//:tracing",
+    ] + select({
+        "@platforms//os:linux": [],
+        "@platforms//os:windows": ["@crates//:windows"],
+    }),
+)

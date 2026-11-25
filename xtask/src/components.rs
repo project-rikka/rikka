@@ -182,6 +182,20 @@ pub(crate) const COMPONENTS: &[Component] = &[
         &[icon("rikka-remote-viewer", "connected_tv")],
     )
     .on_windows("//apps/general/remote:rikka-remote-viewer_windows_zip"),
+    application(
+        "launcher",
+        Offer::Offered,
+        &[named(
+            "//apps/general/launcher:rikka-launcher",
+            "rikka-launcher",
+        )],
+        &[data_file(
+            "apps/general/launcher/rikka-launcher.desktop",
+            APPLICATIONS_DIRECTORY,
+        )],
+        &[icon("rikka-launcher", "sports_esports")],
+    )
+    .on_windows("//apps/general/launcher:rikka-launcher_windows_zip"),
     REMOTE,
     REPLAY,
     SDK,

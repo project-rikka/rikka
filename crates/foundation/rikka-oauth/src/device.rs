@@ -15,7 +15,7 @@ const CALLBACK_TIMEOUT: Duration = Duration::from_secs(1800);
 pub struct DeviceRequest<'a> {
     client: &'a Client,
     endpoint: String,
-    scope: Option<String>,
+    fields: Vec<(&'static str, String)>,
 }
 
 pub struct DeviceAuthorization {
@@ -32,24 +32,23 @@ impl<'a> DeviceRequest<'a> {
         DeviceRequest {
             client,
             endpoint,
-            scope: None,
+            fields: Vec::new(),
         }
     }
 
-    pub fn scope(mut self, scope: impl Into<String>) -> DeviceRequest<'a> {
-        self.scope = Some(scope.into());
+    pub fn scope(self, scope: impl Into<String>) -> DeviceRequest<'a> {
+        self.field("scope", scope)
+    }
+
+    pub fn field(mut self, name: &'static str, value: impl Into<String>) -> DeviceRequest<'a> {
+        self.fields.push((name, value.into()));
         self
     }
 
     pub async fn send(self) -> Result<DeviceAuthorization> {
-        let fields: Vec<_> = self
-            .scope
-            .into_iter()
-            .map(|scope| ("scope", scope))
-            .collect();
         let request = self
             .client
-            .post(endpoint(&self.endpoint)?, &fields, Default::default());
+            .post(endpoint(&self.endpoint)?, &self.fields, Default::default());
 
         DeviceAuthorization::from_response(self.client.clone(), &http::send(request).await?)
     }

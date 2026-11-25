@@ -1,5 +1,5 @@
 {
-  "checksum": "e5a82ab00a8ab97afa3753aaa49151f436be7a00db9e0f765fe3448e1998f21c",
+  "checksum": "6deaee0638703d365c2c0bd2784efaa886e0fd8ede07e9a6e4abfd91f4c28444",
   "conditions": {
     "aarch64-linux-android": [],
     "aarch64-pc-windows-gnullvm": [],
@@ -10087,14 +10087,38 @@
     },
     "ecdsa 0.17.0": {
       "common_attrs": {
+        "crate_features": [
+          "algorithm",
+          "alloc",
+          "der",
+          "digest",
+          "spki",
+          "std"
+        ],
         "deps": [
+          {
+            "id": "der 0.8.2",
+            "target": "der"
+          },
+          {
+            "id": "digest 0.11.3",
+            "target": "digest"
+          },
           {
             "id": "elliptic-curve 0.14.1",
             "target": "elliptic_curve"
           },
           {
+            "id": "rfc6979 0.6.0",
+            "target": "rfc6979"
+          },
+          {
             "id": "signature 3.0.0",
             "target": "signature"
+          },
+          {
+            "id": "spki 0.8.1",
+            "target": "spki"
           },
           {
             "id": "zeroize 1.9.0",
@@ -22226,11 +22250,21 @@
         "crate_features": [
           "alloc",
           "arithmetic",
+          "digest",
           "ecdh",
+          "ecdsa",
+          "ecdsa-core",
           "getrandom",
+          "sha2",
+          "sha256",
           "std"
         ],
         "deps": [
+          {
+            "alias": "ecdsa_core",
+            "id": "ecdsa 0.17.0",
+            "target": "ecdsa"
+          },
           {
             "id": "elliptic-curve 0.14.1",
             "target": "elliptic_curve"
@@ -22242,6 +22276,10 @@
           {
             "id": "primeorder 0.14.0",
             "target": "primeorder"
+          },
+          {
+            "id": "sha2 0.11.0",
+            "target": "sha2"
           }
         ],
         "edition": "2024"
@@ -28180,6 +28218,46 @@
       ],
       "version": "0.4.0"
     },
+    "rfc6979 0.6.0": {
+      "common_attrs": {
+        "deps": [
+          {
+            "alias": "bigint",
+            "id": "crypto-bigint 0.7.5",
+            "target": "crypto_bigint"
+          },
+          {
+            "id": "hmac 0.13.0",
+            "target": "hmac"
+          }
+        ],
+        "edition": "2024"
+      },
+      "library_target_name": "rfc6979",
+      "license": "Apache-2.0 OR MIT",
+      "license_file": "LICENSE-APACHE",
+      "license_ids": [
+        "Apache-2.0",
+        "MIT"
+      ],
+      "name": "rfc6979",
+      "package_url": "https://github.com/RustCrypto/signatures",
+      "repository": {
+        "Http": {
+          "sha256": "b4a459cddafb3fe76b31fd8f1108007566c40301feb64dc7b54656eb7388172b",
+          "url": "https://static.crates.io/crates/rfc6979/0.6.0/download"
+        }
+      },
+      "targets": [
+        {
+          "Library": {
+            "crate_name": "rfc6979",
+            "crate_root": "src/lib.rs"
+          }
+        }
+      ],
+      "version": "0.6.0"
+    },
     "rgb 0.8.53": {
       "common_attrs": {
         "crate_features": [
@@ -31586,6 +31664,21 @@
     },
     "signature 3.0.0": {
       "common_attrs": {
+        "crate_features": [
+          "alloc",
+          "digest",
+          "rand_core"
+        ],
+        "deps": [
+          {
+            "id": "digest 0.11.3",
+            "target": "digest"
+          },
+          {
+            "id": "rand_core 0.10.1",
+            "target": "rand_core"
+          }
+        ],
         "edition": "2024"
       },
       "library_target_name": "signature",

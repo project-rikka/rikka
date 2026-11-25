@@ -1,6 +1,9 @@
 load("//bazel/minecraft:defs.bzl", "fabric_mod", "minecraft_client", "minecraft_sources")
 
-exports_files(["minecraft.lock.json"])
+exports_files([
+    "minecraft.lock.json",
+    "src/main/resources/assets/rikka/textures/gui/project-rikka.jpg",
+])
 
 fabric_mod(
     name = "rikka",

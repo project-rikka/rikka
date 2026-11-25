@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "launcher-instance",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/launcher/crates/launcher-meta",
+        "//apps/general/launcher/crates/launcher-nbt",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:base64",
+        "@crates//:flate2",
+        "@crates//:jiff",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:zip",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":launcher-instance",
+        "//apps/general/launcher/crates/launcher-nbt",
+        "@crates//:flate2",
+        "@crates//:tempfile",
+        "@crates//:zip",
+    ],
+)

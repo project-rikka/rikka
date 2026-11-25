@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Rikka Launcher
+Name[ja]=Rikka ランチャー
+Name[zh_CN]=Rikka 启动器
+GenericName=Minecraft Launcher
+GenericName[ja]=Minecraft ランチャー
+GenericName[zh_CN]=Minecraft 启动器
+Comment=Play Minecraft with mods from Modrinth
+Comment[ja]=Modrinth の Mod を入れて Minecraft を遊びます
+Comment[zh_CN]=使用 Modrinth 模组游玩 Minecraft
+Exec=rikka-launcher
+Icon=rikka-launcher
+Terminal=false
+Categories=Game;
+Keywords=minecraft;modrinth;mods;fabric;game;
+Keywords[ja]=マインクラフト;マイクラ;Mod;ゲーム;
+StartupNotify=true

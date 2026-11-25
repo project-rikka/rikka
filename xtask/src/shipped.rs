@@ -157,6 +157,14 @@ pub(crate) const SHARED: &[Shared] = &[
         into: "lib/rikka-mesa",
         distributed: Distributed::Flake,
     },
+    Shared {
+        name: "minecraft",
+        library: "//apps/general/launcher/crates/launcher-install",
+        variable: "RIKKA_MINECRAFT",
+        found_by: "RIKKA_MINECRAFT_PATH",
+        into: "lib/rikka-minecraft",
+        distributed: Distributed::Flake,
+    },
 ];
 
 pub(crate) const MATERIAL_LISTING: Supplied = Supplied {

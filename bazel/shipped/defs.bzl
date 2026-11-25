@@ -7,4 +7,5 @@ SHIPPED_ENV = {
     "RIKKA_GRAMMAR_PATH": NIX["grammars"],
     "RIKKA_ICON_FONT_PATH": NIX["icon_fonts"],
     "RIKKA_MESA_PATH": NIX["mesa"],
+    "RIKKA_MINECRAFT_PATH": NIX["minecraft_runtime"],
 }
