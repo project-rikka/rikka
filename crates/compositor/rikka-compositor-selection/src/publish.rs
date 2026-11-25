@@ -58,7 +58,14 @@ pub(crate) fn source_gone<A: Access>(state: &mut A, source: SourceId) {
 }
 
 pub(crate) fn announce<A: Access>(state: &mut A, seat: SeatId, kind: SelectionKind) {
-    if let Some(client) = state.selections().seat_mut(seat).focus {
+    let focused: Vec<ClientId> = state
+        .selections()
+        .seat_mut(seat)
+        .focus
+        .iter()
+        .map(|focused| focused.client)
+        .collect();
+    for client in focused {
         announce_to(state, seat, kind, client);
     }
     let selection = snapshot(state, seat, kind);

@@ -11,7 +11,7 @@ use rikka_compositor_protocols::ext_data_control_source_v1::{
 use rikka_compositor_seat::SeatId;
 
 use crate::access::Access;
-use crate::admission::live_seat;
+use crate::admission::{live_seat, selection_seat};
 use crate::ids::SourceId;
 use crate::kind::SelectionKind;
 use crate::offers;
@@ -32,7 +32,7 @@ pub(crate) fn manager_request<A: Access>(
             id.set_key(source);
         }
         manager::Request::GetDataDevice { id, seat } => {
-            let Some(seat) = live_seat(state, seat.key::<SeatId>()) else {
+            let Some(seat) = selection_seat(state, seat.key::<SeatId>()) else {
                 id.finished();
                 return;
             };

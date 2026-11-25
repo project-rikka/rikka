@@ -6,6 +6,7 @@ use rikka_compositor_protocols::wp_cursor_shape_manager_v1::{
 };
 
 use crate::access::Access;
+use crate::carry::Device;
 use crate::ids::{SeatId, ToolId};
 use crate::pointer::cursor::{CursorImage, CursorOwner, may_set_cursor, show};
 
@@ -50,14 +51,18 @@ pub(crate) fn shape_device<A: Access>(
         device.post_error(device::Error::InvalidShape);
         return;
     };
-    let Some(seat) = device.key::<SeatId>() else {
+    let Some(wire) = device.key::<SeatId>() else {
         return;
     };
-    let owner = match device.key::<ToolId>() {
-        Some(tool) => CursorOwner::Tool(tool),
-        None => CursorOwner::Pointer,
+    let client = device.client();
+    let (seat, owner) = match device.key::<ToolId>() {
+        Some(tool) => (wire, CursorOwner::Tool(tool)),
+        None => (
+            state.seats().presenter(wire, client, Device::Pointer),
+            CursorOwner::Pointer,
+        ),
     };
-    if !may_set_cursor(state, seat, owner, device.client(), serial) {
+    if !may_set_cursor(state, seat, owner, client, serial) {
         return;
     }
     show(state, seat, owner, CursorImage::Shape(shape.into()), None);

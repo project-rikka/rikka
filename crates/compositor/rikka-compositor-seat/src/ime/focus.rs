@@ -3,6 +3,7 @@ use rikka_compositor_protocols::zwp_text_input_v3::ZwpTextInputV3;
 use rikka_compositor_surface::SurfaceId;
 
 use crate::access::Access;
+use crate::carry::Device;
 use crate::ids::SeatId;
 use crate::ime::composing;
 use crate::surface;
@@ -45,6 +46,9 @@ pub(crate) fn enter_focus<A: Access>(state: &mut A, seat: SeatId) {
     let Some(wl) = surface::resource(state, focus) else {
         return;
     };
+    if !state.seats().presents(seat, wl.client(), Device::Keyboard) {
+        return;
+    }
     if let Some(entry) = state.seats().seat_mut(seat) {
         entry.ime.entered = true;
     }

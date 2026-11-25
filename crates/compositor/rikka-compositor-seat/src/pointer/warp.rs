@@ -2,6 +2,7 @@ use rikka_compositor_geometry::Point;
 use rikka_compositor_protocols::wp_pointer_warp_v1::{Request, WpPointerWarpV1};
 
 use crate::access::Access;
+use crate::carry::Device;
 use crate::event::SeatEvent;
 use crate::ids::SeatId;
 use crate::pointer::cursor::CursorOwner;
@@ -19,13 +20,15 @@ pub(crate) fn warp_request<A: Access>(state: &mut A, warp: WpPointerWarpV1, requ
     else {
         return;
     };
-    let Some(seat) = pointer.key::<SeatId>() else {
+    let Some(wire) = pointer.key::<SeatId>() else {
         return;
     };
     let Some(surface) = surface::id(state, &surface) else {
         return;
     };
-    if !may_set_cursor(state, seat, CursorOwner::Pointer, warp.client(), serial) {
+    let client = warp.client();
+    let seat = state.seats().presenter(wire, client, Device::Pointer);
+    if !may_set_cursor(state, seat, CursorOwner::Pointer, client, serial) {
         return;
     }
     let Some(focus) = state

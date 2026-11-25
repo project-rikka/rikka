@@ -2,11 +2,13 @@ mod idle;
 mod pointer;
 mod ring;
 mod service;
+mod socket;
 
 use std::time::Instant;
 
 use rikka_compositor_geometry::{Logical, Point};
 use rikka_compositor_seat::SeatId;
+use rikka_compositor_server::{DisplayHandle, Socket};
 use rikka_compositor_types::OutputId;
 use rikka_renderer::Scene;
 use rikka_seam::{Call, Responder, SeamError};
@@ -15,6 +17,7 @@ use rikka_types::Color;
 
 use crate::context::{InputCtx, InputRef, input_ctx, input_ref};
 use crate::outputs::{Output, Outputs};
+use crate::state::Compositor;
 use idle::IdleWaits;
 pub(crate) use ring::Canvas;
 use ring::Ring;
@@ -30,6 +33,7 @@ pub(crate) struct Agent {
     rekeyed: Vec<u32>,
     idle: IdleWaits,
     ring: Ring,
+    _socket: Option<Socket>,
 }
 
 impl Agent {
@@ -47,7 +51,12 @@ impl Agent {
             rekeyed: Vec::new(),
             idle: IdleWaits::default(),
             ring: Ring::default(),
+            _socket: None,
         }
+    }
+
+    pub(crate) fn listen(&mut self, display: &DisplayHandle<Compositor>, name: &str) {
+        self._socket = socket::listen(display, name);
     }
 
     pub(crate) fn shown(&self) -> bool {

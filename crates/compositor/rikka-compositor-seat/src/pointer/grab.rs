@@ -4,6 +4,7 @@ use rikka_compositor_geometry::{Logical, Point};
 use rikka_compositor_types::Gesture;
 
 use crate::access::Access;
+use crate::carry::Claim;
 use crate::event::SeatEvent;
 use crate::grab_slot::GrabOutcome;
 use crate::host::SeatHost;
@@ -135,21 +136,7 @@ pub(crate) fn set_grab<A: Access>(
         state.pointer_grab_ended(previous);
     }
     if focus == GrabFocus::Clear {
-        let location = state
-            .seats()
-            .get(seat)
-            .map(|entry| entry.pointer.location)
-            .unwrap_or_else(Point::zero);
-        change_focus(
-            state,
-            seat,
-            None,
-            &Motion {
-                location,
-                under: None,
-                time: std::time::Duration::ZERO,
-            },
-        );
+        change_focus(state, seat, None, Claim::Passive);
         deliver_frame(state, seat);
     }
     state.report(SeatEvent::PointerGrab {

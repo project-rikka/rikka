@@ -2,6 +2,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use rikka_input::Chord;
+use rikka_session::agent;
 use rikka_types::{Modifiers, PointerButton};
 use rikka_virtual_input::{AbsolutePosition, Pointer, Seat, TextKeyboard};
 
@@ -28,8 +29,12 @@ impl InputDriver {
         InputDriver::new(&Seat::connect_to(socket).map_err(input)?, size)
     }
 
-    pub(crate) fn for_seat(seat: &str, size: Point) -> Result<InputDriver> {
-        InputDriver::new(&Seat::named(seat).map_err(input)?, size)
+    pub(crate) fn for_agent(size: Point) -> Result<InputDriver> {
+        let socket = agent::socket_path().ok_or(Error::NoRuntimeDir)?;
+        InputDriver::new(
+            &Seat::connect_named(&socket, agent::SEAT).map_err(input)?,
+            size,
+        )
     }
 
     fn new(seat: &Seat, size: Point) -> Result<InputDriver> {

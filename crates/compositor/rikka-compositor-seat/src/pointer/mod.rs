@@ -25,6 +25,7 @@ use smallvec::SmallVec;
 
 use crate::focus::{Focus, Focused};
 use crate::grab_slot::GrabSlot;
+use crate::ids::SeatId;
 
 pub(crate) use constraint::{
     Constraint, Handle as ConstraintHandle, confined_request, constrain, constraint_destroyed,
@@ -34,8 +35,8 @@ pub use constraint::{ConstraintKind, ConstraintState};
 pub use cursor::CursorImage;
 pub(crate) use cursor::{CursorOwner, cursor_surface_gone, may_set_cursor, set_cursor, show};
 pub(crate) use deliver::{
-    deliver_axis, deliver_button, deliver_frame, deliver_gesture, deliver_motion, deliver_relative,
-    deliver_warp, introduce, pointer_surface_gone,
+    conceal, deliver_axis, deliver_button, deliver_frame, deliver_gesture, deliver_motion,
+    deliver_relative, deliver_warp, introduce, pointer_surface_gone, reveal,
 };
 pub use events::{Axis, AxisMotion, Button, Motion, RelativeMotion};
 pub(crate) use gestures::{gesture_destroyed, gesture_request, gestures_manager};
@@ -85,7 +86,7 @@ pub struct Pointer {
     pub(crate) cursor: CursorImage,
     pub(crate) constraints: Vec<Constraint>,
     pub(crate) gesture: Option<ActiveGesture>,
-    pub(crate) unframed: SmallVec<[ClientId; 2]>,
+    pub(crate) unframed: SmallVec<[(SeatId, ClientId); 2]>,
 }
 
 impl Pointer {
@@ -154,9 +155,9 @@ impl Pointer {
         self.focused.as_ref().map(|focused| focused.focus.surface)
     }
 
-    pub(crate) fn mark(&mut self, client: ClientId) {
-        if !self.unframed.contains(&client) {
-            self.unframed.push(client);
+    pub(crate) fn mark(&mut self, wire: SeatId, client: ClientId) {
+        if !self.unframed.contains(&(wire, client)) {
+            self.unframed.push((wire, client));
         }
     }
 }

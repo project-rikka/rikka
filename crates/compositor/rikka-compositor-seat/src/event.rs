@@ -21,6 +21,9 @@ pub enum SeatEvent {
         seat: SeatId,
         focus: Option<KeyboardFocus>,
     },
+    KeyboardPresented {
+        seat: SeatId,
+    },
     KeyboardGrab {
         seat: SeatId,
         grab: KeyboardGrab,

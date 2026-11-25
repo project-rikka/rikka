@@ -17,6 +17,7 @@ pub struct SecurityContext {
 pub struct ClientOptions {
     unprivileged: bool,
     xwayland: bool,
+    agent: bool,
     security_context: Option<SecurityContext>,
 }
 
@@ -35,6 +36,11 @@ impl ClientOptions {
         self
     }
 
+    pub fn agent(mut self) -> Self {
+        self.agent = true;
+        self
+    }
+
     pub fn security_context(mut self, context: SecurityContext) -> Self {
         self.security_context = Some(context);
         self
@@ -46,6 +52,10 @@ impl ClientOptions {
 
     pub(crate) fn is_xwayland(&self) -> bool {
         self.xwayland
+    }
+
+    pub(crate) fn is_agent(&self) -> bool {
+        self.agent
     }
 
     pub(crate) fn context(&self) -> Option<&SecurityContext> {

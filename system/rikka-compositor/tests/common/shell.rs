@@ -485,14 +485,7 @@ fn on_wl_pointer(
     }
 }
 
-fn on_wl_keyboard(
-    recorded: &mut Recorded,
-    keyboard: wl_keyboard::WlKeyboard,
-    event: wl_keyboard::Event,
-) {
-    if let Some(tag) = keyboard.key::<u32>() {
-        return super::input::tagged_keyboard(recorded, tag, event);
-    }
+fn on_wl_keyboard(recorded: &mut Recorded, _: wl_keyboard::WlKeyboard, event: wl_keyboard::Event) {
     let shell = &mut recorded.shell;
     match event {
         wl_keyboard::Event::Keymap { fd, size, .. } => shell.keymaps.push((fd, size)),

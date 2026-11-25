@@ -263,7 +263,7 @@ impl WindowsCtx<'_> {
                 )
         }) || self.windows.exclusive_layer_surface().is_some()
             || windows_ref!(self).layer_holds_focus()
-            || self.input.grabs.popups.is_some()
+            || self.input.grabs.popups.holds(self.input.seat)
             || self.switcher.switching();
         if !held {
             self.set_keyboard_window(Some(window));

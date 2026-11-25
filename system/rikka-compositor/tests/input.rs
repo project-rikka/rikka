@@ -13,6 +13,7 @@ use rikka_session::pointer::{self, PointerMode};
 use rikka_session::shortcuts::Shortcut;
 use rikka_wayland::{Host, Serial, SerialKind};
 use rikka_wayland_client::wl_pointer::ButtonState;
+use rikka_wayland_client::wl_seat::WlSeat;
 use rikka_wayland_client::wl_surface::WlSurface;
 use rikka_wayland_client::zwlr_layer_shell_v1::Layer as Level;
 use rikka_wayland_client::zwlr_layer_surface_v1::{
@@ -482,29 +483,38 @@ fn visible_idle_inhibitor_prevents_idle() {
 fn agent_click_keeps_user_focus() {
     let harness = Harness::headless(EXTENT);
     let mut client = harness.client();
-    let seats = client.seats();
-    let person = seats.iter().find(|seated| seated.name == "seat-0").unwrap();
-    let agent = seats.iter().find(|seated| seated.name == SEAT).unwrap();
-    let (person_tag, agent_tag) = (person.tag, agent.tag);
-    let agent_seat = agent.seat.clone();
+    let _devices = client.devices();
+    assert_eq!(wl_seats(&client), 1, "ordinary clients see only seat-0");
 
     let below = mapped(&mut client, 1, (60, 60), GREEN);
     let above = mapped(&mut client, 2, (60, 60), GREEN);
     let (below, above) = (below.surface.id(), above.surface.id());
     client.until("user keyboard focus on newest window", |recorded| {
-        recorded.input.keyboard_on(person_tag) == Some(above)
+        recorded.shell.keyboard_on == Some(above)
     });
 
-    let pointer = client.virtual_pointer(Some(&agent_seat));
+    let mut driver = harness.agent_client();
+    assert_eq!(
+        wl_seats(&driver),
+        2,
+        "the agent socket shows the agent's seat"
+    );
+    let agent_seat = agent_seat(&mut driver);
+    let pointer = driver.virtual_pointer(Some(&agent_seat));
     pointer.motion_absolute(1, 64, 64, 320, 240);
     pointer.frame();
     pointer.button(2, BTN_LEFT, ButtonState::Pressed);
     pointer.button(3, BTN_LEFT, ButtonState::Released);
     pointer.frame();
-    client.until("agent keyboard focus on clicked window", |recorded| {
-        recorded.input.keyboard_on(agent_tag) == Some(below)
+    driver.roundtrip();
+    client.until("agent keyboard focus shown on clicked window", |recorded| {
+        recorded.shell.keyboard_on == Some(below)
     });
-    assert_eq!(client.received.input.keyboard_on(person_tag), Some(above));
+
+    harness.press(&[A]);
+    client.until("user key typed into user's window", |recorded| {
+        recorded.shell.keyboard_on == Some(above) && recorded.shell.keys == [A]
+    });
 
     let placement: AgentPlacement = harness.ask(Request::new(CAPABILITY, PLACEMENT));
     assert_eq!((placement.width, placement.height), (320, 240));
@@ -519,6 +529,64 @@ fn agent_click_keeps_user_focus() {
     harness.frame_where(move |snapshot| shows(snapshot, 64, 64, GREEN));
     harness.ask::<()>(Request::new(CAPABILITY, SHOW).encode(&true));
     harness.frame_where(move |snapshot| !shows(snapshot, 64, 64, GREEN));
+}
+
+#[test]
+fn person_and_agent_work_separate_clients_at_once() {
+    let harness = Harness::headless(EXTENT);
+    let mut first = harness.client();
+    let _first_devices = first.devices();
+    let first_window = mapped(&mut first, 1, (60, 60), GREEN);
+    let mut second = harness.client();
+    let _second_devices = second.devices();
+    let second_window = mapped(&mut second, 2, (60, 60), GREEN);
+    let (first_id, second_id) = (first_window.surface.id(), second_window.surface.id());
+    second.until("user keyboard focus on newest window", |recorded| {
+        recorded.shell.keyboard_on == Some(second_id)
+    });
+
+    let mut driver = harness.agent_client();
+    let agent_seat = agent_seat(&mut driver);
+    let pointer = driver.virtual_pointer(Some(&agent_seat));
+    let keyboard = driver.virtual_keyboard(&agent_seat);
+    pointer.motion_absolute(1, 64, 64, 320, 240);
+    pointer.frame();
+    pointer.button(2, BTN_LEFT, ButtonState::Pressed);
+    pointer.button(3, BTN_LEFT, ButtonState::Released);
+    pointer.frame();
+    keyboard.send_key(4, Q, PRESSED);
+    keyboard.send_key(5, Q, RELEASED);
+    driver.roundtrip();
+    harness.inject(&[Injected::PointerTo { x: 120.0, y: 120.0 }]);
+    harness.press(&[P]);
+
+    first.until("agent's pointer and key in first client", |recorded| {
+        recorded.shell.pointer_on == Some(first_id)
+            && recorded.shell.keyboard_on == Some(first_id)
+            && recorded.shell.keys == [Q]
+    });
+    second.until("user's pointer and key in second client", |recorded| {
+        recorded.shell.pointer_on == Some(second_id)
+            && recorded.shell.keyboard_on == Some(second_id)
+            && recorded.shell.keys == [P]
+    });
+}
+
+fn wl_seats(client: &Client) -> usize {
+    client
+        .globals()
+        .iter()
+        .filter(|global| &*global.interface == "wl_seat")
+        .count()
+}
+
+fn agent_seat(driver: &mut Client) -> WlSeat {
+    driver
+        .seats()
+        .into_iter()
+        .find(|seated| seated.name == SEAT)
+        .expect("agent socket shows the agent's seat")
+        .seat
 }
 
 #[test]

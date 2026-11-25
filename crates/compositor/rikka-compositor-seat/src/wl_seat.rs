@@ -1,6 +1,7 @@
 use rikka_compositor_protocols::wl_seat::{Request, WlSeat};
 
 use crate::access::Access;
+use crate::carry;
 use crate::ids::SeatId;
 use crate::{keyboard, pointer};
 
@@ -8,6 +9,7 @@ pub(crate) fn seat_bound<A: Access>(state: &mut A, handle: WlSeat) {
     let Some(seat) = handle.key::<SeatId>() else {
         return;
     };
+    carry::unwire(state, seat, handle.client());
     let Some(entry) = state.seats().seat_mut(seat) else {
         return;
     };

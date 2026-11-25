@@ -4,6 +4,7 @@ use rikka_compositor_protocols::wl_keyboard::KeyState;
 use rikka_compositor_types::Press;
 
 use crate::access::Access;
+use crate::carry::{self, Claim, Device};
 use crate::event::SeatEvent;
 use crate::host::SeatHost;
 use crate::ids::{SeatId, VirtualKeyboardId};
@@ -30,21 +31,33 @@ pub(crate) fn key<S: SeatHost>(state: &mut S, seat: SeatId, mut key: Key) {
         return;
     };
     entry.keyboard.active = origin;
-    let Some(xkb_state) = entry.keyboard.xkb_state_mut(origin) else {
-        return;
-    };
     let route = match key.press {
-        Press::Pressed => {
-            let route = match (filter, destination) {
-                (KeyFilter::Consume, _) => Route::Host,
-                (KeyFilter::Forward, Destination::Method) => Route::InputMethod,
-                (KeyFilter::Forward, Destination::Clients) => Route::Client,
-            };
-            xkb_state.hold(key.code, route);
-            route
-        }
-        Press::Released => xkb_state.release(key.code).unwrap_or(Route::Host),
+        Press::Pressed => match (filter, destination) {
+            (KeyFilter::Consume, _) => Route::Host,
+            (KeyFilter::Forward, Destination::Method) => Route::InputMethod,
+            (KeyFilter::Forward, Destination::Clients) => Route::Client,
+        },
+        Press::Released => entry
+            .keyboard
+            .xkb_state_mut(origin)
+            .and_then(|xkb_state| xkb_state.release(key.code))
+            .unwrap_or(Route::Host),
     };
+    if key.press == Press::Pressed {
+        if route != Route::Host
+            && let Some(client) = entry.keyboard.focused_client()
+        {
+            carry::claim(state, seat, client, Device::Keyboard, Claim::Active);
+        }
+        let Some(xkb_state) = state
+            .seats()
+            .seat_mut(seat)
+            .and_then(|entry| entry.keyboard.xkb_state_mut(origin))
+        else {
+            return;
+        };
+        xkb_state.hold(key.code, route);
+    }
     deliver(state, seat, route, &key);
     present(state, seat, origin, destination);
 }
@@ -210,20 +223,23 @@ fn deliver<A: Access>(state: &mut A, seat: SeatId, route: Route, key: &Key) {
             }
         }
         Route::Client => {
-            let Some(client) = state
-                .seats()
+            let serial = state.display().next_serial();
+            let seats = state.seats();
+            let Some(client) = seats
                 .get(seat)
                 .and_then(|entry| entry.keyboard.focused_client())
+                .filter(|client| seats.presents(seat, *client, Device::Keyboard))
             else {
                 return;
             };
-            let serial = state.display().next_serial();
-            let Some(entry) = state.seats().get(seat) else {
+            let wire = seats.wire(seat, client);
+            let Some(wired) = seats.get(wire) else {
                 return;
             };
-            for keyboard in entry.keyboard.keyboards.for_client(client) {
+            for keyboard in wired.keyboard.keyboards.for_client(client) {
                 keyboard.send_key(serial, millis(key.time), key.code, key_state(key.press));
             }
+            seats.carry_serial(seat, wire, serial);
         }
     }
 }

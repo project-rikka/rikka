@@ -79,7 +79,6 @@ pub(crate) enum Composed {
 #[derive(Debug, Default)]
 pub(crate) struct InputRecord {
     pub(crate) seats: Vec<(u32, String)>,
-    pub(crate) keyboards: Vec<(u32, Option<u32>)>,
     pub(crate) entered_at: Option<(f64, f64)>,
     pub(crate) typed: Vec<Typed>,
     pub(crate) composed: Vec<Composed>,
@@ -89,20 +88,9 @@ pub(crate) struct InputRecord {
     pub(crate) idle: Vec<bool>,
 }
 
-impl InputRecord {
-    pub(crate) fn keyboard_on(&self, seat: u32) -> Option<u32> {
-        self.keyboards
-            .iter()
-            .rev()
-            .find(|(keyboard_seat, _)| *keyboard_seat == seat)
-            .and_then(|(_, on)| *on)
-    }
-}
-
 pub(crate) struct Seated {
     pub(crate) name: String,
     pub(crate) seat: wl_seat::WlSeat,
-    pub(crate) tag: u32,
 }
 
 impl Client {
@@ -120,20 +108,16 @@ impl Client {
         self.roundtrip();
         seats
             .into_iter()
-            .map(|(tag, seat)| {
-                seat.get_keyboard().set_key(tag);
-                Seated {
-                    name: self
-                        .received
-                        .input
-                        .seats
-                        .iter()
-                        .find(|(seat_tag, _)| *seat_tag == tag)
-                        .map(|(_, name)| name.clone())
-                        .unwrap_or_default(),
-                    seat,
-                    tag,
-                }
+            .map(|(tag, seat)| Seated {
+                name: self
+                    .received
+                    .input
+                    .seats
+                    .iter()
+                    .find(|(seat_tag, _)| *seat_tag == tag)
+                    .map(|(_, name)| name.clone())
+                    .unwrap_or_default(),
+                seat,
             })
             .collect()
     }
@@ -267,17 +251,6 @@ fn on_wl_seat(recorded: &mut Recorded, proxy: wl_seat::WlSeat, event: wl_seat::E
     };
     if let wl_seat::Event::Name { name } = event {
         recorded.input.seats.push((tag, name));
-    }
-}
-
-pub(super) fn tagged_keyboard(recorded: &mut Recorded, tag: u32, event: wl_keyboard::Event) {
-    match event {
-        wl_keyboard::Event::Enter { surface, .. } => {
-            let on = Some(surface.id());
-            recorded.input.keyboards.push((tag, on));
-        }
-        wl_keyboard::Event::Leave { .. } => recorded.input.keyboards.push((tag, None)),
-        _ => {}
     }
 }
 

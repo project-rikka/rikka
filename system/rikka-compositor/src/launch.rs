@@ -6,7 +6,7 @@ use rikka_compositor_pixels::SHM_FORMATS;
 use rikka_compositor_reactor::Reactor;
 use rikka_compositor_seat::{SeatProtocols, Seats};
 use rikka_compositor_selection::SelectionProtocols;
-use rikka_compositor_server::DisplayHandle;
+use rikka_compositor_server::{Client, DisplayHandle};
 use rikka_compositor_shell::{
     ForeignToplevelList, LayerShell, SessionLock, Shell, XdgShell, XwaylandShell,
 };
@@ -195,7 +195,7 @@ impl Launch {
         let bindings = Bindings::read(settings.as_ref(), backend.switches_vt());
         let mut seats = Seats::new();
         let person = seats.add(&display, PERSON_SEAT, keymap.clone());
-        let helper = seats.add(&display, agent::SEAT, keymap);
+        let helper = seats.add_carried(&display, agent::SEAT, keymap, person, Client::is_agent);
         let input = Input::new(rules, bindings, person, helper);
 
         let syncobj = backend.syncobj_device();
@@ -251,6 +251,10 @@ impl Launch {
         compositor.displays_detected();
         let name = compositor.socket_name().to_owned();
         compositor.session.seam.listen(&name);
+        compositor
+            .input
+            .agent
+            .listen(&compositor.core.display, &name);
         if sealed {
             lock_ctx!(compositor).set_session_locked();
             session_ctx!(compositor).await_locker(FIRST_LOCKER_TIMEOUT);

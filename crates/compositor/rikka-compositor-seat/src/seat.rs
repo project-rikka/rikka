@@ -3,6 +3,7 @@ use rikka_compositor_protocols::wl_seat::{self, WlSeat};
 use rikka_compositor_surface::SurfaceId;
 use rikka_wayland_wire::ClientId;
 
+use crate::ids::SeatId;
 use crate::ime::Ime;
 use crate::keyboard::{Keyboard, KeyboardGrab};
 use crate::pointer::Pointer;
@@ -32,6 +33,7 @@ impl Capabilities {
 pub struct Seat {
     pub(crate) name: String,
     pub(crate) capabilities: Capabilities,
+    pub(crate) carrier: Option<SeatId>,
     pub(crate) handles: Vec<WlSeat>,
     pub(crate) keyboard: Keyboard,
     pub(crate) pointer: Pointer,
@@ -82,5 +84,11 @@ impl Seat {
             .method
             .as_ref()
             .map(|method| method.resource.client())
+    }
+
+    pub(crate) fn bound_by(&self, client: ClientId) -> bool {
+        self.handles
+            .iter()
+            .any(|handle| handle.client() == client && handle.alive())
     }
 }

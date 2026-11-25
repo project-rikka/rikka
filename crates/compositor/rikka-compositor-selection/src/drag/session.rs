@@ -99,12 +99,12 @@ impl Drag {
 }
 
 pub(crate) fn drag_mut<A: Access>(state: &mut A, seat: SeatId) -> Option<&mut Drag> {
-    state.selections().seats.get_mut(seat)?.drag.as_mut()
+    state.selections().drags.get_mut(seat)
 }
 
 pub(crate) fn drag_source<A: Access>(state: &mut A, seat: SeatId) -> Option<WlDataSource> {
     let selections = state.selections();
-    let source = selections.seats.get(seat)?.drag.as_ref()?.source?;
+    let source = selections.drags.get(seat)?.source?;
     selections.sources.get(source)?.data_source().cloned()
 }
 

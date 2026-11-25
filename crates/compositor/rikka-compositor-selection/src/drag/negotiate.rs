@@ -47,11 +47,7 @@ pub(crate) fn renegotiate<A: Access>(state: &mut A, id: DragOfferId) {
             object.action(chosen);
         }
     }
-    let Some(drag) = selections
-        .seats
-        .get_mut(seat)
-        .and_then(|entry| entry.drag.as_mut())
-    else {
+    let Some(drag) = selections.drags.get_mut(seat) else {
         return;
     };
     if drag.action != chosen {

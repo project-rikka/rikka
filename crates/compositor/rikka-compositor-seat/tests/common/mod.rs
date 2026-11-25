@@ -8,7 +8,7 @@ use rikka_compositor_seat::{
     KeyFilter, KeyboardFocus, Keymap, Keystroke, SeatEvent, SeatHost, SeatId, SeatMut,
     SeatProtocols, Seats,
 };
-use rikka_compositor_server::{ClientOptions, DisplayHandle};
+use rikka_compositor_server::{Client, ClientOptions, DisplayHandle};
 use rikka_compositor_surface::{Committed, SurfaceHost, SurfaceId, SurfaceProtocols, Surfaces};
 use rikka_compositor_types::Press;
 pub(crate) use rikka_test_display::PATIENCE;
@@ -67,6 +67,7 @@ pub(crate) struct State {
     pub(crate) surfaces: Surfaces,
     pub(crate) seats: Seats,
     pub(crate) seat_mut: SeatId,
+    pub(crate) carried: Option<SeatId>,
     pub(crate) bindings: Vec<u32>,
     pub(crate) strokes: Vec<Keystroke>,
     pub(crate) events: Vec<SeatEvent>,
@@ -93,6 +94,11 @@ impl State {
     pub(crate) fn seat_mut(&mut self) -> SeatMut<'_, State> {
         let seat_mut = self.seat_mut;
         rikka_compositor_seat::seat(self, seat_mut)
+    }
+
+    pub(crate) fn carried_mut(&mut self) -> SeatMut<'_, State> {
+        let carried = self.carried.expect("server started with a carried seat");
+        rikka_compositor_seat::seat(self, carried)
     }
 
     pub(crate) fn focus_keyboard(&mut self, protocol_id: u32) -> SurfaceId {
@@ -164,17 +170,29 @@ pub(crate) struct Server(Display<State>);
 
 impl Server {
     pub(crate) fn start() -> Self {
+        Self::launch(false)
+    }
+
+    pub(crate) fn with_carried() -> Self {
+        Self::launch(true)
+    }
+
+    fn launch(carried: bool) -> Self {
         let display = Display::start(move |reactor, notes| {
             let display = DisplayHandle::new(reactor);
             display.install(SurfaceProtocols);
             display.install(SeatProtocols);
             let mut seats = Seats::new();
             let seat_mut = seats.add(&display, "seat-0", keymap());
+            let carried = carried.then(|| {
+                seats.add_carried(&display, "seat-agent", keymap(), seat_mut, Client::is_agent)
+            });
             State {
                 display,
                 surfaces: Surfaces::new(),
                 seats,
                 seat_mut,
+                carried,
                 bindings: Vec::new(),
                 strokes: Vec::new(),
                 events: Vec::new(),
@@ -190,6 +208,10 @@ impl Server {
 
     pub(crate) fn connect_unprivileged(&self) -> Wayland {
         self.connect_with(ClientOptions::new().unprivileged())
+    }
+
+    pub(crate) fn connect_agent(&self) -> Wayland {
+        self.connect_with(ClientOptions::new().agent())
     }
 
     fn connect_with(&self, options: ClientOptions) -> Wayland {

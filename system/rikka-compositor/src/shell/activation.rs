@@ -14,7 +14,11 @@ impl WindowsCtx<'_> {
             return false;
         };
         let person = self.input.seat;
-        self.seats.seat_id(seat) == Some(person)
+        let issuer = self
+            .seats
+            .seat_id(seat)
+            .and_then(|wire| self.seats.issuer(wire, *serial));
+        issuer == Some(person)
             && self
                 .seats
                 .get(person)

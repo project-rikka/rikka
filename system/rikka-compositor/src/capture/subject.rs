@@ -40,7 +40,7 @@ impl CaptureRef<'_> {
                         ..Composed::default()
                     }
                 }),
-                icon: self.selection.icon(self.input.seat),
+                icon: self.selection.icon(self.input.seats()),
                 screen: Some(output),
             }),
             CaptureSource::Toplevel(window) => Some(Subject {

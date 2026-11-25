@@ -47,13 +47,7 @@ pub(crate) fn assign<S: SelectionHost>(
 fn dragging<A: Access>(state: &mut A, surface: SurfaceId) -> Option<(SeatId, &mut Drag)> {
     state
         .selections()
-        .seats
+        .drags
         .iter_mut()
-        .find_map(|(seat, entry)| {
-            entry
-                .drag
-                .as_mut()
-                .filter(|drag| drag.icon == Some(surface))
-                .map(|drag| (seat, drag))
-        })
+        .find(|(_, drag)| drag.icon == Some(surface))
 }

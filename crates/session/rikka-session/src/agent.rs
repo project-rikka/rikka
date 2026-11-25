@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::time::Duration;
 
 use rikka_seam::{Reply, SeamClient, Version};
@@ -10,6 +11,21 @@ pub const CAPABILITY: &str = PROTOCOL.capability();
 pub const VERSION: Version = PROTOCOL.version();
 
 pub const SEAT: &str = "rikka-agent";
+pub const SOCKET: &str = "agent-wayland";
+
+#[must_use]
+pub fn socket_path() -> Option<PathBuf> {
+    Some(rikka_seam::net::socket_path()?.parent()?.join(SOCKET))
+}
+
+#[must_use]
+pub fn socket_path_for(display: &str) -> Option<PathBuf> {
+    Some(
+        rikka_seam::net::socket_path_for(display)?
+            .parent()?
+            .join(SOCKET),
+    )
+}
 
 pub const PLACEMENT: &str = "where";
 pub const SHOW: &str = "show";

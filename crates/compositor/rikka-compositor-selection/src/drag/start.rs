@@ -27,7 +27,7 @@ pub(crate) struct DragRequest {
 pub(crate) fn start<S: SelectionHost>(
     state: &mut S,
     device: &WlDataDevice,
-    seat: SeatId,
+    wire: SeatId,
     request: DragRequest,
 ) {
     let source = match &request.source {
@@ -46,7 +46,10 @@ pub(crate) fn start<S: SelectionHost>(
         None => None,
     };
     let client = device.client();
-    let dragging = state.selections().seat_mut(seat).drag.is_some();
+    let Some(seat) = state.seats().issuer(wire, request.serial) else {
+        return refuse(&request);
+    };
+    let dragging = state.selections().drags.contains_key(seat);
     let Some(grab) = implicit_grab(state, seat, request.serial, client)
         .filter(|_| !dragging && request.origin.client() == client)
     else {
@@ -68,7 +71,7 @@ pub(crate) fn start<S: SelectionHost>(
         .is_some_and(|source| state.shell().toplevel_drag_started(source));
     let mut drag = Drag::new(source, Some(client), grab.device, grab.location, icon);
     drag.tethered = tethered;
-    state.selections().seat_mut(seat).drag = Some(drag);
+    state.selections().drags.insert(seat, drag);
     match grab.device {
         DragDevice::Pointer => rikka_compositor_seat::seat(state, seat)
             .set_pointer_grab(DragGrab { seat }, GrabFocus::Clear),

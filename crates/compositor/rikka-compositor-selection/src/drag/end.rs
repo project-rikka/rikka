@@ -38,9 +38,7 @@ pub(crate) fn finish<A: Access>(state: &mut A, seat: SeatId) {
     if tethered && let Some(source) = drag_source(state, seat) {
         state.shell().toplevel_drag_ended(&source);
     }
-    if let Some(entry) = state.selections().seats.get_mut(seat) {
-        entry.drag = None;
-    }
+    state.selections().drags.remove(seat);
     if let Some(source) = source {
         retire(state, source);
     }
@@ -50,14 +48,9 @@ pub(crate) fn finish<A: Access>(state: &mut A, seat: SeatId) {
 pub(crate) fn source_gone<A: Access>(state: &mut A, source: SourceId) {
     let seats: Vec<SeatId> = state
         .selections()
-        .seats
+        .drags
         .iter()
-        .filter(|(_, entry)| {
-            entry
-                .drag
-                .as_ref()
-                .is_some_and(|drag| drag.source == Some(source))
-        })
+        .filter(|(_, drag)| drag.source == Some(source))
         .map(|(seat, _)| seat)
         .collect();
     for seat in seats {
