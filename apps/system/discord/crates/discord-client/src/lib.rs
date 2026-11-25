@@ -3,6 +3,7 @@ mod discord;
 mod error;
 mod gateway;
 mod identity;
+mod manage;
 mod mint;
 mod rest;
 mod runtime;

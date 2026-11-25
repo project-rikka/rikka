@@ -38,6 +38,18 @@ pub(crate) fn guild_banner(guild: &str, hash: &str) -> Picture {
     hashed(format!("{CDN}/banners/{guild}"), hash)
 }
 
+pub(crate) fn guild_splash(guild: &str, hash: &str) -> Picture {
+    Picture::sized(format!("{CDN}/splashes/{guild}/{hash}.png"), SIZE)
+}
+
+pub(crate) fn app_icon(application: &str, hash: &str) -> Picture {
+    Picture::sized(format!("{CDN}/app-icons/{application}/{hash}.png"), SIZE)
+}
+
+pub(crate) fn sound(id: &str) -> String {
+    format!("{CDN}/soundboard-sounds/{id}")
+}
+
 pub(crate) fn user_banner(user: &str, hash: &str) -> Picture {
     hashed(format!("{CDN}/banners/{user}"), hash)
 }

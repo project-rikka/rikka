@@ -2,12 +2,16 @@ mod alerts;
 mod calls;
 mod configure;
 mod linking;
+mod manage;
 mod me;
+mod menus;
 mod nav;
 mod people;
 mod screens;
 mod signing;
 mod spaces;
+
+pub(crate) use manage::now_ms;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -19,9 +23,12 @@ use rikka_account_book::Accounts;
 use rikka_app::prelude::*;
 
 use crate::account::LinkedAccount;
+use crate::channel_admin::ChannelAdmin;
 use crate::conversation::Conversation;
 use crate::friends::Friends;
+use crate::manage::Manage;
 use crate::member_menu::{MemberMenu, MemberTarget};
+use crate::menus::Menus;
 use crate::notices::Notices;
 use crate::preferences::{Appearance, Preferences};
 use crate::profile::Profiles;
@@ -29,6 +36,7 @@ use crate::screen::Screens;
 use crate::settings::Settings;
 use crate::sidebar::Sidebar;
 use crate::signing::Signing;
+use crate::space_admin::SpaceAdmin;
 use crate::space_sheet::SpaceSheet;
 use crate::switcher::Switcher;
 use crate::voice::Calls;
@@ -85,6 +93,14 @@ pub(crate) struct Chat {
     space_sheet: SpaceSheet,
     #[state]
     settings: Settings,
+    #[state]
+    menus: Menus,
+    #[state]
+    manage: Manage,
+    #[state]
+    space_admin: SpaceAdmin,
+    #[state]
+    channel_admin: ChannelAdmin,
 }
 
 impl Chat {
@@ -122,6 +138,10 @@ impl Chat {
             switcher: Switcher::new(),
             space_sheet: SpaceSheet::new(),
             settings: Settings::new(),
+            menus: Menus::new(),
+            manage: Manage::new(),
+            space_admin: SpaceAdmin::new(),
+            channel_admin: ChannelAdmin::new(),
         }
     }
 
@@ -186,9 +206,58 @@ impl Chat {
         self.sidebar.close_menu();
         self.switcher.close();
         self.space_sheet.close();
+        self.menus.close();
+    }
+
+    pub(crate) fn space_admin(&self) -> &SpaceAdmin {
+        &self.space_admin
+    }
+
+    pub(crate) fn space_admin_mut(&mut self) -> &mut SpaceAdmin {
+        &mut self.space_admin
+    }
+
+    pub(crate) fn channel_admin(&self) -> &ChannelAdmin {
+        &self.channel_admin
+    }
+
+    pub(crate) fn channel_admin_mut(&mut self) -> &mut ChannelAdmin {
+        &mut self.channel_admin
     }
 
     pub(crate) fn escape(&mut self) {
+        if self.manage.mfa().is_some() {
+            self.cancel_mfa();
+            return;
+        }
+        if self.manage.prompt().is_some() {
+            self.answer_prompt(false);
+            return;
+        }
+        if self.manage.alert().is_some() {
+            self.manage.dismiss_alert();
+            return;
+        }
+        if self.manage.dialog().is_some() {
+            self.manage.close();
+            return;
+        }
+        if self.menus.shown().is_some() {
+            self.menus.close();
+            return;
+        }
+        if self.member_menu.shown().is_some() {
+            self.member_menu.close();
+            return;
+        }
+        if self.channel_admin.is_open() {
+            self.close_channel_admin();
+            return;
+        }
+        if self.space_admin.is_open() {
+            self.close_space_admin();
+            return;
+        }
         if self.settings.is_open() {
             self.close_settings();
             return;
@@ -197,12 +266,9 @@ impl Chat {
             self.space_sheet.close();
             return;
         }
-        if self.member_menu.shown().is_some() {
-            self.member_menu.close();
-            return;
-        }
         self.close_overlays();
     }
+
     pub(crate) fn stage(&self) -> Stage {
         if self.signing.is_open() {
             return Stage::SignIn;

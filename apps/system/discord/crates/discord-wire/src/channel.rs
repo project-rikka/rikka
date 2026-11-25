@@ -42,6 +42,10 @@ pub struct Channel {
     pub flags: u64,
     pub bitrate: Option<u32>,
     pub user_limit: Option<u32>,
+    pub rtc_region: Option<String>,
+    pub video_quality_mode: Option<u8>,
+    pub default_auto_archive_duration: Option<u32>,
+    pub default_thread_rate_limit_per_user: Option<u32>,
     pub member: Option<serde_json::Value>,
 }
 

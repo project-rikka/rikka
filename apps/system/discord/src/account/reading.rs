@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use discord_core::{
-    Area, Bond, Channel, ChannelId, Emoji, Friend, LinkState, Member, MessageId, Presence,
+    Area, Bond, Channel, ChannelId, Emoji, Folder, Friend, LinkState, Member, MessageId, Presence,
     RailItem, Ringing, Role, RoleId, Roster, Section, Space, SpaceId, Sticker, Store, Timeline,
     Unseen, User, UserId, VoiceState,
 };
@@ -44,6 +44,34 @@ impl LinkedAccount {
 
     pub(crate) fn rail(&self) -> Vec<RailItem<'_>> {
         self.watching([Area::Rail]).rail()
+    }
+
+    pub(crate) fn folder(&self, id: &str) -> Option<&Folder> {
+        self.rail().into_iter().find_map(|item| match item {
+            RailItem::Folder { folder, .. } if folder.id.as_deref() == Some(id) => Some(folder),
+            RailItem::Folder { .. } | RailItem::Space(_) => None,
+        })
+    }
+
+    pub(crate) fn top_role_position(&self, space: &SpaceId, user: &UserId) -> i32 {
+        self.member(space, user).map_or(0, |member| {
+            member
+                .roles
+                .iter()
+                .filter_map(|role| self.role(space, role))
+                .map(|role| role.position)
+                .max()
+                .unwrap_or(0)
+        })
+    }
+
+    pub(crate) fn outranks(&self, space: &SpaceId, user: &UserId) -> bool {
+        let (Some(known), Some(me)) = (self.space(space), self.me().map(|me| me.id)) else {
+            return false;
+        };
+        !known.owned_by(user)
+            && (known.owned_by(&me)
+                || self.top_role_position(space, &me) > self.top_role_position(space, user))
     }
 
     pub(crate) fn channel(&self, id: &ChannelId) -> Option<&Channel> {

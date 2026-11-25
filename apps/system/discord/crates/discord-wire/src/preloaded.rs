@@ -1,10 +1,21 @@
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
-use discord_core::{Folder, SpaceId, Status};
+use discord_core::{Folder, PrivacyChange, SpaceId, SpacePrivacy, Status};
 use prost::Message;
+
+use crate::proto::Fields;
+
+mod privacy {
+    pub(super) const RESTRICTED_GUILDS: u32 = 3;
+    pub(super) const ACTIVITY_RESTRICTED: u32 = 13;
+    pub(super) const JOINING_RESTRICTED: u32 = 15;
+    pub(super) const REQUESTS_RESTRICTED: u32 = 16;
+}
 
 #[derive(Clone, PartialEq, Message)]
 pub struct Preloaded {
+    #[prost(bytes = "vec", optional, tag = "8")]
+    pub privacy: Option<Vec<u8>>,
     #[prost(message, optional, tag = "11")]
     pub status: Option<StatusSettings>,
     #[prost(message, optional, tag = "12")]
@@ -43,6 +54,8 @@ pub struct Localization {
 pub struct GuildFolders {
     #[prost(message, repeated, tag = "1")]
     pub folders: Vec<GuildFolder>,
+    #[prost(fixed64, repeated, tag = "2")]
+    pub guild_positions: Vec<u64>,
 }
 
 #[derive(Clone, PartialEq, Message)]
@@ -120,6 +133,63 @@ impl Preloaded {
         if update.guild_folders.is_some() {
             self.guild_folders = update.guild_folders;
         }
+        if update.privacy.is_some() {
+            self.privacy = update.privacy;
+        }
+    }
+
+    fn privacy_fields(&self) -> Option<Fields> {
+        match self.privacy.as_deref() {
+            Some(bytes) => Fields::decode(bytes),
+            None => Some(Fields::default()),
+        }
+    }
+
+    pub fn space_privacy(&self, space: SpaceId) -> Option<SpacePrivacy> {
+        let fields = self.privacy_fields()?;
+        let open = |tag: u32| !fields.fixed64s(tag).contains(&space.get());
+        Some(SpacePrivacy {
+            directs: open(privacy::RESTRICTED_GUILDS),
+            message_requests: open(privacy::REQUESTS_RESTRICTED),
+            activity: open(privacy::ACTIVITY_RESTRICTED),
+            joining: open(privacy::JOINING_RESTRICTED),
+        })
+    }
+
+    pub fn privacy_patch(&self, space: SpaceId, change: PrivacyChange) -> Option<String> {
+        let mut fields = self.privacy_fields()?;
+        let (tag, allowed) = match change {
+            PrivacyChange::Directs(on) => (privacy::RESTRICTED_GUILDS, on),
+            PrivacyChange::MessageRequests(on) => (privacy::REQUESTS_RESTRICTED, on),
+            PrivacyChange::Activity(on) => (privacy::ACTIVITY_RESTRICTED, on),
+            PrivacyChange::Joining(on) => (privacy::JOINING_RESTRICTED, on),
+        };
+        let mut restricted: Vec<u64> = fields
+            .fixed64s(tag)
+            .into_iter()
+            .filter(|id| *id != space.get())
+            .collect();
+        if !allowed {
+            restricted.push(space.get());
+        }
+        fields.set_fixed64s(tag, &restricted);
+        let patch = Preloaded {
+            privacy: Some(fields.encode()),
+            status: None,
+            localization: None,
+            guild_folders: None,
+        };
+        Some(STANDARD.encode(patch.encode_to_vec()))
+    }
+
+    pub fn folders_patch(folders: GuildFolders) -> String {
+        let patch = Preloaded {
+            privacy: None,
+            status: None,
+            localization: None,
+            guild_folders: Some(folders),
+        };
+        STANDARD.encode(patch.encode_to_vec())
     }
 
     pub fn folders(&self) -> Vec<Folder> {
@@ -169,6 +239,7 @@ impl Preloaded {
 
     pub fn status_patch(status: Status) -> String {
         let patch = Preloaded {
+            privacy: None,
             status: Some(StatusSettings {
                 status: Some(StringValue {
                     value: status_name(status).to_owned(),

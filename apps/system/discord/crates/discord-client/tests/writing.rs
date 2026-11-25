@@ -1,7 +1,7 @@
 use discord_client::writing::{emoji, mention, message_link};
 use discord_core::{
-    Abilities, Channel, ChannelId, ChannelKind, Emoji, EmojiId, Mention, MessageId, Picture,
-    RoleId, SpaceId, UserId,
+    Abilities, Channel, ChannelId, ChannelKind, ChannelNotify, Emoji, EmojiId, Mention, MessageId,
+    Permissions, Picture, RoleId, SpaceId, UserId,
 };
 
 fn channel(space: Option<u64>) -> Channel {
@@ -16,8 +16,10 @@ fn channel(space: Option<u64>) -> Channel {
         icon: None,
         recipients: Vec::new(),
         abilities: Abilities::ALL,
+        permissions: Permissions::ALL,
         nsfw: false,
         muted: false,
+        notify: ChannelNotify::default(),
         slowmode: 0,
         last_activity: None,
         thread: None,

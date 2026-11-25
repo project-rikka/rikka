@@ -2,6 +2,8 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::error::Error;
+use discord_translate as translate;
+use discord_wire::{MFA_REQUIRED, MfaRequired};
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default)]
@@ -16,6 +18,12 @@ pub(crate) fn failure(status: u16, body: &[u8]) -> Error {
     let parsed: Body = serde_json::from_slice(body).unwrap_or_default();
     if parsed.captcha_key.is_some() {
         return Error::Captcha;
+    }
+    if parsed.code == Some(MFA_REQUIRED)
+        && let Ok(required) = serde_json::from_slice::<MfaRequired>(body)
+        && let Some(ticket) = required.mfa
+    {
+        return Error::Mfa(translate::mfa_challenge(&ticket));
     }
     let mut message = parsed
         .message

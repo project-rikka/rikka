@@ -140,6 +140,7 @@
 ## apps/system/discord
 
 - [Discord application GUI (rikka-discord)](discord-app.md) — apps/system/discord/src: Chat root state, per-account LinkedAccount stores with Area→Revision marks, voice, overlays.
+- [Discord server management (menus, admin views, moderation, MFA)](discord-management.md) — rikka-discord's context menus, server/channel settings views, moderation, MFA retry and their client/core APIs.
 
 ## apps/system/discord/crates/discord-client
 

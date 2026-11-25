@@ -121,6 +121,12 @@ impl Session {
         }
     }
 
+    pub(crate) fn absorb(&self, event: &str, data: &[u8]) -> Result<()> {
+        let text = std::str::from_utf8(data).map_err(Error::unreadable)?;
+        Listener::dispatch(self, event, text);
+        Ok(())
+    }
+
     pub(crate) fn emit(&self, update: Update) {
         self.feed.send(update);
     }

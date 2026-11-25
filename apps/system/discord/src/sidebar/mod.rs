@@ -70,6 +70,7 @@ impl std::fmt::Debug for Sidebar {
 
 pub(crate) fn view(chat: &Chat) -> impl View {
     let scope = chat.current().map(|linked| linked.location().scope.clone());
+    let header = header::area(scope.as_ref());
     let body = match scope {
         Some(Scope::Space(space)) => component_with(|chat: &Chat| chat, space, channels::view)
             .grow(1.0)
@@ -77,7 +78,7 @@ pub(crate) fn view(chat: &Chat) -> impl View {
         _ => component(|chat: &Chat| chat, directs::view).grow(1.0).any(),
     };
     column! {
-        component(|chat: &Chat| chat, header::view);
+        header;
         body;
         component(|chat: &Chat| chat, crate::voice::panel_view);
         component(|chat: &Chat| chat, user_panel::view);

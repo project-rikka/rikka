@@ -14,6 +14,9 @@ pub(crate) enum Error {
     #[error("Discord requires a captcha; finish it once in the Discord web app")]
     Captcha,
 
+    #[error("Discord requires two-factor verification")]
+    Mfa(discord_core::MfaChallenge),
+
     #[error("{0}")]
     Missing(String),
 
@@ -69,6 +72,7 @@ impl From<Error> for discord_core::Error {
             Error::Unreadable(_) | Error::Handshake(_) => discord_core::Error::Unreadable(message),
             Error::Voice(reason) => discord_core::Error::Voice(reason),
             Error::Captcha => discord_core::Error::Captcha,
+            Error::Mfa(challenge) => discord_core::Error::Mfa(challenge),
             Error::Cancelled => discord_core::Error::Cancelled,
             Error::Storage(reason) => discord_core::Error::Storage(reason),
         }
@@ -86,6 +90,7 @@ impl From<discord_core::Error> for Error {
             discord_core::Error::Unreachable(reason) => Error::Unreachable(reason),
             discord_core::Error::Unreadable(reason) => Error::Unreadable(reason),
             discord_core::Error::Captcha => Error::Captcha,
+            discord_core::Error::Mfa(challenge) => Error::Mfa(challenge),
             discord_core::Error::Cancelled => Error::Cancelled,
             discord_core::Error::Voice(reason) => Error::Voice(reason),
             discord_core::Error::Storage(reason) => Error::Storage(reason),

@@ -1,14 +1,20 @@
 mod cdn;
 mod channel;
 mod guild;
+mod manage;
 mod message;
 mod profile;
 mod user;
 mod voice;
 
 pub use cdn::avatar;
-pub use channel::{Looks, channel};
-pub use guild::{custom_emoji, reaction_emoji, role, space, sticker};
+pub use channel::{Looks, channel, kind, kind_code};
+pub use guild::{SpaceLooks, custom_emoji, reaction_emoji, role, space, sticker};
+pub use manage::{
+    audit_log, automod_rule, ban, channel_settings, incidents, integration, invite, member_hit,
+    mfa_challenge, notify_code, notify_level, onboarding, overwrite, space_emoji, space_settings,
+    space_sound, space_sticker, template, vanity, webhook, welcome_screen, widget,
+};
 pub use message::{Reader, embeds, message};
 pub use profile::profile;
 pub use user::{friend, member, presence, user};

@@ -21,12 +21,14 @@ pub fn emoji(emoji: &Emoji) -> String {
 }
 
 #[must_use]
-pub fn message_link(channel: &Channel, message: &MessageId) -> String {
+pub fn channel_link(channel: &Channel) -> String {
     let scope = channel
         .space
         .map_or_else(|| "@me".to_owned(), |space| space.to_string());
-    format!(
-        "https://discord.com/channels/{scope}/{}/{message}",
-        channel.id
-    )
+    format!("https://discord.com/channels/{scope}/{}", channel.id)
+}
+
+#[must_use]
+pub fn message_link(channel: &Channel, message: &MessageId) -> String {
+    format!("{}/{message}", channel_link(channel))
 }

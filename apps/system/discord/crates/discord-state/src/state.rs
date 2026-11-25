@@ -10,13 +10,14 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 
 use discord_core::{
-    Channel, ChannelId, Focus, Message, Presence, Ringing, Status, StreamKey, Update,
+    Channel, ChannelId, Focus, Message, Presence, PrivacyChange, Ringing, SpaceId, SpacePrivacy,
+    Status, StreamKey, Update,
 };
 use serde_json::Value;
 
 use discord_translate as translate;
 use discord_wire as wire;
-use discord_wire::{GuildSettings, Preloaded, Properties, commands};
+use discord_wire::{GuildFolders, GuildSettings, Preloaded, Properties, commands};
 
 use crate::moment::Moment;
 use reads::{ChannelActivity, Reads};
@@ -299,15 +300,46 @@ impl State {
     }
 
     pub fn unread_in(&self, guild: &str) -> Vec<(String, String)> {
+        self.unread_where(|tracked| tracked.guild.as_deref() == Some(guild))
+    }
+
+    pub fn unread_beneath(&self, channel: &str) -> Vec<(String, String)> {
+        self.unread_where(|tracked| {
+            tracked.wire.id == channel || tracked.wire.parent_id.as_deref() == Some(channel)
+        })
+    }
+
+    fn unread_where(&self, chosen: impl Fn(&Tracked) -> bool) -> Vec<(String, String)> {
         self.channels
             .iter()
-            .filter(|(_, tracked)| tracked.guild.as_deref() == Some(guild))
+            .filter(|(_, tracked)| chosen(tracked))
             .filter_map(|(id, tracked)| {
                 let last = tracked.wire.last_message_id.as_deref()?;
                 let unread = self.reads.unread(&self.activity(id, tracked));
                 (unread.unread || unread.mentions > 0).then(|| (id.clone(), last.to_owned()))
             })
             .collect()
+    }
+
+    pub fn absorb_members(&mut self, guild: &str, members: &[wire::Member]) -> Outcome {
+        let mut outcome = Outcome::default();
+        self.members_out(guild, members, &mut outcome);
+        outcome
+    }
+
+    #[must_use]
+    pub fn space_privacy(&self, space: SpaceId) -> Option<SpacePrivacy> {
+        self.settings.space_privacy(space)
+    }
+
+    #[must_use]
+    pub fn privacy_patch(&self, space: SpaceId, change: PrivacyChange) -> Option<String> {
+        self.settings.privacy_patch(space, change)
+    }
+
+    #[must_use]
+    pub fn guild_folders(&self) -> GuildFolders {
+        self.settings.guild_folders.clone().unwrap_or_default()
     }
 
     pub fn missing_members<'a>(

@@ -34,6 +34,40 @@ pub struct Guild {
     pub joined_at: Option<String>,
     #[serde(deserialize_with = "flex::flag")]
     pub unavailable: bool,
+    pub splash: Option<String>,
+    pub description: Option<String>,
+    pub verification_level: u8,
+    pub explicit_content_filter: u8,
+    pub mfa_level: u8,
+    #[serde(deserialize_with = "flex::id")]
+    pub afk_channel_id: Option<String>,
+    pub afk_timeout: u32,
+    #[serde(deserialize_with = "flex::id")]
+    pub system_channel_id: Option<String>,
+    pub system_channel_flags: u32,
+    #[serde(deserialize_with = "flex::id")]
+    pub rules_channel_id: Option<String>,
+    #[serde(deserialize_with = "flex::id")]
+    pub public_updates_channel_id: Option<String>,
+    #[serde(deserialize_with = "flex::id")]
+    pub safety_alerts_channel_id: Option<String>,
+    pub preferred_locale: Option<String>,
+    #[serde(deserialize_with = "flex::list")]
+    pub features: Vec<String>,
+    pub premium_tier: u8,
+    pub premium_subscription_count: Option<u32>,
+    pub vanity_url_code: Option<String>,
+    #[serde(deserialize_with = "flex::flag")]
+    pub premium_progress_bar_enabled: bool,
+    pub approximate_member_count: Option<u32>,
+    pub incidents_data: Option<Incidents>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct Incidents {
+    pub invites_disabled_until: Option<String>,
+    pub dms_disabled_until: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -44,6 +78,9 @@ pub struct Properties {
     pub banner: Option<String>,
     pub owner_id: Option<String>,
     pub default_message_notifications: Option<u8>,
+    #[serde(deserialize_with = "flex::list")]
+    pub features: Vec<String>,
+    pub premium_tier: Option<u8>,
 }
 
 impl Guild {
@@ -57,6 +94,11 @@ impl Guild {
             default_message_notifications: nested
                 .default_message_notifications
                 .or(self.default_message_notifications),
+            features: match nested.features.is_empty() {
+                true => self.features.clone(),
+                false => nested.features,
+            },
+            premium_tier: nested.premium_tier.or(Some(self.premium_tier)),
         }
     }
 }
@@ -72,8 +114,13 @@ pub struct Role {
     #[serde(deserialize_with = "flex::flag")]
     pub hoist: bool,
     pub icon: Option<String>,
+    pub unicode_emoji: Option<String>,
     #[serde(deserialize_with = "flex::number")]
     pub permissions: u64,
+    #[serde(deserialize_with = "flex::flag")]
+    pub mentionable: bool,
+    #[serde(deserialize_with = "flex::flag")]
+    pub managed: bool,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -124,6 +171,10 @@ pub struct Emoji {
     pub name: Option<String>,
     #[serde(deserialize_with = "flex::flag")]
     pub animated: bool,
+    #[serde(deserialize_with = "flex::snowflakes")]
+    pub roles: Vec<String>,
+    pub user: Option<User>,
+    pub available: Option<bool>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -133,4 +184,21 @@ pub struct Sticker {
     pub name: String,
     pub format_type: u8,
     pub description: Option<String>,
+    pub tags: Option<String>,
+    pub user: Option<User>,
+    pub available: Option<bool>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(default)]
+pub struct Sound {
+    #[serde(deserialize_with = "flex::snowflake")]
+    pub sound_id: String,
+    pub name: String,
+    pub volume: f32,
+    #[serde(deserialize_with = "flex::id")]
+    pub emoji_id: Option<String>,
+    pub emoji_name: Option<String>,
+    pub user: Option<User>,
+    pub available: Option<bool>,
 }

@@ -7,8 +7,8 @@ use crate::account::Scope;
 use crate::chat::{Chat, Stage};
 use crate::voice::talk_area;
 use crate::{
-    banner, conversation, friends, member_menu, members, profile, rail, screen, settings, sidebar,
-    signing, space_sheet, switcher, voice,
+    banner, channel_admin, conversation, friends, manage, member_menu, members, menus, profile,
+    rail, screen, settings, sidebar, signing, space_admin, space_sheet, switcher, voice,
 };
 
 pub(crate) const BODY: &str = "discord-desk";
@@ -17,11 +17,25 @@ pub(crate) fn view(chat: &Chat) -> Element {
     match chat.stage() {
         Stage::SignIn => component(|chat: &Chat| chat, signing::view).fill().any(),
         Stage::Connecting => component(|chat: &Chat| chat, connecting).fill().any(),
+        Stage::Desk if chat.channel_admin().is_open() => {
+            component(|chat: &Chat| chat, channel_admin::view)
+                .fill()
+                .any()
+        }
+        Stage::Desk if chat.space_admin().is_open() => {
+            component(|chat: &Chat| chat, admin_desk).fill().any()
+        }
         Stage::Desk if chat.settings().is_open() => {
             component(|chat: &Chat| chat, settings::view).fill().any()
         }
         Stage::Desk => desk(chat),
     }
+}
+
+fn admin_desk(chat: &Chat) -> Element {
+    column_of(std::iter::once(space_admin::view(chat)).chain(member_menu::view(chat)))
+        .fill()
+        .any()
 }
 
 fn desk(chat: &Chat) -> Element {
@@ -101,19 +115,20 @@ fn region(chat: &Chat) -> Element {
 fn overlays(chat: &Chat) -> Element {
     let incoming = voice::incoming_view(chat)
         .map(|incoming| incoming.anchored(Anchor::new(BODY, AnchorEdge::Center)));
-    column_of(
-        [
-            incoming,
-            screen::golive_view(chat),
-            Some(component(|chat: &Chat| chat, profile::full).any()),
-            Some(component(|chat: &Chat| chat, space_sheet::view).any()),
-            Some(component(|chat: &Chat| chat, profile::popout).any()),
-            member_menu::view(chat),
-        ]
-        .into_iter()
-        .flatten(),
-    )
-    .any()
+    let mut layers: Vec<Element> = [
+        incoming,
+        screen::golive_view(chat),
+        Some(component(|chat: &Chat| chat, profile::full).any()),
+        Some(component(|chat: &Chat| chat, space_sheet::view).any()),
+        Some(component(|chat: &Chat| chat, profile::popout).any()),
+        member_menu::view(chat),
+        menus::view(chat),
+    ]
+    .into_iter()
+    .flatten()
+    .collect();
+    layers.extend(manage::overlays(chat, BODY));
+    column_of(layers).any()
 }
 
 fn connecting(chat: &Chat) -> Element {
@@ -159,31 +174,43 @@ fn connecting(chat: &Chat) -> Element {
     .any()
 }
 
+fn back_bar(title: Label, back: fn(&mut Chat)) -> CaptionBar {
+    caption()
+        .leading(
+            button(
+                row! {
+                    icon(MaterialSymbol::ARROW_BACK).extent(Length::px(16.0));
+                    text(tr!("discord.settings.back")).label();
+                }
+                .gap(Space::TIGHT)
+                .align_items(Align::Center),
+            )
+            .ghost()
+            .small()
+            .on_press(back),
+        )
+        .center(text(title).label().medium().no_wrap())
+        .into()
+}
+
 pub(crate) fn caption_bar(chat: &Chat) -> Option<CaptionBar> {
+    if chat.channel_admin().is_open() {
+        return Some(back_bar(
+            tr!("discord.channel-admin.title"),
+            Chat::close_channel_admin,
+        ));
+    }
+    if chat.space_admin().is_open() {
+        return Some(back_bar(
+            tr!("discord.admin.title"),
+            Chat::close_space_admin,
+        ));
+    }
     if chat.settings().is_open() {
-        return Some(
-            caption()
-                .leading(
-                    button(
-                        row! {
-                            icon(MaterialSymbol::ARROW_BACK).extent(Length::px(16.0));
-                            text(tr!("discord.settings.back")).label();
-                        }
-                        .gap(Space::TIGHT)
-                        .align_items(Align::Center),
-                    )
-                    .ghost()
-                    .small()
-                    .on_press(|chat: &mut Chat| chat.close_settings()),
-                )
-                .center(
-                    text(tr!("discord.settings.title"))
-                        .label()
-                        .medium()
-                        .no_wrap(),
-                )
-                .into(),
-        );
+        return Some(back_bar(
+            tr!("discord.settings.title"),
+            Chat::close_settings,
+        ));
     }
     let title = chat
         .current()

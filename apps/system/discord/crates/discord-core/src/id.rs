@@ -70,7 +70,19 @@ macro_rules! snowflakes {
 }
 
 snowflakes!(
-    SpaceId, ChannelId, MessageId, UserId, RoleId, EmojiId, StickerId, TagId
+    SpaceId,
+    ChannelId,
+    MessageId,
+    UserId,
+    RoleId,
+    EmojiId,
+    StickerId,
+    TagId,
+    WebhookId,
+    IntegrationId,
+    AuditEntryId,
+    RuleId,
+    SoundId,
 );
 
 impl MessageId {

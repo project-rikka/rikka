@@ -2,13 +2,14 @@ use std::rc::Rc;
 
 use discord_core::{Folder, RailItem, Space as ChatSpace, SpaceId, Unseen};
 use rikka_app::prelude::*;
-use rikka_ui::hash_of;
+use rikka_ui::{Handler, hash_of};
 use rikka_widgets::{column, row};
 
 use crate::account::{LinkedAccount, Scope};
 use crate::brand;
 use crate::chat::Chat;
-use crate::widgets::{Pointing, badge, mark_of, picture_tile, pointing};
+use crate::menus::Subject;
+use crate::widgets::{Pointing, badge, context_area, mark_of, picture_tile, pointing};
 
 pub(crate) const WIDTH: f32 = 72.0;
 const TILE: f32 = 48.0;
@@ -35,6 +36,14 @@ impl Target {
             Target::Space(space) => chat.open_space(space),
             Target::Folder(folder) => chat.toggle_folder(folder),
             Target::Add => chat.open_space_sheet(),
+        }
+    }
+
+    fn subject(&self) -> Option<Subject> {
+        match self {
+            Target::Space(space) => Some(Subject::Space(*space)),
+            Target::Folder(folder) => Some(Subject::Folder(folder.clone())),
+            Target::Home | Target::Add => None,
         }
     }
 }
@@ -317,8 +326,9 @@ fn band_view(band: Band, tint: Color, shown: f32) -> Element {
 }
 
 fn tile(target: Target, face: Element, name: String, look: Look) -> Element {
+    let subject = target.subject();
     let anchor = mark_of(("discord-rail", &target));
-    local_state(
+    let tile = local_state(
         Pointing::Away,
         move |pointed: Pointing, set: Setter<Pointing>| {
             let hovered = pointed.is_over();
@@ -389,5 +399,15 @@ fn tile(target: Target, face: Element, name: String, look: Look) -> Element {
                 },
             )
         },
-    )
+    );
+    match subject {
+        Some(subject) => context_area(
+            mark_of(("discord-rail-menu", &subject)),
+            tile,
+            Handler::new(move |chat: &mut Chat, anchor: Anchor| {
+                chat.open_context_menu(subject.clone(), anchor);
+            }),
+        ),
+        None => tile,
+    }
 }

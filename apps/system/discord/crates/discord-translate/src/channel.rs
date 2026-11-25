@@ -1,6 +1,6 @@
 use discord_core::{
-    Abilities, Channel, ChannelId, ChannelKind, Emoji, ForumSettings, ForumTag, PostLayout,
-    PostSort, SpaceId, TagId, TagMatch, Thread, UserId,
+    Abilities, Channel, ChannelId, ChannelKind, ChannelNotify, Emoji, ForumSettings, ForumTag,
+    Permissions, PostLayout, PostSort, SpaceId, TagId, TagMatch, Thread, UserId,
 };
 
 use super::{guild, instant};
@@ -12,12 +12,15 @@ use discord_wire::{channel_flags, channel_kind, forum_layout, sort_order, tag_se
 #[derive(Clone, Copy, Debug)]
 pub struct Looks {
     pub abilities: Abilities,
+    pub permissions: Permissions,
     pub muted: bool,
+    pub notify: ChannelNotify,
     pub joined: bool,
 }
 
-pub fn channel(wire: &wire::Channel, space: Option<&str>, looks: Looks) -> Option<Channel> {
-    let kind = match wire.kind {
+#[must_use]
+pub fn kind(code: u8) -> Option<ChannelKind> {
+    Some(match code {
         channel_kind::TEXT => ChannelKind::Text,
         channel_kind::DIRECT => ChannelKind::Direct,
         channel_kind::VOICE => ChannelKind::Voice,
@@ -30,7 +33,26 @@ pub fn channel(wire: &wire::Channel, space: Option<&str>, looks: Looks) -> Optio
         channel_kind::STAGE => ChannelKind::Stage,
         channel_kind::FORUM | channel_kind::MEDIA => ChannelKind::Forum,
         _ => return None,
-    };
+    })
+}
+
+#[must_use]
+pub fn kind_code(kind: ChannelKind) -> u8 {
+    match kind {
+        ChannelKind::Text => channel_kind::TEXT,
+        ChannelKind::Direct => channel_kind::DIRECT,
+        ChannelKind::Voice => channel_kind::VOICE,
+        ChannelKind::Group => channel_kind::GROUP,
+        ChannelKind::Category => channel_kind::CATEGORY,
+        ChannelKind::Announcement => channel_kind::ANNOUNCEMENT,
+        ChannelKind::Thread => channel_kind::PUBLIC_THREAD,
+        ChannelKind::Stage => channel_kind::STAGE,
+        ChannelKind::Forum => channel_kind::FORUM,
+    }
+}
+
+pub fn channel(wire: &wire::Channel, space: Option<&str>, looks: Looks) -> Option<Channel> {
+    let kind = kind(wire.kind)?;
     let thread = wire.is_thread().then(|| {
         let metadata = wire.thread_metadata.clone().unwrap_or_default();
         Thread {
@@ -75,8 +97,10 @@ pub fn channel(wire: &wire::Channel, space: Option<&str>, looks: Looks) -> Optio
             .map(|user| snowflake::id::<UserId>(&user))
             .collect(),
         abilities: looks.abilities,
+        permissions: looks.permissions,
         nsfw: wire.nsfw,
         muted: looks.muted,
+        notify: looks.notify,
         slowmode: wire.rate_limit_per_user.unwrap_or(0),
         last_activity: wire
             .last_message_id
@@ -98,7 +122,7 @@ fn forum_settings(wire: &wire::Channel) -> ForumSettings {
             .map(|tag| ForumTag {
                 id: snowflake::id::<TagId>(tag.id.as_str()),
                 name: tag.name.clone(),
-                emoji: emoji_of(tag.emoji_id.as_ref(), tag.emoji_name.as_ref()),
+                emoji: emoji_of(tag.emoji_id.as_deref(), tag.emoji_name.as_deref()),
                 moderated: tag.moderated,
             })
             .collect(),
@@ -118,19 +142,19 @@ fn forum_settings(wire: &wire::Channel) -> ForumSettings {
         },
         requires_tag: wire.flags & channel_flags::REQUIRE_TAG != 0,
         reaction: wire.default_reaction_emoji.as_ref().and_then(|reaction| {
-            emoji_of(reaction.emoji_id.as_ref(), reaction.emoji_name.as_ref())
+            emoji_of(reaction.emoji_id.as_deref(), reaction.emoji_name.as_deref())
         }),
     }
 }
 
-fn emoji_of(id: Option<&String>, name: Option<&String>) -> Option<Emoji> {
+pub(crate) fn emoji_of(id: Option<&str>, name: Option<&str>) -> Option<Emoji> {
     match (id, name) {
         (Some(id), name) => guild::custom_emoji(&wire::Emoji {
-            id: Some(id.clone()),
-            name: name.cloned(),
-            animated: false,
+            id: Some(id.to_owned()),
+            name: name.map(str::to_owned),
+            ..wire::Emoji::default()
         }),
-        (None, Some(name)) if !name.is_empty() => Some(Emoji::unicode(name.as_str())),
+        (None, Some(name)) if !name.is_empty() => Some(Emoji::unicode(name)),
         _ => None,
     }
 }

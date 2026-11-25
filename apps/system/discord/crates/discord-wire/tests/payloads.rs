@@ -1,4 +1,4 @@
-use discord_core::{SpaceId, Status};
+use discord_core::{PrivacyChange, SpaceId, Status};
 use discord_wire::{Channel, Coverage, Message, Preloaded, Ready, snowflake};
 
 #[test]
@@ -92,6 +92,7 @@ fn partial_settings_keep_unmentioned_parts() {
                 }),
                 color: None,
             }],
+            guild_positions: Vec::new(),
         }),
         ..Preloaded::default()
     };
@@ -134,4 +135,50 @@ fn custom_status_expires() {
         Some("away")
     );
     assert!(settings.custom_status(2_000).is_none());
+}
+
+#[test]
+fn privacy_patch_toggles_one_server_and_keeps_other_fields() {
+    let other = 7u64;
+    let mut privacy = vec![0x08, 0x01, 0x1a, 0x08];
+    privacy.extend_from_slice(&other.to_le_bytes());
+    privacy.extend_from_slice(&[0x20, 0x01]);
+    let settings = Preloaded {
+        privacy: Some(privacy),
+        ..Preloaded::default()
+    };
+    let space = SpaceId::new(42);
+    let privacy_of = |settings: &Preloaded, space: SpaceId| settings.space_privacy(space).unwrap();
+    assert!(privacy_of(&settings, space).directs);
+    assert!(!privacy_of(&settings, SpaceId::new(other)).directs);
+
+    let patch = settings
+        .privacy_patch(space, PrivacyChange::Directs(false))
+        .unwrap();
+    let patch = Preloaded::decode_base64(&patch);
+    assert!(patch.status.is_none() && patch.guild_folders.is_none());
+    assert!(!privacy_of(&patch, space).directs);
+    assert!(!privacy_of(&patch, SpaceId::new(other)).directs);
+    assert!(privacy_of(&patch, space).activity);
+    let raw = patch.privacy.clone().unwrap();
+    assert!(raw.starts_with(&[0x08, 0x01]));
+    assert!(raw.ends_with(&[0x20, 0x01]));
+
+    let reopened = patch
+        .privacy_patch(space, PrivacyChange::Directs(true))
+        .unwrap();
+    let reopened = Preloaded::decode_base64(&reopened);
+    assert!(privacy_of(&reopened, space).directs);
+    assert!(!privacy_of(&reopened, SpaceId::new(other)).directs);
+
+    let broken = Preloaded {
+        privacy: Some(vec![0x0a, 0x05]),
+        ..Preloaded::default()
+    };
+    assert!(broken.space_privacy(space).is_none());
+    assert!(
+        broken
+            .privacy_patch(space, PrivacyChange::Directs(false))
+            .is_none()
+    );
 }

@@ -1,5 +1,7 @@
 use std::time::Duration;
 
+use crate::manage::mfa::MfaChallenge;
+
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum Error {
     #[error("Discord unreachable: {0}")]
@@ -25,6 +27,9 @@ pub enum Error {
 
     #[error("Discord requires a captcha; finish it once in the Discord web app")]
     Captcha,
+
+    #[error("Discord requires two-factor verification")]
+    Mfa(MfaChallenge),
 
     #[error("cancelled")]
     Cancelled,

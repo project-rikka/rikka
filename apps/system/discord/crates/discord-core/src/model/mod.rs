@@ -1,5 +1,7 @@
 pub(crate) mod channel;
 pub(crate) mod message;
+pub(crate) mod notify;
+pub(crate) mod permissions;
 pub(crate) mod picture;
 pub(crate) mod profile;
 pub(crate) mod rich;

@@ -8,6 +8,7 @@ use rikka_widgets::row;
 use super::rows::{Look, ROW, kind_symbol, trailing_badge, unread_dot};
 use crate::account::LinkedAccount;
 use crate::chat::Chat;
+use crate::menus::Subject;
 use crate::voice::Calls;
 use crate::widgets::{avatar, context_area, live_badge, mark_of};
 
@@ -69,6 +70,9 @@ pub(crate) fn view(chat: &Chat, space: &SpaceId) -> Element {
 fn lines(chat: &Chat, linked: &LinkedAccount, space: &SpaceId) -> Vec<Line> {
     let selected = linked.location().channel;
     let folded = chat.collapsed_categories();
+    let hide_muted = linked
+        .space(space)
+        .is_some_and(|known| known.notify.hide_muted_channels);
     let mut lines = Vec::new();
     for section in linked.sections(space) {
         let collapsed = section
@@ -92,7 +96,8 @@ fn lines(chat: &Chat, linked: &LinkedAccount, space: &SpaceId) -> Vec<Line> {
                 .threads
                 .iter()
                 .any(|thread| selected.as_ref() == Some(&thread.id));
-            if collapsed && !chosen && !threads_chosen {
+            let hidden = hide_muted && Look::resolve(linked, row.channel, None).muted;
+            if (collapsed || hidden) && !chosen && !threads_chosen {
                 continue;
             }
             let voicers = match row.channel.kind.is_voice() {
@@ -208,7 +213,7 @@ fn category(id: &ChannelId, name: &str, collapsed: bool, unread: bool) -> Elemen
         true => palette().text,
         false => palette().text_muted,
     };
-    container(
+    let body = container(
         row! {
             icon(match collapsed {
                 true => MaterialSymbol::CHEVRON_RIGHT,
@@ -237,8 +242,14 @@ fn category(id: &ChannelId, name: &str, collapsed: bool, unread: bool) -> Elemen
     .on_press(move |chat: &mut Chat| chat.toggle_category(&toggled))
     .focusless()
     .height(CATEGORY)
-    .fill_width()
-    .any()
+    .fill_width();
+    context_area(
+        mark_of(("discord-category-row", toggled)),
+        body,
+        Handler::new(move |chat: &mut Chat, anchor: Anchor| {
+            chat.open_context_menu(Subject::Channel(toggled), anchor);
+        }),
+    )
 }
 
 fn channel_row(channel: &ChannelLine) -> Element {
@@ -257,7 +268,7 @@ fn channel_row(channel: &ChannelLine) -> Element {
     } else {
         name = name.medium();
     }
-    row_of([
+    let row = row_of([
         unread_dot(look),
         container(
             row! {
@@ -307,8 +318,15 @@ fn channel_row(channel: &ChannelLine) -> Element {
     ])
     .gap(Space::TIGHT)
     .align_items(Align::Center)
-    .fill_width()
-    .any()
+    .fill_width();
+    let mark = mark_of(("discord-channel-row", channel_id));
+    context_area(
+        mark,
+        row,
+        Handler::new(move |chat: &mut Chat, anchor: Anchor| {
+            chat.open_context_menu(Subject::Channel(channel_id), anchor);
+        }),
+    )
 }
 
 fn voicer_row(voicer: &VoicerLine) -> Element {

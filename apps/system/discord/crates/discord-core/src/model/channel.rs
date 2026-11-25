@@ -1,4 +1,6 @@
 use crate::id::{ChannelId, SpaceId, TagId, UserId};
+use crate::model::notify::ChannelNotify;
+use crate::model::permissions::Permissions;
 use crate::model::picture::Picture;
 use crate::model::rich::{Emoji, Rich};
 
@@ -14,8 +16,10 @@ pub struct Channel {
     pub icon: Option<Picture>,
     pub recipients: Vec<UserId>,
     pub abilities: Abilities,
+    pub permissions: Permissions,
     pub nsfw: bool,
     pub muted: bool,
+    pub notify: ChannelNotify,
     pub slowmode: u32,
     pub last_activity: Option<i64>,
     pub thread: Option<Thread>,

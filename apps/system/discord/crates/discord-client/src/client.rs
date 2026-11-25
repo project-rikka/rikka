@@ -145,7 +145,7 @@ fn joined_threads(session: &Session, results: &wire::ThreadSearch) -> Vec<String
         .collect()
 }
 
-fn adopt_one(session: &Session, wire: &wire::Channel) -> Result<Channel> {
+pub(crate) fn adopt_one(session: &Session, wire: &wire::Channel) -> Result<Channel> {
     let channel = session
         .state()
         .adopt(
@@ -158,6 +158,28 @@ fn adopt_one(session: &Session, wire: &wire::Channel) -> Result<Channel> {
         .ok_or_else(|| Error::Unreadable("Discord answered with an unknown channel".into()))?;
     session.emit(Update::Channel(channel.clone()));
     Ok(channel)
+}
+
+async fn ack_all(session: &Session, unread: &[(String, String)]) -> Result<()> {
+    for (channel, message) in unread {
+        let outcome = session.state().mark_read(channel, message);
+        session.apply(outcome);
+    }
+    for batch in unread.chunks(ACKS_PER_REQUEST) {
+        let states: Vec<Value> = batch
+            .iter()
+            .map(|(channel, message)| {
+                json!({ "channel_id": channel, "message_id": message, "read_state_type": 0 })
+            })
+            .collect();
+        session
+            .rest()
+            .post("/read-states/ack-bulk")
+            .json(json!({ "read_states": states }))
+            .done()
+            .await?;
+    }
+    Ok(())
 }
 
 fn message_body(draft: &Draft, attachments: Vec<Value>) -> Value {
@@ -187,6 +209,19 @@ fn message_body(draft: &Draft, attachments: Vec<Value>) -> Value {
 impl Client {
     pub(crate) fn new(session: Arc<Session>) -> Client {
         Client { session }
+    }
+
+    pub(crate) fn session(&self) -> &Session {
+        &self.session
+    }
+
+    pub(crate) async fn work<T, F, Fut>(&self, task: F) -> discord_core::Result<T>
+    where
+        F: FnOnce(Arc<Session>) -> Fut,
+        Fut: Future<Output = Result<T>> + Send + 'static,
+        T: Send + 'static,
+    {
+        Ok(self.session.work(task).await?)
     }
 
     #[must_use]
@@ -440,33 +475,25 @@ impl Client {
             .await?)
     }
 
-    pub async fn mark_space_read(&self, space: &SpaceId) -> discord_core::Result<()> {
-        let space = space.to_string();
-        Ok(self
-            .session
-            .work(move |session| async move {
-                let unread = session.state().unread_in(&space);
-                for (channel, message) in &unread {
-                    let outcome = session.state().mark_read(channel, message);
-                    session.apply(outcome);
-                }
-                for batch in unread.chunks(ACKS_PER_REQUEST) {
-                    let states: Vec<Value> = batch
-                        .iter()
-                        .map(|(channel, message)| {
-                            json!({ "channel_id": channel, "message_id": message, "read_state_type": 0 })
-                        })
-                        .collect();
-                    session
-                        .rest()
-                        .post("/read-states/ack-bulk")
-                        .json(json!({ "read_states": states }))
-                        .done()
-                        .await?;
-                }
-                Ok(())
-            })
-            .await?)
+    pub async fn mark_spaces_read(&self, spaces: &[SpaceId]) -> discord_core::Result<()> {
+        let spaces: Vec<String> = spaces.iter().map(ToString::to_string).collect();
+        self.work(move |session| async move {
+            let unread: Vec<(String, String)> = spaces
+                .iter()
+                .flat_map(|space| session.state().unread_in(space))
+                .collect();
+            ack_all(&session, &unread).await
+        })
+        .await
+    }
+
+    pub async fn mark_beneath_read(&self, channel: &ChannelId) -> discord_core::Result<()> {
+        let channel = channel.to_string();
+        self.work(move |session| async move {
+            let unread = session.state().unread_beneath(&channel);
+            ack_all(&session, &unread).await
+        })
+        .await
     }
 
     pub async fn open_direct(&self, user: &UserId) -> discord_core::Result<ChannelId> {

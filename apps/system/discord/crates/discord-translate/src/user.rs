@@ -43,6 +43,7 @@ pub fn member(guild: &str, wire: &wire::Member) -> Option<Member> {
             .map(|hash| cdn::member_avatar(guild, user, hash)),
         roles: wire.roles.iter().map(|role| snowflake::id(role)).collect(),
         joined: instant(wire.joined_at.as_deref()),
+        timeout_until: instant(wire.communication_disabled_until.as_deref()),
     })
 }
 

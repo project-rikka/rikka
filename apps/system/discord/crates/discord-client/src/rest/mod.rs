@@ -7,7 +7,8 @@ use std::time::{Duration, Instant};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use discord_rate_limit::{Headers, Limiter, Route, Throttle};
-use rikka_net::{Method, header};
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
+use rikka_net::{Form, Method, Part, header};
 use rikka_sync::Mutex;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -21,6 +22,9 @@ pub(crate) const API: &str = "https://discord.com/api/v9";
 const LONGEST_WAIT: Duration = Duration::from_secs(10);
 const TRIES: u32 = 3;
 const BUSY_PAUSE: Duration = Duration::from_secs(1);
+const MFA_LIFETIME: Duration = Duration::from_secs(4 * 60 + 30);
+const AUDIT_REASON: &str = "x-audit-log-reason";
+const MFA_AUTHORIZATION: &str = "x-discord-mfa-authorization";
 
 pub(crate) struct Token(String);
 
@@ -40,12 +44,34 @@ impl std::fmt::Debug for Token {
     }
 }
 
+struct Elevation {
+    token: String,
+    until: Instant,
+}
+
+impl std::fmt::Debug for Elevation {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("Elevation(..)")
+    }
+}
+
 #[derive(Debug)]
 pub(crate) struct Rest {
     http: rikka_net::Client,
     token: Arc<Token>,
     identity: Arc<Identity>,
     limiter: Mutex<Limiter>,
+    elevation: Mutex<Option<Elevation>>,
+}
+
+#[derive(Clone)]
+pub(crate) enum FormField {
+    Text(String),
+    File {
+        name: String,
+        mime: String,
+        bytes: rikka_net::Bytes,
+    },
 }
 
 pub(crate) struct Request<'a> {
@@ -54,7 +80,9 @@ pub(crate) struct Request<'a> {
     path: String,
     query: Vec<(String, String)>,
     body: Option<Value>,
+    form: Option<Vec<(String, FormField)>>,
     context: Option<String>,
+    reason: Option<String>,
 }
 
 impl Rest {
@@ -70,7 +98,26 @@ impl Rest {
             token,
             identity,
             limiter: Mutex::new(Limiter::default()),
+            elevation: Mutex::new(None),
         })
+    }
+
+    pub(crate) fn elevate(&self, token: String) {
+        *self.elevation.lock() = Some(Elevation {
+            token,
+            until: Instant::now() + MFA_LIFETIME,
+        });
+    }
+
+    fn elevated(&self) -> Option<String> {
+        let mut elevation = self.elevation.lock();
+        if elevation
+            .as_ref()
+            .is_some_and(|live| live.until <= Instant::now())
+        {
+            *elevation = None;
+        }
+        elevation.as_ref().map(|live| live.token.clone())
     }
 
     pub(crate) fn token(&self) -> &Arc<Token> {
@@ -112,7 +159,9 @@ impl Rest {
             path: path.into(),
             query: Vec::new(),
             body: None,
+            form: None,
             context: None,
+            reason: None,
         }
     }
 
@@ -143,6 +192,21 @@ impl Request<'_> {
     #[must_use]
     pub(crate) fn context(mut self, context: &Value) -> Self {
         self.context = Some(STANDARD.encode(context.to_string()));
+        self
+    }
+
+    #[must_use]
+    pub(crate) fn reason(mut self, reason: Option<&str>) -> Self {
+        self.reason = reason
+            .map(str::trim)
+            .filter(|reason| !reason.is_empty())
+            .map(|reason| utf8_percent_encode(reason, NON_ALPHANUMERIC).to_string());
+        self
+    }
+
+    #[must_use]
+    pub(crate) fn form(mut self, fields: Vec<(String, FormField)>) -> Self {
+        self.form = Some(fields);
         self
     }
 
@@ -180,8 +244,17 @@ impl Request<'_> {
             if let Some(context) = &self.context {
                 builder = builder.header("x-context-properties", context.as_str());
             }
+            if let Some(reason) = &self.reason {
+                builder = builder.header(AUDIT_REASON, reason.as_str());
+            }
+            if let Some(token) = rest.elevated() {
+                builder = builder.header(MFA_AUTHORIZATION, token);
+            }
             if let Some(body) = &self.body {
                 builder = builder.json(body);
+            }
+            if let Some(fields) = &self.form {
+                builder = builder.multipart(form_of(fields));
             }
             let response = builder.send().await.map_err(Error::unreachable)?;
             let status = response.status().as_u16();
@@ -214,4 +287,22 @@ impl Request<'_> {
             }
         }
     }
+}
+
+fn form_of(fields: &[(String, FormField)]) -> Form {
+    fields
+        .iter()
+        .fold(Form::new(), |form, (name, field)| match field {
+            FormField::Text(value) => form.text(name.clone(), value.clone()),
+            FormField::File {
+                name: file,
+                mime,
+                bytes,
+            } => form.part(
+                name.clone(),
+                Part::bytes(bytes.clone())
+                    .file_name(file.clone())
+                    .content_type(mime.clone()),
+            ),
+        })
 }

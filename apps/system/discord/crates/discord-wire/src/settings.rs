@@ -6,11 +6,22 @@ use crate::preloaded::Coverage;
 pub mod level {
     pub const ALL: u8 = 0;
     pub const MENTIONS: u8 = 1;
+    pub const NOTHING: u8 = 2;
     pub const INHERIT: u8 = 3;
+}
+
+pub mod highlights {
+    pub const DEFAULT: u8 = 0;
+    pub const DISABLED: u8 = 1;
+    pub const ENABLED: u8 = 2;
 }
 
 fn inherit() -> u8 {
     level::INHERIT
+}
+
+fn enabled() -> bool {
+    true
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -27,6 +38,13 @@ pub struct GuildSettings {
     pub suppress_everyone: bool,
     #[serde(deserialize_with = "flex::flag")]
     pub suppress_roles: bool,
+    #[serde(default = "enabled")]
+    pub mobile_push: bool,
+    pub notify_highlights: u8,
+    #[serde(deserialize_with = "flex::flag")]
+    pub hide_muted_channels: bool,
+    #[serde(deserialize_with = "flex::flag")]
+    pub mute_scheduled_events: bool,
     #[serde(deserialize_with = "flex::list")]
     pub channel_overrides: Vec<ChannelOverride>,
 }
@@ -40,6 +58,10 @@ impl Default for GuildSettings {
             message_notifications: level::INHERIT,
             suppress_everyone: false,
             suppress_roles: false,
+            mobile_push: true,
+            notify_highlights: highlights::DEFAULT,
+            hide_muted_channels: false,
+            mute_scheduled_events: false,
             channel_overrides: Vec::new(),
         }
     }

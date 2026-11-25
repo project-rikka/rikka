@@ -4,27 +4,29 @@ use discord_wire::Overwrite;
 use discord_wire::Role;
 
 pub(crate) mod bits {
-    pub(crate) const ADMINISTRATOR: u64 = 1 << 3;
-    pub(crate) const ADD_REACTIONS: u64 = 1 << 6;
-    pub(crate) const VIEW_CHANNEL: u64 = 1 << 10;
-    pub(crate) const SEND_MESSAGES: u64 = 1 << 11;
-    pub(crate) const STREAM: u64 = 1 << 9;
-    pub(crate) const MANAGE_MESSAGES: u64 = 1 << 13;
-    pub(crate) const EMBED_LINKS: u64 = 1 << 14;
-    pub(crate) const ATTACH_FILES: u64 = 1 << 15;
-    pub(crate) const READ_MESSAGE_HISTORY: u64 = 1 << 16;
-    pub(crate) const MENTION_EVERYONE: u64 = 1 << 17;
-    pub(crate) const USE_EXTERNAL_EMOJIS: u64 = 1 << 18;
-    pub(crate) const CONNECT: u64 = 1 << 20;
-    pub(crate) const SPEAK: u64 = 1 << 21;
-    pub(crate) const MUTE_MEMBERS: u64 = 1 << 22;
-    pub(crate) const USE_VAD: u64 = 1 << 25;
-    pub(crate) const MANAGE_THREADS: u64 = 1 << 34;
-    pub(crate) const CREATE_PUBLIC_THREADS: u64 = 1 << 35;
-    pub(crate) const USE_EXTERNAL_STICKERS: u64 = 1 << 37;
-    pub(crate) const SEND_MESSAGES_IN_THREADS: u64 = 1 << 38;
-    pub(crate) const PIN_MESSAGES: u64 = 1 << 51;
-    pub(crate) const ALL: u64 = u64::MAX;
+    use discord_core::Permissions;
+
+    pub(crate) const ADMINISTRATOR: u64 = Permissions::ADMINISTRATOR.bits();
+    pub(crate) const ADD_REACTIONS: u64 = Permissions::ADD_REACTIONS.bits();
+    pub(crate) const VIEW_CHANNEL: u64 = Permissions::VIEW_CHANNEL.bits();
+    pub(crate) const SEND_MESSAGES: u64 = Permissions::SEND_MESSAGES.bits();
+    pub(crate) const STREAM: u64 = Permissions::STREAM.bits();
+    pub(crate) const MANAGE_MESSAGES: u64 = Permissions::MANAGE_MESSAGES.bits();
+    pub(crate) const EMBED_LINKS: u64 = Permissions::EMBED_LINKS.bits();
+    pub(crate) const ATTACH_FILES: u64 = Permissions::ATTACH_FILES.bits();
+    pub(crate) const READ_MESSAGE_HISTORY: u64 = Permissions::READ_MESSAGE_HISTORY.bits();
+    pub(crate) const MENTION_EVERYONE: u64 = Permissions::MENTION_EVERYONE.bits();
+    pub(crate) const USE_EXTERNAL_EMOJIS: u64 = Permissions::USE_EXTERNAL_EMOJIS.bits();
+    pub(crate) const CONNECT: u64 = Permissions::CONNECT.bits();
+    pub(crate) const SPEAK: u64 = Permissions::SPEAK.bits();
+    pub(crate) const MUTE_MEMBERS: u64 = Permissions::MUTE_MEMBERS.bits();
+    pub(crate) const USE_VAD: u64 = Permissions::USE_VAD.bits();
+    pub(crate) const MANAGE_THREADS: u64 = Permissions::MANAGE_THREADS.bits();
+    pub(crate) const CREATE_PUBLIC_THREADS: u64 = Permissions::CREATE_PUBLIC_THREADS.bits();
+    pub(crate) const USE_EXTERNAL_STICKERS: u64 = Permissions::USE_EXTERNAL_STICKERS.bits();
+    pub(crate) const SEND_MESSAGES_IN_THREADS: u64 = Permissions::SEND_MESSAGES_IN_THREADS.bits();
+    pub(crate) const PIN_MESSAGES: u64 = Permissions::PIN_MESSAGES.bits();
+    pub(crate) const ALL: u64 = Permissions::ALL.bits();
 }
 
 pub(crate) struct Viewer<'a> {

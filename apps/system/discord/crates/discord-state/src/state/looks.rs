@@ -1,12 +1,15 @@
-use discord_core::{Abilities, Channel, ChannelId, Space, Update};
+use discord_core::{
+    Abilities, Channel, ChannelId, ChannelNotify, Highlights, Permissions, Space, SpaceNotify,
+    Update,
+};
 
 use super::notify::{self, Arrival};
 use super::permissions::{self, Viewer};
-use super::{Outcome, State, Tracked};
+use super::{Guild, Outcome, State, Tracked};
 use discord_translate::{self as translate, Reader};
 use discord_wire as wire;
 use discord_wire::snowflake;
-use discord_wire::{ChannelOverride, MuteConfig, notification_level};
+use discord_wire::{ChannelOverride, MuteConfig, notification_level, notify_highlights};
 
 const DEFAULT_LEVEL: u8 = notification_level::ALL;
 
@@ -33,9 +36,12 @@ impl State {
 
     pub(super) fn channel_now(&self, id: &str) -> Option<Channel> {
         let tracked = self.channels.get(id)?;
+        let allowed = self.allowed(tracked);
         let looks = translate::Looks {
-            abilities: self.abilities(tracked),
+            abilities: self.abilities(tracked, allowed),
+            permissions: allowed.map_or(Permissions::NONE, Permissions::from_bits),
             muted: self.override_muted(tracked, self.now.unix_ms),
+            notify: self.channel_notify(tracked),
             joined: tracked.joined,
         };
         translate::channel(&tracked.wire, tracked.guild.as_deref(), looks)
@@ -55,6 +61,13 @@ impl State {
     }
 
     pub(super) fn refresh(&mut self, guild: Option<&str>, outcome: &mut Outcome) {
+        let guilds: Vec<String> = match guild {
+            Some(guild) => vec![guild.to_owned()],
+            None => self.guilds.keys().cloned().collect(),
+        };
+        for guild in &guilds {
+            self.space_out(guild, false, outcome);
+        }
         let ids: Vec<String> = self
             .channels
             .iter()
@@ -68,12 +81,16 @@ impl State {
 
     pub(super) fn space_now(&self, guild: &str) -> Option<Space> {
         let known = self.guilds.get(guild)?;
-        Some(translate::space(
-            guild,
-            &known.properties,
-            self.space_muted(guild, self.now.unix_ms),
-            known.unavailable,
-        ))
+        let looks = translate::SpaceLooks {
+            muted: self.space_muted(guild, self.now.unix_ms),
+            unavailable: known.unavailable,
+            permissions: Permissions::from_bits(permissions::base(
+                &self.viewer(guild, known),
+                &known.roles,
+            )),
+            notify: self.space_notify(guild, known),
+        };
+        Some(translate::space(guild, &known.properties, looks))
     }
 
     pub(super) fn space_out(&mut self, guild: &str, force: bool, outcome: &mut Outcome) {
@@ -93,6 +110,64 @@ impl State {
         self.notifications
             .get(&Some(guild.to_owned()))
             .is_some_and(|settings| silenced(settings.muted, settings.mute_config.as_ref(), now))
+    }
+
+    fn space_notify(&self, guild: &str, known: &Guild) -> SpaceNotify {
+        let settings = self
+            .notifications
+            .get(&Some(guild.to_owned()))
+            .cloned()
+            .unwrap_or_default();
+        let inherited = settings.message_notifications == notification_level::INHERIT;
+        let code = match inherited {
+            true => known
+                .properties
+                .default_message_notifications
+                .unwrap_or(DEFAULT_LEVEL),
+            false => settings.message_notifications,
+        };
+        SpaceNotify {
+            level: translate::notify_level(code).unwrap_or_default(),
+            inherited,
+            mute_ends: self.mute_end(settings.muted, settings.mute_config.as_ref()),
+            suppress_everyone: settings.suppress_everyone,
+            suppress_roles: settings.suppress_roles,
+            highlights: match settings.notify_highlights {
+                notify_highlights::DISABLED => Highlights::Off,
+                notify_highlights::ENABLED => Highlights::On,
+                _ => Highlights::Default,
+            },
+            mobile_push: settings.mobile_push,
+            hide_muted_channels: settings.hide_muted_channels,
+            mute_events: settings.mute_scheduled_events,
+        }
+    }
+
+    fn channel_notify(&self, tracked: &Tracked) -> ChannelNotify {
+        let entry = self.override_of(tracked.guild.as_deref(), &tracked.wire.id);
+        ChannelNotify {
+            level: entry.and_then(|entry| translate::notify_level(entry.message_notifications)),
+            resolved: translate::notify_level(self.level(tracked)).unwrap_or_default(),
+            mute_ends: entry
+                .and_then(|entry| self.mute_end(entry.muted, entry.mute_config.as_ref())),
+        }
+    }
+
+    fn mute_end(&self, muted: bool, config: Option<&MuteConfig>) -> Option<i64> {
+        let end = translate::instant(config?.end_time.as_deref())?;
+        (muted && end > self.now.unix_ms).then_some(end)
+    }
+
+    fn viewer<'a>(&'a self, guild: &'a str, known: &'a Guild) -> Viewer<'a> {
+        Viewer {
+            user: &self.me.id,
+            guild,
+            owner: known.properties.owner_id.as_deref(),
+            roles: &known.my_roles,
+            timed_out: known
+                .timeout_until
+                .is_some_and(|until| until > self.now.unix_ms),
+        }
     }
 
     fn override_of(&self, guild: Option<&str>, channel: &str) -> Option<&ChannelOverride> {
@@ -203,36 +278,34 @@ impl State {
         }
     }
 
-    fn abilities(&self, tracked: &Tracked) -> Abilities {
-        let Some(guild_id) = tracked.guild.as_deref() else {
-            return permissions::private();
-        };
+    fn allowed(&self, tracked: &Tracked) -> Option<u64> {
+        let guild_id = tracked.guild.as_deref()?;
         let Some(guild) = self.guilds.get(guild_id) else {
-            return Abilities::NONE;
+            return Some(0);
         };
-        let viewer = Viewer {
-            user: &self.me.id,
-            guild: guild_id,
-            owner: guild.properties.owner_id.as_deref(),
-            roles: &guild.my_roles,
-            timed_out: guild
-                .timeout_until
-                .is_some_and(|until| until > self.now.unix_ms),
-        };
+        let viewer = self.viewer(guild_id, guild);
         let base = permissions::base(&viewer, &guild.roles);
-        let thread = tracked.wire.is_thread();
-        let source = if thread {
-            tracked
+        let source = match tracked.wire.is_thread() {
+            true => tracked
                 .wire
                 .parent_id
                 .as_deref()
                 .and_then(|parent| self.channels.get(parent))
-                .map_or(&tracked.wire, |parent| &parent.wire)
-        } else {
-            &tracked.wire
+                .map_or(&tracked.wire, |parent| &parent.wire),
+            false => &tracked.wire,
         };
-        let allowed = permissions::in_channel(&viewer, base, &source.permission_overwrites);
-        let locked = thread.then(|| {
+        Some(permissions::in_channel(
+            &viewer,
+            base,
+            &source.permission_overwrites,
+        ))
+    }
+
+    fn abilities(&self, tracked: &Tracked, allowed: Option<u64>) -> Abilities {
+        let Some(allowed) = allowed else {
+            return permissions::private();
+        };
+        let locked = tracked.wire.is_thread().then(|| {
             tracked
                 .wire
                 .thread_metadata

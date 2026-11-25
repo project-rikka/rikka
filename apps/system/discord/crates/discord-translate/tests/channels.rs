@@ -1,12 +1,19 @@
 use discord_core::{
-    Abilities, Emoji, ForumSettings, ForumTag, PostLayout, PostSort, TagId, TagMatch,
+    Abilities, ChannelNotify, Emoji, ForumSettings, ForumTag, Grant, OverwriteTarget, Permissions,
+    PostLayout, PostSort, RoleId, SpaceId, TagId, TagMatch, UserId,
 };
-use discord_translate::{Looks, channel};
+use discord_translate::{Looks, channel, channel_settings};
 use discord_wire::Channel as WireChannel;
 
 const LOOKS: Looks = Looks {
     abilities: Abilities::ALL,
+    permissions: Permissions::ALL,
     muted: false,
+    notify: ChannelNotify {
+        level: None,
+        resolved: discord_core::NotifyLevel::All,
+        mute_ends: None,
+    },
     joined: false,
 };
 
@@ -81,4 +88,40 @@ fn pinned_flag_marks_forum_post() {
     assert!(thread.locked);
     assert_eq!(thread.applied_tags, vec![TagId::new(5)]);
     assert_eq!(post.forum, None);
+}
+
+#[test]
+fn channel_settings_read_overwrites_and_privacy() {
+    let payload = wire(
+        r#"{
+            "id": "40", "type": 2, "guild_id": "1", "name": "lounge",
+            "bitrate": 64000, "user_limit": 5, "rtc_region": "japan", "video_quality_mode": 2,
+            "permission_overwrites": [
+                {"id": "1", "type": 0, "allow": "0", "deny": "1024"},
+                {"id": "9", "type": 1, "allow": "1049600", "deny": "0"}
+            ]
+        }"#,
+    );
+    let settings = channel_settings(&payload).unwrap();
+    assert_eq!(settings.space, SpaceId::new(1));
+    assert_eq!(settings.bitrate, 64_000);
+    assert_eq!(settings.region.as_deref(), Some("japan"));
+    assert!(settings.is_private());
+    let member = settings
+        .overwrite(OverwriteTarget::Member(UserId::new(9)))
+        .copied()
+        .unwrap();
+    assert_eq!(member.state(Permissions::CONNECT), Grant::Allow);
+    assert_eq!(member.state(Permissions::SPEAK), Grant::Inherit);
+    let everyone = settings
+        .overwrite(OverwriteTarget::Role(RoleId::new(1)))
+        .copied()
+        .unwrap();
+    let opened = everyone.with(Permissions::VIEW_CHANNEL, Grant::Inherit);
+    assert!(opened.deny.is_empty());
+    let denied = opened
+        .with(Permissions::SPEAK, Grant::Allow)
+        .with(Permissions::SPEAK, Grant::Deny);
+    assert_eq!(denied.state(Permissions::SPEAK), Grant::Deny);
+    assert!(!denied.allow.contains(Permissions::SPEAK));
 }

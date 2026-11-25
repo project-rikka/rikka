@@ -4,9 +4,11 @@ mod flex;
 mod gateway;
 mod guild;
 mod invite;
+mod manage;
 mod message;
 mod preloaded;
 mod profile;
+mod proto;
 mod ready;
 mod search;
 mod settings;
@@ -27,8 +29,16 @@ pub use events::{
     RelationshipRemove, ThreadListSync, ThreadMember, ThreadMembersUpdate, Typing,
 };
 pub use gateway::{Closing, Frame, Hello, ReadySession};
-pub use guild::{Emoji, Guild, Member, Properties, Role, RoleColors, Sticker};
+pub use guild::{Emoji, Guild, Incidents, Member, Properties, Role, RoleColors, Sound, Sticker};
 pub use invite::Invite;
+pub use manage::{
+    ActionMetadata, AuditChange, AuditEntry, AuditLog, AutomodAction, AutomodRule, Ban,
+    Integration, IntegrationAccount, IntegrationApplication, MFA_REQUIRED, MemberSearch,
+    MemberSearchHit, MfaOffer, MfaRequired, MfaTicket, MfaToken, Onboarding, Prompt, PromptOption,
+    PruneCount, Template, TriggerMetadata, Vanity, Webhook, WelcomeChannel, WelcomeScreen, Widget,
+    automod_action, mfa_level, onboarding_mode, overwrite_kind, prompt_kind, video_quality,
+    webhook_kind,
+};
 pub use message::{
     Attachment, CallInfo, Embed, EmbedAuthor, EmbedField, EmbedFooter, EmbedMedia, EmbedProvider,
     Message, Reaction, Reference, Snapshot, StickerItem, flags as message_flags,
@@ -42,7 +52,7 @@ pub use ready::{MergedPresences, Ready, Supplemental, SupplementalGuild};
 pub use search::{Created, Post, PostData, ThreadSearch};
 pub use settings::{
     Ack, ChannelOverride, ChannelUnread, GuildSettings, MuteConfig, ProtoBlob, ReadState,
-    SettingsProto, UnreadUpdate, level as notification_level,
+    SettingsProto, UnreadUpdate, highlights as notify_highlights, level as notification_level,
 };
 pub use user::{
     Activity, ActivityAssets, ActivityTimes, ClientStatus, Presence, Relationship, Session, User,
