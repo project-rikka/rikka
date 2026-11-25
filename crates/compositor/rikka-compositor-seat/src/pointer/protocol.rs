@@ -2,6 +2,7 @@ use rikka_compositor_geometry::Point;
 use rikka_compositor_protocols::wl_pointer::{self, Request, WlPointer};
 
 use crate::access::Access;
+use crate::carry::Device;
 use crate::host::SeatHost;
 use crate::ids::SeatId;
 use crate::pointer::cursor::may_set_cursor;
@@ -17,10 +18,12 @@ pub(crate) fn pointer_request<S: SeatHost>(state: &mut S, pointer: WlPointer, re
     else {
         return;
     };
-    let Some(seat) = pointer.key::<SeatId>() else {
+    let Some(wire) = pointer.key::<SeatId>() else {
         return;
     };
-    if !may_set_cursor(state, seat, CursorOwner::Pointer, pointer.client(), serial) {
+    let client = pointer.client();
+    let seat = state.seats().presenter(wire, client, Device::Pointer);
+    if !may_set_cursor(state, seat, CursorOwner::Pointer, client, serial) {
         return;
     }
     if let Err(error) = set_cursor(

@@ -1,6 +1,7 @@
 use rikka_compositor_protocols::wl_keyboard::KeymapFormat;
 
 use crate::access::Access;
+use crate::carry::Device;
 use crate::ids::SeatId;
 use crate::input::KeySource;
 use crate::keyboard::Repeat;
@@ -95,18 +96,20 @@ fn send_to_clients<A: Access>(
     keymap: Option<&Keymap>,
     modifiers: SerializedModifiers,
 ) {
-    let Some(client) = state
-        .seats()
+    let serial = state.display().next_serial();
+    let seats = state.seats();
+    let Some(client) = seats
         .get(seat)
         .and_then(|entry| entry.keyboard.focused_client())
+        .filter(|client| seats.presents(seat, *client, Device::Keyboard))
     else {
         return;
     };
-    let serial = state.display().next_serial();
-    let Some(entry) = state.seats().get(seat) else {
+    let wire = seats.wire(seat, client);
+    let Some(wired) = seats.get(wire) else {
         return;
     };
-    for keyboard in entry.keyboard.keyboards.for_client(client) {
+    for keyboard in wired.keyboard.keyboards.for_client(client) {
         if let Some(keymap) = keymap {
             send_keymap(keyboard, keymap);
         }
@@ -118,6 +121,7 @@ fn send_to_clients<A: Access>(
             modifiers.group,
         );
     }
+    seats.carry_serial(seat, wire, serial);
 }
 
 fn send_to_input_method<A: Access>(

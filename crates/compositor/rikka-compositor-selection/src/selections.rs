@@ -17,6 +17,7 @@ use crate::source::{Source, SourceRecord};
 #[derive(Debug, Default)]
 pub struct Selections {
     pub(crate) seats: SecondaryMap<SeatId, SeatSelections>,
+    pub(crate) drags: SecondaryMap<SeatId, Drag>,
     pub(crate) sources: SlotMap<SourceId, SourceRecord>,
     pub(crate) drag_offers: SlotMap<DragOfferId, DragOffer>,
     pub(crate) pending: Queue,
@@ -41,9 +42,13 @@ pub(crate) struct SeatSelections {
     pub(crate) data_devices: ByClient<WlDataDevice>,
     pub(crate) primary_devices: ByClient<ZwpPrimarySelectionDeviceV1>,
     pub(crate) control_devices: Vec<ExtDataControlDeviceV1>,
-    pub(crate) focus: Option<ClientId>,
-    pub(crate) focus_serial: u32,
-    pub(crate) drag: Option<Drag>,
+    pub(crate) focus: Vec<Focused>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct Focused {
+    pub(crate) client: ClientId,
+    pub(crate) since: u32,
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -66,6 +71,13 @@ impl SeatSelections {
             SelectionKind::Primary => &mut self.primary,
         }
     }
+
+    pub(crate) fn focused_since(&self, client: ClientId) -> Option<u32> {
+        self.focus
+            .iter()
+            .find(|focused| focused.client == client)
+            .map(|focused| focused.since)
+    }
 }
 
 impl Selections {
@@ -83,12 +95,12 @@ impl Selections {
     }
 
     pub fn drag(&self, seat: SeatId) -> Option<DragView> {
-        let drag = self.seats.get(seat)?.drag.as_ref()?;
+        let drag = self.drags.get(seat)?;
         Some(drag.view(&self.drag_offers))
     }
 
     pub fn drag_mime_types(&self, seat: SeatId) -> Option<&MimeList> {
-        let source = self.seats.get(seat)?.drag.as_ref()?.source?;
+        let source = self.drags.get(seat)?.source?;
         self.sources.get(source)?.mime_types.frozen()
     }
 

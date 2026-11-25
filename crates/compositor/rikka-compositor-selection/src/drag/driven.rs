@@ -23,7 +23,7 @@ pub fn start_compositor_drag<A: Access>(
     at: Point<f64, Logical>,
 ) -> Result<CompositorSource> {
     let seat = live_seat(state, Some(seat)).ok_or(Error::UnknownSeat)?;
-    if state.selections().seat_mut(seat).drag.is_some() {
+    if state.selections().drags.contains_key(seat) {
         return Err(Error::Dragging);
     }
     let mut record = SourceRecord::frozen(Origin::Dragged { seat }, mime_types);
@@ -31,7 +31,7 @@ pub fn start_compositor_drag<A: Access>(
     let id = state.selections().sources.insert(record);
     let mut drag = Drag::new(Some(id), None, DragDevice::Pointer, at, None);
     drag.driven = true;
-    state.selections().seat_mut(seat).drag = Some(drag);
+    state.selections().drags.insert(seat, drag);
     state.report(SelectionEvent::DragStarted { seat });
     Ok(CompositorSource(id))
 }

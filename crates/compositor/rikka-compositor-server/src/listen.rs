@@ -71,15 +71,33 @@ impl Drop for Socket {
 
 pub(crate) fn socket<S: 'static>(display: &DisplayHandle<S>, name: Option<&str>) -> Result<Socket> {
     if let Some(name) = name {
-        return bind(display, name);
+        return bind(display, name, resolve(name)?, ClientOptions::new());
     }
     for number in 0..=AUTOMATIC_NAMES {
-        match bind(display, &format!("wayland-{number}")) {
+        let name = format!("wayland-{number}");
+        match bind(display, &name, resolve(&name)?, ClientOptions::new()) {
             Err(Error::SocketLocked(_)) => continue,
             result => return result,
         }
     }
     Err(Error::NoFreeSocket)
+}
+
+pub(crate) fn socket_at<S: 'static>(
+    display: &DisplayHandle<S>,
+    path: &Path,
+    options: ClientOptions,
+) -> Result<Socket> {
+    bind(display, &path.to_string_lossy(), path.to_owned(), options)
+}
+
+fn resolve(name: &str) -> Result<PathBuf> {
+    if name.starts_with('/') {
+        return Ok(PathBuf::from(name));
+    }
+    Ok(rikka_dirs::runtime_dir()
+        .ok_or(Error::NoRuntimeDir)?
+        .join(name))
 }
 
 pub(crate) fn accept_all(listener: &UnixListener, mut admit: impl FnMut(UnixStream)) {
@@ -96,14 +114,12 @@ pub(crate) fn accept_all(listener: &UnixListener, mut admit: impl FnMut(UnixStre
     }
 }
 
-fn bind<S: 'static>(display: &DisplayHandle<S>, name: &str) -> Result<Socket> {
-    let path = if name.starts_with('/') {
-        PathBuf::from(name)
-    } else {
-        rikka_dirs::runtime_dir()
-            .ok_or(Error::NoRuntimeDir)?
-            .join(name)
-    };
+fn bind<S: 'static>(
+    display: &DisplayHandle<S>,
+    name: &str,
+    path: PathBuf,
+    options: ClientOptions,
+) -> Result<Socket> {
     if path.as_os_str().len() > SOCKET_PATH_LIMIT {
         return Err(Error::PathTooLong(path));
     }
@@ -130,7 +146,7 @@ fn bind<S: 'static>(display: &DisplayHandle<S>, name: &str) -> Result<Socket> {
     }
     let listener =
         UnixListener::bind(&path).map_err(Error::io(format!("binding {}", path.display())))?;
-    let listener = match display.accept_on(listener, ClientOptions::new()) {
+    let listener = match display.accept_on(listener, options) {
         Ok(listener) => listener,
         Err(error) => {
             let _ = std::fs::remove_file(&path);

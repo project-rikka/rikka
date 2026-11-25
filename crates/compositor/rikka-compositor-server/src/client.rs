@@ -20,6 +20,7 @@ pub(crate) struct ClientInner {
     credentials: Credentials,
     privileged: bool,
     xwayland: bool,
+    agent: bool,
     security_context: Option<SecurityContext>,
     core: Weak<Core>,
     watch: Cell<Option<Token>>,
@@ -31,6 +32,7 @@ pub(crate) struct Admission {
     pub(crate) credentials: Credentials,
     pub(crate) privileged: bool,
     pub(crate) xwayland: bool,
+    pub(crate) agent: bool,
     pub(crate) security_context: Option<SecurityContext>,
     pub(crate) core: Weak<Core>,
 }
@@ -49,6 +51,7 @@ impl Client {
             credentials: admission.credentials,
             privileged: admission.privileged,
             xwayland: admission.xwayland,
+            agent: admission.agent,
             security_context: admission.security_context,
             core: admission.core,
             watch: Cell::new(None),
@@ -78,6 +81,10 @@ impl Client {
 
     pub fn is_xwayland(&self) -> bool {
         self.0.xwayland
+    }
+
+    pub fn is_agent(&self) -> bool {
+        self.0.agent
     }
 
     pub fn security_context(&self) -> Option<&SecurityContext> {

@@ -31,12 +31,10 @@ pub(crate) fn retire<A: Access>(state: &mut A, source: SourceId) {
         .sources
         .get(source)
         .is_some_and(SourceRecord::is_dragged);
-    let dragging = selections.seats.values().any(|entry| {
-        entry
-            .drag
-            .as_ref()
-            .is_some_and(|drag| drag.source == Some(source))
-    });
+    let dragging = selections
+        .drags
+        .values()
+        .any(|drag| drag.source == Some(source));
     let offered = selections
         .drag_offers
         .values()

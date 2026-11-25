@@ -2,8 +2,10 @@ use rikka_compositor_geometry::{Logical, Point};
 use rikka_compositor_protocols::wl_data_device::WlDataDevice;
 use rikka_compositor_protocols::wl_data_device_manager::DndAction;
 use rikka_compositor_seat::{Focus, Motion, SeatId};
+use rikka_wayland_wire::ClientId;
 
 use crate::access::Access;
+use crate::admission::root;
 use crate::drag::feedback::Feedback;
 use crate::drag::foreign;
 use crate::drag::negotiate::renegotiate;
@@ -22,7 +24,7 @@ pub(crate) fn moved<A: Access>(state: &mut A, seat: SeatId, motion: &Motion) {
         .under
         .filter(|under| state.surfaces().get(under.surface).is_some());
     match under {
-        Some(under) if current == Some(under.surface) => {
+        Some(under) if current == Some(under.surface) && !reoffers(state, seat, under) => {
             let Some(target) = drag_mut(state, seat).and_then(|drag| drag.target.as_ref()) else {
                 return;
             };
@@ -46,6 +48,25 @@ pub(crate) fn moved<A: Access>(state: &mut A, seat: SeatId, motion: &Motion) {
         _ => retarget(state, seat, motion.location, under),
     }
     toplevel::follow(state, seat, motion.location);
+}
+
+fn reoffers<A: Access>(state: &mut A, seat: SeatId, under: Focus) -> bool {
+    let Some(client) = state
+        .surfaces()
+        .get(under.surface)
+        .map(|surface| surface.client())
+    else {
+        return false;
+    };
+    let Some(drag) = drag_mut(state, seat) else {
+        return false;
+    };
+    let starved = drag
+        .target
+        .as_ref()
+        .is_some_and(|target| !target.foreign && target.devices.is_empty());
+    let eligible = drag.source.is_some() || drag.origin == Some(client);
+    starved && !offerable_devices(state, seat, client, eligible).is_empty()
 }
 
 pub(crate) fn retarget<A: Access>(
@@ -103,6 +124,37 @@ fn withdraw_feedback<A: Access>(state: &mut A, seat: SeatId) {
     }
 }
 
+fn offerable_devices<A: Access>(
+    state: &mut A,
+    seat: SeatId,
+    client: ClientId,
+    eligible: bool,
+) -> Vec<WlDataDevice> {
+    if !eligible {
+        return Vec::new();
+    }
+    let wire = state.seats().wire(seat, client);
+    let shared = root(state, seat);
+    let selections = state.selections();
+    let taken: Vec<WlDataDevice> = selections
+        .drags
+        .iter()
+        .filter(|(other, _)| *other != seat)
+        .filter_map(|(_, drag)| drag.target.as_ref())
+        .flat_map(|target| target.devices.iter().cloned())
+        .collect();
+    selections
+        .seat_mut(shared)
+        .data_devices
+        .for_client(client)
+        .iter()
+        .filter(|device| {
+            device.alive() && device.key::<SeatId>() == Some(wire) && !taken.contains(device)
+        })
+        .cloned()
+        .collect()
+}
+
 fn enter<A: Access>(state: &mut A, seat: SeatId, under: Focus, location: Point<f64, Logical>) {
     let Some(resource) = state
         .surfaces()
@@ -130,19 +182,12 @@ fn enter<A: Access>(state: &mut A, seat: SeatId, under: Focus, location: Point<f
         }
         return;
     }
-    let devices: Vec<WlDataDevice> = if source.is_some() || Some(client) == origin {
-        state
-            .selections()
-            .seat_mut(seat)
-            .data_devices
-            .for_client(client)
-            .iter()
-            .filter(|device| device.alive())
-            .cloned()
-            .collect()
-    } else {
-        Vec::new()
-    };
+    let devices = offerable_devices(
+        state,
+        seat,
+        client,
+        source.is_some() || Some(client) == origin,
+    );
     let created = match source {
         Some(source) if !devices.is_empty() => offer::create(state, seat, source, &devices),
         _ => None,

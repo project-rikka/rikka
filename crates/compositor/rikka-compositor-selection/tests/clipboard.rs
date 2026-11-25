@@ -103,6 +103,44 @@ fn selection_follows_keyboard_focus() {
 }
 
 #[test]
+fn carried_keyboard_copies_into_carrier_clipboard() {
+    let server = Server::start();
+    let mut a = server.connect();
+    let mut b = server.connect();
+    let desk_a = a.participant();
+    let desk_b = b.participant();
+    let (client_a, window_a) = (a.client, desk_a.window.id);
+    let (client_b, window_b) = (b.client, desk_b.window.id);
+
+    let seat_mut = server.call(move |state| {
+        state.focus_keyboard(client_b, window_b);
+        state.focus_carried(client_a, window_a);
+        state.seat_mut
+    });
+    a.roundtrip();
+    b.roundtrip();
+    b.received.take_device();
+    let source = a.data_source(&desk_a.manager, "copied by agent", &[TEXT]);
+    desk_a
+        .device
+        .set_selection(Some(&source), a.received.last_enter_serial());
+    a.roundtrip();
+    b.roundtrip();
+
+    let current = server.call(move |state| {
+        state
+            .selections
+            .current(seat_mut, SelectionKind::Clipboard)
+            .map(|current| current.source)
+    });
+    assert_eq!(current, Some(Source::Client(client_a)));
+    let lines = b.received.take_device();
+    assert_eq!(lines.len(), 2, "{lines:?}");
+    let offer_id: u32 = lines[0].trim_start_matches("data_offer ").parse().unwrap();
+    assert_eq!(lines[1], format!("selection Some({offer_id})"));
+}
+
+#[test]
 fn set_selection_requires_focus_and_serial() {
     let server = Server::start();
     let mut a = server.connect();

@@ -11,7 +11,7 @@ use rikka_compositor_surface::SurfaceId;
 
 pub(crate) use composing::Composing;
 pub use composing::{Surrounding, TextInputState};
-pub(crate) use focus::{focus_entered, focus_left};
+pub(crate) use focus::{enter_focus, focus_entered, focus_left, leave_focus};
 pub(crate) use host::{compose, serve_text_input};
 pub(crate) use input_method::{
     grab_destroyed, grab_request, input_method_destroyed, input_method_manager,

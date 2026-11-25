@@ -5,7 +5,7 @@ use std::time::Duration;
 use rikka_capture::{Screen, ScreenWindow, Source};
 use rikka_input::Chord;
 use rikka_seam::SeamClient;
-use rikka_session::agent::{AgentClient, AgentPlacement, Idle, SEAT};
+use rikka_session::agent::{AgentClient, AgentPlacement, Idle};
 use rikka_types::{Modifiers, PointerButton};
 
 use crate::backend::{Backend, Point};
@@ -58,7 +58,7 @@ impl State {
                 input.resize(target.size);
                 input
             }
-            None => InputDriver::for_seat(SEAT, target.size)?,
+            None => InputDriver::for_agent(target.size)?,
         };
         Ok(self.input.insert(input))
     }

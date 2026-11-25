@@ -2,6 +2,7 @@ use std::cell::{Cell, RefCell};
 use std::fmt;
 use std::os::fd::AsFd;
 use std::os::unix::net::{UnixListener, UnixStream};
+use std::path::Path;
 use std::rc::{Rc, Weak};
 
 use rikka_compositor_reactor::{Interest, Reactor, Token};
@@ -119,6 +120,10 @@ impl<S: 'static> DisplayHandle<S> {
         listen::socket(self, name)
     }
 
+    pub fn listen_at(&self, path: &Path, options: ClientOptions) -> Result<Socket> {
+        listen::socket_at(self, path, options)
+    }
+
     pub fn accept_on(&self, listener: UnixListener, options: ClientOptions) -> Result<Listener> {
         listener
             .set_nonblocking(true)
@@ -170,6 +175,7 @@ impl<S: 'static> DisplayHandle<S> {
             credentials,
             privileged: options.privileged(),
             xwayland: options.is_xwayland(),
+            agent: options.is_agent(),
             security_context: options.context().cloned(),
             core: Rc::downgrade(core),
         });

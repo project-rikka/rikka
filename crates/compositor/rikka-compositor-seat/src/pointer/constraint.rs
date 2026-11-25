@@ -9,7 +9,9 @@ use rikka_compositor_protocols::zwp_pointer_constraints_v1::{
 use rikka_compositor_surface::{Committed, SurfaceId};
 
 use crate::access::Access;
+use crate::carry::Device;
 use crate::event::SeatEvent;
+use crate::focus::Focused;
 use crate::ids::SeatId;
 use crate::surface;
 
@@ -304,13 +306,22 @@ pub(crate) fn deactivate_constraints_except<A: Access>(
 }
 
 pub(crate) fn refresh<A: Access>(state: &mut A, seat: SeatId) {
-    let Some(entry) = state.seats().seat_mut(seat) else {
+    let seats = state.seats();
+    let Some(client) = seats
+        .get(seat)
+        .filter(|entry| !entry.pointer.constraints.is_empty())
+        .and_then(|entry| entry.pointer.focused.as_ref())
+        .map(Focused::client)
+    else {
+        return;
+    };
+    if !seats.presents(seat, client, Device::Pointer) {
+        return;
+    }
+    let Some(entry) = seats.seat_mut(seat) else {
         return;
     };
     let pointer = &mut entry.pointer;
-    if pointer.constraints.is_empty() {
-        return;
-    }
     let Some(focus) = pointer.focus() else {
         return;
     };

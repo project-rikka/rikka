@@ -98,6 +98,10 @@ impl Input {
         &self.rules
     }
 
+    pub(crate) fn seats(&self) -> [SeatId; 2] {
+        [self.seat, self.agent.seat()]
+    }
+
     pub(crate) fn queue_event(&mut self, event: &InputEvent) {
         if let Some(event) = translate::translate(&mut self.pending, &self.rules, event) {
             self.pending.push(event);

@@ -22,11 +22,13 @@ pub(crate) struct Selection {
 }
 
 impl Selection {
-    pub(crate) fn icon(&self, seat: SeatId) -> Option<DragIcon> {
-        let drag = self.selections.drag(seat)?;
-        Some(DragIcon {
-            surface: drag.icon?,
-            at: drag.at + drag.icon_offset.to_f64(),
+    pub(crate) fn icon(&self, seats: [SeatId; 2]) -> Option<DragIcon> {
+        seats.into_iter().find_map(|seat| {
+            let drag = self.selections.drag(seat)?;
+            Some(DragIcon {
+                surface: drag.icon?,
+                at: drag.at + drag.icon_offset.to_f64(),
+            })
         })
     }
 

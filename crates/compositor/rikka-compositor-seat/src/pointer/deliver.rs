@@ -6,6 +6,7 @@ use rikka_compositor_types::{AxisSource, Gesture, Press};
 use rikka_wayland_wire::ClientId;
 
 use crate::access::Access;
+use crate::carry::{self, Claim, Device};
 use crate::focus::{Focus, Focused};
 use crate::ids::SeatId;
 use crate::input::millis;
@@ -13,6 +14,7 @@ use crate::pointer::constraint::{self, deactivate_constraints_except};
 use crate::pointer::cursor::{CursorImage, CursorOwner, show};
 use crate::pointer::events::{Axis, AxisMotion, Button, Motion, RelativeMotion};
 use crate::pointer::{ActiveGesture, GestureKind, Pointer};
+use crate::seats::Seats;
 use crate::surface;
 
 const WARP_SINCE: u32 = 11;
@@ -32,7 +34,7 @@ pub(crate) fn deliver_motion<A: Access>(state: &mut A, seat: SeatId, motion: &Mo
         return;
     };
     if entry.pointer.focused_surface() != target.map(|focus| focus.surface) {
-        change_focus(state, seat, target, motion);
+        change_focus(state, seat, target, Claim::Active);
     }
     if let Some(focus) = target {
         move_within(state, seat, focus, motion);
@@ -44,56 +46,110 @@ fn move_within<A: Access>(state: &mut A, seat: SeatId, focus: Focus, motion: &Mo
     let Some(entry) = state.seats().seat_mut(seat) else {
         return;
     };
-    let pointer = &mut entry.pointer;
-    let locked = locked(pointer);
-    let Some(focused) = pointer.focused.as_mut() else {
+    let Some(focused) = entry.pointer.focused.as_mut() else {
         return;
     };
     focused.focus = focus;
-    if locked {
+    let client = focused.client();
+    if !carry::claim(state, seat, client, Device::Pointer, Claim::Active) {
         return;
     }
-    let client = focused.client();
+    let seats = state.seats();
+    if seats.get(seat).is_none_or(|entry| locked(&entry.pointer)) {
+        return;
+    }
+    let wire = seats.wire(seat, client);
     let local = focus.local(motion.location);
-    for resource in pointer.pointers.for_client(client) {
+    for resource in pointers(seats, wire, client) {
         resource.motion(millis(motion.time), local.x, local.y);
     }
-    pointer.mark(client);
+    mark(seats, seat, wire, client);
 }
 
 pub(crate) fn change_focus<A: Access>(
     state: &mut A,
     seat: SeatId,
     target: Option<Focus>,
-    motion: &Motion,
+    claim: Claim,
 ) {
-    let serial = state.display().next_serial();
     let entered = target.and_then(|focus| {
         surface::resource(state, focus.surface).map(|surface| Focused { focus, surface })
     });
+    let Some(entry) = state.seats().get(seat) else {
+        return;
+    };
+    let left = focused_client(&entry.pointer);
+    if let Some(client) = left
+        && state.seats().presents(seat, client, Device::Pointer)
+    {
+        conceal(state, seat, client, seat);
+    }
+    let joined = entered.as_ref().map(Focused::client);
     let Some(entry) = state.seats().seat_mut(seat) else {
         return;
     };
-    let pointer = &mut entry.pointer;
-    if let Some(old) = pointer.focused.take()
-        && old.surface.alive()
+    entry.pointer.focused = entered;
+    if let Some(client) = left
+        && joined != Some(client)
     {
-        let client = old.client();
-        for resource in pointer.pointers.for_client(client) {
-            resource.leave(serial, &old.surface);
-        }
-        pointer.mark(client);
+        carry::vacate(state, seat, client, Device::Pointer);
     }
-    if let Some(focused) = &entered {
-        let local = focused.focus.local(motion.location);
-        let client = focused.client();
-        for resource in pointer.pointers.for_client(client) {
-            resource.enter(serial, &focused.surface, local.x, local.y);
-        }
-        pointer.mark(client);
-        pointer.enter_serial = serial;
+    if let Some(client) = joined {
+        carry::enter(state, seat, client, Device::Pointer, claim);
     }
-    pointer.focused = entered;
+    show(
+        state,
+        seat,
+        CursorOwner::Pointer,
+        CursorImage::default(),
+        None,
+    );
+}
+
+pub(crate) fn reveal<A: Access>(state: &mut A, seat: SeatId, client: ClientId, actor: SeatId) {
+    let serial = state.display().next_serial();
+    let seats = state.seats();
+    let wire = seats.wire(seat, client);
+    let Some(entry) = seats.get(seat) else {
+        return;
+    };
+    let pointer = &entry.pointer;
+    let Some(focused) = pointer
+        .focused
+        .as_ref()
+        .filter(|focused| focused.client() == client && focused.surface.alive())
+    else {
+        return;
+    };
+    let local = focused.focus.local(pointer.location);
+    let surface = focused.surface.clone();
+    for resource in pointers(seats, wire, client) {
+        resource.enter(serial, &surface, local.x, local.y);
+    }
+    seats.carry_serial(seat, wire, serial);
+    if let Some(entry) = seats.seat_mut(seat) {
+        entry.pointer.enter_serial = serial;
+    }
+    mark(seats, actor, wire, client);
+}
+
+pub(crate) fn conceal<A: Access>(state: &mut A, seat: SeatId, client: ClientId, actor: SeatId) {
+    let serial = state.display().next_serial();
+    let seats = state.seats();
+    let wire = seats.wire(seat, client);
+    let Some(surface) = seats
+        .get(seat)
+        .and_then(|entry| entry.pointer.focused.as_ref())
+        .filter(|focused| focused.client() == client && focused.surface.alive())
+        .map(|focused| focused.surface.clone())
+    else {
+        return;
+    };
+    for resource in pointers(seats, wire, client) {
+        resource.leave(serial, &surface);
+    }
+    seats.carry_serial(seat, wire, serial);
+    mark(seats, actor, wire, client);
     show(
         state,
         seat,
@@ -111,15 +167,11 @@ pub(crate) fn refocus<A: Access>(state: &mut A, seat: SeatId) {
     if !pointer.buttons.is_empty() {
         return;
     }
-    let motion = Motion {
-        location: pointer.location,
-        under: pointer.under,
-        time: std::time::Duration::ZERO,
-    };
-    if pointer.focused_surface() == motion.under.map(|focus| focus.surface) {
+    let under = pointer.under;
+    if pointer.focused_surface() == under.map(|focus| focus.surface) {
         return;
     }
-    change_focus(state, seat, motion.under, &motion);
+    change_focus(state, seat, under, Claim::Passive);
     constraint::refresh(state, seat);
 }
 
@@ -142,7 +194,7 @@ pub(crate) fn deliver_warp<A: Access>(state: &mut A, seat: SeatId, motion: &Moti
     };
     if current.map(|focus| focus.surface) != target.map(|focus| focus.surface) {
         deactivate_constraints_except(state, seat, target.map(|focus| focus.surface));
-        change_focus(state, seat, target, motion);
+        change_focus(state, seat, target, Claim::Passive);
         constraint::refresh(state, seat);
         deliver_frame(state, seat);
         return;
@@ -150,78 +202,102 @@ pub(crate) fn deliver_warp<A: Access>(state: &mut A, seat: SeatId, motion: &Moti
     let Some(focus) = target else {
         return;
     };
-    let locked = locked(pointer);
     let Some(focused) = pointer.focused.as_mut() else {
         return;
     };
     focused.focus = focus;
     let client = focused.client();
-    if let Some(index) = pointer
-        .unframed
-        .iter()
-        .position(|unframed| *unframed == client)
-    {
-        pointer.unframed.remove(index);
-        for resource in pointer.pointers.for_client(client) {
+    let locked = locked(pointer);
+    let seats = state.seats();
+    if seats.presents(seat, client, Device::Pointer) {
+        let wire = seats.wire(seat, client);
+        if let Some(entry) = seats.seat_mut(seat)
+            && let Some(index) = entry
+                .pointer
+                .unframed
+                .iter()
+                .position(|unframed| *unframed == (wire, client))
+        {
+            entry.pointer.unframed.remove(index);
+            for resource in pointers(seats, wire, client) {
+                resource.frame();
+            }
+        }
+        let local = focus.local(motion.location);
+        for resource in pointers(seats, wire, client) {
+            if resource.version() >= WARP_SINCE {
+                resource.warp(local.x, local.y);
+            } else if locked {
+                continue;
+            } else {
+                resource.motion(millis(motion.time), local.x, local.y);
+            }
             resource.frame();
         }
-    }
-    let local = focus.local(motion.location);
-    for resource in pointer.pointers.for_client(client) {
-        if resource.version() >= WARP_SINCE {
-            resource.warp(local.x, local.y);
-        } else if locked {
-            continue;
-        } else {
-            resource.motion(millis(motion.time), local.x, local.y);
-        }
-        resource.frame();
     }
     constraint::refresh(state, seat);
 }
 
 pub(crate) fn deliver_button<A: Access>(state: &mut A, seat: SeatId, button: &Button, serial: u32) {
-    let Some(entry) = state.seats().seat_mut(seat) else {
+    let Some(client) = state
+        .seats()
+        .get(seat)
+        .and_then(|entry| focused_client(&entry.pointer))
+    else {
         return;
     };
-    let pointer = &mut entry.pointer;
-    let Some(client) = focused_client(pointer) else {
-        return;
+    let presented = match button.press {
+        Press::Pressed => carry::claim(state, seat, client, Device::Pointer, Claim::Active),
+        Press::Released => state.seats().presents(seat, client, Device::Pointer),
     };
-    let pressed = match button.press {
-        Press::Pressed => ButtonState::Pressed,
-        Press::Released => ButtonState::Released,
-    };
-    for resource in pointer.pointers.for_client(client) {
-        resource.button(serial, millis(button.time), button.code, pressed);
+    if presented {
+        let pressed = match button.press {
+            Press::Pressed => ButtonState::Pressed,
+            Press::Released => ButtonState::Released,
+        };
+        let seats = state.seats();
+        let wire = seats.wire(seat, client);
+        for resource in pointers(seats, wire, client) {
+            resource.button(serial, millis(button.time), button.code, pressed);
+        }
+        seats.carry_serial(seat, wire, serial);
+        mark(seats, seat, wire, client);
     }
-    pointer.mark(client);
+    let Some(entry) = state.seats().get(seat) else {
+        return;
+    };
+    let pointer = &entry.pointer;
     if button.press == Press::Released && pointer.buttons.is_empty() && !pointer.grab.grabbed() {
         refocus(state, seat);
     }
 }
 
 pub(crate) fn deliver_axis<A: Access>(state: &mut A, seat: SeatId, axis: &Axis) {
-    let Some(entry) = state.seats().seat_mut(seat) else {
+    let Some(client) = state
+        .seats()
+        .get(seat)
+        .and_then(|entry| focused_client(&entry.pointer))
+    else {
         return;
     };
-    let pointer = &mut entry.pointer;
-    let Some(client) = focused_client(pointer) else {
+    if !carry::claim(state, seat, client, Device::Pointer, Claim::Active) {
         return;
-    };
+    }
+    let seats = state.seats();
+    let wire = seats.wire(seat, client);
     let time = millis(axis.time);
-    for resource in pointer.pointers.for_client(client) {
+    for resource in pointers(seats, wire, client) {
         if let Some(source) = axis.source {
             resource.axis_source(wire_source(source));
         }
-        for (wire, motion) in [
+        for (wire_axis, motion) in [
             (WireAxis::HorizontalScroll, axis.horizontal),
             (WireAxis::VerticalScroll, axis.vertical),
         ] {
-            send_axis(resource, wire, &motion, time);
+            send_axis(resource, wire_axis, &motion, time);
         }
     }
-    pointer.mark(client);
+    mark(seats, seat, wire, client);
 }
 
 fn send_axis(pointer: &WlPointer, axis: WireAxis, motion: &AxisMotion, time: u32) {
@@ -261,38 +337,45 @@ fn wire_source(source: AxisSource) -> WireSource {
 }
 
 pub(crate) fn deliver_frame<A: Access>(state: &mut A, seat: SeatId) {
-    let Some(entry) = state.seats().seat_mut(seat) else {
+    let seats = state.seats();
+    let Some(entry) = seats.seat_mut(seat) else {
         return;
     };
-    let pointer = &mut entry.pointer;
-    for client in pointer.unframed.drain(..) {
-        for resource in pointer.pointers.for_client(client) {
+    let unframed = std::mem::take(&mut entry.pointer.unframed);
+    for (wire, client) in unframed {
+        for resource in pointers(seats, wire, client) {
             resource.frame();
         }
     }
 }
 
 pub(crate) fn deliver_relative<A: Access>(state: &mut A, seat: SeatId, motion: &RelativeMotion) {
-    let Some(entry) = state.seats().seat_mut(seat) else {
+    let seats = state.seats();
+    let Some(client) = seats
+        .get(seat)
+        .and_then(|entry| focused_client(&entry.pointer))
+    else {
         return;
     };
-    let pointer = &mut entry.pointer;
-    let Some(client) = focused_client(pointer) else {
+    if !seats.presents(seat, client, Device::Pointer) {
         return;
-    };
+    }
+    let wire = seats.wire(seat, client);
     let micros = motion.time.as_micros() as u64;
     let (high, low) = ((micros >> 32) as u32, micros as u32);
-    for relative in pointer.relative.for_client(client) {
-        relative.relative_motion(
-            high,
-            low,
-            motion.delta.x,
-            motion.delta.y,
-            motion.unaccelerated.x,
-            motion.unaccelerated.y,
-        );
+    if let Some(entry) = seats.get(wire) {
+        for relative in entry.pointer.relative.for_client(client) {
+            relative.relative_motion(
+                high,
+                low,
+                motion.delta.x,
+                motion.delta.y,
+                motion.unaccelerated.x,
+                motion.unaccelerated.y,
+            );
+        }
     }
-    pointer.mark(client);
+    mark(seats, seat, wire, client);
 }
 
 pub(crate) fn deliver_gesture<A: Access>(
@@ -301,10 +384,6 @@ pub(crate) fn deliver_gesture<A: Access>(
     gesture: &Gesture,
     serial: u32,
 ) {
-    let Some(entry) = state.seats().seat_mut(seat) else {
-        return;
-    };
-    let pointer = &mut entry.pointer;
     let begin = match *gesture {
         Gesture::SwipeBegin { fingers, time } => Some((GestureKind::Swipe, fingers, time)),
         Gesture::PinchBegin { fingers, time } => Some((GestureKind::Pinch, fingers, time)),
@@ -312,52 +391,31 @@ pub(crate) fn deliver_gesture<A: Access>(
         _ => None,
     };
     if let Some((kind, fingers, time)) = begin {
-        let Some(focused) = &pointer.focused else {
-            return;
-        };
-        let client = focused.client();
-        let time = millis(time);
-        let wl = &focused.surface;
-        match kind {
-            GestureKind::Swipe => {
-                for swipe in pointer.swipes.for_client(client) {
-                    swipe.begin(serial, time, wl, fingers);
-                }
-            }
-            GestureKind::Pinch => {
-                for pinch in pointer.pinches.for_client(client) {
-                    pinch.begin(serial, time, wl, fingers);
-                }
-            }
-            GestureKind::Hold => {
-                for hold in pointer.holds.for_client(client) {
-                    hold.begin(serial, time, wl, fingers);
-                }
-            }
-        }
-        pointer.gesture = Some(ActiveGesture {
-            kind,
-            surface: focused.focus.surface,
-            client,
-        });
-        pointer.mark(client);
+        begin_gesture(state, seat, kind, fingers, millis(time), serial);
         return;
     }
-    let Some(gesturing) = pointer.gesture else {
+    let seats = state.seats();
+    let Some(gesturing) = seats.get(seat).and_then(|entry| entry.pointer.gesture) else {
         return;
     };
     let client = gesturing.client;
-    match (*gesture, gesturing.kind) {
+    let wire = seats.wire(seat, client);
+    let Some(entry) = seats.get(wire) else {
+        return;
+    };
+    let pointer = &entry.pointer;
+    let ended = match (*gesture, gesturing.kind) {
         (Gesture::SwipeUpdate { delta, time }, GestureKind::Swipe) => {
             for swipe in pointer.swipes.for_client(client) {
                 swipe.update(millis(time), delta.x, delta.y);
             }
+            false
         }
         (Gesture::SwipeEnd { cancelled, time }, GestureKind::Swipe) => {
             for swipe in pointer.swipes.for_client(client) {
                 swipe.end(serial, millis(time), i32::from(cancelled));
             }
-            pointer.gesture = None;
+            true
         }
         (
             Gesture::PinchUpdate {
@@ -371,22 +429,84 @@ pub(crate) fn deliver_gesture<A: Access>(
             for pinch in pointer.pinches.for_client(client) {
                 pinch.update(millis(time), delta.x, delta.y, scale, rotation);
             }
+            false
         }
         (Gesture::PinchEnd { cancelled, time }, GestureKind::Pinch) => {
             for pinch in pointer.pinches.for_client(client) {
                 pinch.end(serial, millis(time), i32::from(cancelled));
             }
-            pointer.gesture = None;
+            true
         }
         (Gesture::HoldEnd { cancelled, time }, GestureKind::Hold) => {
             for hold in pointer.holds.for_client(client) {
                 hold.end(serial, millis(time), i32::from(cancelled));
             }
-            pointer.gesture = None;
+            true
         }
         _ => return,
+    };
+    if ended && let Some(entry) = seats.seat_mut(seat) {
+        entry.pointer.gesture = None;
     }
-    pointer.mark(client);
+    mark(seats, seat, wire, client);
+}
+
+fn begin_gesture<A: Access>(
+    state: &mut A,
+    seat: SeatId,
+    kind: GestureKind,
+    fingers: u32,
+    time: u32,
+    serial: u32,
+) {
+    let Some(client) = state
+        .seats()
+        .get(seat)
+        .and_then(|entry| focused_client(&entry.pointer))
+    else {
+        return;
+    };
+    if !carry::claim(state, seat, client, Device::Pointer, Claim::Active) {
+        return;
+    }
+    let seats = state.seats();
+    let wire = seats.wire(seat, client);
+    let (Some(entry), Some(wired)) = (seats.get(seat), seats.get(wire)) else {
+        return;
+    };
+    let Some(focused) = &entry.pointer.focused else {
+        return;
+    };
+    let surface = focused.focus.surface;
+    let wl = &focused.surface;
+    let pointer = &wired.pointer;
+    match kind {
+        GestureKind::Swipe => {
+            for swipe in pointer.swipes.for_client(client) {
+                swipe.begin(serial, time, wl, fingers);
+            }
+        }
+        GestureKind::Pinch => {
+            for pinch in pointer.pinches.for_client(client) {
+                pinch.begin(serial, time, wl, fingers);
+            }
+        }
+        GestureKind::Hold => {
+            for hold in pointer.holds.for_client(client) {
+                hold.begin(serial, time, wl, fingers);
+            }
+        }
+    }
+    seats.carry_serial(seat, wire, serial);
+    let Some(entry) = seats.seat_mut(seat) else {
+        return;
+    };
+    entry.pointer.gesture = Some(ActiveGesture {
+        kind,
+        surface,
+        client,
+    });
+    entry.pointer.mark(wire, client);
 }
 
 pub(crate) fn pointer_surface_gone<A: Access>(state: &mut A, seat: SeatId, surface: SurfaceId) {
@@ -409,33 +529,57 @@ pub(crate) fn pointer_surface_gone<A: Access>(state: &mut A, seat: SeatId, surfa
     {
         pointer.press = None;
     }
-    if pointer.focused_surface() == Some(surface) {
-        pointer.focused = None;
-        show(
-            state,
-            seat,
-            CursorOwner::Pointer,
-            CursorImage::default(),
-            None,
-        );
+    if pointer.focused_surface() != Some(surface) {
+        return;
     }
+    let client = pointer.focused.take().map(|focused| focused.client());
+    if let Some(client) = client {
+        carry::vacate(state, seat, client, Device::Pointer);
+        deliver_frame(state, seat);
+    }
+    show(
+        state,
+        seat,
+        CursorOwner::Pointer,
+        CursorImage::default(),
+        None,
+    );
 }
 
 pub(crate) fn introduce<A: Access>(state: &mut A, seat: SeatId, resource: WlPointer) {
-    let Some(entry) = state.seats().seat_mut(seat) else {
+    let client = resource.client();
+    let seats = state.seats();
+    let Some(entry) = seats.seat_mut(seat) else {
         return;
     };
-    let pointer = &mut entry.pointer;
-    pointer.pointers.add(resource.clone());
-    let Some(focused) = &pointer.focused else {
+    entry.pointer.pointers.add(resource.clone());
+    let presenter = seats.presenter(seat, client, Device::Pointer);
+    let Some(entry) = seats.get(presenter) else {
         return;
     };
-    if focused.client() != resource.client() {
+    let pointer = &entry.pointer;
+    let Some(focused) = pointer
+        .focused
+        .as_ref()
+        .filter(|focused| focused.client() == client)
+    else {
         return;
-    }
+    };
     let local = focused.focus.local(pointer.location);
     resource.enter(pointer.enter_serial, &focused.surface, local.x, local.y);
     resource.frame();
+}
+
+fn pointers(seats: &Seats, wire: SeatId, client: ClientId) -> &[WlPointer] {
+    seats
+        .get(wire)
+        .map_or(&[], |entry| entry.pointer.pointers.for_client(client))
+}
+
+fn mark(seats: &mut Seats, seat: SeatId, wire: SeatId, client: ClientId) {
+    if let Some(entry) = seats.seat_mut(seat) {
+        entry.pointer.mark(wire, client);
+    }
 }
 
 fn focused_client(pointer: &Pointer) -> Option<ClientId> {

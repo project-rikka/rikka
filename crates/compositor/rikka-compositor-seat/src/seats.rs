@@ -4,6 +4,7 @@ use slotmap::SlotMap;
 use rikka_compositor_surface::SurfaceId;
 
 use crate::access::Queue;
+use crate::carry::Carrying;
 use crate::idle::Idle;
 use crate::ids::{SeatId, VirtualKeyboardId, VirtualPointerId};
 use crate::seat::Seat;
@@ -14,6 +15,7 @@ use crate::virtual_pointer::VirtualPointer;
 pub struct Seats {
     pub(crate) seats: SlotMap<SeatId, Seat>,
     pub(crate) primary: Option<SeatId>,
+    pub(crate) carrying: Carrying,
     pub(crate) virtual_keyboards: SlotMap<VirtualKeyboardId, VirtualKeyboard>,
     pub(crate) virtual_pointers: SlotMap<VirtualPointerId, VirtualPointer>,
     pub(crate) idle: Idle,

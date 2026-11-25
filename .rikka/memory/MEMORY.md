@@ -1063,7 +1063,7 @@
 
 ## system/rikka-compositor/src/agent
 
-- [The agent's own seat](agent-seat.md) — The compositor gives an agent a second seat, drawn as an accent ring, so it works the desktop beside the person.
+- [The agent's own seat](agent-seat.md) — The agent drives a carried seat projected onto every client's seat-0 objects, drawn as an accent ring beside the person.
 
 ## system/rikka-compositor/src/backend/kms
 

@@ -71,7 +71,7 @@ impl Parts<'_> {
             surfaces: self.surfaces,
             drawn,
             staging,
-            icon: self.selection.icon(self.input.seat),
+            icon: self.selection.icon(self.input.seats()),
             corners,
             locked,
         };

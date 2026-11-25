@@ -10,7 +10,7 @@ mod retiling;
 use rikka_compositor_seat::{Button, PointerHandle};
 
 pub(super) use moving::Drag;
-pub(crate) use popup::PopupChain;
+pub(crate) use popup::PopupChains;
 pub(crate) use request::{GrabRequest, GrabRequests};
 pub(super) use resizing::Reshape;
 
@@ -18,7 +18,7 @@ use crate::state::Compositor;
 
 #[derive(Debug, Default)]
 pub(crate) struct Grabs {
-    pub(crate) popups: Option<PopupChain>,
+    pub(crate) popups: PopupChains,
     pub(crate) requests: GrabRequests,
 }
 

@@ -1,11 +1,11 @@
 use std::time::Duration;
 
-use rikka_compositor_desktop::{Hit, Target, WindowId, WindowKind};
+use rikka_compositor_desktop::{Hit, Target};
 use rikka_compositor_geometry::{Logical, Point};
 use rikka_compositor_input::PointerRestrictions;
 use rikka_compositor_protocols::wl_output::WlOutput;
 use rikka_compositor_seat::{
-    Axis, Button, Key, KeyFilter, KeyboardFocus, Keystroke, Motion, VirtualPointerInput,
+    Axis, Button, Focus, Key, KeyFilter, KeyboardFocus, Keystroke, Motion, VirtualPointerInput,
 };
 use rikka_compositor_types::Press;
 
@@ -14,7 +14,6 @@ use crate::context::{WindowsCtx, windows_ctx};
 use crate::input::{PendingEvent, stretch};
 use crate::render::monotonic;
 use crate::state::Compositor;
-use crate::windows::Windows;
 
 impl Compositor {
     pub(crate) fn agent_pointer(&mut self, output: Option<&WlOutput>, input: VirtualPointerInput) {
@@ -64,7 +63,8 @@ impl Compositor {
 
     fn agent_moved_to(&mut self, location: Point<f64, Logical>, time: Duration) {
         let location = input_ctx!(self).agent_placed_at(location);
-        let under = input_ref!(self).focus_at(location);
+        let under = input_ctx!(self).agent_target(location);
+        let relayed = self.input.agent.relayed;
         let mut pointer = self.agent_seat();
         pointer.motion(Motion {
             location,
@@ -72,8 +72,7 @@ impl Compositor {
             time,
         });
         pointer.frame();
-        self.input.agent.relayed = input_ref!(self).relayed_under(location);
-        if self.input.agent.relayed {
+        if relayed {
             input_ctx!(self).queue_person_event(PendingEvent::Motion {
                 to: location,
                 moved: None,
@@ -109,20 +108,6 @@ impl Compositor {
     }
 }
 
-impl Windows {
-    fn keyboard_focus_of(&self, window: WindowId) -> Option<KeyboardFocus> {
-        let record = self.desktop.window(window)?;
-        let surface = record.surface()?;
-        Some(match record.kind() {
-            WindowKind::X11(x11) => KeyboardFocus::X11 {
-                window: x11.raw(),
-                surface,
-            },
-            WindowKind::Xdg(_) => KeyboardFocus::Surface(surface),
-        })
-    }
-}
-
 impl InputCtx<'_> {
     fn agent_placed_at(&mut self, location: Point<f64, Logical>) -> Point<f64, Logical> {
         let location = self
@@ -144,12 +129,21 @@ impl InputCtx<'_> {
 
     pub(crate) fn agent_warped(&mut self, location: Point<f64, Logical>) {
         let location = self.agent_placed_at(location);
-        let under = input_ref!(self).focus_at(location);
+        let under = self.agent_target(location);
         agent_seat!(self).warp(Motion {
             location,
             under,
             time: monotonic(),
         });
+    }
+
+    fn agent_target(&mut self, location: Point<f64, Logical>) -> Option<Focus> {
+        let relayed = input_ref!(self).relayed_under(location);
+        self.input.agent.relayed = relayed;
+        match relayed {
+            true => None,
+            false => input_ref!(self).focus_at(location),
+        }
     }
 }
 
@@ -167,11 +161,15 @@ impl WindowsCtx<'_> {
     fn focus_under_agent(&mut self) {
         let at = self.input.agent.at;
         let focus = input_ref!(self).element_under(at).map(|under| {
-            match self.windows.desktop.root_of(under.target) {
-                Target::Window(window) => self.windows.keyboard_focus_of(window),
+            let surface = match self.windows.desktop.root_of(under.target) {
+                Target::Window(window) => self
+                    .windows
+                    .desktop
+                    .window(window)
+                    .and_then(|record| record.surface()),
                 _ => None,
-            }
-            .unwrap_or(KeyboardFocus::Surface(under.surface))
+            };
+            KeyboardFocus::Surface(surface.unwrap_or(under.surface))
         });
         agent_seat!(self).set_keyboard_focus(focus);
     }

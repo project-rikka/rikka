@@ -4,7 +4,7 @@ use rikka_compositor_seat::SeatId;
 use rikka_compositor_server::Client;
 
 use crate::access::Access;
-use crate::admission::{admits, live_seat};
+use crate::admission::{admits, live_seat, root};
 use crate::drag::{self, DragRequest};
 use crate::host::SelectionHost;
 use crate::ids::SourceId;
@@ -16,10 +16,11 @@ pub(crate) fn device_request<S: SelectionHost>(
     device: WlDataDevice,
     request: Request,
 ) {
-    let seat = live_seat(state, device.key::<SeatId>());
+    let wire = live_seat(state, device.key::<SeatId>());
     match request {
         Request::SetSelection { source, serial } => {
-            if let Some(seat) = seat {
+            if let Some(wire) = wire {
+                let seat = root(state, wire);
                 set_selection(state, &device, seat, source, serial);
             }
         }
@@ -35,8 +36,8 @@ pub(crate) fn device_request<S: SelectionHost>(
                 icon,
                 serial,
             };
-            match seat {
-                Some(seat) => drag::start(state, &device, seat, request),
+            match wire {
+                Some(wire) => drag::start(state, &device, wire, request),
                 None => drag::refuse(&request),
             }
         }
@@ -45,9 +46,10 @@ pub(crate) fn device_request<S: SelectionHost>(
 }
 
 pub(crate) fn device_destroyed<A: Access>(state: &mut A, device: WlDataDevice) {
-    let Some(seat) = device.key::<SeatId>() else {
+    let Some(wire) = live_seat(state, device.key::<SeatId>()) else {
         return;
     };
+    let seat = root(state, wire);
     if let Some(entry) = state.selections().seats.get_mut(seat) {
         entry.data_devices.remove(&device);
     }

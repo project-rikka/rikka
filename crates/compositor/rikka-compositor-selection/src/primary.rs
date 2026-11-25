@@ -14,7 +14,7 @@ use rikka_compositor_seat::SeatId;
 use rikka_compositor_server::Client;
 
 use crate::access::Access;
-use crate::admission::{admits, live_seat};
+use crate::admission::{admits, live_seat, selection_seat};
 use crate::host::SelectionHost;
 use crate::ids::SourceId;
 use crate::kind::SelectionKind;
@@ -36,13 +36,13 @@ pub(crate) fn manager_request<A: Access>(
             id.set_key(source);
         }
         manager::Request::GetDevice { id, seat } => {
-            let Some(seat) = live_seat(state, seat.key::<SeatId>()) else {
+            let Some(seat) = selection_seat(state, seat.key::<SeatId>()) else {
                 return;
             };
             id.set_key(seat);
             let entry = state.selections().seat_mut(seat);
             entry.primary_devices.add(id.clone());
-            if entry.focus == Some(id.client()) {
+            if entry.focused_since(id.client()).is_some() {
                 let selection = snapshot(state, seat, SelectionKind::Primary);
                 offers::to_primary_device(&id, selection.as_ref());
             }

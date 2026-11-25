@@ -56,24 +56,31 @@ struct SeatInput {
 }
 
 impl SeatInput {
-    fn connect(name: Option<&str>) -> Result<SeatInput, Error> {
-        let seat = match name {
-            Some(name) => Seat::named(name),
-            None => Seat::connect(),
-        }
-        .map_err(|error| Error::Input(error.to_string()))?;
-        let pointer = seat
-            .pointer()
-            .map_err(|error| Error::Input(error.to_string()))?;
+    fn person() -> Result<SeatInput, Error> {
+        SeatInput::new(Seat::connect().map_err(input_error)?)
+    }
+
+    fn agent() -> Result<SeatInput, Error> {
+        let socket = agent::socket_path()
+            .ok_or_else(|| Error::Input("no runtime directory for the agent socket".to_owned()))?;
+        SeatInput::new(Seat::connect_named(&socket, agent::SEAT).map_err(input_error)?)
+    }
+
+    fn new(seat: Seat) -> Result<SeatInput, Error> {
+        let pointer = seat.pointer().map_err(input_error)?;
         let keyboard = seat
             .keyboard([Cap::Named(Key::Escape)])
-            .map_err(|error| Error::Input(error.to_string()))?;
+            .map_err(input_error)?;
         Ok(SeatInput {
             _seat: seat,
             pointer,
             _keyboard: keyboard,
         })
     }
+}
+
+fn input_error(error: impl std::fmt::Display) -> Error {
+    Error::Input(error.to_string())
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -145,8 +152,8 @@ impl Session {
         let seam = SocketClient::from_env()
             .map_err(|error| Error::Compositor(format!("no session socket: {error}")))?;
         Ok(Session {
-            person: SeatInput::connect(None)?,
-            agent: SeatInput::connect(Some(agent::SEAT))?,
+            person: SeatInput::person()?,
+            agent: SeatInput::agent()?,
             seam,
             compositor: compositor_child,
             root,

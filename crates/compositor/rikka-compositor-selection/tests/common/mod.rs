@@ -65,6 +65,7 @@ pub(crate) struct State {
     pub(crate) shell: Shell,
     pub(crate) selections: Selections,
     pub(crate) seat_mut: SeatId,
+    pub(crate) carried: SeatId,
     pub(crate) trusted: bool,
     pub(crate) events: Vec<SelectionEvent>,
     pub(crate) sent: Vec<String>,
@@ -94,6 +95,13 @@ impl State {
     pub(crate) fn focus_keyboard(&mut self, client: ClientId, protocol_id: u32) {
         let surface = self.surface(client, protocol_id);
         self.seat_mut()
+            .set_keyboard_focus(Some(KeyboardFocus::Surface(surface)));
+    }
+
+    pub(crate) fn focus_carried(&mut self, client: ClientId, protocol_id: u32) {
+        let surface = self.surface(client, protocol_id);
+        let carried = self.carried;
+        rikka_compositor_seat::seat(self, carried)
             .set_keyboard_focus(Some(KeyboardFocus::Surface(surface)));
     }
 
@@ -222,6 +230,13 @@ impl Server {
             let shell = Shell::new(&display);
             let mut seats = Seats::new();
             let seat_mut = seats.add(&display, "seat-0", Keymap::from_text(KEYMAP).unwrap());
+            let carried = seats.add_carried(
+                &display,
+                "seat-agent",
+                Keymap::from_text(KEYMAP).unwrap(),
+                seat_mut,
+                Client::is_agent,
+            );
             State {
                 display,
                 surfaces: Surfaces::new(),
@@ -229,6 +244,7 @@ impl Server {
                 shell,
                 selections: Selections::new(),
                 seat_mut,
+                carried,
                 trusted: false,
                 events: Vec::new(),
                 sent: Vec::new(),

@@ -18,6 +18,7 @@ use rikka_compositor::{Compositor, Extent, Injected, Launch, Snapshot};
 use rikka_compositor_reactor::Sender;
 use rikka_seam::Request;
 use rikka_seam::net::{SocketClient, socket_path_for};
+use rikka_session::agent;
 use rikka_session::profile::Profile;
 use serde::de::DeserializeOwned;
 use tempfile::TempDir;
@@ -155,6 +156,10 @@ impl Harness {
 
     pub(crate) fn client(&self) -> Client {
         Client::connect(&self.socket)
+    }
+
+    pub(crate) fn agent_client(&self) -> Client {
+        Client::connect(&agent::socket_path_for(SOCKET).expect("runtime directory set"))
     }
 
     pub(crate) fn globals(&self) -> Vec<String> {

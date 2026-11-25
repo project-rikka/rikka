@@ -9,7 +9,7 @@ use crate::context::{InputCtx, InputRef, windows_ctx};
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Undragged<'a> {
     surfaces: &'a Surfaces,
-    dragged: Option<SurfaceId>,
+    dragged: [Option<SurfaceId>; 2],
 }
 
 impl SurfaceTrees for Undragged<'_> {
@@ -18,7 +18,7 @@ impl SurfaceTrees for Undragged<'_> {
         root: SurfaceId,
         point: Point<f64, Logical>,
     ) -> Option<(SurfaceId, Point<f64, Logical>)> {
-        if self.dragged == Some(root) {
+        if self.dragged.contains(&Some(root)) {
             return None;
         }
         self.surfaces.surface_under(root, point)
@@ -31,14 +31,15 @@ impl SurfaceTrees for Undragged<'_> {
 
 impl InputRef<'_> {
     pub(crate) fn hit_surfaces(&self) -> Undragged<'_> {
-        let dragged = self
-            .selection
-            .selections
-            .drag(self.input.seat)
-            .and_then(|drag| drag.toplevel)
-            .and_then(|toplevel| self.windows.desktop.window_for_toplevel(toplevel))
-            .and_then(|window| self.windows.desktop.window(window))
-            .and_then(|window| window.surface());
+        let dragged = self.input.seats().map(|seat| {
+            self.selection
+                .selections
+                .drag(seat)
+                .and_then(|drag| drag.toplevel)
+                .and_then(|toplevel| self.windows.desktop.window_for_toplevel(toplevel))
+                .and_then(|window| self.windows.desktop.window(window))
+                .and_then(|window| window.surface())
+        });
         Undragged {
             surfaces: self.surfaces,
             dragged,
@@ -52,8 +53,7 @@ impl InputCtx<'_> {
     }
 
     pub(crate) fn drag_icon_followed(&mut self) {
-        let seat = self.input.seat;
-        let now = self.selection.icon(seat).map(|icon| icon.at);
+        let now = self.selection.icon(self.input.seats()).map(|icon| icon.at);
         let was = std::mem::replace(&mut self.selection.icon_at, now);
         if was == now {
             return;

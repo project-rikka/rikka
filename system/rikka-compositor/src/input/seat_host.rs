@@ -53,6 +53,7 @@ impl SeatHost for Compositor {
 fn event_seat(event: &SeatEvent) -> Option<SeatId> {
     match event {
         SeatEvent::KeyboardFocus { seat, .. }
+        | SeatEvent::KeyboardPresented { seat }
         | SeatEvent::KeyboardGrab { seat, .. }
         | SeatEvent::TouchGrab { seat, .. }
         | SeatEvent::PointerGrab { seat, .. }

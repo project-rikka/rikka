@@ -21,7 +21,7 @@ use rikka_wayland_wire::{ClientId, serial_not_before};
 use crate::focus::KeyboardFocus;
 
 pub(crate) use deliver::introduce;
-pub(crate) use focus::{refocus_after_destroy, restore, set_focus, withhold};
+pub(crate) use focus::{conceal, refocus_after_destroy, restore, reveal, set_focus, withhold};
 pub(crate) use inhibit::{inhibit_manager, inhibitor, inhibitor_destroyed};
 pub use keymap::{Keymap, KeymapNames};
 pub use keystroke::{KeyFilter, Keystroke};

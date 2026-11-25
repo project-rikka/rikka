@@ -24,8 +24,8 @@ impl Seat {
         Seat::new(Display::connect_to(socket)?, None)
     }
 
-    pub fn named(seat: &str) -> Result<Seat> {
-        Seat::new(Display::from_env()?, Some(seat))
+    pub fn connect_named(socket: &Path, seat: &str) -> Result<Seat> {
+        Seat::new(Display::connect_to(socket)?, Some(seat))
     }
 
     fn new(display: Display, name: Option<&str>) -> Result<Seat> {

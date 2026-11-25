@@ -1,5 +1,5 @@
 use rikka_compositor_protocols::wl_seat::WlSeat;
-use rikka_compositor_server::DisplayHandle;
+use rikka_compositor_server::{Client, DisplayHandle};
 use rikka_compositor_surface::{Committed, SurfaceId};
 use smallvec::SmallVec;
 
@@ -21,19 +21,37 @@ impl Seats {
         name: &str,
         keymap: Keymap,
     ) -> SeatId {
-        let id = self.seats.insert(Seat {
+        let id = self.insert(name, keymap, None);
+        display.global::<WlSeat>().key(id).publish();
+        self.primary.get_or_insert(id);
+        id
+    }
+
+    pub fn add_carried<A: Access>(
+        &mut self,
+        display: &DisplayHandle<A>,
+        name: &str,
+        keymap: Keymap,
+        carrier: SeatId,
+        visible: impl Fn(&Client) -> bool + 'static,
+    ) -> SeatId {
+        let id = self.insert(name, keymap, Some(carrier));
+        display.global::<WlSeat>().key(id).only(visible).publish();
+        id
+    }
+
+    fn insert(&mut self, name: &str, keymap: Keymap, carrier: Option<SeatId>) -> SeatId {
+        self.seats.insert(Seat {
             name: name.to_owned(),
             capabilities: Capabilities::POINTER | Capabilities::KEYBOARD,
+            carrier,
             handles: Vec::new(),
             keyboard: Keyboard::new(keymap),
             pointer: Pointer::new(),
             touch: Touch::default(),
             tablets: Tablets::default(),
             ime: Ime::default(),
-        });
-        display.global::<WlSeat>().key(id).publish();
-        self.primary.get_or_insert(id);
-        id
+        })
     }
 }
 
