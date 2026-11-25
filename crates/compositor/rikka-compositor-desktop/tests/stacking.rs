@@ -14,17 +14,20 @@ fn windows_stack_by_arrival_and_restack() {
         [first, second, third]
     );
 
-    world.desktop.raise(first).expect("raised");
+    assert_eq!(world.desktop.raise(first), Ok(true));
     assert_eq!(
         world.desktop.stacking().collect::<Vec<_>>(),
         [second, third, first]
     );
+    assert_eq!(world.desktop.raise(first), Ok(false));
 
-    world.desktop.lower(third).expect("lowered");
+    assert_eq!(world.desktop.lower(third), Ok(true));
     assert_eq!(
         world.desktop.stacking().collect::<Vec<_>>(),
         [third, second, first]
     );
+    assert_eq!(world.desktop.lower(third), Ok(false));
+    assert_eq!(world.desktop.restack(third, Stack::Above(third)), Ok(false));
 }
 
 #[test]

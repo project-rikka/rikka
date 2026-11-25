@@ -9,15 +9,16 @@ mod state;
 pub(crate) use rikka_compositor_snap::Divider;
 pub(crate) use state::Snapping;
 
-use rikka_compositor_desktop::WindowId;
+use rikka_compositor_desktop::{self as desktop, WindowId};
 use rikka_compositor_geometry::{Logical, Point, Rect, Size};
+use rikka_compositor_protocols::zwlr_layer_shell_v1::Layer as Level;
 use rikka_compositor_snap::{between, pulled, shift};
 use rikka_compositor_tiling::{EDGE_REACH, Edges};
 use rikka_compositor_types::OutputId;
 
 use crate::windows::{Snapped, gripped};
 
-use crate::context::{WindowsCtx, WindowsRef, windows_ref};
+use crate::context::{WindowsCtx, WindowsRef, input_ref, windows_ref};
 use crate::windows::Windows;
 use state::{Target, Where};
 
@@ -209,8 +210,26 @@ impl WindowsCtx<'_> {
         }
         let output = self.windows.desktop.output_at(at)?;
         let group = self.snap_group(output);
+        if !self.exposes_divider(&group, at) {
+            return None;
+        }
         let divider = between(&group.rects, at, EDGE_REACH)?;
         Some((group, divider))
+    }
+
+    fn exposes_divider(&self, group: &Group, at: Point<f64, Logical>) -> bool {
+        let Some(hit) = input_ref!(self).hit_under(at) else {
+            return true;
+        };
+        match hit.target() {
+            desktop::Target::Window(window) => group.windows.contains(&window),
+            desktop::Target::Layer(layer) => {
+                self.windows.desktop.layer(layer).is_some_and(|record| {
+                    matches!(record.level(), Level::Background | Level::Bottom)
+                })
+            }
+            desktop::Target::Popup(_) | desktop::Target::Lock(_) => false,
+        }
     }
 
     pub(crate) fn snap_divider_pulled(
@@ -232,22 +251,21 @@ impl WindowsCtx<'_> {
     }
 
     fn snap_group(&mut self, output: OutputId) -> Group {
-        let standing: Vec<(WindowId, Rect<i32, Logical>)> = self
-            .windows
-            .desktop
-            .stacking()
-            .filter(|window| self.windows.output_of(*window) == Some(output))
-            .filter(|window| {
-                self.windows
-                    .desktop
-                    .window(*window)
-                    .is_some_and(|record| record.visibility().shown())
-            })
-            .filter(|window| {
-                self.windows.snapped(*window).is_some() && !self.windows.enlargements(*window).any()
-            })
-            .filter_map(|window| Some((window, self.windows.desktop.window(window)?.geometry())))
-            .collect();
+        let mut standing: Vec<(WindowId, Rect<i32, Logical>)> = Vec::new();
+        for window in self.windows.desktop.stacking().rev() {
+            let Some(record) = self.windows.desktop.window(window) else {
+                continue;
+            };
+            let member = self.windows.output_of(window) == Some(output)
+                && record.visibility().shown()
+                && self.windows.snapped(window).is_some()
+                && !self.windows.enlargements(window).any();
+            let geometry = record.geometry();
+            if member && !standing.iter().any(|(_, above)| above.overlaps(geometry)) {
+                standing.push((window, geometry));
+            }
+        }
+        standing.reverse();
         let minima = standing
             .iter()
             .map(|(window, _)| self.smallest(*window))

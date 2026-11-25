@@ -19,6 +19,7 @@ const EXTENT: Extent = Extent {
 
 const TILING: [(&str, &str); 1] = [("rikka.windows", "layout = \"tiling\"\n")];
 const SCROLLING: [(&str, &str); 1] = [("rikka.windows", "layout = \"tiling\"\nscrolling = true\n")];
+const STILL: [(&str, &str); 1] = [("rikka.animation", "enabled = false\n")];
 
 const KEY_LEFTMETA: u32 = 125;
 const KEY_LEFT: u32 = 105;
@@ -78,6 +79,23 @@ fn click_focuses_window() {
     client.until("keyboard focus follows click", |recorded| {
         recorded.shell.keyboard_on == Some(below) && recorded.shell.pointer_on == Some(below)
     });
+    harness.frame_where(move |snapshot| shows(snapshot, 100, 100, SHOWN_GREEN));
+}
+
+#[test]
+fn seam_focus_redraws_raised_window() {
+    let harness = Harness::full(EXTENT, &STILL);
+    let mut client = harness.client();
+    let _below = mapped(&mut client, 1, (60, 60), GREEN);
+    let _above = mapped(&mut client, 2, (60, 60), BLUE);
+    harness.frame_where(move |snapshot| shows(snapshot, 100, 100, SHOWN_BLUE));
+    let listed: toplevels::State =
+        harness.ask(Request::new(toplevels::CAPABILITY, toplevels::STATE));
+    let below = listed.toplevels[0].id.clone();
+
+    let _: () = harness.ask(
+        Request::new(toplevels::CAPABILITY, toplevels::FOCUS).encode(&ToplevelRef::new(&below)),
+    );
     harness.frame_where(move |snapshot| shows(snapshot, 100, 100, SHOWN_GREEN));
 }
 

@@ -99,9 +99,9 @@ impl Windows {
         });
     }
 
-    pub(crate) fn lift_floating(&mut self) {
+    pub(crate) fn lift_floating(&mut self) -> Vec<WindowId> {
         if !self.tiling_mode() {
-            return;
+            return Vec::new();
         }
         let order: Vec<WindowId> = self
             .desktop
@@ -125,7 +125,7 @@ impl Windows {
             .windows(2)
             .all(|pair| standing(self, pair[0]) <= standing(self, pair[1]));
         if in_order {
-            return;
+            return Vec::new();
         }
         let mut lifted: Vec<(u8, WindowId)> = order
             .into_iter()
@@ -133,11 +133,15 @@ impl Windows {
             .filter(|(standing, _)| *standing > 0)
             .collect();
         lifted.sort_by_key(|(standing, _)| *standing);
+        let mut moved = Vec::new();
         for (_, window) in lifted {
-            if let Err(error) = self.desktop.raise(window) {
-                tracing::debug!("cannot raise floating window: {error}");
+            match self.desktop.raise(window) {
+                Ok(true) => moved.push(window),
+                Ok(false) => {}
+                Err(error) => tracing::debug!("cannot raise floating window: {error}"),
             }
         }
+        moved
     }
 }
 
@@ -211,7 +215,8 @@ impl WindowsCtx<'_> {
                 self.place(window, tile, placing);
             }
         }
-        self.windows.lift_floating();
+        let lifted = self.windows.lift_floating();
+        self.redraw_where_drawn(&lifted);
     }
 
     fn place(&mut self, window: WindowId, tile: Rect<i32, Logical>, placing: Placing) {

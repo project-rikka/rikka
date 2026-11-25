@@ -61,7 +61,8 @@ impl<P> Desktop<P> {
         }
         window.workspace = Some(workspace);
         self.settle(id);
-        self.raise(id)
+        self.raise(id)?;
+        Ok(())
     }
 
     fn shown_on(&self, workspace: Workspace) -> Vec<WindowId> {

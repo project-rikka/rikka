@@ -34,6 +34,7 @@ impl Snapping {
                 panes: Arc::clone(assist.frost()),
                 alpha: assist.alpha(),
             });
+            let lifted = !assist.is_leaving();
             for card in assist.cards() {
                 let (Some(shown), Some(geometry)) =
                     (assist.visual_for(card.window), geometry(card.window))
@@ -42,7 +43,9 @@ impl Snapping {
                 };
                 let target = Target::Window(card.window);
                 staging.moved.insert(target, Moved { geometry, shown });
-                staging.lifted.push(target);
+                if lifted {
+                    staging.lifted.push(target);
+                }
             }
         }
         moving

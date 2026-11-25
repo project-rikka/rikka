@@ -48,6 +48,26 @@ impl WindowsCtx<'_> {
         }
     }
 
+    pub(crate) fn redraw_where_drawn(&mut self, windows: &[WindowId]) {
+        if windows.is_empty() {
+            return;
+        }
+        let desktop = &self.windows.desktop;
+        let surfaces = &*self.surfaces;
+        let outputs: Vec<OutputId> = desktop
+            .outputs()
+            .map(|(output, _)| output)
+            .filter(|output| {
+                desktop
+                    .windows_drawn_on(surfaces, *output)
+                    .any(|drawn| windows.contains(&drawn))
+            })
+            .collect();
+        for output in outputs {
+            self.redraw(output);
+        }
+    }
+
     pub(crate) fn travel(&mut self, window: WindowId, to: Rect<i32, Logical>) -> bool {
         self.travel_at(window, to, None)
     }

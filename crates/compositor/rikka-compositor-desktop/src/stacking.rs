@@ -16,15 +16,15 @@ pub enum Stack {
 }
 
 impl<P> Desktop<P> {
-    pub fn raise(&mut self, id: WindowId) -> Result<()> {
+    pub fn raise(&mut self, id: WindowId) -> Result<bool> {
         self.restack(id, Stack::Top)
     }
 
-    pub fn lower(&mut self, id: WindowId) -> Result<()> {
+    pub fn lower(&mut self, id: WindowId) -> Result<bool> {
         self.restack(id, Stack::Bottom)
     }
 
-    pub fn restack(&mut self, id: WindowId, to: Stack) -> Result<()> {
+    pub fn restack(&mut self, id: WindowId, to: Stack) -> Result<bool> {
         let window = self.known(id)?;
         if matches!(window.visibility, Visibility::Exiting(_)) {
             return Err(Error::Exiting(id));
@@ -35,7 +35,7 @@ impl<P> Desktop<P> {
                 return Err(Error::SeparateStacks { window: id, other });
             }
             if other == id {
-                return Ok(());
+                return Ok(false);
             }
         }
         let windows = &self.windows;
@@ -53,7 +53,7 @@ impl<P> Desktop<P> {
             Stack::Below(other) => position(stack, other),
         };
         stack.insert(at, id);
-        Ok(())
+        Ok(at != from)
     }
 
     pub fn stacking(&self) -> impl DoubleEndedIterator<Item = WindowId> + '_ {

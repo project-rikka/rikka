@@ -9,29 +9,42 @@ pub(crate) struct XStacking(Vec<XWindowId>);
 
 impl WindowsCtx<'_> {
     pub(crate) fn raise_window(&mut self, window: WindowId) {
-        self.raise_with_dialogs(window, 0);
-        self.windows.lift_floating();
-        self.sync_x11_stacking();
+        let mut moved = Vec::new();
+        self.raise_with_dialogs(window, 0, &mut moved);
+        self.restacked(moved);
     }
 
     pub(crate) fn raise_family(&mut self, window: WindowId) {
         let root = windows_ref!(self).family_root(window);
+        let mut moved = Vec::new();
         if root != window {
-            self.raise_with_dialogs(root, 0);
+            self.raise_with_dialogs(root, 0, &mut moved);
         }
-        self.raise_window(window);
+        self.raise_with_dialogs(window, 0, &mut moved);
+        self.restacked(moved);
     }
 
-    fn raise_with_dialogs(&mut self, window: WindowId, depth: usize) {
-        if let Err(error) = self.windows.desktop.raise(window) {
-            tracing::debug!("cannot raise window: {error}");
+    fn raise_with_dialogs(&mut self, window: WindowId, depth: usize, moved: &mut Vec<WindowId>) {
+        match self.windows.desktop.raise(window) {
+            Ok(true) => moved.push(window),
+            Ok(false) => {}
+            Err(error) => tracing::debug!("cannot raise window: {error}"),
         }
         if depth >= FAMILY_DEPTH {
             return;
         }
         for dialog in windows_ref!(self).dialogs_of(window) {
-            self.raise_with_dialogs(dialog, depth + 1);
+            self.raise_with_dialogs(dialog, depth + 1, moved);
         }
+    }
+
+    fn restacked(&mut self, mut moved: Vec<WindowId>) {
+        moved.extend(self.windows.lift_floating());
+        if !moved.is_empty() {
+            self.redraw_where_drawn(&moved);
+            self.windows.session_changed();
+        }
+        self.sync_x11_stacking();
     }
 
     pub(crate) fn sync_x11_stacking(&mut self) {
