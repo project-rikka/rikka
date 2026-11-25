@@ -10,7 +10,6 @@ rikka_binary(
         "//apps/system/music/crates/music-local",
         "//apps/system/music/crates/music-qobuz",
         "//apps/system/music/crates/music-soundcloud",
-        "//apps/system/music/crates/music-spotify",
         "//apps/system/music/crates/music-youtube",
         "//crates/daemons/rikka-mpris",
         "//crates/daemons/rikka-sound",
