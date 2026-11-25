@@ -1,6 +1,7 @@
 """Rikka's Java rules: jars compiled by the development shell's JDK and run by its JVM."""
 
 load("@nix//:paths.bzl", "NIX")
+load("//bazel/platforms:defs.bzl", "LANGUAGES")
 load("//bazel/shipped:defs.bzl", "SHIPPED_ENV")
 load("//bazel/test:defs.bzl", "hermetic_test")
 
@@ -27,7 +28,7 @@ def _compile(ctx, output, jars):
         outputs = [output],
         inputs = ctx.files.srcs + jars,
         arguments = ["-c", _COMPILE.format(
-            path = NIX["path"],
+            path = NIX["language_path"],
             java_home = NIX["java_home"],
             release = ctx.attr.release,
             classpath = "-classpath " + ":".join([jar.path for jar in jars]) if jars else "",
@@ -64,6 +65,7 @@ _ATTRS = {
 
 rikka_java_library = rule(
     implementation = _library_impl,
+    exec_compatible_with = LANGUAGES,
     doc = "A jar of Java sources, modular when they include a module-info.java.",
     attrs = _ATTRS | {
         "libraries": attr.label_list(allow_files = True, doc = "Shared libraries loaded at run time."),
@@ -106,6 +108,7 @@ _PROGRAM_ATTRS = _ATTRS | {
 
 rikka_java_binary = rule(
     implementation = _program_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     doc = "A Java program run by the shell's JVM from the runfiles root.",
     attrs = _PROGRAM_ATTRS,
@@ -136,6 +139,7 @@ def rikka_java_test(name, srcs, main_class, deps = [], env = {}, tags = [], time
     )
     hermetic_test(
         name = name,
+        languages = True,
         binary = ":" + name + "_bin",
         tags = tags,
         timeout = timeout,

@@ -2,6 +2,7 @@
 
 load("@nix//:paths.bzl", "NIX")
 load("@rules_rust//rust:defs.bzl", "rust_clippy_aspect", "rustfmt_aspect")
+load("//bazel/platforms:defs.bzl", "LANGUAGES")
 load("//bazel/shipped:defs.bzl", "SHIPPED_ENV")
 
 LIBTEST = "libtest"
@@ -23,7 +24,7 @@ def _hermetic_test_impl(ctx):
             "{fontconfig_file}": NIX["fontconfig_file"],
             "{jobs}": str(ctx.attr.jobs),
             "{limit}": str(ctx.attr.limit),
-            "{path}": NIX["path"],
+            "{path}": NIX["language_path"] if ctx.attr.languages else NIX["path"],
             "{runner}": ctx.attr.runner,
             "{ssl_cert_file}": NIX["ssl_cert_file"],
             "{xdg_data_dirs}": NIX["xdg_data_dirs"],
@@ -65,21 +66,26 @@ _hermetic_test = rule(
             mandatory = True,
         ),
         "jobs": attr.int(default = 1, doc = "Tests of a shard that run at once."),
+        "languages": attr.bool(doc = "Whether the program needs the language toolchains on `PATH`."),
         "limit": attr.int(default = 60, doc = "Seconds each test may take."),
         "runner": attr.string(default = PROGRAM, values = [LIBTEST, PROGRAM]),
         "_launcher": attr.label(default = ":hermetic.sh.tpl", allow_single_file = True),
     },
 )
 
-def hermetic_test(name, **kwargs):
+def hermetic_test(name, languages = False, **kwargs):
     """The hermetic launcher of a test program; tests run only on Linux.
 
     Args:
         name: target name.
+        languages: whether the program runs on the language toolchains.
         **kwargs: passed to the launcher rule.
     """
     _hermetic_test(
         name = name,
+        languages = languages,
+        exec_compatible_with = LANGUAGES if languages else [],
+        exec_group_compatible_with = {"test": LANGUAGES} if languages else {},
         target_compatible_with = ["@platforms//os:linux"] + kwargs.pop("target_compatible_with", []),
         **kwargs
     )

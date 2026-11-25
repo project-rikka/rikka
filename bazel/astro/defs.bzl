@@ -1,13 +1,14 @@
 """Rikka's Astro rules: sites built, checked and served by the development shell's Node."""
 
 load("@nix//:paths.bzl", "NIX")
+load("//bazel/platforms:defs.bzl", "LANGUAGES")
 load("//bazel/test:defs.bzl", "hermetic_test")
 
 _ENVIRONMENT = """export PATH="{path}"
 export ASTRO_TELEMETRY_DISABLED=1
 export FONTCONFIG_FILE="{fontconfig_file}"
 """.format(
-    path = NIX["path"],
+    path = NIX["language_path"],
     fontconfig_file = NIX["fontconfig_file"],
 )
 
@@ -102,6 +103,7 @@ _SOURCE_ATTRS = {
 
 rikka_astro_site = rule(
     implementation = _site_impl,
+    exec_compatible_with = LANGUAGES,
     doc = """A static Astro site built from this package into a directory.
 
     The sources and data are staged at their workspace paths with the Nix `node_modules` linked into
@@ -136,6 +138,7 @@ _TOOL_ATTRS = {
 
 _rikka_astro_test_program = rule(
     implementation = _test_program_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     attrs = _SOURCE_ATTRS | _TOOL_ATTRS,
 )
@@ -165,6 +168,7 @@ def rikka_astro_test(name, srcs, tool, arguments = [], data = [], tags = [], tim
     )
     hermetic_test(
         name = name,
+        languages = True,
         binary = ":" + name + "_bin",
         tags = tags,
         timeout = timeout,
@@ -189,6 +193,7 @@ def _run_impl(ctx):
 
 rikka_astro_run = rule(
     implementation = _run_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     doc = """Runs a `node_modules/.bin` tool in this package of the workspace itself.
 

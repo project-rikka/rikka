@@ -34,6 +34,23 @@ constraint_value(
     visibility = ["//visibility:public"],
 )
 
+constraint_setting(
+    name = "languages",
+    default_constraint_value = ":with_languages",
+)
+
+constraint_value(
+    name = "with_languages",
+    constraint_setting = ":languages",
+    visibility = ["//visibility:public"],
+)
+
+constraint_value(
+    name = "without_languages",
+    constraint_setting = ":languages",
+    visibility = ["//visibility:public"],
+)
+
 platform(
     name = "linux",
     constraint_values = [
@@ -60,10 +77,24 @@ platform(
 
 platform(
     name = "rbe",
+    constraint_values = [":without_languages"],
     exec_properties = {
         "OSFamily": "Linux",
         "container-image": "docker://" + NIX["image"],
         "network": "off",
+        "recycle-runner": "true",
+    },
+    parents = [":linux"],
+    visibility = ["//visibility:public"],
+)
+
+platform(
+    name = "rbe_languages",
+    exec_properties = {
+        "OSFamily": "Linux",
+        "container-image": "docker://" + NIX["languages_image"],
+        "network": "off",
+        "recycle-runner": "true",
     },
     parents = [":linux"],
     visibility = ["//visibility:public"],

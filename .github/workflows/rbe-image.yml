@@ -36,30 +36,20 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - name: Name the image
-        id: image
-        run: |
-          echo "reference=$(nix eval --raw .#rbe-image.imageName):$(nix eval --raw .#rbe-image.imageTag)" >> "$GITHUB_OUTPUT"
-
-      - name: Check whether the registry already has it
-        id: published
+      - name: Build and push the images the registry lacks
         env:
           REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if nix run nixpkgs#skopeo -- inspect --creds "${{ github.actor }}:$REGISTRY_TOKEN" \
-              "docker://${{ steps.image.outputs.reference }}" > /dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Build and push
-        if: steps.published.outputs.exists == 'false'
-        env:
-          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          nix build .#rbe-image --out-link stream
-          ./stream | nix run nixpkgs#skopeo -- copy \
-            --dest-creds "${{ github.actor }}:$REGISTRY_TOKEN" \
-            docker-archive:/dev/stdin \
-            "docker://${{ steps.image.outputs.reference }}"
+          for image in rbe-image rbe-languages-image; do
+            reference="$(nix eval --raw ".#$image.imageName"):$(nix eval --raw ".#$image.imageTag")"
+            if nix run nixpkgs#skopeo -- inspect --creds "${{ github.actor }}:$REGISTRY_TOKEN" \
+                "docker://$reference" > /dev/null 2>&1; then
+              echo "$reference is already published"
+              continue
+            fi
+            nix build ".#$image" --out-link stream
+            ./stream | nix run nixpkgs#skopeo -- copy \
+              --dest-creds "${{ github.actor }}:$REGISTRY_TOKEN" \
+              docker-archive:/dev/stdin \
+              "docker://$reference"
+          done

@@ -12,7 +12,7 @@ let
 in
 mkShell {
   packages = [
-    env.toolchain
+    env.analyzerToolchain
     bazel_9
     bazel-buildtools
   ]

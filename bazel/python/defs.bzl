@@ -1,6 +1,7 @@
 """Rikka's Python rules: packages and tests run by the development shell's Python."""
 
 load("@nix//:paths.bzl", "NIX")
+load("//bazel/platforms:defs.bzl", "LANGUAGES")
 load("//bazel/shipped:defs.bzl", "SHIPPED_ENV")
 load("//bazel/test:defs.bzl", "hermetic_test")
 
@@ -33,6 +34,7 @@ def _library_impl(ctx):
 
 rikka_py_library = rule(
     implementation = _library_impl,
+    exec_compatible_with = LANGUAGES,
     doc = "A pure-Python package importable from `root` within this package.",
     attrs = {
         "srcs": attr.label_list(allow_files = [".py", ".typed"]),
@@ -91,6 +93,7 @@ def _test_impl(ctx):
 
 rikka_py_binary = rule(
     implementation = _binary_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     doc = "A Python script run by the shell's Python from the runfiles root.",
     attrs = {
@@ -102,6 +105,7 @@ rikka_py_binary = rule(
 
 _rikka_py_test_program = rule(
     implementation = _test_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     attrs = {
         "srcs": attr.label_list(allow_files = [".py"]),
@@ -136,6 +140,7 @@ def rikka_py_test(name, srcs, deps = [], typecheck = False, env = {}, tags = [],
     )
     hermetic_test(
         name = name,
+        languages = True,
         binary = ":" + name + "_bin",
         tags = tags,
         timeout = timeout,

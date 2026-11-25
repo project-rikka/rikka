@@ -66,16 +66,22 @@ rec {
     inherit (pkgsCross.ucrt64) spirv-tools;
   };
 
-  toolchain = (rust-bin.fromRustupToolchainFile ../rust-toolchain.toml).override {
-    extensions = (lib.importTOML ../rust-toolchain.toml).toolchain.components ++ [
-      "rust-analyzer"
-      "rust-src"
-    ];
-    targets = [
-      muslTarget
-      windowsTarget
-    ];
-  };
+  rustToolchain =
+    extensions:
+    (rust-bin.fromRustupToolchainFile ../rust-toolchain.toml).override {
+      extensions = (lib.importTOML ../rust-toolchain.toml).toolchain.components ++ extensions;
+      targets = [
+        muslTarget
+        windowsTarget
+      ];
+    };
+
+  toolchain = rustToolchain [ ];
+
+  analyzerToolchain = rustToolchain [
+    "rust-analyzer"
+    "rust-src"
+  ];
 
   nativeBuildInputs = [
     cmake

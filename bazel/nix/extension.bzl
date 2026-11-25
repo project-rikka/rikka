@@ -1,12 +1,14 @@
 """Exposes the development shell's Nix toolchain to Bazel as the `@nix` repository."""
 
 _TOOLCHAIN = "RIKKA_BAZEL_TOOLCHAIN"
+_LANGUAGES = "RIKKA_BAZEL_LANGUAGES"
 _LOCAL = "RIKKA_BAZEL_LOCAL"
 _IMAGE = "RIKKA_RBE_IMAGE"
+_LANGUAGES_IMAGE = "RIKKA_RBE_LANGUAGES_IMAGE"
 
 _COMPILERS = ["rustc", "rustdoc", "clippy-driver"]
 
-_TOOLS = ["cargo", "rustfmt", "rust-analyzer"]
+_TOOLS = ["cargo", "rustfmt"]
 
 _WRAPPER = """#!{bash}
 exec {target} "$@"
@@ -40,25 +42,31 @@ def _wrap(rctx, template, bash, name, target):
 
 def _nix_repository_impl(rctx):
     nix = json.decode(rctx.read(_require(rctx, _TOOLCHAIN)))
+    languages = json.decode(rctx.read(_require(rctx, _LANGUAGES)))
     local = json.decode(rctx.read(_require(rctx, _LOCAL)))
-    image = _require(rctx, _IMAGE)
+    images = {
+        "image": _require(rctx, _IMAGE),
+        "languages_image": _require(rctx, _LANGUAGES_IMAGE),
+    }
     bash = nix["bash"]
+    analyzer = local["rust_analyzer"]
 
     for tool in _COMPILERS:
         _wrap(rctx, _COMPILER_WRAPPER, bash, "rust/bin/" + tool, "{}/bin/{}".format(nix["rust"], tool))
     for tool in _TOOLS:
         _wrap(rctx, _WRAPPER, bash, "rust/bin/" + tool, "{}/bin/{}".format(nix["rust"], tool))
+    _wrap(rctx, _WRAPPER, bash, "rust/bin/rust-analyzer", "{}/bin/rust-analyzer".format(analyzer))
     _wrap(
         rctx,
         _WRAPPER,
         bash,
         "rust/bin/rust-analyzer-proc-macro-srv",
-        "{}/libexec/rust-analyzer-proc-macro-srv".format(nix["rust"]),
+        "{}/libexec/rust-analyzer-proc-macro-srv".format(analyzer),
     )
-    rctx.symlink("{}/lib/rustlib/src/rust".format(nix["rust"]), "rust/src")
+    rctx.symlink("{}/lib/rustlib/src/rust".format(analyzer), "rust/src")
     rctx.file("rust/host_tools", "")
 
-    rctx.file("paths.bzl", "NIX = {}\n".format(json.encode_indent(nix | local | {"image": image}, indent = "    ")))
+    rctx.file("paths.bzl", "NIX = {}\n".format(json.encode_indent(nix | languages | local | images, indent = "    ")))
     rctx.template(
         "BUILD.bazel",
         Label("//bazel/nix:BUILD.nix.bazel"),

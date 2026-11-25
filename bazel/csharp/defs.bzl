@@ -1,6 +1,7 @@
 """Rikka's C# rules: assemblies compiled by the development shell's .NET SDK and run by its runtime."""
 
 load("@nix//:paths.bzl", "NIX")
+load("//bazel/platforms:defs.bzl", "LANGUAGES")
 load("//bazel/shipped:defs.bzl", "SHIPPED_ENV")
 load("//bazel/test:defs.bzl", "hermetic_test")
 
@@ -41,7 +42,7 @@ def _compile(ctx, output, target, references, documentation = None):
         outputs = outputs,
         inputs = ctx.files.srcs + references,
         arguments = ["-c", _COMPILE.format(
-            path = NIX["path"],
+            path = NIX["language_path"],
             dotnet = NIX["dotnet"],
             language = ctx.attr.language,
             target = target,
@@ -82,6 +83,7 @@ _ATTRS = {
 
 rikka_csharp_library = rule(
     implementation = _library_impl,
+    exec_compatible_with = LANGUAGES,
     doc = "A class library assembly with its XML documentation.",
     attrs = _ATTRS | {
         "assembly": attr.string(mandatory = True, doc = "The assembly name."),
@@ -142,6 +144,7 @@ _PROGRAM_ATTRS = _ATTRS | {
 
 rikka_csharp_binary = rule(
     implementation = _program_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     doc = "A C# program compiled to an executable assembly and run by the shell's .NET runtime from the runfiles root.",
     attrs = _PROGRAM_ATTRS,
@@ -170,6 +173,7 @@ def rikka_csharp_test(name, srcs, deps = [], env = {}, tags = [], timeout = "sho
     )
     hermetic_test(
         name = name,
+        languages = True,
         binary = ":" + name + "_bin",
         tags = tags,
         timeout = timeout,

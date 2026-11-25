@@ -1,6 +1,7 @@
 """Rikka's Go rules: cgo packages built by the development shell's Go through pkg-config."""
 
 load("@nix//:paths.bzl", "NIX")
+load("//bazel/platforms:defs.bzl", "LANGUAGES")
 load("//bazel/shipped:defs.bzl", "SHIPPED_ENV")
 load("//bazel/test:defs.bzl", "hermetic_test")
 
@@ -30,6 +31,7 @@ def _library_impl(ctx):
 
 rikka_go_library = rule(
     implementation = _library_impl,
+    exec_compatible_with = LANGUAGES,
     doc = "A Go module whose root is this package, linking a C library through pkg-config.",
     attrs = {
         "srcs": attr.label_list(allow_files = [".go", ".mod"], mandatory = True),
@@ -92,7 +94,7 @@ def _program_impl(ctx, build):
             include = library.include,
             goroot = NIX["go"],
             cc = NIX["gnu"]["cc"],
-            path = NIX["path"],
+            path = NIX["language_path"],
             output = binary.path,
         )],
         mnemonic = "GoCompile",
@@ -138,6 +140,7 @@ _PROGRAM_ATTRS = {
 
 rikka_go_binary = rule(
     implementation = _binary_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     doc = "A Go command (`package main`) over a `rikka_go_library`, vetted, built inside its module and run from the runfiles root.",
     attrs = _PROGRAM_ATTRS | {
@@ -147,6 +150,7 @@ rikka_go_binary = rule(
 
 _rikka_go_test_program = rule(
     implementation = _test_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     attrs = _PROGRAM_ATTRS | {
         "srcs": attr.label_list(allow_files = [".go"], mandatory = True),
@@ -176,6 +180,7 @@ def rikka_go_test(name, srcs, library, env = {}, tags = [], timeout = "short"):
     )
     hermetic_test(
         name = name,
+        languages = True,
         binary = ":" + name + "_bin",
         tags = tags,
         timeout = timeout,

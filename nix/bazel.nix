@@ -27,34 +27,41 @@
 let
   registry = "ghcr.io/project-rikka/rikka-rbe";
 
-  tools = buildEnv {
-    name = "rikka-bazel-tools";
-    paths = [
-      bashNonInteractive
-      coreutils
-      diffutils
-      findutils
-      gawk
-      gnugrep
-      gnumake
-      gnused
-      gnutar
-      gzip
-      bzip2
-      xz
-      zstd
-      stdenv.cc
-      env.toolchain
-    ]
-    ++ env.nativeBuildInputs
-    ++ env.runtimeTools
-    ++ env.bindingTools
-    ++ env.websiteTools;
-    pathsToLink = [
-      "/bin"
-      "/share"
-    ];
-  };
+  coreTools = [
+    bashNonInteractive
+    coreutils
+    diffutils
+    findutils
+    gawk
+    gnugrep
+    gnumake
+    gnused
+    gnutar
+    gzip
+    bzip2
+    xz
+    zstd
+    stdenv.cc
+    env.toolchain
+  ]
+  ++ env.nativeBuildInputs
+  ++ env.runtimeTools;
+
+  toolEnv =
+    name: paths:
+    buildEnv {
+      inherit name paths;
+      pathsToLink = [
+        "/bin"
+        "/share"
+      ];
+    };
+
+  tools = toolEnv "rikka-bazel-tools" coreTools;
+
+  languageTools = toolEnv "rikka-bazel-language-tools" (
+    coreTools ++ env.bindingTools ++ env.websiteTools
+  );
 
   compiler =
     cc:
@@ -103,12 +110,6 @@ let
     runpath = env.runpath;
     library_path = lib.makeLibraryPath env.buildInputs;
     slangc = env.slangc;
-    go = "${env.bindings.go}/share/go";
-    java_home = "${env.bindings.jdk}/lib/openjdk";
-    python = "${env.bindings.python}/bin/python3";
-    dotnet = "${env.bindings.dotnet}/share/dotnet";
-    node = "${env.website.node}/bin/node";
-    website_modules = "${env.website.modules}/node_modules";
     fontconfig_file = "${rikka-fonts-conf}";
     xdg_data_dirs = "${shared-mime-info}/share";
     ssl_cert_file = "${cacert}/etc/ssl/certs/ca-bundle.crt";
@@ -116,8 +117,7 @@ let
     icon_fonts = env.shipped.RIKKA_ICON_FONTS;
     icon_listings = env.shipped.RIKKA_ICON_LISTINGS;
     grammars = env.shipped.RIKKA_GRAMMARS;
-    gecko = builtins.unsafeDiscardStringContext env.shipped.RIKKA_GECKO;
-    mesa = builtins.unsafeDiscardStringContext env.shipped.RIKKA_MESA;
+    mesa = env.shipped.RIKKA_MESA;
   };
 
   toolchain = stdenv.mkDerivation {
@@ -136,42 +136,69 @@ let
         --arg cflags "$NIX_CFLAGS_COMPILE" \
         --arg libclang_path "$LIBCLANG_PATH" \
         --arg bindgen_args "$BINDGEN_EXTRA_CLANG_ARGS" \
-        '. + {pkg_config_path: $pkg_config_path, cflags: $cflags, libclang_path: $libclang_path, bindgen_args: $bindgen_args}' \
+        '. + {
+          pkg_config_path: $pkg_config_path,
+          cflags: ($cflags | split(" ") | map(select(startswith("-frandom-seed=") | not)) | join(" ")),
+          libclang_path: $libclang_path,
+          bindgen_args: $bindgen_args
+        }' \
         "$descriptionPath" > "$out"
     '';
   };
 
-  local = writeText "rikka-bazel-local.json" (
+  languages = writeText "rikka-bazel-languages.json" (
     builtins.toJSON {
-      minecraft_library_path = lib.makeLibraryPath env.minecraftLibraries;
+      language_path = "${languageTools}/bin";
+      go = "${env.bindings.go}/share/go";
+      java_home = "${env.bindings.jdk}/lib/openjdk";
+      python = "${env.bindings.python}/bin/python3";
+      dotnet = "${env.bindings.dotnet}/share/dotnet";
+      node = "${env.website.node}/bin/node";
+      website_modules = "${env.website.modules}/node_modules";
     }
   );
 
-  image = dockerTools.streamLayeredImage {
-    name = registry;
-    contents = [
-      tools
-      dockerTools.fakeNss
-    ];
-    extraCommands = ''
-      mkdir -m 1777 tmp
-      mkdir -p usr/bin
-      ln -s ../../bin/env usr/bin/env
-    '';
-    config.Labels."org.opencontainers.image.source" = "https://github.com/project-rikka/rikka";
-    config.Env = [
-      "PATH=/bin"
-      "RIKKA_BAZEL_TOOLCHAIN=${toolchain}"
-    ];
-    maxLayers = 120;
-  };
+  local = writeText "rikka-bazel-local.json" (
+    builtins.toJSON {
+      minecraft_library_path = lib.makeLibraryPath env.minecraftLibraries;
+      gecko = env.shipped.RIKKA_GECKO;
+      rust_analyzer = "${env.analyzerToolchain}";
+    }
+  );
+
+  rbeImage =
+    paths: environment:
+    dockerTools.streamLayeredImage {
+      name = registry;
+      contents = [
+        paths
+        dockerTools.fakeNss
+      ];
+      extraCommands = ''
+        mkdir -m 1777 tmp
+        mkdir -p usr/bin
+        ln -s ../../bin/env usr/bin/env
+      '';
+      config.Labels."org.opencontainers.image.source" = "https://github.com/project-rikka/rikka";
+      config.Env = [ "PATH=/bin" ] ++ environment;
+      maxLayers = 120;
+    };
+
+  image = rbeImage tools [ "RIKKA_BAZEL_TOOLCHAIN=${toolchain}" ];
+
+  languagesImage = rbeImage languageTools [
+    "RIKKA_BAZEL_TOOLCHAIN=${toolchain}"
+    "RIKKA_BAZEL_LANGUAGES=${languages}"
+  ];
 in
 {
-  inherit toolchain image;
+  inherit toolchain image languagesImage;
 
   environment = {
     RIKKA_BAZEL_TOOLCHAIN = "${toolchain}";
+    RIKKA_BAZEL_LANGUAGES = "${languages}";
     RIKKA_BAZEL_LOCAL = "${local}";
     RIKKA_RBE_IMAGE = "${registry}:${image.imageTag}";
+    RIKKA_RBE_LANGUAGES_IMAGE = "${registry}:${languagesImage.imageTag}";
   };
 }

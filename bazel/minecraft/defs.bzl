@@ -3,6 +3,7 @@
 load("@minecraft//:versions.bzl", "FABRIC_LOADER", "MINECRAFT")
 load("@nix//:paths.bzl", "NIX")
 load("//bazel/java:defs.bzl", "RikkaJavaInfo")
+load("//bazel/platforms:defs.bzl", "LANGUAGES")
 load("//bazel/shipped:defs.bzl", "SHIPPED_ENV")
 
 FabricModInfo = provider(
@@ -122,7 +123,7 @@ def _fabric_mod_impl(ctx):
         outputs = [jar],
         inputs = ctx.files.srcs + classpath + [manifest] + [resource.file for resource in resources],
         arguments = ["-c", _COMPILE.format(
-            path = NIX["path"],
+            path = NIX["language_path"],
             java_home = NIX["java_home"],
             release = MINECRAFT.java_release,
             flags = _JAVAC_FLAGS,
@@ -141,6 +142,7 @@ def _fabric_mod_impl(ctx):
 
 fabric_mod = rule(
     implementation = _fabric_mod_impl,
+    exec_compatible_with = LANGUAGES,
     doc = "A Fabric mod jar compiled against the pinned Minecraft client and Fabric Loader.",
     attrs = _game_attrs() | {
         "srcs": attr.label_list(allow_files = [".java"], mandatory = True),
@@ -207,6 +209,7 @@ def _minecraft_client_impl(ctx):
 
 minecraft_client = rule(
     implementation = _minecraft_client_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     doc = "Starts the pinned Minecraft client under Fabric Loader with the given mods, in `<package>/run`.",
     attrs = _game_attrs() | {
@@ -262,6 +265,7 @@ def _minecraft_sources_impl(ctx):
 
 minecraft_sources = rule(
     implementation = _minecraft_sources_impl,
+    exec_compatible_with = LANGUAGES,
     executable = True,
     doc = "The pinned Minecraft client decompiled by Vineflower; running it unpacks the sources into `<package>/mcsrc`.",
     attrs = {

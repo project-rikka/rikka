@@ -43,6 +43,7 @@
         in
         {
           rbe-image = bazel.image;
+          rbe-languages-image = bazel.languagesImage;
           bazel-toolchain = bazel.toolchain;
         };
 
