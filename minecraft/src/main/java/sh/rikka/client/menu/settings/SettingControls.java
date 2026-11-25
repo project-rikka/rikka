@@ -36,9 +36,7 @@ import sh.rikka.client.setting.StringSetting;
 
 public final class SettingControls implements AutoCloseable {
 	private static final int SEGMENTED_LIMIT = 3;
-	private static final float SEGMENT_WIDTH = 88.0F;
 	private static final int DOUBLE_DECIMALS = 2;
-	private static final float SLIDER_WIDTH = 180.0F;
 	private static final float VALUE_WIDTH = 56.0F;
 	private static final float COMBO_WIDTH = 200.0F;
 	private static final float KEY_WIDTH = 132.0F;
@@ -57,13 +55,24 @@ public final class SettingControls implements AutoCloseable {
 		return this.capture;
 	}
 
-	public static boolean isWide(Setting<?, ?> setting) {
-		return setting instanceof StringListSetting
-			|| setting instanceof EnumSetSetting<?>
-			|| setting instanceof IntRangeSetting
-			|| setting instanceof DoubleRangeSetting
-			|| setting instanceof PositionSetting
-			|| setting instanceof LanguageListSetting;
+	static ControlPlacement placement(Setting<?, ?> setting) {
+		return switch (setting) {
+			case BoolSetting bool -> ControlPlacement.TRAILING;
+			case ColorSetting color -> ControlPlacement.TRAILING;
+			case KeybindSetting keybind -> ControlPlacement.TRAILING;
+			case RegistrySetSetting<?> registry -> ControlPlacement.TRAILING;
+			case IntSetting integer -> ControlPlacement.BELOW;
+			case DoubleSetting number -> ControlPlacement.BELOW;
+			case StringSetting text -> ControlPlacement.BELOW;
+			case EnumSetting<?> choice -> ControlPlacement.BELOW;
+			case IntRangeSetting range -> ControlPlacement.BELOW;
+			case DoubleRangeSetting range -> ControlPlacement.BELOW;
+			case EnumSetSetting<?> choices -> ControlPlacement.BELOW;
+			case StringListSetting list -> ControlPlacement.BELOW;
+			case PositionSetting position -> ControlPlacement.BELOW;
+			case LanguageSetting language -> ControlPlacement.BELOW;
+			case LanguageListSetting languageList -> ControlPlacement.BELOW;
+		};
 	}
 
 	public void control(View view, Setting<?, ?> setting) {
@@ -111,12 +120,13 @@ public final class SettingControls implements AutoCloseable {
 	private static void number(View view, double value, double min, double max, double step, int decimals, DoubleConsumer set) {
 		view.row(() -> {
 				if (min < max) {
-					slider(view, value, min, max, step, set).width(SLIDER_WIDTH);
+					slider(view, value, min, max, step, set).grow(1.0F);
 				}
 				valueLabel(view, value, decimals);
 			})
 			.gap(Rikka.SPACE_SNUG)
-			.alignItems(Align.CENTER);
+			.alignItems(Align.CENTER)
+			.fillWidth();
 	}
 
 	private static Element slider(View view, double value, double min, double max, double step, DoubleConsumer set) {
@@ -157,7 +167,7 @@ public final class SettingControls implements AutoCloseable {
 						view.segment(setting.constantName(constant).getString());
 					}
 				})
-				.width(SEGMENT_WIDTH * constants.size())
+				.fillWidth()
 				.onSelect((context, index) -> setting.set(constants.get(index)));
 		} else {
 			view.combo(selected, () -> {
@@ -165,7 +175,7 @@ public final class SettingControls implements AutoCloseable {
 						view.option(setting.constantName(constant).getString());
 					}
 				})
-				.width(COMBO_WIDTH)
+				.fillWidth()
 				.onSelect((context, index) -> setting.set(constants.get(index)));
 		}
 	}

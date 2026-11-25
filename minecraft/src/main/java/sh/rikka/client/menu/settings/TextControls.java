@@ -14,15 +14,13 @@ import sh.rikka.client.setting.StringListSetting;
 import sh.rikka.client.setting.StringSetting;
 
 final class TextControls implements AutoCloseable {
-	private static final float FIELD_WIDTH = 220.0F;
-
 	private final Map<Setting<?, ?>, TextDocument> documents = new IdentityHashMap<>();
 
 	void text(View view, StringSetting setting) {
 		TextDocument document = document(setting, setting.get());
 		view.textField(document)
 			.maxLength(setting.maxLength())
-			.width(FIELD_WIDTH)
+			.fillWidth()
 			.onChange(context -> setting.set(document.getText()));
 	}
 

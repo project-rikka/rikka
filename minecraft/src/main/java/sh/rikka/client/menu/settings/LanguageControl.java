@@ -22,7 +22,6 @@ import sh.rikka.client.setting.Setting;
 import sh.rikka.client.translate.Languages;
 
 final class LanguageControl implements AutoCloseable {
-	private static final float BUTTON_WIDTH = 200.0F;
 	private static final float PICKER_WIDTH = 320.0F;
 	private static final float LIST_HEIGHT = 300.0F;
 
@@ -33,7 +32,7 @@ final class LanguageControl implements AutoCloseable {
 		String key = "language:" + setting.translationKey();
 		view.button(label(setting.get(), display))
 			.buttonStyle(ButtonVariant.SECONDARY)
-			.minWidth(BUTTON_WIDTH)
+			.fillWidth()
 			.key(key)
 			.onPress(context -> toggle(setting, () -> entries(setting, display), setting::set));
 		popover(view, setting, key, setting.get());
