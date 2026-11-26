@@ -24,6 +24,7 @@ rikka_library(
         "@crates//:serde",
         "@crates//:serde_json",
         "@crates//:serde_urlencoded",
+        "@crates//:sha1",
         "@crates//:sha2",
         "@crates//:thiserror",
         "@crates//:tokio",

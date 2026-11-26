@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "launcher-modrinth",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "//crates/foundation/rikka-net",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":launcher-modrinth",
+        "@crates//:serde_json",
+    ],
+)

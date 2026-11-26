@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "launcher-meta",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":launcher-meta",
+        "@crates//:serde_json",
+    ],
+)

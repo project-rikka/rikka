@@ -26,16 +26,6 @@
   dotnet-sdk_10,
   nodejs,
   importNpmLock,
-  flite,
-  libdecor,
-  libglvnd,
-  libpulseaudio,
-  libxcursor,
-  libxext,
-  libxfixes,
-  libxi,
-  libxrandr,
-  libxscrnsaver,
 }:
 
 let
@@ -101,12 +91,15 @@ rec {
 
   discordKrisp = callPackage ./packages/discord-krisp.nix { };
 
+  minecraftRuntime = callPackage ./dist/minecraft-runtime.nix { };
+
   shipped = {
     RIKKA_ICON_FONTS = "${iconFonts}/share/rikka/fonts";
     RIKKA_ICON_LISTINGS = "${iconFonts}/share/rikka/listings";
     RIKKA_GRAMMARS = "${grammars}/lib/rikka/grammars";
     RIKKA_GECKO = "${rikka-gecko}/lib/rikka-gecko";
     RIKKA_MESA = "${mesa}";
+    RIKKA_MINECRAFT = "${minecraftRuntime}/lib/rikka-minecraft";
   };
 
   runtimeTools = [
@@ -140,16 +133,5 @@ rec {
 
   websiteTools = [ website.node ];
 
-  minecraftLibraries = [
-    flite
-    libdecor
-    libglvnd
-    libpulseaudio
-    libxcursor
-    libxext
-    libxfixes
-    libxi
-    libxrandr
-    libxscrnsaver
-  ];
+  minecraftLibraries = minecraftRuntime.libraries;
 }

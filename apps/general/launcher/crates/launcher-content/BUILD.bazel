@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "launcher-content",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/launcher/crates/launcher-instance",
+        "//apps/general/launcher/crates/launcher-modrinth",
+        "//crates/foundation/rikka-net",
+        "@crates//:thiserror",
+    ],
+)

@@ -1,0 +1,18 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "launcher-nbt",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":launcher-nbt",
+    ],
+)

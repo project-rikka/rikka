@@ -5,6 +5,7 @@ use crate::error::{Error, Result};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
 pub enum ChecksumAlgorithm {
+    Sha1,
     Sha256,
     Sha512,
 }
@@ -13,6 +14,7 @@ impl ChecksumAlgorithm {
     #[must_use]
     pub const fn digest_len(self) -> usize {
         match self {
+            ChecksumAlgorithm::Sha1 => 20,
             ChecksumAlgorithm::Sha256 => 32,
             ChecksumAlgorithm::Sha512 => 64,
         }
@@ -22,6 +24,7 @@ impl ChecksumAlgorithm {
 impl fmt::Display for ChecksumAlgorithm {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = match self {
+            ChecksumAlgorithm::Sha1 => "SHA-1",
             ChecksumAlgorithm::Sha256 => "SHA-256",
             ChecksumAlgorithm::Sha512 => "SHA-512",
         };
@@ -36,6 +39,10 @@ pub struct Checksum {
 }
 
 impl Checksum {
+    pub fn sha1(digest: &str) -> Result<Checksum> {
+        Checksum::from_hex(ChecksumAlgorithm::Sha1, digest)
+    }
+
     pub fn sha256(digest: &str) -> Result<Checksum> {
         Checksum::from_hex(ChecksumAlgorithm::Sha256, digest)
     }

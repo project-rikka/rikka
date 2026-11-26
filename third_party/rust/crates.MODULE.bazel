@@ -348,6 +348,7 @@ crate.spec(
     default_features = False,
     features = [
         "ecdh",
+        "ecdsa",
         "std",
     ],
     package = "p256",

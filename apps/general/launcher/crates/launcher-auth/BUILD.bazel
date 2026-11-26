@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "launcher-auth",
+    visibility = [
+        "//apps/general/launcher:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-oauth",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "@crates//:base64",
+        "@crates//:getrandom",
+        "@crates//:jiff",
+        "@crates//:p256",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+    ],
+)

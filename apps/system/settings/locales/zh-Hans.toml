@@ -295,6 +295,7 @@ discord = "Discord"
 music = "音乐"
 proton = "Proton"
 remote = "远程桌面"
+minecraft = "Minecraft"
 other = "其他应用"
 
 [settings.lock-screen]
