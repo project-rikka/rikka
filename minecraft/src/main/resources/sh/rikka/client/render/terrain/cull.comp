@@ -1,0 +1,113 @@
+#version 460
+
+layout(local_size_x = WORKGROUP) in;
+
+const float SECTION_SIZE = 16.0;
+const float GEOMETRY_MARGIN = 2.0;
+
+layout(std430, binding = 0) readonly buffer Instances {
+    ivec4 instances[];
+};
+
+layout(std430, binding = 1) readonly buffer Records {
+    uint records[];
+};
+
+layout(std430, binding = 2) readonly buffer Items {
+    uint items[];
+};
+
+layout(std430, binding = 3) writeonly buffer Draws {
+    uint draws[];
+};
+
+layout(push_constant) uniform View {
+    mat4 viewProjection;
+    ivec3 cameraBlock;
+    uint itemCount;
+    vec3 cameraOffset;
+    float opaqueFogDistance;
+};
+
+bool hiddenByFog(vec3 low, float extent) {
+    vec3 nearest = clamp(vec3(0.0), low, low + extent);
+    return max(length(nearest.xz), abs(nearest.y)) >= opaqueFogDistance;
+}
+
+bool insideFrustum(vec3 low, float extent) {
+    bvec4 outside = bvec4(true);
+    for (int corner = 0; corner < 8; corner++) {
+        vec3 offset = vec3(float(corner & 1), float((corner >> 1) & 1), float(corner >> 2)) * extent;
+        vec4 clip = viewProjection * vec4(low + offset, 1.0);
+        outside = bvec4(outside.x && clip.x > clip.w, outside.y && clip.x < -clip.w, outside.z && clip.y > clip.w, outside.w && clip.y < -clip.w);
+    }
+    return !any(outside);
+}
+
+bool facesCamera(uint bucket, vec3 camera) {
+    if (bucket == UNASSIGNED) {
+        return true;
+    }
+    if (bucket < UNASSIGNED) {
+        return camera[bucket] > -GEOMETRY_MARGIN;
+    }
+    return camera[bucket - UNASSIGNED - 1u] < SECTION_SIZE + GEOMETRY_MARGIN;
+}
+
+void main() {
+    uint item = gl_GlobalInvocationID.x;
+    if (item >= itemCount) {
+        return;
+    }
+    uint slot = items[item] & ((1u << LAYER_SHIFT) - 1u);
+    uint layer = items[item] >> LAYER_SHIFT;
+    uint record = slot * RECORD_WORDS + layer * LAYER_WORDS;
+    uint firstDraw = item * DRAWS_PER_ITEM * DRAW_WORDS;
+    uint written = 0u;
+    vec3 origin = vec3(instances[slot].xyz - cameraBlock);
+    vec3 low = origin + cameraOffset - GEOMETRY_MARGIN;
+    float extent = SECTION_SIZE + 2.0 * GEOMETRY_MARGIN;
+    if (!hiddenByFog(low, extent) && insideFrustum(low, extent)) {
+        vec3 camera = -origin - cameraOffset;
+        uint vertexBase = records[record];
+        uint firstIndex = records[record + 1u];
+        bool open = false;
+        uint first = 0u;
+        uint last = 0u;
+        uint previous = 0u;
+        for (uint bucket = 0u; bucket <= BUCKETS; bucket++) {
+            uint end = bucket < BUCKETS ? records[record + 2u + bucket] : previous;
+            bool closes = bucket == BUCKETS;
+            if (end > previous) {
+                if (facesCamera(bucket, camera)) {
+                    if (!open) {
+                        open = true;
+                        first = previous;
+                    }
+                    last = end;
+                } else {
+                    closes = true;
+                }
+            }
+            if (closes && open) {
+                open = false;
+                uint draw = firstDraw + written * DRAW_WORDS;
+                draws[draw] = (last - first) * INDICES_PER_QUAD;
+                draws[draw + 1u] = 1u;
+                draws[draw + 2u] = firstIndex;
+                draws[draw + 3u] = vertexBase + first * 4u;
+                draws[draw + 4u] = slot;
+                written++;
+            }
+            previous = end;
+        }
+    }
+    for (; written < DRAWS_PER_ITEM; written++) {
+        uint draw = firstDraw + written * DRAW_WORDS;
+        draws[draw] = 0u;
+        draws[draw + 1u] = 0u;
+        draws[draw + 2u] = 0u;
+        draws[draw + 3u] = 0u;
+        draws[draw + 4u] = 0u;
+    }
+}

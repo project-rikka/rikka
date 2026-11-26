@@ -52,6 +52,10 @@ public final class VisualHooks {
 		}
 	}
 
+	public static boolean labelsPrimedTnt() {
+		return TntTimerMod.active() != null;
+	}
+
 	public static void entitySubmitted(EntityRenderState state, PoseStack poseStack, SubmitNodeCollector collector) {
 		TargetIndicatorMod indicator = TargetIndicatorMod.active();
 		if (indicator != null) {

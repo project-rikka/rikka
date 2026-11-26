@@ -3,6 +3,7 @@ package sh.rikka.client.mods;
 import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mod.SimpleHudMod;
 import sh.rikka.client.mods.animation.OldAnimationsMod;
+import sh.rikka.client.mods.boost.BoostMod;
 import sh.rikka.client.mods.camera.FreeLookMod;
 import sh.rikka.client.mods.camera.TapLookMod;
 import sh.rikka.client.mods.camera.ZoomMod;
@@ -95,6 +96,7 @@ public final class BuiltinMods {
 		mods.register(new SnapTapMod());
 		mods.register(new QuickSwitchMod());
 		mods.register(new StreamerModeMod());
+		mods.register(new BoostMod());
 		mods.register(new FpsDisplayMod(left(0)));
 		mods.register(new PingDisplayMod(left(1)));
 		mods.register(new CpsDisplayMod(left(2)));

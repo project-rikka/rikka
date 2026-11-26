@@ -1,0 +1,25 @@
+{
+	"required": true,
+	"package": "sh.rikka.client.mixin.entity",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"BufferBuilderMixin",
+		"EntityExtractionMixin",
+		"ItemFeatureRendererMixin",
+		"LivingEntityStateMixin",
+		"ModelFeatureRendererMixin",
+		"ModelPartCubeMixin",
+		"ModelPartMixin",
+		"PoseAccessor",
+		"RenderTypeFeatureRendererMixin",
+		"RenderTypeGroupMixin",
+		"ShadowFeatureRendererMixin",
+		"StagedVertexBufferMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

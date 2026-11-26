@@ -10,6 +10,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.renderpearl.api.textures.GpuSampler;
+import com.mojang.renderpearl.api.textures.GpuTextureView;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -17,10 +18,14 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
 import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
+import net.minecraft.client.renderer.oit.OitRenderPassProvider;
+import net.minecraft.client.renderer.oit.OitStage;
 import net.minecraft.client.renderer.state.level.LevelRenderState;
+import org.joml.Matrix4fc;
 import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
@@ -32,6 +37,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import sh.rikka.client.mods.motionblur.MotionBlurHooks;
 import sh.rikka.client.mods.rearview.RearviewLevel;
+import sh.rikka.client.render.terrain.TerrainRenderer;
 
 @Mixin(LevelRenderer.class)
 abstract class LevelRendererMixin implements RearviewLevel {
@@ -41,6 +47,14 @@ abstract class LevelRendererMixin implements RearviewLevel {
 		"Lnet/minecraft/client/renderer/LevelRenderer;visibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;";
 	private static final String NEARBY_VISIBLE_SECTIONS =
 		"Lnet/minecraft/client/renderer/LevelRenderer;nearbyVisibleSections:Lit/unimi/dsi/fastutil/objects/ObjectArrayList;";
+	private static final String PREPARE_INDIRECT =
+		"Lnet/minecraft/client/renderer/LevelRenderer;prepareChunkRendersIndirect(Lorg/joml/Matrix4fc;Z)Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;";
+	private static final String PREPARE_SEPARATE =
+		"Lnet/minecraft/client/renderer/LevelRenderer;prepareChunkRenders(Lorg/joml/Matrix4fc;Z)Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;";
+	private static final String RENDER_GROUP =
+		"Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;renderGroup(Lnet/minecraft/client/renderer/chunk/ChunkSectionLayerGroup;Lcom/mojang/renderpearl/api/commands/RenderPass;Lcom/mojang/renderpearl/api/textures/GpuSampler;Lcom/mojang/renderpearl/api/textures/GpuTextureView;Z)V";
+	private static final String RENDER_OIT =
+		"Lnet/minecraft/client/renderer/chunk/ChunkSectionsToRender;renderOit(Lcom/mojang/renderpearl/api/textures/GpuSampler;Lnet/minecraft/client/renderer/oit/OitStage;Lnet/minecraft/client/renderer/oit/OitRenderPassProvider$Parameters;Lcom/mojang/renderpearl/api/textures/GpuTextureView;Lcom/mojang/renderpearl/api/textures/GpuTextureView;)V";
 
 	@Shadow
 	@Final
@@ -139,6 +153,58 @@ abstract class LevelRendererMixin implements RearviewLevel {
 		return rikka$join(nearby, this.rikka$followedNearbySections, this.rikka$sectionsToResort);
 	}
 
+	@Inject(method = "invalidateCompiledGeometry", at = @At("HEAD"))
+	private void rikka$invalidateTerrain(CallbackInfo callback) {
+		TerrainRenderer.get().geometryInvalidated();
+	}
+
+	@Inject(method = "resetLevelRenderData", at = @At("TAIL"))
+	private void rikka$releaseTerrain(CallbackInfo callback) {
+		TerrainRenderer.release();
+	}
+
+	@Inject(method = "clearVisibleSections", at = @At("TAIL"))
+	private void rikka$visibleSectionsChanged(CallbackInfo callback) {
+		TerrainRenderer.visibleSectionsChanged();
+	}
+
+	@WrapOperation(method = "render", at = {@At(value = "INVOKE", target = PREPARE_INDIRECT), @At(value = "INVOKE", target = PREPARE_SEPARATE)})
+	private @Nullable ChunkSectionsToRender rikka$prepareTerrain(
+		LevelRenderer level,
+		Matrix4fc viewRotation,
+		boolean respectTranslucentOrder,
+		Operation<ChunkSectionsToRender> original
+	) {
+		TerrainRenderer.get().prepareMain(level, viewRotation);
+		return null;
+	}
+
+	@WrapOperation(method = {"executeSolid", "executeClassicTransparency"}, at = @At(value = "INVOKE", target = RENDER_GROUP))
+	private void rikka$drawTerrain(
+		@Nullable ChunkSectionsToRender sections,
+		ChunkSectionLayerGroup group,
+		RenderPass pass,
+		GpuSampler sampler,
+		GpuTextureView atlas,
+		boolean wireframe,
+		Operation<Void> original
+	) {
+		TerrainRenderer.get().mainView().draw(group, pass, sampler, atlas, wireframe);
+	}
+
+	@WrapOperation(method = "executeOit", at = @At(value = "INVOKE", target = RENDER_OIT))
+	private void rikka$drawTerrainOit(
+		@Nullable ChunkSectionsToRender sections,
+		GpuSampler sampler,
+		OitStage stage,
+		OitRenderPassProvider.Parameters parameters,
+		GpuTextureView atlas,
+		GpuTextureView lightmap,
+		Operation<Void> original
+	) {
+		TerrainRenderer.get().mainView().drawOit(sampler, stage, parameters, atlas, lightmap);
+	}
+
 	@Inject(method = {"invalidateCompiledGeometry", "resetLevelRenderData"}, at = @At("TAIL"))
 	private void rikka$forgetFollowedSections(CallbackInfo callback) {
 		if (this.rikka$followedSections != null) {
@@ -192,7 +258,7 @@ abstract class LevelRendererMixin implements RearviewLevel {
 
 	@WrapMethod(method = "executeClassicTransparency")
 	private void rikka$continueTransparency(
-		ChunkSectionsToRender sections,
+		@Nullable ChunkSectionsToRender sections,
 		FeatureRenderDispatcher.PreparedFrame frame,
 		RenderPass pass,
 		Operation<Void> original

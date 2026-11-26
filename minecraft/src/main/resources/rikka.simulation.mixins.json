@@ -1,0 +1,23 @@
+{
+	"required": true,
+	"package": "sh.rikka.client.mixin.simulation",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"BlockDataLayerStorageMapMixin",
+		"DataLayerStorageMapMixin",
+		"LayerLightSectionStorageMixin",
+		"PacketProcessorMixin",
+		"PalettedContainerMixin",
+		"QueuedPacketAccessor",
+		"SkyDataLayerStorageMapMixin"
+	],
+	"client": [
+		"MinecraftMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

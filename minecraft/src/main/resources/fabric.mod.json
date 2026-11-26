@@ -11,7 +11,13 @@
 		]
 	},
 	"mixins": [
-		"rikka.mixins.json"
+		"rikka.mixins.json",
+		"rikka.culling.mixins.json",
+		"rikka.entity.mixins.json",
+		"rikka.memory.mixins.json",
+		"rikka.scale.mixins.json",
+		"rikka.simulation.mixins.json",
+		"rikka.terrain.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=${loader_version}",

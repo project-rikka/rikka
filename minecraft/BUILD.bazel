@@ -8,6 +8,7 @@ fabric_mod(
     deps = ["//sdk/bindings/java"],
     resources = glob(["src/main/resources/**"]),
     version = "0.1.0",
+    visibility = ["//benchmarks/minecraft:__pkg__"],
 )
 
 minecraft_client(

@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"package": "sh.rikka.bench.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"GuiRendererMixin",
+		"LevelRendererMixin",
+		"LightmapRenderStateExtractorMixin",
+		"MinecraftMixin",
+		"SkyRendererMixin",
+		"TextureManagerMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
