@@ -17,7 +17,6 @@ pub(crate) fn services(
         None => providers,
     };
     Ok(providers
-        .adapter::<music_spotify::Spotify>()
         .adapter::<music_youtube::YouTubeMusic>()
         .adapter::<music_qobuz::Qobuz>()
         .adapter::<music_soundcloud::SoundCloud>())
