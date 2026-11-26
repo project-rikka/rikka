@@ -1,3 +1,6 @@
+load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("//bazel/windows:defs.bzl", "windows_zip")
+
 exports_files(
     ["rikka.ridl"],
     visibility = ["//sdk:__subpackages__"],
@@ -13,4 +16,32 @@ filegroup(
         "//sdk/bindings/java:generated",
         "//sdk/bindings/python:generated",
     ],
+)
+
+expand_template(
+    name = "relocatable_pkgconfig",
+    out = "relocatable/rikka.pc",
+    substitutions = {"@PREFIX@": "${pcfiledir}/../.."},
+    template = "//sdk/bindings/c:rikka.pc.in",
+)
+
+windows_zip(
+    name = "windows_zip",
+    out = "rikka-sdk-windows-x86_64.zip",
+    files = {
+        ":relocatable_pkgconfig": "lib/pkgconfig/rikka.pc",
+        "//sdk/bindings/c:cmake/RikkaConfig.cmake": "lib/cmake/Rikka/RikkaConfig.cmake",
+        "//sdk/bindings/c:cmake/RikkaConfigVersion.cmake": "lib/cmake/Rikka/RikkaConfigVersion.cmake",
+        "//sdk/bindings/c:include/rikka/rikka.h": "include/rikka/rikka.h",
+        "//sdk/bindings/cpp:include/rikka/rikka.hpp": "include/rikka/rikka.hpp",
+    },
+    import_libraries = {"//sdk/native:rikka": "lib/rikka.lib"},
+    libraries = {"//sdk/native:rikka": "bin"},
+    packages = {
+        "//sdk/bindings/csharp:package": "share/rikka/sdk/csharp",
+        "//sdk/bindings/go:package": "share/rikka/sdk/go",
+        "//sdk/bindings/java:package": "share/rikka/sdk/java",
+        "//sdk/bindings/python:package": "share/rikka/sdk/python",
+    },
+    tags = ["manual"],
 )

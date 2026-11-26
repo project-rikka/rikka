@@ -507,7 +507,6 @@ impl Api_ {
                 classes.iter().any(|class| !class.scoped) || generated.contains("runtime."),
             ),
             ("strings", enums.iter().any(|item| item.flags)),
-            ("syscall", classes.iter().any(|class| class.bound)),
             ("unsafe", generated.contains("unsafe.")),
         ]
         .into_iter()

@@ -3,6 +3,8 @@ use rikka_settings::session::appearance;
 use rikka_theme::{MaterialStyle, MaterialYou, Translucency};
 use rikka_types::Color;
 
+use crate::dress;
+
 pub(crate) fn material(store: &Store) -> MaterialYou {
     let text = |key: &str| store.get::<String>(key).unwrap_or_default();
     let contrast = store
@@ -22,12 +24,11 @@ pub(crate) fn glaze(store: &Store) -> Translucency {
     let blurs = store
         .get::<bool>(appearance::BLUR)
         .unwrap_or(appearance::BLUR_DEFAULT);
-    let radius = match blurs {
-        true => number(appearance::BLUR_RADIUS, appearance::BLUR_RADIUS_DEFAULT),
-        false => 0.0,
-    };
-    Translucency::new(number(appearance::OPACITY, appearance::OPACITY_DEFAULT) as f32)
-        .with_blur(radius as f32)
+    dress::glaze(
+        number(appearance::OPACITY, appearance::OPACITY_DEFAULT),
+        blurs,
+        number(appearance::BLUR_RADIUS, appearance::BLUR_RADIUS_DEFAULT),
+    )
 }
 
 fn source(setting: &str) -> Option<Color> {

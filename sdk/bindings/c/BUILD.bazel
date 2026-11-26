@@ -2,14 +2,21 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("//sdk/codegen:defs.bzl", "rikka_bindings")
 
 exports_files(
-    ["include/rikka/rikka.h"],
-    visibility = ["//sdk/bindings:__subpackages__"],
+    [
+        "cmake/RikkaConfig.cmake",
+        "cmake/RikkaConfigVersion.cmake",
+        "include/rikka/rikka.h",
+        "rikka.pc.in",
+    ],
+    visibility = ["//sdk:__subpackages__"],
 )
 
 rikka_bindings(
     name = "generated",
     language = "c",
     outs = [
+        "cmake/RikkaConfig.cmake",
+        "cmake/RikkaConfigVersion.cmake",
         "include/rikka/rikka.h",
         "rikka.pc.in",
     ],

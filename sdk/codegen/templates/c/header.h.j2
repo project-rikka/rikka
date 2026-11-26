@@ -7,8 +7,22 @@
 #include <stddef.h>
 #include <stdint.h>
 
-{{ doc }}#define {{ upper }}_API __attribute__((visibility("default")))
+{{ doc }}#if defined(_WIN32)
+#define {{ upper }}_API __declspec(dllimport)
+#elif defined(__GNUC__) || defined(__clang__)
+#define {{ upper }}_API __attribute__((visibility("default")))
+#else
+#define {{ upper }}_API
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
 #define {{ upper }}_NODISCARD __attribute__((warn_unused_result))
+#elif defined(_MSC_VER)
+#include <sal.h>
+#define {{ upper }}_NODISCARD _Check_return_
+#else
+#define {{ upper }}_NODISCARD
+#endif
 
 #ifdef __cplusplus
 extern "C" {

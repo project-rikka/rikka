@@ -165,7 +165,8 @@ enum class Status : std::uint32_t {
      */
     ok = RK_STATUS_OK,
     /**
-     * No Wayland compositor could be reached.
+     * The window system is unavailable: no Wayland compositor could be reached, or Windows
+     * refused to open a window.
      */
     no_display = RK_STATUS_NO_DISPLAY,
     /**
@@ -787,7 +788,7 @@ public:
      * Makes an application.
      *
      * @param id The reverse-DNS application id, such as org.example.notes; it names the desktop
-     * entry and the bus name.
+     * entry and the bus name on Linux, and the AppUserModelID and instance pipe on Windows.
      */
     explicit App(std::string_view id);
 
@@ -2093,8 +2094,8 @@ private:
 };
 
 /**
- * The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
- * and the system's and the person's, Rikka's own first.
+ * The themes installed on the desktop: the built-in ones, those generated from the wallpaper
+ * (from the accent colour on Windows), and the system's and the person's, Rikka's own first.
  *
  * Copies share one reference-counted object, usable from any thread.
  */

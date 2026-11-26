@@ -171,7 +171,7 @@ func {{ class.adopt }}(raw *{{ class.raw }}) *{{ class.name }} {
 {%- if let Some(release) = class.release %}
 {%- if class.bound %}
 	drainReleases()
-	owner := syscall.Gettid()
+	owner := osThread()
 	value.cleanup = runtime.AddCleanup(value, func(raw *{{ class.raw }}) {
 		releaseOn(owner, func() { {{ release }}(raw) })
 	}, raw)

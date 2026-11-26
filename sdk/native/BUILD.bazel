@@ -1,6 +1,6 @@
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
-load("//bazel/rust:defs.bzl", "rikka_shared_library")
+load("//bazel/windows:defs.bzl", "rikka_native_library")
 load("//sdk/codegen:defs.bzl", "rikka_bindings")
 
 SONAME = "librikka.so.0"
@@ -12,11 +12,15 @@ rikka_bindings(
     language = "rust",
 )
 
-rikka_shared_library(
+rikka_native_library(
     name = "rikka",
     srcs = glob(["src/**/*.rs"]) + ["src/ffi.rs"],
+    product = "SDK",
     soname = SONAME,
-    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//minecraft:__pkg__",
+        "//sdk:__pkg__",
+    ],
     deps = [
         "//crates/desktop/rikka-dialog",
         "//crates/desktop/rikka-open",
@@ -46,11 +50,21 @@ copy_file(
     src = ":rikka",
     out = SONAME,
     allow_symlink = True,
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//sdk/bindings:__subpackages__"],
 )
 
 cc_import(
-    name = "library",
+    name = "versioned_import",
     shared_library = ":versioned",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "library",
+    actual = select({
+        "@platforms//os:windows": ":rikka",
+        "//conditions:default": ":versioned_import",
+    }),
     visibility = ["//sdk/bindings:__subpackages__"],
 )

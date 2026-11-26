@@ -6,9 +6,9 @@ use askama::Template;
 use crate::abi::{self, Abi, Lifecycle, Origin};
 use crate::diagnostic::{Diagnostic, Span};
 use crate::language::{Error, Language, Output};
-use crate::languages::{doxygen, keywords, unique};
+use crate::languages::{doxygen, keywords, projection, unique};
 use crate::model::{Api, ConstantValue, Doc, Id, Lifetime, Primitive, Version};
-use crate::names::screaming;
+use crate::names::{pascal, screaming};
 
 pub(crate) use spelling::{Spelling, primitive};
 
@@ -44,9 +44,25 @@ impl Language for C {
             library: &api.name,
             version: api.version,
         };
+        let package = pascal(&api.name);
+        let cmake = CMakeConfig {
+            library: &api.name,
+            package: &package,
+            soname: projection::soname(api),
+            dll: projection::dll(api),
+        };
+        let cmake_version = CMakeVersion {
+            library: &api.name,
+            version: api.version,
+        };
         Ok(vec![
             Output::render(format!("include/{0}/{0}.h", api.name), &header)?,
             Output::render(format!("{}.pc.in", api.name), &pkgconfig)?,
+            Output::render(format!("cmake/{package}Config.cmake"), &cmake)?,
+            Output::render(
+                format!("cmake/{package}ConfigVersion.cmake"),
+                &cmake_version,
+            )?,
         ])
     }
 }
@@ -370,6 +386,22 @@ impl Header {
 #[derive(Template)]
 #[template(path = "c/library.pc.in.j2", escape = "none")]
 struct PkgConfig<'a> {
+    library: &'a str,
+    version: Version,
+}
+
+#[derive(Template)]
+#[template(path = "c/config.cmake.j2", escape = "none")]
+struct CMakeConfig<'a> {
+    library: &'a str,
+    package: &'a str,
+    soname: String,
+    dll: String,
+}
+
+#[derive(Template)]
+#[template(path = "c/config_version.cmake.j2", escape = "none")]
+struct CMakeVersion<'a> {
     library: &'a str,
     version: Version,
 }

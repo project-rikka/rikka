@@ -301,6 +301,10 @@ pub(crate) fn soname(api: &Api) -> String {
     format!("lib{}.so.{}", api.name, api.version.major)
 }
 
+pub(crate) fn dll(api: &Api) -> String {
+    format!("{}.dll", api.name)
+}
+
 pub(crate) fn single_error(api: &Api, mapped: &str) -> Result<(), Diagnostic> {
     let errors: Vec<_> = api
         .enums

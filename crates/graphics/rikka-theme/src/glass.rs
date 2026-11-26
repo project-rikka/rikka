@@ -1,7 +1,9 @@
 use rikka_types::Color;
 
 use crate::spec::ThemeSpec;
+use crate::theme::Theme;
 use crate::tone;
+use crate::translucency::Translucency;
 use crate::variant::Variant;
 
 const RIM_CHROMA: f64 = 24.0;
@@ -52,6 +54,30 @@ impl ThemeSpec {
         spec.lens.get_or_insert_default();
         spec.colors.border = spec.colors.border.scale_alpha(LIQUID_RIM_SHARE);
         spec
+    }
+}
+
+impl Theme {
+    pub fn glass(self) -> Theme {
+        let pane = pane(self.variant());
+        let translucency = self.translucency();
+        let opacity = translucency.opacity().min(pane.glass_opacity);
+        let outline = rim(self.opaque_palette().accent, pane);
+        self.glazed(
+            Translucency::new(opacity).with_lens(translucency.lens()),
+            outline,
+        )
+    }
+
+    pub fn liquid(self) -> Theme {
+        let glass = self.glass();
+        let translucency = glass.translucency();
+        let opacity = translucency
+            .opacity()
+            .min(pane(glass.variant()).liquid_opacity);
+        let lens = translucency.lens().unwrap_or_default();
+        let outline = glass.opaque_palette().outline.scale_alpha(LIQUID_RIM_SHARE);
+        glass.glazed(Translucency::new(opacity).with_lens(Some(lens)), outline)
     }
 }
 

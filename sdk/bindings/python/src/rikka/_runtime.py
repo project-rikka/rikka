@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import atexit
 import ctypes
+import ctypes.util
 import enum
 import itertools
 import os
@@ -17,14 +18,22 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from typing import Any, NoReturn
 
-LIBRARY = "librikka.so.0"
+
+def locate() -> str:
+    if sys.platform != "win32":
+        return "librikka.so.0"
+    found = ctypes.util.find_library("rikka")
+    if found is None:
+        raise ImportError("rikka: rikka.dll is in no folder on PATH")
+    return found
 
 
 def load() -> ctypes.CDLL:
+    library = locate()
     try:
-        return ctypes.CDLL(LIBRARY)
+        return ctypes.CDLL(library)
     except OSError as error:
-        raise ImportError(f"rikka: failed to load {LIBRARY}: {error}") from error
+        raise ImportError(f"rikka: failed to load {library}: {error}") from error
 
 
 class Str(ctypes.Structure):

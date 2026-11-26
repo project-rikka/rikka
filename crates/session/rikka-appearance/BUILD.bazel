@@ -8,11 +8,11 @@ rikka_library(
     deps = [
         "//crates/foundation/rikka-types",
         "//crates/graphics/rikka-theme",
+        "//crates/session/rikka-settings",
         "@crates//:tracing",
     ] + select({
         "@platforms//os:linux": [
             "//crates/session/rikka-seam",
-            "//crates/session/rikka-settings",
         ],
         "@platforms//os:windows": [
             "@crates//:windows",

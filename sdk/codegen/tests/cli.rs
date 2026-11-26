@@ -3,7 +3,12 @@ use std::process::{Command, Output};
 
 const HEADER: &str = "library sample version \"1.0.0\" abi_prefix sm;\n";
 
-const C_OUTPUTS: &[&str] = &["include/sample/sample.h", "sample.pc.in"];
+const C_OUTPUTS: &[&str] = &[
+    "include/sample/sample.h",
+    "sample.pc.in",
+    "cmake/SampleConfig.cmake",
+    "cmake/SampleConfigVersion.cmake",
+];
 
 const PYTHON_OUTPUTS: &[&str] = &[
     "pyproject.toml",
@@ -50,7 +55,12 @@ fn outputs(language: &str) -> &'static [&'static str] {
     }
 }
 
-const FOLDERS: &[&str] = &["include/sample", "src/sample", "src/main/java/os/sample"];
+const FOLDERS: &[&str] = &[
+    "include/sample",
+    "cmake",
+    "src/sample",
+    "src/main/java/os/sample",
+];
 
 fn scratch(name: &str) -> PathBuf {
     let root = std::env::var_os("TEST_TMPDIR").map_or_else(std::env::temp_dir, PathBuf::from);

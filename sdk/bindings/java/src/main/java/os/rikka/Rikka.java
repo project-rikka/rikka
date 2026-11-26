@@ -22,6 +22,13 @@ public final class Rikka {
     public static final int BINDING_VERSION = 12288;
 
     /**
+     * The system property naming the native library file to load, such as an absolute path to
+     * rikka.dll; unset, the platform's library search finds rikka.dll on Windows and librikka.so.0
+     * elsewhere. Set it before the first use of this binding.
+     */
+    public static final String LIBRARY_PROPERTY = "os.rikka.library";
+
+    /**
      * As an index: nothing is selected.
      */
     public static final int NONE = -1;

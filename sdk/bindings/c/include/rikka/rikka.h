@@ -14,8 +14,22 @@
  * the wrong thread) prints a diagnostic and aborts the process. Failures the caller cannot rule
  * out are reported through rk_status and rk_last_error().
  */
+#if defined(_WIN32)
+#define RK_API __declspec(dllimport)
+#elif defined(__GNUC__) || defined(__clang__)
 #define RK_API __attribute__((visibility("default")))
+#else
+#define RK_API
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
 #define RK_NODISCARD __attribute__((warn_unused_result))
+#elif defined(_MSC_VER)
+#include <sal.h>
+#define RK_NODISCARD _Check_return_
+#else
+#define RK_NODISCARD
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -199,7 +213,8 @@ typedef enum rk_status {
      */
     RK_STATUS_OK = 0,
     /**
-     * No Wayland compositor could be reached.
+     * The window system is unavailable: no Wayland compositor could be reached, or Windows
+     * refused to open a window.
      */
     RK_STATUS_NO_DISPLAY = 1,
     /**
@@ -766,8 +781,8 @@ typedef struct rk_text_document rk_text_document;
 typedef struct rk_vulkan_device rk_vulkan_device;
 
 /**
- * The themes installed on the desktop: the built-in ones, those generated from the wallpaper,
- * and the system's and the person's, Rikka's own first.
+ * The themes installed on the desktop: the built-in ones, those generated from the wallpaper
+ * (from the accent colour on Windows), and the system's and the person's, Rikka's own first.
  *
  * Reference-counted with rk_theme_catalog_ref() and rk_theme_catalog_unref(); usable from any
  * thread.
@@ -1004,7 +1019,7 @@ RK_API float rk_text_width(rk_str text, float size);
  * Makes an application.
  *
  * @param id The reverse-DNS application id, such as org.example.notes; it names the desktop
- * entry and the bus name.
+ * entry and the bus name on Linux, and the AppUserModelID and instance pipe on Windows.
  * @return The caller owns the result; release it with rk_app_free().
  */
 RK_API RK_NODISCARD rk_app *rk_app_new(rk_str id);

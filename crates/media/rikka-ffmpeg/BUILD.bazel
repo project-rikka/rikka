@@ -16,7 +16,10 @@ rikka_library(
     deps = [
         "@crates//:libloading",
         "@crates//:thiserror",
-    ],
+    ] + select({
+        "@platforms//os:windows": ["//crates/foundation/rikka-shipped"],
+        "//conditions:default": [],
+    }),
 )
 
 windows_runtime(

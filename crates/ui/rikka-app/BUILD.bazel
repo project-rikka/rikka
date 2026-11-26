@@ -18,9 +18,11 @@ rikka_library(
         "//crates/graphics/rikka-renderer",
         "//crates/graphics/rikka-theme",
         "//crates/session/rikka-appearance",
+        "//crates/session/rikka-settings",
         "//crates/ui/rikka-ui",
         "//crates/ui/rikka-ui-host",
         "//crates/ui/rikka-widgets",
+        "@crates//:rustc-hash",
         "@crates//:thiserror",
         "@crates//:tracing",
     ] + select({
@@ -31,9 +33,7 @@ rikka_library(
             "//crates/session/rikka-present",
             "//crates/session/rikka-seam",
             "//crates/session/rikka-session",
-            "//crates/session/rikka-settings",
             "//crates/ui/rikka-seat",
-            "@crates//:rustc-hash",
         ],
         "@platforms//os:windows": [
             "//crates/desktop/rikka-clipboard-core",

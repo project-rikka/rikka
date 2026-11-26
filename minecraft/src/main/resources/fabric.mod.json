@@ -6,6 +6,9 @@
 	"description": "A Minecraft PvP client for Rikka.",
 	"environment": "client",
 	"entrypoints": {
+		"preLaunch": [
+			"sh.rikka.client.natives.NativeLibraries"
+		],
 		"client": [
 			"sh.rikka.client.RikkaClient"
 		]

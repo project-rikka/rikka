@@ -18,7 +18,7 @@
     <PackageId>Rikka</PackageId>
     <Version>0.3.0</Version>
     <Description>The Rikka application SDK</Description>
-    <PackageTags>gui;wayland;linux;rikka</PackageTags>
+    <PackageTags>gui;wayland;linux;windows;rikka</PackageTags>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 

@@ -2,7 +2,7 @@ load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
 
 exports_files(
     ["THIRD_PARTY.md"],
-    visibility = ["//apps/general:__subpackages__"],
+    visibility = ["//bazel/windows:__pkg__"],
 )
 
 rikka_library(

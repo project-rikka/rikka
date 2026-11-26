@@ -25,7 +25,7 @@ public final class App implements AutoCloseable {
      * Makes an application.
      *
      * @param id The reverse-DNS application id, such as org.example.notes; it names the desktop
-     * entry and the bus name.
+     * entry and the bus name on Linux, and the AppUserModelID and instance pipe on Windows.
      */
     public App(String id) {
         this(construct(id));
