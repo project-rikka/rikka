@@ -14,7 +14,6 @@ mod menus;
 mod notices;
 mod permission_catalog;
 mod pictures;
-mod preferences;
 mod profile;
 mod rail;
 mod screen;
@@ -31,6 +30,7 @@ use std::sync::Arc;
 
 use discord_client::Discord;
 use discord_core::SavedAccount;
+use discord_preferences::Preferences;
 use discord_voice::Krisp;
 use rikka_account_book::Accounts;
 use rikka_app::prelude::*;
@@ -38,7 +38,6 @@ use rikka_dirs::Paths;
 use rikka_ui_video::VideoStore;
 
 use crate::chat::Chat;
-use crate::preferences::Preferences;
 
 fn window(
     discord: Arc<Discord>,

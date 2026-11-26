@@ -1,4 +1,5 @@
 use discord_core::{PostLayout, PostSort};
+use discord_preferences::ForumView;
 use rikka_app::prelude::*;
 use rikka_ui::Element;
 use rikka_widgets::{menu, menu_header, menu_item, menu_separator};
@@ -6,7 +7,6 @@ use rikka_widgets::{menu, menu_header, menu_item, menu_separator};
 use super::SORT_BUTTON;
 use crate::chat::Chat;
 use crate::conversation::overlay::Overlay;
-use crate::preferences::ForumView;
 
 const WIDTH: f32 = 240.0;
 

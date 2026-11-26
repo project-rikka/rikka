@@ -5,6 +5,8 @@ use installer_core::{
     SECRETS_DIR, SECRETS_MODE, Swap, TARGET_ROOT, generate,
 };
 
+use rikka_backup::{HOME_STATE, PENDING};
+
 use crate::{command::Command, error::Result, host::Host, stage::Stage};
 
 const UDEV_TIMEOUT: &str = "--timeout=30";
@@ -74,6 +76,7 @@ impl Run<'_> {
                 Stage::Scan => self.scan()?,
                 Stage::Configure => self.configure()?,
                 Stage::Install => self.nixos_install()?,
+                Stage::Handover => self.hand_over()?,
                 Stage::Finish => self.finish()?,
             }
         }
@@ -349,6 +352,56 @@ impl Run<'_> {
         self.host.run_logged(&command, &mut |line| {
             report(Event::Log(line.to_owned()));
         })?;
+        Ok(())
+    }
+
+    fn hand_over(&mut self) -> Result<()> {
+        let Some(source) = self
+            .answers
+            .restored
+            .as_ref()
+            .and_then(|restored| restored.pending.clone())
+        else {
+            return Ok(());
+        };
+        let user = self.answers.username.clone();
+        let home = format!("/home/{user}");
+        let state = format!("{home}/{HOME_STATE}");
+        let pending = format!("{state}/{PENDING}");
+        if !self.host.exists(&format!("{TARGET_ROOT}{home}")) {
+            self.run(Command::new("install").args([
+                "-d",
+                "-m",
+                "0700",
+                &format!("{TARGET_ROOT}{home}"),
+            ]))?;
+        }
+        self.run(Command::new("install").args([
+            "-d",
+            "-m",
+            "0700",
+            &format!("{TARGET_ROOT}{state}"),
+        ]))?;
+        self.run(Command::new("install").args([
+            "-m",
+            "0600",
+            &source,
+            &format!("{TARGET_ROOT}{pending}"),
+        ]))?;
+        let owner = format!("{user}:");
+        let mut owned = vec![home.clone()];
+        let mut folder = home.clone();
+        for part in HOME_STATE.split('/') {
+            folder = format!("{folder}/{part}");
+            owned.push(folder.clone());
+        }
+        owned.push(pending);
+        self.run(
+            Command::new("nixos-enter")
+                .args(["--root", TARGET_ROOT, "--", "chown", &owner])
+                .args(owned),
+        )?;
+        self.log("Sign-ins and settings finish restoring in Settings → Backup & restore after the first login.".to_owned());
         Ok(())
     }
 

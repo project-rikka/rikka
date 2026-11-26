@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use crate::constraint::Constraint;
 use crate::domain::is_valid_key;
+use crate::role::Role;
 use crate::value::{Value, ValueType, Values};
 
 type Check = Arc<dyn Fn(&Value) -> Result<(), String> + Send + Sync>;
@@ -15,8 +16,14 @@ pub struct Key {
     summary: Option<Box<str>>,
     #[serde(default, skip_serializing_if = "Constraint::is_any")]
     constraint: Constraint,
+    #[serde(default, skip_serializing_if = "is_preference")]
+    role: Role,
     #[serde(skip)]
     check: Option<Check>,
+}
+
+fn is_preference(role: &Role) -> bool {
+    role.is_preference()
 }
 
 impl Key {
@@ -56,6 +63,7 @@ impl Key {
             default,
             summary: None,
             constraint: Constraint::Any,
+            role: Role::Preference,
             check: None,
         }
     }
@@ -76,6 +84,19 @@ impl Key {
     pub fn choices<V: Into<Value>>(mut self, choices: impl IntoIterator<Item = V>) -> Self {
         self.constraint = Constraint::Choices(choices.into_iter().map(Into::into).collect());
         self
+    }
+
+    #[must_use]
+    pub fn role(mut self, role: Role) -> Self {
+        self.role = role;
+        self
+    }
+
+    pub(crate) fn renamed(&self, name: String) -> Self {
+        Self {
+            name: name.into_boxed_str(),
+            ..self.clone()
+        }
     }
 
     #[must_use]
@@ -105,6 +126,11 @@ impl Key {
     #[must_use]
     pub fn constraint(&self) -> &Constraint {
         &self.constraint
+    }
+
+    #[must_use]
+    pub fn is_preference(&self) -> bool {
+        self.role.is_preference()
     }
 
     #[must_use]
@@ -144,6 +170,7 @@ impl fmt::Debug for Key {
             .field("name", &self.name)
             .field("default", &self.default)
             .field("constraint", &self.constraint)
+            .field("role", &self.role)
             .finish_non_exhaustive()
     }
 }
@@ -154,5 +181,6 @@ impl PartialEq for Key {
             && self.default == other.default
             && self.summary == other.summary
             && self.constraint == other.constraint
+            && self.role == other.role
     }
 }

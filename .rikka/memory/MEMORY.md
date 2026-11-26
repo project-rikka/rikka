@@ -190,10 +190,6 @@
 
 - [Music local library (rikka-audio-tags, music-library, music-local)](music-local.md) — How rikka-music indexes local files (tags, SQLite index, watching) and serves them as the always-linked local service.
 
-## apps/system/music/crates/music-spotify
-
-- [Spotify client (music-spotify and its protocol crates)](music-spotify.md) — rikka-music's in-house Spotify client: sans-IO access point protocol, AP session, spclient API, decryption.
-
 ## apps/system/music/crates/music-stream
 
 - [Music services, adapter kit and streaming](music-services.md) — music-stream adapter kit (Fetcher, Plan, Spool, Streamer, Origin), Providers, audio cache, YouTube, Qobuz, SoundCloud.
@@ -811,6 +807,10 @@
 ## crates/remote
 
 - [Remote desktop wire format and transport (rikka-remote-wire, rikka-remote-link)](remote-protocol-transport.md) — rikka-remote-wire's messages/datagrams and PROTOCOL.md; rikka-remote-link's QUIC, FEC, congestion control, pacer.
+
+## crates/session/rikka-backup
+
+- [Backups, configuration repositories and restore](backup-restore.md) — rikka-age passphrase files, rikka-backup bundles, Settings Backup & Configuration pages, installer restore.
 
 ## crates/session/rikka-present
 

@@ -22,4 +22,7 @@ pub enum Error {
 
     #[error("failed to render configuration: {0}")]
     Nix(#[from] rikka_nix_edit::Error),
+
+    #[error("failed to restore the configuration: {0}")]
+    Restore(String),
 }

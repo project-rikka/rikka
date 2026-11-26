@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use rikka_settings::seam::Settings;
-use rikka_settings::{Key, Schema};
+use rikka_settings::{Key, Role, Schema};
 
 const DOMAIN: &str = "rikka.ade";
 const RECENTS: &str = "recents";
@@ -17,11 +17,7 @@ pub struct Config {
 impl Config {
     #[must_use]
     pub fn load() -> Config {
-        let schema = Schema::new(DOMAIN)
-            .summary("ADE")
-            .key(Key::list(RECENTS, []).summary("Recently opened projects, newest first"));
-
-        let settings = Settings::open(schema)
+        let settings = Settings::open(Self::schema())
             .inspect_err(|error| tracing::warn!(%error, "failed to open ADE settings"))
             .ok();
 
@@ -32,6 +28,15 @@ impl Config {
                 .collect(),
             settings,
         }
+    }
+
+    #[must_use]
+    pub fn schema() -> Schema {
+        Schema::new(DOMAIN).summary("ADE").key(
+            Key::list(RECENTS, [])
+                .summary("Recently opened projects, newest first")
+                .role(Role::State),
+        )
     }
 
     #[must_use]

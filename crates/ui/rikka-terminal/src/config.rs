@@ -37,7 +37,7 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Self {
-        Self::from_preferences(Preferences::open(schema()))
+        Self::from_preferences(Preferences::open(Self::schema()))
     }
 
     fn from_preferences(preferences: Preferences) -> Self {
@@ -87,38 +87,41 @@ impl Config {
     }
 }
 
-fn schema() -> Schema {
-    Schema::new(DOMAIN)
-        .summary("Terminal")
-        .key(
-            Key::string(FONT_FAMILY, DEFAULT_FAMILY)
-                .summary("The fixed-pitch family the grid is drawn in"),
-        )
-        .key(
-            Key::int(FONT_SIZE, DEFAULT_SIZE)
-                .range(SIZE_RANGE)
-                .summary("How big the text is, in logical pixels"),
-        )
-        .key(
-            Key::int(SCROLLBACK, DEFAULT_SCROLLBACK)
-                .range(0..=1_000_000)
-                .summary("How many lines that have scrolled off the top are kept"),
-        )
-        .key(
-            Key::bool(CLIPBOARD_READ, false)
-                .summary("Whether a program may read what the selections hold"),
-        )
-        .key(
-            Key::bool(CLIPBOARD_WRITE, ALLOWED)
-                .summary("Whether a program may put anything on the selections"),
-        )
-        .key(
-            Key::int(CLIPBOARD_LIMIT, DEFAULT_LIMIT)
-                .range(LIMIT_RANGE)
-                .summary(
-                    "How much one clipboard sequence may carry, in mebibytes; 0 is any amount",
-                ),
-        )
+impl Config {
+    #[must_use]
+    pub fn schema() -> Schema {
+        Schema::new(DOMAIN)
+            .summary("Terminal")
+            .key(
+                Key::string(FONT_FAMILY, DEFAULT_FAMILY)
+                    .summary("The fixed-pitch family the grid is drawn in"),
+            )
+            .key(
+                Key::int(FONT_SIZE, DEFAULT_SIZE)
+                    .range(SIZE_RANGE)
+                    .summary("How big the text is, in logical pixels"),
+            )
+            .key(
+                Key::int(SCROLLBACK, DEFAULT_SCROLLBACK)
+                    .range(0..=1_000_000)
+                    .summary("How many lines that have scrolled off the top are kept"),
+            )
+            .key(
+                Key::bool(CLIPBOARD_READ, false)
+                    .summary("Whether a program may read what the selections hold"),
+            )
+            .key(
+                Key::bool(CLIPBOARD_WRITE, ALLOWED)
+                    .summary("Whether a program may put anything on the selections"),
+            )
+            .key(
+                Key::int(CLIPBOARD_LIMIT, DEFAULT_LIMIT)
+                    .range(LIMIT_RANGE)
+                    .summary(
+                        "How much one clipboard sequence may carry, in mebibytes; 0 is any amount",
+                    ),
+            )
+    }
 }
 
 fn access(preferences: &Preferences) -> ClipboardAccess {

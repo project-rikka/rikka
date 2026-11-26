@@ -21,6 +21,11 @@ impl Entry {
     }
 
     #[must_use]
+    pub fn from_attributes(attributes: Attributes) -> Entry {
+        Entry { attributes }
+    }
+
+    #[must_use]
     pub fn attribute(mut self, name: impl Into<String>, value: impl Into<String>) -> Entry {
         self.attributes.insert(name.into(), value.into());
         self
@@ -53,6 +58,7 @@ impl std::fmt::Debug for Secret {
 
 #[derive(Debug)]
 pub struct Found {
+    pub label: String,
     pub attributes: Attributes,
     pub secret: Secret,
 }

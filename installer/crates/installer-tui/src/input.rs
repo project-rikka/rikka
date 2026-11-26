@@ -18,6 +18,10 @@ impl App {
             return;
         }
 
+        if self.is_reading() {
+            return;
+        }
+
         if key.code == KeyCode::F(1) && self.overlay().is_none() {
             self.show(Overlay::Help);
             return;

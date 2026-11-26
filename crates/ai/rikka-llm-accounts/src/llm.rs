@@ -60,7 +60,7 @@ pub struct Llm {
 impl Llm {
     #[must_use]
     pub fn load() -> Llm {
-        let (mut settings, mut unavailable) = match Settings::open(schema()) {
+        let (mut settings, mut unavailable) = match Settings::open(Self::schema()) {
             Ok(settings) => (Some(settings), None),
             Err(error) => (None, Some(error.to_string())),
         };
@@ -529,23 +529,27 @@ fn credential_changes() -> impl Stream<Item = AccountsChanged> + Send + 'static 
     .map(|_| AccountsChanged(Announced::Credentials))
 }
 
-fn schema() -> Schema {
-    Schema::new(DOMAIN)
-        .summary("The models this desktop answers with")
-        .key(Key::list(BACKENDS, []).summary("The model each backend answers with"))
-        .key(
-            Key::list(ENDPOINTS, [])
-                .summary("The OpenAI-compatible endpoints the person added, and their models"),
-        )
-        .key(
-            Key::string(CHOSEN, "").summary("Which of them answers when nothing else is asked for"),
-        )
-        .key(
-            Key::string(EFFORT, Effort::default().id())
-                .summary("How hard a model is asked to think before it answers"),
-        )
-        .key(
-            Key::string(LANGUAGE, "")
-                .summary("The language an agent answers in, or nothing for the person's own"),
-        )
+impl Llm {
+    #[must_use]
+    pub fn schema() -> Schema {
+        Schema::new(DOMAIN)
+            .summary("The models this desktop answers with")
+            .key(Key::list(BACKENDS, []).summary("The model each backend answers with"))
+            .key(
+                Key::list(ENDPOINTS, [])
+                    .summary("The OpenAI-compatible endpoints the person added, and their models"),
+            )
+            .key(
+                Key::string(CHOSEN, "")
+                    .summary("Which of them answers when nothing else is asked for"),
+            )
+            .key(
+                Key::string(EFFORT, Effort::default().id())
+                    .summary("How hard a model is asked to think before it answers"),
+            )
+            .key(
+                Key::string(LANGUAGE, "")
+                    .summary("The language an agent answers in, or nothing for the person's own"),
+            )
+    }
 }

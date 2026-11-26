@@ -1,5 +1,6 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Step {
+    Restore,
     Language,
     Keyboard,
     Timezone,
@@ -13,6 +14,7 @@ pub enum Step {
 
 impl Step {
     pub const ALL: &'static [Step] = &[
+        Step::Restore,
         Step::Language,
         Step::Keyboard,
         Step::Timezone,
@@ -29,6 +31,7 @@ impl Step {
     #[must_use]
     pub fn title(self) -> &'static str {
         match self {
+            Self::Restore => "Start",
             Self::Language => "Language",
             Self::Keyboard => "Keyboard",
             Self::Timezone => "Time zone",

@@ -71,6 +71,13 @@ impl Host for DemoHost {
         }
     }
 
+    fn read_bytes(&self, path: &str) -> Result<Vec<u8>> {
+        Err(Error::Io {
+            path: path.to_owned(),
+            source: std::io::Error::from(std::io::ErrorKind::NotFound),
+        })
+    }
+
     fn write(&self, path: &str, contents: &str, mode: u32) -> Result<()> {
         self.journal.write(path, contents, mode);
         Ok(())

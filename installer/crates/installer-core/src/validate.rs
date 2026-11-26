@@ -1,4 +1,6 @@
-use crate::{answers::Answers, catalog::PACKAGES_FLAKE, plan::PartitionPlan, step::Step};
+use crate::{
+    answers::Answers, catalog::PACKAGES_FLAKE, plan::PartitionPlan, restore::Start, step::Step,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Problem {
@@ -24,11 +26,18 @@ const RESERVED_USERNAMES: &[&str] = &[
 
 #[must_use]
 pub fn validate(answers: &Answers) -> Vec<Problem> {
-    Step::ALL
+    let mut problems: Vec<Problem> = Step::ALL
         .iter()
         .take_while(|step| **step != Step::Summary)
         .flat_map(|step| validate_step(answers, *step))
-        .collect()
+        .collect();
+    if answers.start != Start::Fresh && answers.restored.is_none() {
+        problems.push(Problem {
+            step: Step::Restore,
+            message: "Read the backup on the Start step first.".to_owned(),
+        });
+    }
+    problems
 }
 
 #[must_use]
@@ -37,6 +46,28 @@ pub fn validate_step(answers: &Answers, step: Step) -> Vec<Problem> {
     let mut fail = |message: String| problems.push(Problem { step, message });
 
     match step {
+        Step::Restore => {
+            match answers.start {
+                Start::Fresh => {}
+                Start::Backup => {
+                    if answers.backup_path.trim().is_empty() {
+                        fail("Enter the path of the backup file.".to_owned());
+                    }
+                    if answers.backup_passphrase.as_str().is_empty() {
+                        fail("Enter the backup's passphrase.".to_owned());
+                    }
+                }
+                Start::Repository => {
+                    if answers.repository.trim().is_empty() {
+                        fail("Enter the repository to clone.".to_owned());
+                    }
+                }
+            }
+            if let Some(problem) = &answers.restore_problem {
+                fail(problem.clone());
+            }
+        }
+
         Step::Language | Step::Keyboard => {}
 
         Step::Timezone => {

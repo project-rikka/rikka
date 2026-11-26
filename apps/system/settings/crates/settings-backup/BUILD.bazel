@@ -1,0 +1,40 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
+
+rikka_library(
+    name = "settings-backup",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/settings:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/settings/crates/settings-declared",
+        "//crates/desktop/rikka-account-book",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-fs",
+        "//crates/session/rikka-backup",
+        "//crates/session/rikka-settings",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "settings_backup::Config::schema",
+    deps = [":settings-backup"],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":settings-backup",
+        "//crates/desktop/rikka-secrets",
+        "//crates/desktop/rikka-test-keyring",
+        "//crates/nix/rikka-nix",
+        "//crates/session/rikka-backup",
+        "@crates//:tempfile",
+    ],
+)

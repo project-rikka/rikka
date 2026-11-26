@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
+
+rikka_library(
+    name = "animate-preferences",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-cast",
+        "//apps/general/animate/crates/animate-export",
+        "//apps/general/animate/crates/animate-fluid",
+        "//crates/model/rikka-model",
+        "//crates/physics/rikka-physics-tailor",
+        "//crates/session/rikka-settings",
+    ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "animate_preferences::Preferences::schema",
+    deps = [":animate-preferences"],
+)

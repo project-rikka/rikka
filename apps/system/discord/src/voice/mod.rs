@@ -1,4 +1,3 @@
-pub(crate) mod hotkey;
 mod incoming;
 mod panel;
 mod talk;
@@ -10,6 +9,7 @@ use discord_core::{ChannelId, Privacy, UserId};
 use discord_voice::Voice;
 use rikka_app::prelude::*;
 
+pub(crate) use discord_preferences::hotkey;
 pub(crate) use incoming::view as incoming_view;
 pub(crate) use panel::view as panel_view;
 pub(crate) use talk::talk_area;

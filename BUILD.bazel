@@ -1,3 +1,44 @@
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
+
+SETTINGS_CATALOG_PARTS = [
+    "//apps/general/animate/crates/animate-preferences:settings_catalog",
+    "//apps/general/cut/crates/cut-preferences:settings_catalog",
+    "//apps/system/ade/crates/ade-config:settings_catalog",
+    "//apps/system/browser/crates/browser-preferences:settings_catalog",
+    "//apps/system/discord/crates/discord-preferences:settings_catalog",
+    "//apps/system/files/crates/files-config:settings_catalog",
+    "//apps/system/music/crates/music-preferences:settings_catalog",
+    "//apps/system/proton/crates/proton-config:settings_catalog",
+    "//apps/system/settings/crates/settings-backup:settings_catalog",
+    "//crates/ai/rikka-llm-accounts:settings_catalog",
+    "//crates/session/rikka-session:settings_catalog",
+    "//crates/session/rikka-settings:settings_catalog",
+    "//crates/ui/rikka-terminal:settings_catalog",
+    "//system/rikka-shell/crates/shell-emoji:settings_catalog",
+    "//system/rikka-shell/crates/shell-translate:settings_catalog",
+]
+
+run_binary(
+    name = "settings_catalog",
+    srcs = SETTINGS_CATALOG_PARTS,
+    outs = ["nix/dist/generated/settings.json"],
+    args = ["$(execpath nix/dist/generated/settings.json)"] + [
+        "$(execpath %s)" % part
+        for part in SETTINGS_CATALOG_PARTS
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    tool = "//crates/session/rikka-settings-catalog",
+)
+
+diff_test(
+    name = "settings_catalog_is_current",
+    file1 = "nix/dist/generated/settings.json",
+    file2 = "nix/dist/settings.json",
+    failure_message = "nix/dist/settings.json is stale; regenerate it with `bazel run //xtask -- settings`",
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
 exports_files(
     [
         "LICENSE",
@@ -8,6 +49,11 @@ exports_files(
         "crates/text/THIRD_PARTY.md",
     ],
     visibility = ["//bazel/windows:__pkg__"],
+)
+
+exports_files(
+    ["nix/dist/settings.json"],
+    visibility = ["//apps/system/settings:__pkg__"],
 )
 
 filegroup(

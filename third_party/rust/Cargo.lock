@@ -2027,6 +2027,7 @@ dependencies = [
  "rustls-pemfile",
  "rustls-pki-types",
  "rustls-webpki",
+ "scrypt 0.12.0",
  "serde",
  "serde_json",
  "serde_urlencoded",

@@ -1,7 +1,6 @@
+use browser_preferences::{ReaderStyle, ReaderTheme};
 use browser_reader::{Article, Labels, Look, Palette};
 use rikka_app::prelude::*;
-
-use crate::preferences::{ReaderStyle, ReaderTheme};
 
 pub(crate) fn look(style: ReaderStyle, dark: bool) -> Look {
     let palette = match style.theme {

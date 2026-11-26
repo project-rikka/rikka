@@ -1,9 +1,8 @@
 use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 
+use browser_preferences::{CustomEngine, Preferences};
 use rikka_omnibox::{SearchEngine, SearchEngines, Suggester};
-
-use crate::preferences::{CustomEngine, Preferences};
 
 #[derive(Debug, Default)]
 pub(crate) struct Searching {

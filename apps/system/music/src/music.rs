@@ -12,6 +12,7 @@ use music_core::{
     Account, AudioCache, Catalog, Connection, Cookie, Prompt, Providers, Quality, SavedAccount,
     Service, SignInStep, Track, WebSignIn,
 };
+use music_preferences::Preferences;
 use rikka_account_book::{Accounts, PendingAccount};
 use rikka_app::prelude::*;
 use rikka_web::{CloseReason, Event};
@@ -25,7 +26,6 @@ use crate::menus::Menus;
 use crate::nav::{Nav, Place};
 use crate::player::Player;
 use crate::portal::Portal;
-use crate::preferences::Preferences;
 use crate::settings::Settings;
 use crate::sound::Sound;
 

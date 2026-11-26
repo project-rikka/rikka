@@ -1,11 +1,11 @@
 use std::rc::Rc;
 use std::sync::Arc;
 
+use files_config::Config;
 use files_core::Location;
 use files_drives::{Drives, Error, Volume, VolumeId, VolumeKind};
 use rikka_app::prelude::*;
 
-use crate::config::Config;
 use crate::services::{Services, SharedServices};
 
 #[derive(Clone, Debug)]

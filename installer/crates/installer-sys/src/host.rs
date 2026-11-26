@@ -36,6 +36,8 @@ pub trait Host: fmt::Debug + Send + Sync {
 
     fn read(&self, path: &str) -> Result<String>;
 
+    fn read_bytes(&self, path: &str) -> Result<Vec<u8>>;
+
     fn write(&self, path: &str, contents: &str, mode: u32) -> Result<()>;
 
     fn mkdir(&self, path: &str, mode: u32) -> Result<()>;
@@ -125,6 +127,13 @@ impl Host for SystemHost {
 
     fn read(&self, path: &str) -> Result<String> {
         fs::read_to_string(path).map_err(|source| Error::Io {
+            path: path.to_owned(),
+            source,
+        })
+    }
+
+    fn read_bytes(&self, path: &str) -> Result<Vec<u8>> {
+        fs::read(path).map_err(|source| Error::Io {
             path: path.to_owned(),
             source,
         })

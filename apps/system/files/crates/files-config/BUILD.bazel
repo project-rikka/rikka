@@ -1,0 +1,19 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
+
+rikka_library(
+    name = "files-config",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/files:__subpackages__",
+    ],
+    deps = [
+        "//crates/session/rikka-settings",
+    ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "files_config::Config::schema",
+    deps = [":files-config"],
+)

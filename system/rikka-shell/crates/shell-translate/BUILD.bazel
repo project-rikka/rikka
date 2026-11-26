@@ -1,4 +1,5 @@
 load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
 
 rikka_library(
     name = "shell-translate",
@@ -35,4 +36,10 @@ rikka_library(
         "@crates//:thiserror",
         "@crates//:tracing",
     ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "shell_translate::Translator::schema",
+    deps = [":shell-translate"],
 )

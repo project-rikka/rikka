@@ -8,6 +8,7 @@ use crate::{
     kernel::Kernel,
     keyboard::{KEYBOARDS, Keyboard},
     locale::{LOCALES, Locale},
+    restore::{Restored, Start},
     secret::Secret,
     storage::{Filesystem, Swap},
 };
@@ -43,6 +44,13 @@ impl Channel {
 
 #[derive(Clone, Debug)]
 pub struct Answers {
+    pub start: Start,
+    pub backup_path: String,
+    pub backup_passphrase: Secret,
+    pub repository: String,
+    pub restored: Option<Restored>,
+    pub restore_problem: Option<String>,
+
     pub locale: &'static Locale,
     pub english_messages: bool,
     pub keyboard: &'static Keyboard,
@@ -82,6 +90,13 @@ pub struct Answers {
 impl Default for Answers {
     fn default() -> Self {
         Self {
+            start: Start::default(),
+            backup_path: String::new(),
+            backup_passphrase: Secret::new(),
+            repository: String::new(),
+            restored: None,
+            restore_problem: None,
+
             locale: &LOCALES[0],
             english_messages: false,
             keyboard: &KEYBOARDS[0],

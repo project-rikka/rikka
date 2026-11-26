@@ -22,6 +22,15 @@ pub enum Error {
     #[error("invalid value for `{key}`: {reason}")]
     Refused { key: String, reason: String },
 
+    #[error("`{domain}/{key}` is locked by the system configuration")]
+    Locked { domain: String, key: String },
+
+    #[error("the catalog describes `{0}` twice")]
+    DuplicateDomain(String),
+
+    #[error("failed to read the settings catalog: {0}")]
+    Catalog(String),
+
     #[error("value conversion failed")]
     Convert(#[source] Cause),
 

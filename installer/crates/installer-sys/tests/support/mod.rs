@@ -87,6 +87,10 @@ impl Host for FailingHost {
         self.inner.read(path)
     }
 
+    fn read_bytes(&self, path: &str) -> Result<Vec<u8>> {
+        self.inner.read_bytes(path)
+    }
+
     fn write(&self, path: &str, contents: &str, mode: u32) -> Result<()> {
         self.inner.write(path, contents, mode)
     }

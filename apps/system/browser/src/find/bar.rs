@@ -1,8 +1,8 @@
+use browser_preferences::{FindOption, FindOptions};
 use rikka_app::prelude::*;
 use rikka_widgets::row;
 
 use crate::find::Find;
-use crate::preferences::{FindOption, FindOptions};
 use crate::shell::Shell;
 use browser_model::TabId;
 

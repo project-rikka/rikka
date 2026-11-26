@@ -1,9 +1,9 @@
 use music_core::Quality;
+use music_preferences::Preferences;
 use rikka_app::prelude::*;
 use rikka_widgets::column;
 
 use crate::music::Music;
-use crate::preferences::Preferences;
 
 const CHOICE: f32 = 220.0;
 

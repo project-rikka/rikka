@@ -4,10 +4,10 @@ pub(crate) use catalog::{Searching, engine_of};
 
 use std::rc::Rc;
 
+use browser_preferences::CustomEngine;
 use rikka_omnibox::{SearchEngines, Suggester};
 
 use crate::browser::Browser;
-use crate::preferences::CustomEngine;
 
 impl Browser {
     pub(crate) fn search_engines(&self) -> Rc<SearchEngines> {

@@ -1,8 +1,9 @@
 use std::collections::HashMap;
 use std::time::SystemTime;
 
-use rikka_nix::{Event, Run, RunId};
+use rikka_nix::{Action, Event, Operation, Run, RunId, RunState};
 use rikka_seam::{Call, Manifest, Method, MethodInfo, SeamClient, Service, Version};
+use rikka_settings::seam::protocol as settings;
 use shell_kit::Host;
 
 use crate::describe::{self, Shown};
@@ -61,7 +62,12 @@ impl SystemUpdateService {
                     self.announce(seam, run);
                 }
             }
-            Event::Finished(run) => self.follow(seam, run),
+            Event::Finished(run) => {
+                if activated(&run) {
+                    seam.notify(settings::reload());
+                }
+                self.follow(seam, run);
+            }
             Event::Exited | Event::Disconnected => {
                 let now = SystemTime::now();
                 let stopped: Vec<RunId> = self
@@ -137,4 +143,14 @@ impl Service<Host> for SystemUpdateService {
             _ => call.unknown_method(),
         }
     }
+}
+
+fn activated(run: &Run) -> bool {
+    let activates = match run.operation {
+        Operation::Apply { action } | Operation::Update { action } => {
+            matches!(action, Action::Switch | Action::Test)
+        }
+        Operation::Rollback { .. } => true,
+    };
+    activates && matches!(run.state, RunState::Done { .. })
 }

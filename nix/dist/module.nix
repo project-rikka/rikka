@@ -58,6 +58,8 @@ let
   );
 in
 {
+  imports = [ ./settings.nix ];
+
   options.rikka = {
     enable = lib.mkEnableOption "the Rikka desktop";
 
@@ -121,12 +123,12 @@ in
         ++ installed
         ++ (with pkgs; [
           adwaita-icon-theme
+          git
           hwdata
           xdg-user-dirs
           xdg-utils
           xkeyboard-config
-        ])
-        ++ lib.optional (cfg.apps.ade.enable or false) pkgs.git;
+        ]);
 
         environment.pathsToLink = [
           "/share/hwdata"

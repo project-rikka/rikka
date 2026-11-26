@@ -1,3 +1,4 @@
+use browser_preferences::{ReaderStyle, ReaderTheme};
 use browser_reader::{FontSize, Spacing, Typeface, Width};
 use rikka_app::prelude::*;
 use rikka_input::Chord;
@@ -6,7 +7,6 @@ use rikka_web::web_view;
 use rikka_widgets::column;
 
 use crate::keys;
-use crate::preferences::{ReaderStyle, ReaderTheme};
 use crate::shell::Shell;
 use crate::widgets::key_catcher;
 use browser_model::TabId;

@@ -10,12 +10,12 @@ use discord_core::{
     ChannelId, Emoji, ForumPost, ForumSettings, Limits, MessageId, PostQuery, ReactionKind, TagId,
     Upload,
 };
+use discord_preferences::ForumView;
 use rikka_app::prelude::*;
 
 use crate::conversation::Seat;
 use crate::conversation::composer::Picked;
 use crate::conversation::composer::uploads::{self, Pending};
-use crate::preferences::ForumView;
 
 pub(crate) use menus::sort_menu;
 pub(crate) use view::view;

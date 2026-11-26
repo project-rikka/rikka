@@ -27,6 +27,8 @@ pub enum Section {
     Defaults,
     Llm,
     System,
+    Configuration,
+    Backup,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -44,7 +46,7 @@ pub enum Link {
 }
 
 impl Section {
-    pub const ALL: [Section; 22] = [
+    pub const ALL: [Section; 24] = [
         Section::Users,
         Section::Appearance,
         Section::Windows,
@@ -67,6 +69,8 @@ impl Section {
         Section::Defaults,
         Section::Llm,
         Section::System,
+        Section::Configuration,
+        Section::Backup,
     ];
 
     #[must_use]
@@ -94,6 +98,8 @@ impl Section {
             Section::Defaults => "default-apps",
             Section::Llm => "llm",
             Section::System => "system",
+            Section::Configuration => "configuration",
+            Section::Backup => "backup",
         }
     }
 

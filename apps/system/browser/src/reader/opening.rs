@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use browser_pages::Cause;
+use browser_preferences::ReaderStyle;
 use browser_reader::{Article, EXTRACT_SCRIPT, parse, render};
 use rikka_app::prelude::*;
 use rikka_appearance::Appearance;
@@ -9,7 +10,6 @@ use serde_json::Value;
 
 use crate::link::{self, Opening as LinkOpening};
 use crate::omnibox::Opening;
-use crate::preferences::ReaderStyle;
 use crate::reader::look::{labels, look};
 use crate::reader::probe::WORLD;
 use crate::reader::state::Reading;

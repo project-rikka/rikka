@@ -3,6 +3,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use rikka_seam::{Event, Version};
+use rikka_settings::{Key, Schema};
 use serde::de::{Error as _, Unexpected};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -132,6 +133,17 @@ const NAMED: [Shortcut; 37] = [
 
 const WORKSPACE: &str = "workspace-";
 const MOVE_TO_WORKSPACE: &str = "move-to-workspace-";
+
+#[must_use]
+pub fn schema() -> Schema {
+    Shortcut::all().fold(
+        Schema::new(DOMAIN).summary("Compositor keybindings"),
+        |schema, shortcut| {
+            let shortcut = shortcut.describe();
+            schema.key(Key::string(shortcut.name, shortcut.chord).summary(shortcut.summary))
+        },
+    )
+}
 
 impl Shortcut {
     pub fn all() -> impl Iterator<Item = Shortcut> {

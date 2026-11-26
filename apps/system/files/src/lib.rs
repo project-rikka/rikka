@@ -1,6 +1,5 @@
 mod browser;
 mod chooser;
-mod config;
 mod crumbs;
 mod devices;
 mod frame;

@@ -74,6 +74,9 @@
                 apps = builtins.mapAttrs (_: _: { enable = true; }) (
                   nixpkgs.lib.filterAttrs (_: entry: entry.offer != "required") release.components
                 );
+                settings."rikka.windows".layout = "tiling";
+                locked."rikka.windows" = [ "layout" ];
+                users.rikka.settings."rikka.displays"."example-display".scale = 1.5;
               };
               system.stateVersion = nixpkgs.lib.trivial.release;
             }

@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use rikka_types::Choice;
@@ -8,11 +9,12 @@ use crate::atomic;
 use crate::domain::Domain;
 use crate::error::{Error, Result};
 use crate::key::Key;
-use crate::layers::{Layers, Source};
+use crate::layers::Layers;
 use crate::report::LoadReport;
 use crate::schema::Schema;
 use crate::scribe;
 use crate::snapshot::Snapshot;
+use crate::source::Source;
 use crate::value::{Value, Values};
 
 #[derive(Debug)]
@@ -20,9 +22,28 @@ pub struct Store {
     schema: Schema,
     domain: Domain,
     layers: Layers,
-    system: Values,
+    beneath: Vec<Layer>,
     user: Values,
+    locked: Vec<Layer>,
     unknown: Values,
+}
+
+#[derive(Debug)]
+struct Layer {
+    source: Source,
+    values: Values,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Resolved<'a> {
+    pub source: Source,
+    pub value: &'a Value,
+}
+
+enum Undeclared<'a> {
+    Reject,
+    Skip,
+    Carry(&'a mut Values),
 }
 
 impl Store {
@@ -38,8 +59,9 @@ impl Store {
             schema,
             domain,
             layers,
-            system: Values::new(),
+            beneath: Vec::new(),
             user: Values::new(),
+            locked: Vec::new(),
             unknown: Values::new(),
         };
         let report = store.read_layers()?;
@@ -61,19 +83,46 @@ impl Store {
     }
 
     #[must_use]
+    pub fn layers(&self) -> &Layers {
+        &self.layers
+    }
+
+    #[must_use]
     pub fn unknown(&self) -> &Values {
         &self.unknown
     }
 
     pub fn value(&self, key: &str) -> Result<&Value> {
+        Ok(self.resolved(self.schema.require(key)?).value)
+    }
+
+    pub fn resolve(&self, key: &str) -> Result<Resolved<'_>> {
         Ok(self.resolved(self.schema.require(key)?))
     }
 
-    fn resolved<'a>(&'a self, declared: &'a Key) -> &'a Value {
-        self.user
-            .get(declared.name())
-            .or_else(|| self.system.get(declared.name()))
-            .unwrap_or_else(|| declared.default_value())
+    pub fn beneath_user(&self, key: &str) -> Result<Resolved<'_>> {
+        Ok(self.beneath_user_of(self.schema.require(key)?))
+    }
+
+    fn resolved<'a>(&'a self, declared: &'a Key) -> Resolved<'a> {
+        let name = declared.name();
+        if let Some(locked) = found(&self.locked, name) {
+            return locked;
+        }
+        match self.user.get(name) {
+            Some(value) => Resolved {
+                source: Source::User,
+                value,
+            },
+            None => self.beneath_user_of(declared),
+        }
+    }
+
+    fn beneath_user_of<'a>(&'a self, declared: &'a Key) -> Resolved<'a> {
+        found(&self.beneath, declared.name()).unwrap_or(Resolved {
+            source: Source::Default,
+            value: declared.default_value(),
+        })
     }
 
     pub fn get<T: DeserializeOwned>(&self, key: &str) -> Result<T> {
@@ -95,19 +144,14 @@ impl Store {
             .map(|slug| C::of_slug(&slug))
             .unwrap_or_default()
     }
+
     pub fn source(&self, key: &str) -> Result<Source> {
-        self.schema.require(key)?;
-        Ok(self.source_of(key))
+        Ok(self.resolve(key)?.source)
     }
 
-    fn source_of(&self, name: &str) -> Source {
-        if self.user.contains_key(name) {
-            Source::User
-        } else if self.system.contains_key(name) {
-            Source::System
-        } else {
-            Source::Default
-        }
+    #[must_use]
+    pub fn is_locked(&self, key: &str) -> bool {
+        found(&self.locked, key).is_some()
     }
 
     pub fn set(&mut self, key: &str, value: impl Serialize) -> Result<()> {
@@ -124,6 +168,7 @@ impl Store {
             .require(key)?
             .accepts(value)
             .map_err(|reason| Error::refused(key, reason))?;
+        self.refuse_locked(key)?;
         if self.user.get(key) == Some(&accepted) && self.in_step() {
             return Ok(());
         }
@@ -133,10 +178,21 @@ impl Store {
 
     pub fn reset(&mut self, key: &str) -> Result<()> {
         self.schema.require(key)?;
+        self.refuse_locked(key)?;
         if self.user.remove(key).is_none() && self.in_step() {
             return Ok(());
         }
         self.persist()
+    }
+
+    fn refuse_locked(&self, key: &str) -> Result<()> {
+        match self.is_locked(key) {
+            true => Err(Error::Locked {
+                domain: self.domain.as_str().to_owned(),
+                key: key.to_owned(),
+            }),
+            false => Ok(()),
+        }
     }
 
     fn in_step(&self) -> bool {
@@ -169,11 +225,11 @@ impl Store {
     }
 
     #[must_use]
-    pub fn sources(&self) -> std::collections::BTreeMap<String, Source> {
+    pub fn sources(&self) -> BTreeMap<String, Source> {
         self.schema
             .keys()
             .iter()
-            .map(|key| (key.name().to_owned(), self.source_of(key.name())))
+            .map(|key| (key.name().to_owned(), self.resolved(key).source))
             .collect()
     }
 
@@ -183,7 +239,7 @@ impl Store {
             .schema
             .keys()
             .iter()
-            .map(|key| (key.name().to_owned(), self.resolved(key).clone()))
+            .map(|key| (key.name().to_owned(), self.resolved(key).value.clone()))
             .collect();
         Snapshot::new(self.domain.clone(), values)
     }
@@ -191,11 +247,21 @@ impl Store {
     fn read_layers(&mut self) -> Result<LoadReport> {
         let mut report = LoadReport::default();
         let system_file = self.layers.system_file(&self.domain);
-        let system_document = atomic::read(&system_file).map_err(|source| Error::ReadFile {
-            path: system_file.clone(),
-            source,
-        })?;
-        let system = self.read_layer(&system_file, system_document, None, &mut report);
+        let mut beneath = vec![Layer {
+            source: Source::System,
+            values: self.read_file(&system_file, Undeclared::Reject, &mut report)?,
+        }];
+        let mut locked = Vec::new();
+        for files in self.layers.declared_files(&self.domain) {
+            beneath.push(Layer {
+                source: Source::Declared(files.scope),
+                values: self.read_file(&files.values, Undeclared::Skip, &mut report)?,
+            });
+            locked.push(Layer {
+                source: Source::Locked(files.scope),
+                values: self.read_file(&files.locked, Undeclared::Skip, &mut report)?,
+            });
+        }
         let user_file = self.layers.user_file(&self.domain);
         let user_document =
             self.layers
@@ -205,18 +271,37 @@ impl Store {
                     source,
                 })?;
         let mut unknown = Values::new();
-        let user = self.read_layer(&user_file, user_document, Some(&mut unknown), &mut report);
-        self.system = system;
+        let user = self.read_layer(
+            &user_file,
+            user_document,
+            Undeclared::Carry(&mut unknown),
+            &mut report,
+        );
+        self.beneath = beneath;
+        self.locked = locked;
         self.user = user;
         self.unknown = unknown;
         Ok(report)
+    }
+
+    fn read_file(
+        &self,
+        path: &Path,
+        undeclared: Undeclared<'_>,
+        report: &mut LoadReport,
+    ) -> Result<Values> {
+        let document = atomic::read(path).map_err(|source| Error::ReadFile {
+            path: path.to_path_buf(),
+            source,
+        })?;
+        Ok(self.read_layer(path, document, undeclared, report))
     }
 
     fn read_layer(
         &self,
         path: &Path,
         document: Option<String>,
-        carry: Option<&mut Values>,
+        mut undeclared: Undeclared<'_>,
         report: &mut LoadReport,
     ) -> Values {
         let Some(contents) = document else {
@@ -232,7 +317,6 @@ impl Store {
         };
 
         let mut valid = Values::new();
-        let mut carry = carry;
         for (name, raw) in parsed {
             let value = match Value::from_toml(raw) {
                 Ok(value) => value,
@@ -248,17 +332,25 @@ impl Store {
                     }
                     Err(reason) => report.reject(path, Some(&name), reason),
                 },
-                None => match &mut carry {
-                    Some(carry) => {
+                None => match &mut undeclared {
+                    Undeclared::Reject => {
+                        report.reject(path, Some(&name), "is not a setting of this domain".into());
+                    }
+                    Undeclared::Skip => {
+                        tracing::debug!(
+                            domain = %self.domain,
+                            setting = %name,
+                            path = %path.display(),
+                            "skipping a declared setting this domain does not have",
+                        );
+                    }
+                    Undeclared::Carry(carry) => {
                         tracing::debug!(
                             domain = %self.domain,
                             setting = %name,
                             "preserving undeclared setting",
                         );
                         carry.insert(name, value);
-                    }
-                    None => {
-                        report.reject(path, Some(&name), "is not a setting of this domain".into());
                     }
                 },
             }
@@ -290,6 +382,15 @@ impl Store {
             source: Box::new(source),
         })
     }
+}
+
+fn found<'a>(layers: &'a [Layer], name: &str) -> Option<Resolved<'a>> {
+    layers.iter().rev().find_map(|layer| {
+        layer.values.get(name).map(|value| Resolved {
+            source: layer.source,
+            value,
+        })
+    })
 }
 
 impl Drop for Store {

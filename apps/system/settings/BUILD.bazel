@@ -2,9 +2,15 @@ load("//bazel/rust:defs.bzl", "rikka_binary")
 
 rikka_binary(
     name = "rikka-settings",
+    compile_data = ["//:nix/dist/settings.json"],
+    rustc_env = {
+        "RIKKA_SETTINGS_CATALOG": "$(execpath //:nix/dist/settings.json)",
+    },
     target_compatible_with = ["@platforms//os:linux"],
     deps = [
         "//apps/system/settings/crates/settings-avatar",
+        "//apps/system/settings/crates/settings-backup",
+        "//apps/system/settings/crates/settings-declared",
         "//apps/system/settings/crates/settings-displays",
         "//apps/system/settings/crates/settings-sources",
         "//crates/ai/rikka-llm-accounts",
@@ -37,6 +43,7 @@ rikka_binary(
         "//crates/media/rikka-audio",
         "//crates/nix/rikka-nix",
         "//crates/session/rikka-appearance",
+        "//crates/session/rikka-backup",
         "//crates/session/rikka-capture",
         "//crates/session/rikka-seam",
         "//crates/session/rikka-session",
@@ -48,6 +55,7 @@ rikka_binary(
         "@crates//:futures-util",
         "@crates//:jiff",
         "@crates//:serde",
+        "@crates//:serde_json",
         "@crates//:tempfile",
         "@crates//:tracing",
         "@crates//:zeroize",

@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use rikka_app::prelude::*;
 use rikka_nix::{
-    Action, ChangeState, Document, Draft, Expr, FromNix, Module, Modules, Outcome, Progress,
-    Rebuild, Refusal, Request, Stage,
+    Action, ChangeState, Document, Draft, Expr, FromNix, IntoAttrPath, Module, Modules, Outcome,
+    Progress, Rebuild, Refusal, Request, Stage,
 };
 
 #[derive(State)]
@@ -14,6 +14,7 @@ pub(crate) struct Pending {
     error: Option<String>,
     overridden: Vec<Module>,
     rebuild: Rebuild,
+    concluded: Option<Outcome>,
     report: Arc<dyn Fn(Progress) + Send + Sync>,
 }
 
@@ -26,6 +27,7 @@ impl Pending {
             error: None,
             overridden: Vec::new(),
             rebuild: Rebuild::new(),
+            concluded: None,
             report: Arc::new(report),
         };
         pending.reload();
@@ -60,7 +62,11 @@ impl Pending {
         self.rebuild.stage()
     }
 
-    pub(crate) fn get<T: FromNix>(&self, module: Module, path: &str) -> Option<T> {
+    pub(crate) fn concluded(&self) -> Option<&Outcome> {
+        self.concluded.as_ref()
+    }
+
+    pub(crate) fn get<T: FromNix>(&self, module: Module, path: impl IntoAttrPath) -> Option<T> {
         self.edited(module)?.get(path).ok().flatten()
     }
 
@@ -85,12 +91,12 @@ impl Pending {
         });
     }
 
-    pub(crate) fn set(&mut self, module: Module, path: &str, value: impl Into<Expr>) {
+    pub(crate) fn set(&mut self, module: Module, path: impl IntoAttrPath, value: impl Into<Expr>) {
         let value = value.into();
         self.edit(module, |document| document.set(path, value));
     }
 
-    pub(crate) fn remove(&mut self, module: Module, path: &str) {
+    pub(crate) fn remove(&mut self, module: Module, path: impl IntoAttrPath) {
         self.edit(module, |document| document.remove(path));
     }
 
@@ -141,6 +147,7 @@ impl Pending {
     }
 
     fn start(&mut self, request: Request) {
+        self.concluded = None;
         let pending_request = self.rebuild.start(request);
         let report = Arc::clone(&self.report);
         spawn_blocking(
@@ -162,6 +169,7 @@ impl Pending {
     }
 
     fn conclude(&mut self, outcome: &Outcome) {
+        self.concluded = Some(outcome.clone());
         if matches!(outcome, Outcome::Refused(Refusal::Stale)) {
             self.rebase();
         } else if outcome.changes() == ChangeState::Modified {

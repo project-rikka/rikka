@@ -1,3 +1,3 @@
 mod component;
 
-pub(crate) use component::{Keyring, view};
+pub(crate) use component::{Keyring, app_named, view};

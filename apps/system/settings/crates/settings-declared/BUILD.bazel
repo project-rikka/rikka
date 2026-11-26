@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "settings-declared",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/settings:__subpackages__",
+    ],
+    deps = [
+        "//crates/nix/rikka-nix",
+        "//crates/session/rikka-settings",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":settings-declared",
+        "//crates/nix/rikka-nix",
+        "//crates/nix/rikka-test-nixfmt",
+        "//crates/session/rikka-settings",
+        "@crates//:tempfile",
+    ],
+)

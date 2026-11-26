@@ -1,6 +1,6 @@
 use installer_core::{
-    Answers, Channel, Disk, Filesystem, KEYBOARDS, Kernel, LOCALES, Offer, PartitionPlan, Step,
-    Strength,
+    Answers, Channel, Disk, Filesystem, KEYBOARDS, Kernel, LOCALES, Offer, PartitionPlan, Start,
+    Step, Strength,
 };
 
 use crate::form::{Choice, Field, FieldId, Form, Tone};
@@ -24,6 +24,7 @@ pub(crate) struct Context<'a> {
 pub(crate) fn build(step: Step, cx: Context<'_>) -> Form {
     let answers = cx.answers;
     let fields = match step {
+        Step::Restore => restore(answers),
         Step::Language => language(answers),
         Step::Keyboard => keyboard(answers),
         Step::Timezone => timezone(answers, cx.timezones),
@@ -44,6 +45,7 @@ pub(crate) fn commit(
     timezones: &[String],
 ) {
     match step {
+        Step::Restore => commit_restore(form, answers),
         Step::Language => {
             if let Some(locale) = picked(LOCALES, form, FieldId::Locale) {
                 answers.locale = locale;
@@ -116,6 +118,7 @@ pub(crate) fn commit(
 #[must_use]
 pub(crate) fn detail(step: Step, answers: &Answers) -> Vec<(String, Tone)> {
     match step {
+        Step::Restore => restore_detail(answers),
         Step::Disk => disk_detail(answers),
 
         Step::Account => {
@@ -158,6 +161,102 @@ pub(crate) fn detail(step: Step, answers: &Answers) -> Vec<(String, Tone)> {
             Vec::new()
         }
     }
+}
+
+fn restore(answers: &Answers) -> Vec<Field> {
+    let mut fields = vec![Field::choice(
+        FieldId::Start,
+        "Start from",
+        Start::ALL
+            .iter()
+            .map(|start| Choice::new(start.label()))
+            .collect(),
+        index_of(Start::ALL, |start| *start == answers.start),
+    )];
+    match answers.start {
+        Start::Fresh => {}
+        Start::Backup => {
+            fields.push(
+                Field::text(
+                    FieldId::BackupPath,
+                    "Backup file",
+                    answers.backup_path.clone(),
+                )
+                .placeholder("/run/media/usb/computer.rikka-backup"),
+            );
+            fields.push(Field::secret(
+                FieldId::BackupPassphrase,
+                "Passphrase",
+                answers.backup_passphrase.clone(),
+            ));
+        }
+        Start::Repository => fields.push(
+            Field::text(
+                FieldId::Repository,
+                "Repository",
+                answers.repository.clone(),
+            )
+            .placeholder("https://example.com/me/rikka.git"),
+        ),
+    }
+    fields
+}
+
+fn commit_restore(form: &Form, answers: &mut Answers) {
+    let start = picked(Start::ALL, form, FieldId::Start)
+        .copied()
+        .unwrap_or_default();
+    let backup_path = match form.get(FieldId::BackupPath) {
+        Some(_) => form.value(FieldId::BackupPath).to_owned(),
+        None => answers.backup_path.clone(),
+    };
+    let backup_passphrase = match form.get(FieldId::BackupPassphrase) {
+        Some(_) => form.secret(FieldId::BackupPassphrase),
+        None => answers.backup_passphrase.clone(),
+    };
+    let repository = match form.get(FieldId::Repository) {
+        Some(_) => form.value(FieldId::Repository).to_owned(),
+        None => answers.repository.clone(),
+    };
+    let changed = start != answers.start
+        || backup_path != answers.backup_path
+        || backup_passphrase.as_str() != answers.backup_passphrase.as_str()
+        || repository != answers.repository;
+    if changed {
+        answers.restored = None;
+        answers.restore_problem = None;
+    }
+    answers.start = start;
+    answers.backup_path = backup_path;
+    answers.backup_passphrase = backup_passphrase;
+    answers.repository = repository;
+}
+
+fn restore_detail(answers: &Answers) -> Vec<(String, Tone)> {
+    let Some(restored) = &answers.restored else {
+        return match answers.start {
+            Start::Fresh => Vec::new(),
+            Start::Backup | Start::Repository => vec![(
+                "Press Enter to read it; the answers that follow start from what it holds."
+                    .to_owned(),
+                Tone::Plain,
+            )],
+        };
+    };
+    let mut lines = vec![(
+        format!("Restores {} configuration modules.", restored.modules.len()),
+        Tone::Plain,
+    )];
+    if restored.pending.is_some() {
+        lines.push((
+            format!(
+                "{} changed settings and {} sign-ins finish in Settings → Backup & restore after the first login.",
+                restored.preferences, restored.sign_ins
+            ),
+            Tone::Plain,
+        ));
+    }
+    lines
 }
 
 fn disk_detail(answers: &Answers) -> Vec<(String, Tone)> {

@@ -1,4 +1,5 @@
 load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
 
 rikka_library(
     name = "ade-config",
@@ -11,4 +12,10 @@ rikka_library(
         "@crates//:serde",
         "@crates//:tracing",
     ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "ade_config::Config::schema",
+    deps = [":ade-config"],
 )

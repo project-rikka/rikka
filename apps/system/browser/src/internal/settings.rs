@@ -1,10 +1,10 @@
 use browser_pages::Cause;
+use browser_preferences::{ArchiveAfter, HistoryKept, ZOOMS};
 use rikka_app::prelude::*;
 use rikka_types::Choice;
 use rikka_widgets::{column, row};
 
 use crate::menus::profile_name;
-use crate::preferences::{ArchiveAfter, HistoryKept, ZOOMS};
 use crate::shell::Shell;
 use crate::sidebar::Renaming;
 use browser_model::ProfileId;

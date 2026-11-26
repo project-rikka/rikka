@@ -6,6 +6,7 @@ rikka_library(
         "//installer:__subpackages__",
     ],
     deps = [
+        "//crates/session/rikka-backup",
         "//installer/crates/installer-core",
         "@crates//:serde",
         "@crates//:serde_json",

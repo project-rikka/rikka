@@ -1,8 +1,8 @@
+use discord_preferences::Alerts;
 use rikka_app::prelude::*;
 use rikka_widgets::column;
 
 use crate::chat::Chat;
-use crate::preferences::Alerts;
 
 pub(super) fn view(chat: &Chat) -> Element {
     let alerts = chat.alerts();

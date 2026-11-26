@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::domain::Domain;
 use crate::error::{Error, Result};
 use crate::key::Key;
@@ -30,6 +32,23 @@ impl Schema {
     #[must_use]
     pub fn key(mut self, key: Key) -> Self {
         self.keys.push(key);
+        self
+    }
+
+    #[must_use]
+    pub fn checked_with(
+        mut self,
+        check: impl Fn(&Value) -> Result<(), String> + Send + Sync + 'static,
+    ) -> Self {
+        let check = Arc::new(check);
+        self.keys = self
+            .keys
+            .into_iter()
+            .map(|key| {
+                let check = Arc::clone(&check);
+                key.checked_with(move |value| check(value))
+            })
+            .collect();
         self
     }
 

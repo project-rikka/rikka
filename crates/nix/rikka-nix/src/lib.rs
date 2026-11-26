@@ -22,7 +22,7 @@ pub use generation::Generation;
 pub use monitor::{Interest, Monitor, Page};
 pub use outcome::{Outcome, Progress, Refusal};
 pub use rebuild::{PendingRequest, Rebuild, Stage};
-pub use rikka_nix_edit::{AttrPath, Document, Expr, FromNix, Set};
+pub use rikka_nix_edit::{AttrPath, Document, Expr, FromNix, IntoAttrPath, Set};
 pub use rikka_nix_log::Tally;
 pub use rikka_nix_protocol::{
     Action, ChangeState, Operation, Phase, Request, Run, RunId, RunState, Status,

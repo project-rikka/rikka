@@ -4,12 +4,15 @@ use rikka_nix::{Progress, Stage};
 use rikka_session::settings_app::{Link, Spot};
 use rikka_sound::NodeKind;
 use rikka_widgets::column;
+use settings_declared::SettingId;
 
 use crate::appearance::{self, Appearance};
 use crate::audio::{self, Audio};
+use crate::backup::{self, Backup, Documents, Restored};
 use crate::bluetooth::{self, Bluetooth};
 use crate::capture::{self, Capture};
 use crate::color_picker::{self, ColorPicker};
+use crate::configuration::{self, Configuration};
 use crate::date_time::{self, DateTimePage};
 use crate::defaults::{self, Defaults};
 use crate::displays::{self, Displays};
@@ -65,6 +68,8 @@ pub(crate) struct Settings {
     defaults: Defaults,
     llm: LlmSettings,
     system: System,
+    configuration: Configuration,
+    backup: Backup,
     pending: Pending,
     session: Session,
 }
@@ -105,6 +110,8 @@ impl Settings {
             defaults: Defaults::new(),
             llm: LlmSettings::load(),
             system: System::new(),
+            configuration: Configuration::new(),
+            backup: Backup::new(),
             pending: Pending::new(move |progress| {
                 let _ = sender.send(move |settings: &mut Settings| {
                     settings.rebuild_progressed(progress);
@@ -205,6 +212,22 @@ impl Settings {
         self.users.commit_name(&mut self.pending);
     }
 
+    pub(crate) fn declare_settings(&mut self, chosen: &[SettingId]) {
+        self.configuration.declare(&mut self.pending, chosen);
+    }
+
+    pub(crate) fn undeclare_setting(&mut self, id: &SettingId) {
+        self.configuration.undeclare(&mut self.pending, id);
+    }
+
+    pub(crate) fn backup_restored(&mut self, restored: Result<Restored, String>) {
+        self.backup.restored(&mut self.pending, restored);
+    }
+
+    pub(crate) fn repository_fetched(&mut self, fetched: Result<Documents, String>) {
+        self.backup.fetched(&mut self.pending, fetched);
+    }
+
     fn page(&mut self, section: Section) -> (&mut dyn Page, &Pending, &Session) {
         let page: &mut dyn Page = match section {
             Section::Users => &mut self.users,
@@ -229,6 +252,8 @@ impl Settings {
             Section::Defaults => &mut self.defaults,
             Section::Llm => &mut self.llm,
             Section::System => &mut self.system,
+            Section::Configuration => &mut self.configuration,
+            Section::Backup => &mut self.backup,
         };
         (page, &self.pending, &self.session)
     }
@@ -254,6 +279,7 @@ impl Settings {
         self.system.rebuild_finished();
         self.keyboard.rebuild_finished();
         self.users.rebuild_finished(&self.pending);
+        self.configuration.rebuild_finished(&self.pending);
     }
 
     fn entries(&self) -> Vec<Entry> {
@@ -328,6 +354,8 @@ fn body(settings: &Settings) -> impl View {
                 Section::Defaults => defaults::view(&settings.defaults),
                 Section::Llm => llm_settings(&settings.llm),
                 Section::System => system::view(&settings.system, pending),
+                Section::Configuration => configuration::view(&settings.configuration, pending),
+                Section::Backup => backup::view(&settings.backup),
             }
         }
     }

@@ -5,7 +5,7 @@ about: installer
 tags: [installer, architecture]
 ---
 
-- Partitions a machine and writes its flake before any Rikka session exists. It depends on no Rikka layer, only its own crates.io deps and `crates/nix/{rikka-nix-edit,rikka-nixos-layout}` (plus `rikka-test-nixfmt` in installer-core's tests).
+- Partitions a machine and writes its flake before any Rikka session exists. It depends on no Rikka layer, only its own crates.io deps, `crates/nix/{rikka-nix-edit,rikka-nixos-layout}` and `crates/session/rikka-backup` (with rikka-age and rikka-file-format; plus `rikka-test-nixfmt` in installer-core's tests). Its first step restores from a backup or repository.
 - Layers run `installer → installer-tui → installer-sys → installer-core`. Core: answers, validation, rendered Nix, no machine access. Sys: the only layer touching commands and filesystems, through `Host` (real, scripted or read-only). `src/main.rs` only wires.
 - `--config=installer`: `-c opt` with `opt-level = "z"`, fat LTO and unwind panics (terminal cleanup) on `//bazel/platforms:linux_musl`. `install.sh` refuses to run unless `/` is tmpfs/ramfs/overlayfs/squashfs (a live medium; `RIKKA_FORCE=1` overrides) and points installed systems at the existing-NixOS guide; it downloads `rikka-installer-<arch>` plus `.sha256` from `project-rikka/rikka`'s `releases/latest/download` (every `xtask release` uploads them), else builds from source with `bazel build --config=local --config=installer //installer:rikka-installer` inside `nix develop`.
 - `https://install.rikka.sh` (the command in `website/src/site.ts`) is a Cloudflare Single Redirect (302, proxied `AAAA 100::` record) to `raw.githubusercontent.com/project-rikka/rikka/main/installer/install.sh`; nothing in the repository serves it.

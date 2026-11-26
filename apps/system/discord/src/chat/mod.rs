@@ -18,6 +18,7 @@ use std::sync::Arc;
 
 use discord_client::Discord;
 use discord_core::{SavedAccount, SpaceId, UserId};
+use discord_preferences::{Appearance, Preferences};
 use discord_voice::{Krisp, KrispState};
 use rikka_account_book::Accounts;
 use rikka_app::prelude::*;
@@ -30,7 +31,6 @@ use crate::manage::Manage;
 use crate::member_menu::{MemberMenu, MemberTarget};
 use crate::menus::Menus;
 use crate::notices::Notices;
-use crate::preferences::{Appearance, Preferences};
 use crate::profile::Profiles;
 use crate::screen::Screens;
 use crate::settings::Settings;

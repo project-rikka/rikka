@@ -1,7 +1,7 @@
+use browser_preferences::CustomEngine;
 use rikka_app::prelude::*;
 use rikka_omnibox::{Error, SearchEngines};
 
-use crate::preferences::CustomEngine;
 use crate::search::engine_of;
 
 #[derive(Clone, Debug, PartialEq, Eq)]

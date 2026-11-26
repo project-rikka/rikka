@@ -9,6 +9,7 @@
     ./integration.nix
     ./nix.nix
     ./packages.nix
+    ./settings.nix
     ./system.nix
   ];
 }

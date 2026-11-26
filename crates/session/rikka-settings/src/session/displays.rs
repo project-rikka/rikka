@@ -3,7 +3,13 @@ use std::ops::RangeInclusive;
 
 use rikka_types::{Choice, Transform};
 
+use crate::catalog::instance_key;
+use crate::key::Key;
+use crate::schema::Schema;
+
 pub const DOMAIN: &str = "rikka.displays";
+
+pub const INSTANCES: &str = "display";
 
 pub const CONNECTED: &str = "connected";
 
@@ -41,7 +47,36 @@ const SEPARATOR: char = ';';
 
 #[must_use]
 pub fn key(display: &str, suffix: &str) -> String {
-    format!("{display}-{suffix}")
+    instance_key(display, suffix)
+}
+
+#[must_use]
+pub fn template() -> Schema {
+    Schema::new(DOMAIN)
+        .summary("Each display, named by its make, model and serial number")
+        .key(Key::bool(ENABLED, true).summary("Whether the display is enabled"))
+        .key(Key::string(MODE, "").summary(
+            "Resolution and refresh rate as `<width>x<height>@<hertz>`, one of the display's modes",
+        ))
+        .key(Key::string(POSITION, "0,0").summary("Top-left position in the layout (`x,y`)"))
+        .key(Key::float(SCALE, 1.0).summary("Scale factor").range(SCALES))
+        .key(
+            Key::string(TRANSFORM, TRANSFORMS[0])
+                .summary("Rotation and reflection")
+                .choices(TRANSFORMS),
+        )
+        .key(Key::choice::<AdaptiveSync>(ADAPTIVE_SYNC).summary(
+            "Variable refresh rate: never, while a fullscreen window shows moving content, or always",
+        ))
+        .key(
+            Key::bool(HDR, false)
+                .summary("High dynamic range and wide colour output, on displays capable of it"),
+        )
+        .key(
+            Key::float(SDR_BRIGHTNESS, SDR_BRIGHTNESS_DEFAULT)
+                .summary("Brightness of standard content in HDR (cd/m²)")
+                .range(SDR_BRIGHTNESS_RANGE),
+        )
 }
 
 #[must_use]

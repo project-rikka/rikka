@@ -1,10 +1,10 @@
+use discord_preferences::{Alerts, Appearance};
 use discord_voice::{
     InputMode, KrispState, MicTest, NoiseSuppression, VoiceSettings, input_devices, output_devices,
 };
 use rikka_app::prelude::*;
 
 use super::Chat;
-use crate::preferences::{Alerts, Appearance};
 use crate::settings::{Listed, Section, Settings};
 
 const DEVICES: &str = "discord-voice-devices";

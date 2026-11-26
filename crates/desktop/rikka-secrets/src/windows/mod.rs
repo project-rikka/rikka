@@ -76,8 +76,9 @@ impl Secrets {
             .into_iter()
             .map(|(stored, attributes)| {
                 Ok(Found {
-                    attributes,
                     secret: Secret::new(whole(&stored)?),
+                    label: stored.label,
+                    attributes,
                 })
             })
             .collect()

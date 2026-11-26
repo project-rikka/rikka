@@ -83,6 +83,12 @@ const fn about(section: Section) -> About {
         Section::Defaults => (Group::System, MaterialSymbol::APPS, Needs::Nothing),
         Section::Llm => (Group::System, MaterialSymbol::AUTO_AWESOME, Needs::Nothing),
         Section::System => (Group::System, MaterialSymbol::COMPUTER, Needs::Nixos),
+        Section::Configuration => (Group::System, MaterialSymbol::DATA_OBJECT, Needs::Nixos),
+        Section::Backup => (
+            Group::System,
+            MaterialSymbol::SETTINGS_BACKUP_RESTORE,
+            Needs::Nixos,
+        ),
     };
     About {
         group,

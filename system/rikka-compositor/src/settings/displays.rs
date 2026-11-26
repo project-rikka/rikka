@@ -7,7 +7,7 @@ use rikka_settings::session::displays::{
     POSITION, Position, SCALE, SCALES, SDR_BRIGHTNESS, SDR_BRIGHTNESS_DEFAULT,
     SDR_BRIGHTNESS_RANGE, TRANSFORM, TRANSFORMS,
 };
-use rikka_settings::{Key, Schema};
+use rikka_settings::{Key, Role, Schema};
 
 use crate::outputs::{Head, Mode, Output, OutputConfig};
 
@@ -178,9 +178,12 @@ impl Display {
         });
 
         [
-            Key::string(identity.key(NAME), identity.label()).summary("Display name (read-only)"),
+            Key::string(identity.key(NAME), identity.label())
+                .summary("Display name (read-only)")
+                .role(Role::State),
             Key::string(identity.key(MODES), keys::listed(&modes))
-                .summary("Supported resolutions and refresh rates (read-only)"),
+                .summary("Supported resolutions and refresh rates (read-only)")
+                .role(Role::State),
             Key::bool(identity.key(ENABLED), auto.enabled)
                 .summary("Whether the display is enabled"),
             Key::string(identity.key(MODE), text(auto.mode))
@@ -319,7 +322,8 @@ pub(crate) fn schema(displays: &[Display]) -> Schema {
         .summary("Connected displays and their arrangement")
         .key(
             Key::string(CONNECTED, connected)
-                .summary("Connected displays (read-only, `;`-separated)"),
+                .summary("Connected displays (read-only, `;`-separated)")
+                .role(Role::State),
         );
     for key in displays.iter().flat_map(Display::keys) {
         schema = schema.key(key);

@@ -1,0 +1,23 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
+
+rikka_library(
+    name = "discord-preferences",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/discord:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/discord/crates/discord-core",
+        "//apps/system/discord/crates/discord-stream",
+        "//apps/system/discord/crates/discord-voice",
+        "//crates/session/rikka-settings",
+        "//crates/ui/rikka-app",
+    ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "discord_preferences::Preferences::schema",
+    deps = [":discord-preferences"],
+)

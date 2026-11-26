@@ -20,6 +20,7 @@ pub const SET: &str = "set";
 pub const RESET: &str = "reset";
 pub const SOURCE: &str = "source";
 pub const SOURCES: &str = "sources";
+pub const RELOAD: &str = "reload";
 
 pub const CHANGED: &str = "changed";
 
@@ -51,6 +52,8 @@ pub struct Changed {
     pub changes: Vec<Change>,
     #[serde(rename = "held")]
     pub user_values: Values,
+    #[serde(default)]
+    pub reread: bool,
 }
 
 impl Changed {
@@ -141,6 +144,11 @@ pub fn set(domain: &str, key: &str, value: impl Into<Value>) -> Request {
 #[must_use]
 pub fn reset(domain: &str, key: &str) -> Request {
     asking(RESET, &Keyed { domain, key })
+}
+
+#[must_use]
+pub fn reload() -> Request {
+    asking(RELOAD, &())
 }
 
 #[must_use]

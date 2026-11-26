@@ -1,0 +1,32 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-backup",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "//crates/foundation/rikka-age",
+        "//crates/foundation/rikka-file-format",
+        "//crates/nix/rikka-nix-edit",
+        "//crates/nix/rikka-nixos-layout",
+        "@crates//:base64",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-backup",
+        "//crates/foundation/rikka-age",
+        "//crates/nix/rikka-nix-edit",
+        "//crates/nix/rikka-nixos-layout",
+        "@crates//:serde_json",
+        "@crates//:zeroize",
+    ],
+)

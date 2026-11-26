@@ -22,8 +22,14 @@ impl RenderModule for Module {
             Self::Integration => integration::body(),
             Self::Nix => nix::body(answers),
             Self::Packages => packages::body(),
+            Self::Settings => Set::new(),
             Self::System => system::body(answers),
         };
+        if let Some(restored) = &answers.restored
+            && let Some(text) = restored.render(self, &body, &answers.username)?
+        {
+            return Ok(text);
+        }
         Ok(self.document(body)?.to_string())
     }
 }

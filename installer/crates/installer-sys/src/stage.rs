@@ -9,12 +9,17 @@ pub enum Stage {
     Scan,
     Configure,
     Install,
+    Handover,
     Finish,
 }
 
 impl Stage {
     #[must_use]
     pub fn plan(answers: &Answers) -> Vec<Stage> {
+        let hands_over = answers
+            .restored
+            .as_ref()
+            .is_some_and(|restored| restored.pending.is_some());
         [
             Stage::Partition,
             Stage::Encrypt,
@@ -23,10 +28,15 @@ impl Stage {
             Stage::Scan,
             Stage::Configure,
             Stage::Install,
+            Stage::Handover,
             Stage::Finish,
         ]
         .into_iter()
-        .filter(|stage| *stage != Stage::Encrypt || answers.encrypt)
+        .filter(|stage| match stage {
+            Stage::Encrypt => answers.encrypt,
+            Stage::Handover => hands_over,
+            _ => true,
+        })
         .collect()
     }
 
@@ -40,6 +50,7 @@ impl Stage {
             Self::Scan => "Scan the hardware",
             Self::Configure => "Write the configuration",
             Self::Install => "Install NixOS",
+            Self::Handover => "Hand over the backup",
             Self::Finish => "Finish",
         }
     }

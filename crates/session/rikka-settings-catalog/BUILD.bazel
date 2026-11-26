@@ -1,0 +1,10 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-settings-catalog",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//:__pkg__"],
+    deps = [
+        "//crates/session/rikka-settings",
+    ],
+)

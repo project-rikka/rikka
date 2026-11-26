@@ -1,7 +1,7 @@
 use music_core::AudioCache;
+use music_preferences::CacheSize;
 use rikka_app::prelude::*;
 
-use crate::cache_size::CacheSize;
 use crate::music::Music;
 
 impl Music {

@@ -1,8 +1,7 @@
 use discord_core::{ChannelId, Notice};
+use discord_preferences::Alerts;
 use rikka_app::prelude::tr;
 use rikka_notify::{Icon, Invoked, Ledger, Notifications};
-
-use crate::preferences::Alerts;
 
 pub(crate) const ENTRY: &str = "rikka-discord";
 const BODY: usize = 240;

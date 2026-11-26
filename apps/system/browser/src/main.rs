@@ -31,7 +31,6 @@ mod overlays;
 mod page;
 mod page_services;
 mod peek;
-mod preferences;
 mod reader;
 mod relay;
 mod requests;

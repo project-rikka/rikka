@@ -1,23 +1,13 @@
 use rikka_input::{ActionMap, Chord};
 use rikka_session::profile::Profile;
-use rikka_session::shortcuts::{DOMAIN, Shortcut};
+use rikka_session::shortcuts::{self, DOMAIN, Shortcut};
 use rikka_settings::seam::Settings;
-use rikka_settings::{Key, Schema, Value};
+use rikka_settings::{Schema, Value};
 
 use crate::input::KeyAction;
 
 pub(crate) fn schema() -> Schema {
-    Shortcut::all().fold(
-        Schema::new(DOMAIN).summary("Compositor keybindings"),
-        |schema, shortcut| {
-            let shortcut = shortcut.describe();
-            schema.key(
-                Key::string(shortcut.name, shortcut.chord)
-                    .summary(shortcut.summary)
-                    .checked_with(validate_chord),
-            )
-        },
-    )
+    shortcuts::schema().checked_with(validate_chord)
 }
 
 fn validate_chord(value: &Value) -> Result<(), String> {

@@ -2,12 +2,12 @@ use std::ops::Range;
 use std::time::Duration;
 
 use discord_core::{ChannelId, ForumPage, ForumSettings, PostLayout, PostQuery, PostSort, TagId};
+use discord_preferences::ForumView;
 use rikka_app::prelude::*;
 
 use super::Posts;
 use crate::chat::Chat;
 use crate::conversation::Seat;
-use crate::preferences::ForumView;
 
 const SEARCH_SETTLE: Duration = Duration::from_millis(300);
 const SEARCH_TIMER: &str = "discord-forum-search";

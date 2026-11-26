@@ -2,11 +2,11 @@ mod bar;
 
 pub(crate) use bar::bar;
 
+use browser_preferences::{FindOption, FindOptions};
 use rikka_app::prelude::*;
 use rikka_ui::search::{Action, Step};
 use rikka_web::{DisplayMatches, FindResult, Session};
 
-use crate::preferences::{FindOption, FindOptions};
 use crate::shell::Shell;
 use browser_model::TabId;
 use browser_pages::Internal;

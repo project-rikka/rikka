@@ -6,6 +6,7 @@ rikka_application(
     deps = [
         "//apps/general/cut/crates/cut-export",
         "//apps/general/cut/crates/cut-filmstrip",
+        "//apps/general/cut/crates/cut-preferences",
         "//apps/general/cut/crates/cut-project",
         "//apps/general/cut/crates/cut-render",
         "//apps/general/cut/crates/cut-waveform",
@@ -29,7 +30,6 @@ rikka_application(
         "//crates/media/rikka-audio-decode",
         "//crates/media/rikka-media-format",
         "//crates/media/rikka-video",
-        "//crates/session/rikka-settings",
         "//crates/ui/rikka-app",
         "//crates/ui/rikka-effects-forms",
         "//crates/ui/rikka-figure-editing",

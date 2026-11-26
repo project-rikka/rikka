@@ -1,0 +1,22 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
+
+rikka_library(
+    name = "music-preferences",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/music:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/music/crates/music-core",
+        "//crates/foundation/rikka-types",
+        "//crates/media/rikka-hifi",
+        "//crates/session/rikka-settings",
+    ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "music_preferences::Preferences::schema",
+    deps = [":music-preferences"],
+)

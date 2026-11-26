@@ -8,10 +8,11 @@ use rikka_types::Choice;
 
 use crate::domain::Domain;
 use crate::error::{Error, Result};
-use crate::layers::{Layers, Source};
+use crate::layers::Layers;
 use crate::schema::Schema;
 use crate::seam::protocol::{self, CAPABILITY, Changed};
-use crate::store::Store;
+use crate::source::Source;
+use crate::store::{Resolved, Store};
 use crate::value::{Value, Values};
 
 #[derive(Debug)]
@@ -95,7 +96,7 @@ impl Settings {
             connection: None,
         };
         if settings.seam.is_some()
-            && let Err(error) = settings.refresh()
+            && let Err(error) = settings.fetch_user_values()
         {
             tracing::warn!(
                 "failed to read `{}` from session, using file contents: {error}",
@@ -150,6 +151,15 @@ impl Settings {
         self.store.source(key)
     }
 
+    pub fn resolve(&self, key: &str) -> Result<Resolved<'_>> {
+        self.store.resolve(key)
+    }
+
+    #[must_use]
+    pub fn is_locked(&self, key: &str) -> bool {
+        self.store.is_locked(key)
+    }
+
     pub fn set(&mut self, key: &str, value: impl Serialize) -> Result<()> {
         self.set_value(key, Value::from(&value)?)
     }
@@ -162,6 +172,7 @@ impl Settings {
         let Some(seam) = &self.seam else {
             return self.store.set_value(key, value);
         };
+        self.refuse_locked(key)?;
         self.apply_reply(seam.call(protocol::set(self.store.domain().as_str(), key, value)))
     }
 
@@ -169,7 +180,18 @@ impl Settings {
         let Some(seam) = &self.seam else {
             return self.store.reset(key);
         };
+        self.refuse_locked(key)?;
         self.apply_reply(seam.call(protocol::reset(self.store.domain().as_str(), key)))
+    }
+
+    fn refuse_locked(&self, key: &str) -> Result<()> {
+        match self.store.is_locked(key) {
+            true => Err(Error::Locked {
+                domain: self.domain().as_str().to_owned(),
+                key: key.to_owned(),
+            }),
+            false => Ok(()),
+        }
     }
 
     fn apply_reply(&mut self, reply: Reply) -> Result<()> {
@@ -197,6 +219,15 @@ impl Settings {
     pub fn apply_change(&mut self, changed: &Changed) -> bool {
         if changed.domain != *self.store.domain() {
             return false;
+        }
+        if changed.reread {
+            match self.store.reload() {
+                Ok(report) => report.log_warnings(self.store.domain()),
+                Err(error) => tracing::warn!(
+                    "failed to reread `{}` after the configuration changed: {error}",
+                    self.domain(),
+                ),
+            }
         }
         self.set_user_values(changed.user_values.clone());
         true
@@ -232,9 +263,13 @@ impl Settings {
     }
 
     pub fn refresh(&mut self) -> Result<()> {
+        let report = self.store.reload()?;
+        report.log_warnings(self.store.domain());
+        self.fetch_user_values()
+    }
+
+    fn fetch_user_values(&mut self) -> Result<()> {
         let Some(seam) = &self.seam else {
-            let report = self.store.reload()?;
-            report.log_warnings(self.store.domain());
             return Ok(());
         };
         let values: Values = seam

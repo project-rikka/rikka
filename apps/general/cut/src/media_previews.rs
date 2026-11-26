@@ -1,15 +1,10 @@
 use std::path::Path;
 use std::rc::Rc;
 
-use cut_filmstrip::{Filmstrips, Mode};
-use cut_waveform::{Scale, Waveforms};
+use cut_filmstrip::Filmstrips;
+pub(crate) use cut_preferences::Display;
+use cut_waveform::Waveforms;
 use rikka_ui::Watchers;
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(crate) struct Display {
-    pub(crate) thumbnails: Mode,
-    pub(crate) waveform: Scale,
-}
 
 #[derive(Clone)]
 pub(crate) struct MediaPreviews(Rc<Inner>);

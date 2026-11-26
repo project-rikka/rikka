@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use browser_pages::Cause;
+use browser_preferences::Preferences;
 use browser_store::{SiteSettings, Store, Timestamp};
 use rikka_app::Sender;
 use rikka_web::{Runtime, Session};
@@ -10,7 +11,6 @@ use rikka_web::{Runtime, Session};
 use crate::engines::Engines;
 use crate::model::Model;
 use crate::page::{Activation, Live, Page};
-use crate::preferences::Preferences;
 use crate::services::Services;
 use crate::shell::Shell;
 use browser_model::{Loaded, ProfileId, ProfileKey, Reopening, TabId, WindowId};

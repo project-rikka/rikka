@@ -1,4 +1,5 @@
 load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
 
 rikka_library(
     name = "rikka-settings",
@@ -13,10 +14,16 @@ rikka_library(
         "//crates/session/rikka-seam",
         "@crates//:futures-util",
         "@crates//:serde",
+        "@crates//:serde_json",
         "@crates//:thiserror",
         "@crates//:toml",
         "@crates//:tracing",
     ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "rikka_settings::session::catalog",
 )
 
 rikka_test(

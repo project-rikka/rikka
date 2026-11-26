@@ -1,11 +1,11 @@
 use browser_pages::Cause;
+use browser_preferences::Rule;
 use browser_translators::{CodeMode, Display, Engine};
 use rikka_app::prelude::*;
 use rikka_languages::Language;
 use rikka_types::Choice;
 use rikka_widgets::{column, row};
 
-use crate::preferences::Rule;
 use crate::shell::Shell;
 use crate::translate::tabs::{Progress, TabStatus};
 use crate::widgets::floating;

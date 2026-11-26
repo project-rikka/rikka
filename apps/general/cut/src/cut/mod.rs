@@ -29,6 +29,7 @@ use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use cut_preferences::Preferences;
 use cut_project::{ClipId, Document, MediaId, Project};
 use rikka_app::prelude::*;
 use rikka_figure::ShapeKind;
@@ -40,7 +41,6 @@ use crate::gallery::TransitionPreviews;
 use crate::live::LivePreview;
 use crate::media_previews::{Display, MediaPreviews};
 use crate::playback::Playback;
-use crate::preferences::Preferences;
 use crate::quality::Quality;
 use crate::timeline::Scale;
 use crate::tool::Tool;

@@ -7,6 +7,7 @@ use crate::bazel::Profile;
 use crate::release::{Bump, Version};
 
 mod bazel;
+mod committed;
 mod components;
 mod dist;
 mod ffmpeg_layout;
@@ -19,6 +20,7 @@ mod public_suffix;
 mod release;
 mod run;
 mod sdk;
+mod settings;
 mod shipped;
 mod tree;
 mod unicode;
@@ -79,6 +81,10 @@ enum Task {
     Ltc,
     #[command(about = "regenerate the SDK's committed language bindings from its IDL")]
     Sdk,
+    #[command(
+        about = "regenerate the committed settings catalog from the crates that own each domain"
+    )]
+    Settings,
     #[command(about = "refresh the committed public suffix list and its test vectors")]
     PublicSuffix,
     #[command(
@@ -299,6 +305,7 @@ fn main() -> Result<()> {
         Task::FfmpegLayout => ffmpeg_layout::run(&workspace),
         Task::Ltc => ltc::run(&workspace),
         Task::Sdk => sdk::regenerate(&workspace),
+        Task::Settings => settings::regenerate(&workspace),
         Task::PublicSuffix => public_suffix::refresh(&workspace),
         Task::Minecraft { version, loader } => minecraft::pin(
             &workspace,

@@ -1,9 +1,9 @@
 use browser_pages::web_site;
+use browser_preferences::MemorySaver;
 use rikka_app::prelude::*;
 use rikka_types::Choice;
 use rikka_widgets::{column, row};
 
-use crate::preferences::MemorySaver;
 use crate::shell::Shell;
 
 const CHOICE: f32 = 220.0;

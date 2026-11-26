@@ -1,9 +1,11 @@
 mod amount;
 mod appearance;
 mod audio;
+mod backup;
 mod bluetooth;
 mod capture;
 mod color_picker;
+mod configuration;
 mod controls;
 mod date_time;
 mod defaults;

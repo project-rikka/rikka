@@ -1,11 +1,11 @@
 use std::convert::Infallible;
 
+use music_preferences::CacheSize;
 use rikka_app::prelude::*;
 use rikka_format::format_bytes;
 use rikka_types::Choice;
 use rikka_widgets::{column, row};
 
-use crate::cache_size::CacheSize;
 use crate::music::Music;
 
 const CHOICE: f32 = 220.0;

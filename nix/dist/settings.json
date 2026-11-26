@@ -1,0 +1,2917 @@
+{
+  "domains": [
+    {
+      "domain": "rikka.ade",
+      "summary": "ADE",
+      "keys": [
+        {
+          "name": "recents",
+          "default": [],
+          "summary": "Recently opened projects, newest first",
+          "role": "state"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.animate",
+      "summary": "Animate",
+      "keys": [
+        {
+          "name": "output-width",
+          "default": 1920,
+          "summary": "Output width in pixels",
+          "constraint": {
+            "range": {
+              "min": 16,
+              "max": 8192
+            }
+          }
+        },
+        {
+          "name": "output-height",
+          "default": 1080,
+          "summary": "Output height in pixels",
+          "constraint": {
+            "range": {
+              "min": 16,
+              "max": 8192
+            }
+          }
+        },
+        {
+          "name": "export-frame-rate",
+          "default": "30",
+          "summary": "Frames per second of exported videos",
+          "constraint": {
+            "choices": [
+              "23.976",
+              "24",
+              "25",
+              "29.97",
+              "30",
+              "50",
+              "59.94",
+              "60"
+            ]
+          }
+        },
+        {
+          "name": "export-container",
+          "default": "mp4",
+          "summary": "File format of exported videos",
+          "constraint": {
+            "choices": [
+              "mp4",
+              "mkv",
+              "mov"
+            ]
+          }
+        },
+        {
+          "name": "export-codec",
+          "default": "h264",
+          "summary": "Video codec of exported videos",
+          "constraint": {
+            "choices": [
+              "h264",
+              "hevc",
+              "av1"
+            ]
+          }
+        },
+        {
+          "name": "export-encoder",
+          "default": "auto",
+          "summary": "Encoder used to export videos",
+          "constraint": {
+            "choices": [
+              "auto",
+              "nvenc",
+              "amf",
+              "qsv",
+              "vaapi",
+              "software"
+            ]
+          }
+        },
+        {
+          "name": "export-speed",
+          "default": "balanced",
+          "summary": "Encoding speed of exported videos",
+          "constraint": {
+            "choices": [
+              "fastest",
+              "fast",
+              "balanced",
+              "slow"
+            ]
+          }
+        },
+        {
+          "name": "export-rate",
+          "default": "quality",
+          "summary": "Whether exports hold a quality or a bitrate",
+          "constraint": {
+            "choices": [
+              "quality",
+              "bitrate"
+            ]
+          }
+        },
+        {
+          "name": "export-quality",
+          "default": 80,
+          "summary": "Constant quality of exported videos, 1 to 100",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 100
+            }
+          }
+        },
+        {
+          "name": "export-bitrate",
+          "default": 20,
+          "summary": "Video bitrate of exported videos in Mbit/s",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 500
+            }
+          }
+        },
+        {
+          "name": "export-sound",
+          "default": true,
+          "summary": "Whether exported videos carry the music"
+        },
+        {
+          "name": "export-sound-bitrate",
+          "default": 256,
+          "summary": "Audio bitrate of exported videos in kbit/s",
+          "constraint": {
+            "choices": [
+              128,
+              192,
+              256,
+              320
+            ]
+          }
+        },
+        {
+          "name": "liquid-particle-size",
+          "default": 0.004000000189989805,
+          "summary": "Diameter of one liquid particle in metres",
+          "constraint": {
+            "range": {
+              "min": 0.0020000000949949026,
+              "max": 0.05000000074505806
+            }
+          }
+        },
+        {
+          "name": "liquid-capacity",
+          "default": 500000,
+          "summary": "Most liquid particles one scene holds",
+          "constraint": {
+            "range": {
+              "min": 10000,
+              "max": 4000000
+            }
+          }
+        },
+        {
+          "name": "liquid-gravity",
+          "default": 9.8100004196167,
+          "summary": "Downward pull on liquids in m/s²",
+          "constraint": {
+            "range": {
+              "min": 0.0,
+              "max": 50.0
+            }
+          }
+        },
+        {
+          "name": "liquid-wetness",
+          "default": true,
+          "summary": "Whether liquids leave figures wet"
+        },
+        {
+          "name": "liquid-drying",
+          "default": 30.0,
+          "summary": "Seconds a wet figure takes to dry",
+          "constraint": {
+            "range": {
+              "min": 1.0,
+              "max": 600.0
+            }
+          }
+        },
+        {
+          "name": "cloth-quality",
+          "default": "high",
+          "summary": "Detail of the simulated cloth and hair",
+          "constraint": {
+            "choices": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        },
+        {
+          "name": "morphs-open",
+          "default": true,
+          "summary": "Show the expressions and morphs in the Motion tab",
+          "role": "state"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.animation",
+      "summary": "Window animations",
+      "keys": [
+        {
+          "name": "enabled",
+          "default": true,
+          "summary": "Animate window open, close and resize"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.appearance",
+      "summary": "What the desktop looks like",
+      "keys": [
+        {
+          "name": "theme",
+          "default": "",
+          "summary": "The theme's slug, or nothing for the built-in one"
+        },
+        {
+          "name": "wallpaper",
+          "default": "",
+          "summary": "The name of a wallpaper of the session's library, or nothing for none"
+        },
+        {
+          "name": "taskbar",
+          "default": true,
+          "summary": "Whether the taskbar is up on every display"
+        },
+        {
+          "name": "taskbar-position",
+          "default": "top",
+          "summary": "Which display edge the taskbar stands on: top, bottom, left or right",
+          "constraint": {
+            "choices": [
+              "top",
+              "bottom",
+              "left",
+              "right"
+            ]
+          }
+        },
+        {
+          "name": "taskbar-indicators",
+          "default": [
+            "input-method",
+            "ai-usage"
+          ],
+          "summary": "What the taskbar shows beside its status, by indicator name"
+        },
+        {
+          "name": "material-source",
+          "default": "",
+          "summary": "The colour a dynamic theme is generated from, as `#rrggbb`"
+        },
+        {
+          "name": "material-style",
+          "default": "tonal-spot",
+          "summary": "Which Material You scheme a dynamic theme is spread into"
+        },
+        {
+          "name": "material-contrast",
+          "default": 0.0,
+          "summary": "How far a dynamic theme is pushed from the specified contrast",
+          "constraint": {
+            "range": {
+              "min": -1.0,
+              "max": 1.0
+            }
+          }
+        },
+        {
+          "name": "icon-theme",
+          "default": "Adwaita",
+          "summary": "The icon theme an application's own icon is taken from"
+        },
+        {
+          "name": "background",
+          "default": "solid",
+          "summary": "What a surface's background is made of: solid colour, glass or liquid glass",
+          "constraint": {
+            "choices": [
+              "solid",
+              "glass",
+              "liquid"
+            ]
+          }
+        },
+        {
+          "name": "opacity",
+          "default": 1.0,
+          "summary": "How much of what is behind a surface stays behind it",
+          "constraint": {
+            "range": {
+              "min": 0.0,
+              "max": 1.0
+            }
+          }
+        },
+        {
+          "name": "blur",
+          "default": true,
+          "summary": "Whether what shows through a translucent surface is blurred"
+        },
+        {
+          "name": "blur-radius",
+          "default": 32.0,
+          "summary": "How far that blur reaches, in logical pixels",
+          "constraint": {
+            "range": {
+              "min": 0.0,
+              "max": 128.0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.backup",
+      "summary": "Backup",
+      "keys": [
+        {
+          "name": "repository",
+          "default": "",
+          "summary": "Git repository that receives this computer's configuration"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.browser",
+      "summary": "Browser",
+      "keys": [
+        {
+          "name": "search-engine",
+          "default": "google",
+          "summary": "Default search engine"
+        },
+        {
+          "name": "search-suggestions",
+          "default": true,
+          "summary": "Show search suggestions while typing"
+        },
+        {
+          "name": "search-engines",
+          "default": [],
+          "summary": "Custom search engines: id, name, keyword, url and suggestions"
+        },
+        {
+          "name": "https-only",
+          "default": true,
+          "summary": "Upgrade every connection to HTTPS"
+        },
+        {
+          "name": "reader-typeface",
+          "default": "sans",
+          "summary": "Reader typeface",
+          "constraint": {
+            "choices": [
+              "sans",
+              "serif"
+            ]
+          }
+        },
+        {
+          "name": "reader-size",
+          "default": 4,
+          "summary": "Reader text size step",
+          "constraint": {
+            "choices": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8
+            ]
+          }
+        },
+        {
+          "name": "reader-width",
+          "default": "medium",
+          "summary": "Reader line width",
+          "constraint": {
+            "choices": [
+              "narrow",
+              "medium",
+              "wide"
+            ]
+          }
+        },
+        {
+          "name": "reader-spacing",
+          "default": "normal",
+          "summary": "Reader line spacing",
+          "constraint": {
+            "choices": [
+              "compact",
+              "normal",
+              "relaxed"
+            ]
+          }
+        },
+        {
+          "name": "reader-theme",
+          "default": "auto",
+          "summary": "Reader colours",
+          "constraint": {
+            "choices": [
+              "auto",
+              "light",
+              "sepia",
+              "dark"
+            ]
+          }
+        },
+        {
+          "name": "download-folder",
+          "default": "",
+          "summary": "Folder downloads are saved to"
+        },
+        {
+          "name": "download-ask",
+          "default": false,
+          "summary": "Ask where to save each download"
+        },
+        {
+          "name": "memory-saver",
+          "default": "1h",
+          "summary": "Discard tabs left unused for",
+          "constraint": {
+            "choices": [
+              "off",
+              "15m",
+              "1h",
+              "4h"
+            ]
+          }
+        },
+        {
+          "name": "memory-saver-exceptions",
+          "default": [],
+          "summary": "Sites whose tabs are never discarded"
+        },
+        {
+          "name": "home-clock",
+          "default": true,
+          "summary": "Show the clock and date on Home"
+        },
+        {
+          "name": "home-search",
+          "default": true,
+          "summary": "Show the search box on Home"
+        },
+        {
+          "name": "home-top-sites",
+          "default": true,
+          "summary": "Show top sites on Home"
+        },
+        {
+          "name": "home-favorites",
+          "default": true,
+          "summary": "Show favorites on Home"
+        },
+        {
+          "name": "home-recently-closed",
+          "default": true,
+          "summary": "Show recently closed tabs on Home"
+        },
+        {
+          "name": "check-default",
+          "default": true,
+          "summary": "Offer to make Browser the default browser when it starts"
+        },
+        {
+          "name": "translate-target",
+          "default": "",
+          "summary": "Translate pages into this language, or the session's"
+        },
+        {
+          "name": "translate-engine",
+          "default": "google",
+          "summary": "Translation service",
+          "constraint": {
+            "choices": [
+              "google",
+              "microsoft"
+            ]
+          }
+        },
+        {
+          "name": "translate-display",
+          "default": "replace",
+          "summary": "Replace the text or show both languages",
+          "constraint": {
+            "choices": [
+              "replace",
+              "bilingual"
+            ]
+          }
+        },
+        {
+          "name": "translate-code",
+          "default": "comments",
+          "summary": "Translate only the comments in code, or skip code",
+          "constraint": {
+            "choices": [
+              "comments",
+              "skip"
+            ]
+          }
+        },
+        {
+          "name": "translate-protect",
+          "default": true,
+          "summary": "Keep code identifiers in prose untranslated"
+        },
+        {
+          "name": "translate-offer",
+          "default": true,
+          "summary": "Offer to translate pages in other languages"
+        },
+        {
+          "name": "translate-always-languages",
+          "default": [],
+          "summary": "Languages always translated"
+        },
+        {
+          "name": "translate-never-languages",
+          "default": [],
+          "summary": "Languages never translated"
+        },
+        {
+          "name": "translate-always-sites",
+          "default": [],
+          "summary": "Sites always translated"
+        },
+        {
+          "name": "translate-never-sites",
+          "default": [],
+          "summary": "Sites never translated"
+        },
+        {
+          "name": "find-match-case",
+          "default": false,
+          "summary": "Find in page matches letter case"
+        },
+        {
+          "name": "find-whole-word",
+          "default": false,
+          "summary": "Find in page matches whole words only"
+        },
+        {
+          "name": "find-match-diacritics",
+          "default": false,
+          "summary": "Find in page tells accented letters apart"
+        },
+        {
+          "name": "find-links-only",
+          "default": false,
+          "summary": "Find in page searches link text only"
+        },
+        {
+          "name": "sidebar-expanded",
+          "default": true,
+          "summary": "Show the sidebar expanded with titles"
+        },
+        {
+          "name": "rounded-corners",
+          "default": true,
+          "summary": "Round the page, sidebar and address field corners"
+        },
+        {
+          "name": "archive-after",
+          "default": "never",
+          "summary": "Archive Today tabs left unused for",
+          "constraint": {
+            "choices": [
+              "never",
+              "12h",
+              "24h",
+              "7d",
+              "30d"
+            ]
+          }
+        },
+        {
+          "name": "history-kept",
+          "default": "90d",
+          "summary": "Keep browsing history for",
+          "constraint": {
+            "choices": [
+              "forever",
+              "365d",
+              "90d",
+              "30d"
+            ]
+          }
+        },
+        {
+          "name": "default-zoom",
+          "default": 100,
+          "summary": "Default page zoom in percent",
+          "constraint": {
+            "choices": [
+              25,
+              33,
+              50,
+              67,
+              75,
+              80,
+              90,
+              100,
+              110,
+              125,
+              150,
+              175,
+              200,
+              250,
+              300,
+              400
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.capture",
+      "summary": "What the desktop does with a picture of the screen, and with a recording of it",
+      "keys": [
+        {
+          "name": "picture-format",
+          "default": "png",
+          "summary": "What a screenshot is written as",
+          "constraint": {
+            "choices": [
+              "png",
+              "jpeg",
+              "webp",
+              "avif"
+            ]
+          }
+        },
+        {
+          "name": "picture-quality",
+          "default": 92,
+          "summary": "How good a screenshot looks where the format is a lossy one",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 100
+            }
+          }
+        },
+        {
+          "name": "picture-save",
+          "default": true,
+          "summary": "Whether a screenshot is written to a file"
+        },
+        {
+          "name": "picture-copy",
+          "default": true,
+          "summary": "Whether a screenshot is put on the clipboard"
+        },
+        {
+          "name": "picture-folder",
+          "default": "",
+          "summary": "Where screenshots are written; empty for a Screenshots folder in this session's own pictures"
+        },
+        {
+          "name": "picture-cursor",
+          "default": false,
+          "summary": "Whether the pointer is in the picture"
+        },
+        {
+          "name": "video-container",
+          "default": "mp4",
+          "summary": "What a recording is written as; WebM holds AV1 and nothing else",
+          "constraint": {
+            "choices": [
+              "mp4",
+              "mkv",
+              "webm"
+            ]
+          }
+        },
+        {
+          "name": "video-codec",
+          "default": "h264",
+          "summary": "What a recording is encoded with; H.264 is the one everything plays",
+          "constraint": {
+            "choices": [
+              "h264",
+              "hevc",
+              "av1"
+            ]
+          }
+        },
+        {
+          "name": "video-encoder",
+          "default": "auto",
+          "summary": "Which encoder does it; automatic is the GPU's own where there is one",
+          "constraint": {
+            "choices": [
+              "auto",
+              "nvenc",
+              "amf",
+              "qsv",
+              "vaapi",
+              "vulkan",
+              "software"
+            ]
+          }
+        },
+        {
+          "name": "video-quality",
+          "default": 70,
+          "summary": "How good a recording looks — a constant quality, so a still screen costs almost nothing",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 100
+            }
+          }
+        },
+        {
+          "name": "video-effort",
+          "default": "balanced",
+          "summary": "How much of the machine the encoder may spend making the file smaller",
+          "constraint": {
+            "choices": [
+              "fastest",
+              "fast",
+              "balanced",
+              "slow"
+            ]
+          }
+        },
+        {
+          "name": "video-fps",
+          "default": 60,
+          "summary": "Frames a second",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 240
+            }
+          }
+        },
+        {
+          "name": "video-audio",
+          "default": "none",
+          "summary": "What a recording records the sound of",
+          "constraint": {
+            "choices": [
+              "none",
+              "microphone",
+              "system"
+            ]
+          }
+        },
+        {
+          "name": "video-audio-device",
+          "default": "",
+          "summary": "The capture device to record the sound of; empty for the usual one"
+        },
+        {
+          "name": "video-cursor",
+          "default": true,
+          "summary": "Whether the pointer is in the recording"
+        },
+        {
+          "name": "video-folder",
+          "default": "",
+          "summary": "Where recordings are written; empty for a Screencasts folder in this session's own videos"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.clipboard",
+      "summary": "Clipboard history",
+      "keys": [
+        {
+          "name": "history",
+          "default": 100,
+          "summary": "How many clippings are kept; pinned ones are kept beyond it",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 1000
+            }
+          }
+        },
+        {
+          "name": "paste",
+          "default": true,
+          "summary": "Whether choosing a clipping pastes it into the window that had the keyboard"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.color-picker",
+      "summary": "What the desktop's colour picker does, and how it writes the colours it picks",
+      "keys": [
+        {
+          "name": "activation",
+          "default": "pick",
+          "summary": "What its shortcut brings up: the picker over the screen, or the editor of the colours picked before",
+          "constraint": {
+            "choices": [
+              "pick",
+              "editor"
+            ]
+          }
+        },
+        {
+          "name": "primary-click",
+          "default": "pick-then-editor",
+          "summary": "What a left click does while picking: pick and open the editor, pick and close, or close",
+          "constraint": {
+            "choices": [
+              "pick-then-editor",
+              "pick-and-close",
+              "close"
+            ]
+          }
+        },
+        {
+          "name": "middle-click",
+          "default": "pick-and-close",
+          "summary": "What a middle click does while picking",
+          "constraint": {
+            "choices": [
+              "pick-then-editor",
+              "pick-and-close",
+              "close"
+            ]
+          }
+        },
+        {
+          "name": "secondary-click",
+          "default": "close",
+          "summary": "What a right click does while picking",
+          "constraint": {
+            "choices": [
+              "pick-then-editor",
+              "pick-and-close",
+              "close"
+            ]
+          }
+        },
+        {
+          "name": "copied-format",
+          "default": "HEX",
+          "summary": "The name of the colour format a picked colour is copied to the clipboard in"
+        },
+        {
+          "name": "show-color-name",
+          "default": false,
+          "summary": "Whether the picker names the colour under the pointer, like `Light green`"
+        },
+        {
+          "name": "formats",
+          "default": [
+            {
+              "format": "%Rex%Grx%Blx",
+              "name": "HEX",
+              "shown": true
+            },
+            {
+              "format": "rgb(%Re, %Gr, %Bl)",
+              "name": "RGB",
+              "shown": true
+            },
+            {
+              "format": "hsl(%Hu, %Sl%, %Ll%)",
+              "name": "HSL",
+              "shown": true
+            },
+            {
+              "format": "hsv(%Hu, %Sb%, %Va%)",
+              "name": "HSV",
+              "shown": false
+            },
+            {
+              "format": "cmyk(%Cy%, %Ma%, %Ye%, %Bk%)",
+              "name": "CMYK",
+              "shown": false
+            },
+            {
+              "format": "hsb(%Hu, %Sb%, %Br%)",
+              "name": "HSB",
+              "shown": false
+            },
+            {
+              "format": "hsi(%Hu, %Si%, %In%)",
+              "name": "HSI",
+              "shown": false
+            },
+            {
+              "format": "hwb(%Hu, %Wh%, %Bn%)",
+              "name": "HWB",
+              "shown": false
+            },
+            {
+              "format": "%Hn, %Wh%, %Bn%",
+              "name": "NCol",
+              "shown": false
+            },
+            {
+              "format": "XYZ(%Xv, %Yv, %Zv)",
+              "name": "CIEXYZ",
+              "shown": false
+            },
+            {
+              "format": "CIELab(%Lc, %Ca, %Cb)",
+              "name": "CIELAB",
+              "shown": false
+            },
+            {
+              "format": "oklab(%Lo, %Oa, %Ob)",
+              "name": "Oklab",
+              "shown": false
+            },
+            {
+              "format": "oklch(%Lo, %Oc, %Oh)",
+              "name": "Oklch",
+              "shown": false
+            },
+            {
+              "format": "(%Reff, %Grff, %Blff, 1f)",
+              "name": "VEC4",
+              "shown": false
+            },
+            {
+              "format": "%Dv",
+              "name": "Decimal",
+              "shown": false
+            },
+            {
+              "format": "0xFF%ReX%GrX%BlX",
+              "name": "HEX Int",
+              "shown": false
+            }
+          ],
+          "summary": "The colour formats the editor shows, in order: each a table of `name`, `format` (with `%Re`, `%Gr`, `%Bl` and the other parameters) and `shown`"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.cut",
+      "summary": "Cut",
+      "keys": [
+        {
+          "name": "export-target",
+          "default": "video",
+          "summary": "What File → Export makes",
+          "constraint": {
+            "choices": [
+              "video",
+              "audio",
+              "still"
+            ]
+          }
+        },
+        {
+          "name": "export-folder",
+          "default": "",
+          "summary": "Folder of the last export",
+          "role": "state"
+        },
+        {
+          "name": "video-container",
+          "default": "mp4",
+          "summary": "File format of videos",
+          "constraint": {
+            "choices": [
+              "mp4",
+              "mov",
+              "mkv"
+            ]
+          }
+        },
+        {
+          "name": "video-codec",
+          "default": "h264",
+          "summary": "Video codec",
+          "constraint": {
+            "choices": [
+              "h264",
+              "hevc",
+              "av1"
+            ]
+          }
+        },
+        {
+          "name": "video-encoder",
+          "default": "auto",
+          "summary": "Encoder used for videos",
+          "constraint": {
+            "choices": [
+              "auto",
+              "nvenc",
+              "amf",
+              "qsv",
+              "vaapi",
+              "software"
+            ]
+          }
+        },
+        {
+          "name": "video-speed",
+          "default": "balanced",
+          "summary": "Encoding speed of videos",
+          "constraint": {
+            "choices": [
+              "fastest",
+              "fast",
+              "balanced",
+              "slow"
+            ]
+          }
+        },
+        {
+          "name": "video-compression",
+          "default": "quality",
+          "summary": "Whether videos hold a quality or a bitrate",
+          "constraint": {
+            "choices": [
+              "quality",
+              "bitrate"
+            ]
+          }
+        },
+        {
+          "name": "video-quality",
+          "default": 75,
+          "summary": "Constant quality of videos, 1 to 100",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 100
+            }
+          }
+        },
+        {
+          "name": "video-bitrate",
+          "default": 20,
+          "summary": "Video bitrate in Mbit/s",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 500
+            }
+          }
+        },
+        {
+          "name": "video-resolution",
+          "default": "project",
+          "summary": "Picture size of videos: project or the short side in pixels",
+          "constraint": {
+            "choices": [
+              "project",
+              "2160",
+              "1440",
+              "1080",
+              "720",
+              "480",
+              "360"
+            ]
+          }
+        },
+        {
+          "name": "video-frame-rate",
+          "default": "project",
+          "summary": "Frames per second of videos: project or a rate",
+          "constraint": {
+            "choices": [
+              "project",
+              "24000/1001",
+              "24/1",
+              "25/1",
+              "30000/1001",
+              "30/1",
+              "50/1",
+              "60000/1001",
+              "60/1"
+            ]
+          }
+        },
+        {
+          "name": "video-sound",
+          "default": true,
+          "summary": "Whether videos carry the sound"
+        },
+        {
+          "name": "video-sound-bitrate",
+          "default": 256,
+          "summary": "AAC bitrate of videos in kbit/s",
+          "constraint": {
+            "choices": [
+              128,
+              192,
+              256,
+              320
+            ]
+          }
+        },
+        {
+          "name": "audio-codec",
+          "default": "wav",
+          "summary": "File format of sound exports",
+          "constraint": {
+            "choices": [
+              "wav",
+              "aac"
+            ]
+          }
+        },
+        {
+          "name": "audio-depth",
+          "default": "24",
+          "summary": "Bit depth of WAV exports",
+          "constraint": {
+            "choices": [
+              "16",
+              "24"
+            ]
+          }
+        },
+        {
+          "name": "audio-sample-rate",
+          "default": 48000,
+          "summary": "Sample rate of sound exports in Hz",
+          "constraint": {
+            "choices": [
+              44100,
+              48000,
+              96000
+            ]
+          }
+        },
+        {
+          "name": "audio-bitrate",
+          "default": 256,
+          "summary": "AAC bitrate of sound exports in kbit/s",
+          "constraint": {
+            "choices": [
+              128,
+              192,
+              256,
+              320
+            ]
+          }
+        },
+        {
+          "name": "still-format",
+          "default": "png",
+          "summary": "File format of frame exports",
+          "constraint": {
+            "choices": [
+              "png",
+              "jpeg"
+            ]
+          }
+        },
+        {
+          "name": "still-resolution",
+          "default": "project",
+          "summary": "Picture size of frame exports",
+          "constraint": {
+            "choices": [
+              "project",
+              "2160",
+              "1440",
+              "1080",
+              "720",
+              "480",
+              "360"
+            ]
+          }
+        },
+        {
+          "name": "timeline-thumbnails",
+          "default": "continuous",
+          "summary": "How video clips on the timeline show their frames",
+          "constraint": {
+            "choices": [
+              "continuous",
+              "head",
+              "head-and-tail",
+              "off"
+            ]
+          }
+        },
+        {
+          "name": "timeline-waveform",
+          "default": "logarithmic",
+          "summary": "Whether timeline waveforms are drawn in decibels or linearly",
+          "constraint": {
+            "choices": [
+              "logarithmic",
+              "linear"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.discord",
+      "summary": "Chat",
+      "keys": [
+        {
+          "name": "muted",
+          "default": false,
+          "summary": "Keep the microphone muted",
+          "role": "state"
+        },
+        {
+          "name": "deafened",
+          "default": false,
+          "summary": "Keep other people silenced",
+          "role": "state"
+        },
+        {
+          "name": "collapsed-categories",
+          "default": {},
+          "summary": "Channel categories folded in the sidebar, per account",
+          "role": "state"
+        },
+        {
+          "name": "input-device",
+          "default": "",
+          "summary": "Microphone, empty for the default"
+        },
+        {
+          "name": "output-device",
+          "default": "",
+          "summary": "Speaker, empty for the default"
+        },
+        {
+          "name": "input-volume",
+          "default": 1.0,
+          "summary": "Microphone volume",
+          "constraint": {
+            "range": {
+              "min": 0.0,
+              "max": 2.0
+            }
+          }
+        },
+        {
+          "name": "output-volume",
+          "default": 1.0,
+          "summary": "Call volume",
+          "constraint": {
+            "range": {
+              "min": 0.0,
+              "max": 2.0
+            }
+          }
+        },
+        {
+          "name": "input-mode",
+          "default": "voice-activity",
+          "summary": "How the microphone opens",
+          "constraint": {
+            "choices": [
+              "voice-activity",
+              "push-to-talk"
+            ]
+          }
+        },
+        {
+          "name": "sensitivity",
+          "default": -50.0,
+          "summary": "Voice activity threshold in dB",
+          "constraint": {
+            "range": {
+              "min": -100.0,
+              "max": 0.0
+            }
+          }
+        },
+        {
+          "name": "automatic-sensitivity",
+          "default": true,
+          "summary": "Find the voice activity threshold by itself"
+        },
+        {
+          "name": "push-to-talk-key",
+          "default": "F8",
+          "summary": "Key held to talk"
+        },
+        {
+          "name": "push-to-talk-release",
+          "default": 200,
+          "summary": "Milliseconds the microphone stays open after the key is let go",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 2000
+            }
+          }
+        },
+        {
+          "name": "noise-suppression-kind",
+          "default": "krisp",
+          "summary": "Noise suppression: off, standard (WebRTC) or Krisp",
+          "constraint": {
+            "choices": [
+              "off",
+              "standard",
+              "krisp"
+            ]
+          }
+        },
+        {
+          "name": "echo-cancellation",
+          "default": true,
+          "summary": "Cancel the echo of the speakers in the microphone"
+        },
+        {
+          "name": "automatic-gain",
+          "default": true,
+          "summary": "Keep the microphone at a steady loudness"
+        },
+        {
+          "name": "user-volumes",
+          "default": {},
+          "summary": "Volume of other people in calls, per account",
+          "role": "state"
+        },
+        {
+          "name": "notifications",
+          "default": true,
+          "summary": "Show desktop notifications"
+        },
+        {
+          "name": "notify-directs",
+          "default": true,
+          "summary": "Notify about direct messages"
+        },
+        {
+          "name": "notify-mentions",
+          "default": true,
+          "summary": "Notify about mentions in spaces"
+        },
+        {
+          "name": "message-display",
+          "default": "cozy",
+          "summary": "Message display",
+          "constraint": {
+            "choices": [
+              "cozy",
+              "compact"
+            ]
+          }
+        },
+        {
+          "name": "show-embeds",
+          "default": true,
+          "summary": "Show embeds and link previews"
+        },
+        {
+          "name": "animated-emoji",
+          "default": true,
+          "summary": "Play animated emoji"
+        },
+        {
+          "name": "stream-resolution",
+          "default": "1080p",
+          "summary": "Picture size of a shared screen",
+          "constraint": {
+            "choices": [
+              "720p",
+              "1080p",
+              "1440p",
+              "2160p",
+              "source"
+            ]
+          }
+        },
+        {
+          "name": "stream-frame-rate",
+          "default": 30,
+          "summary": "Frames per second of a shared screen",
+          "constraint": {
+            "range": {
+              "min": 15,
+              "max": 60
+            }
+          }
+        },
+        {
+          "name": "stream-sound",
+          "default": false,
+          "summary": "Whether a shared screen carries the whole desktop's sound"
+        },
+        {
+          "name": "forum-sorts",
+          "default": {},
+          "summary": "Post order chosen in each forum, per account",
+          "role": "state"
+        },
+        {
+          "name": "forum-layouts",
+          "default": {},
+          "summary": "Post layout chosen in each forum, per account",
+          "role": "state"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.displays",
+      "summary": "Each display, named by its make, model and serial number",
+      "keys": [
+        {
+          "name": "enabled",
+          "default": true,
+          "summary": "Whether the display is enabled"
+        },
+        {
+          "name": "mode",
+          "default": "",
+          "summary": "Resolution and refresh rate as `<width>x<height>@<hertz>`, one of the display's modes"
+        },
+        {
+          "name": "position",
+          "default": "0,0",
+          "summary": "Top-left position in the layout (`x,y`)"
+        },
+        {
+          "name": "scale",
+          "default": 1.0,
+          "summary": "Scale factor",
+          "constraint": {
+            "range": {
+              "min": 0.5,
+              "max": 4.0
+            }
+          }
+        },
+        {
+          "name": "transform",
+          "default": "normal",
+          "summary": "Rotation and reflection",
+          "constraint": {
+            "choices": [
+              "normal",
+              "90",
+              "180",
+              "270",
+              "flipped",
+              "flipped-90",
+              "flipped-180",
+              "flipped-270"
+            ]
+          }
+        },
+        {
+          "name": "adaptive-sync",
+          "default": "automatic",
+          "summary": "Variable refresh rate: never, while a fullscreen window shows moving content, or always",
+          "constraint": {
+            "choices": [
+              "never",
+              "automatic",
+              "always"
+            ]
+          }
+        },
+        {
+          "name": "hdr",
+          "default": false,
+          "summary": "High dynamic range and wide colour output, on displays capable of it"
+        },
+        {
+          "name": "sdr-brightness",
+          "default": 203.0,
+          "summary": "Brightness of standard content in HDR (cd/m²)",
+          "constraint": {
+            "range": {
+              "min": 80.0,
+              "max": 500.0
+            }
+          }
+        }
+      ],
+      "instances": "display"
+    },
+    {
+      "domain": "rikka.emoji",
+      "summary": "How the desktop's emoji picker puts an emoji where it is wanted",
+      "keys": [
+        {
+          "name": "type",
+          "default": true,
+          "summary": "Whether choosing an emoji types it into the window that had the keyboard; when it is off the emoji is copied to the clipboard instead"
+        },
+        {
+          "name": "skin-tone",
+          "default": "plain",
+          "summary": "The skin tone the emoji that have one are shown and inserted with",
+          "constraint": {
+            "choices": [
+              "plain",
+              "light",
+              "medium-light",
+              "medium",
+              "medium-dark",
+              "dark"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.files",
+      "summary": "Files",
+      "keys": [
+        {
+          "name": "automount",
+          "default": true,
+          "summary": "Mount disks automatically when plugged in"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.ime",
+      "summary": "What the keyboard types, and what composes on top of it",
+      "keys": [
+        {
+          "name": "sources",
+          "default": [
+            {
+              "layout": "us"
+            }
+          ],
+          "summary": "The keyboard layouts the seat types in, and their input methods"
+        },
+        {
+          "name": "keyboard-model",
+          "default": "pc105",
+          "summary": "The xkb model the keyboard is"
+        },
+        {
+          "name": "keyboard-options",
+          "default": "",
+          "summary": "xkb options, comma separated — `caps:escape` and the like"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.input",
+      "summary": "Compositor keybindings",
+      "keys": [
+        {
+          "name": "quit",
+          "default": "Ctrl+Alt+Backspace",
+          "summary": "Ends the session"
+        },
+        {
+          "name": "stop-desktop",
+          "default": "Ctrl+Alt+R",
+          "summary": "Stops the desktop — the wallpaper, the taskbar and the launcher — and leaves every window where it is"
+        },
+        {
+          "name": "spawn-terminal",
+          "default": "Super+Return",
+          "summary": "Starts $TERMINAL"
+        },
+        {
+          "name": "close-window",
+          "default": "Super+Q",
+          "summary": "Asks the focused window to close"
+        },
+        {
+          "name": "toggle-fullscreen",
+          "default": "Super+F",
+          "summary": "Puts the focused window full screen, or takes it back"
+        },
+        {
+          "name": "toggle-maximize",
+          "default": "Super+M",
+          "summary": "Maximizes the focused window, or takes it back"
+        },
+        {
+          "name": "toggle-floating",
+          "default": "Super+Space",
+          "summary": "Takes the focused window out of the tiling, or puts it back"
+        },
+        {
+          "name": "switch-windows",
+          "default": "Alt+Tab",
+          "summary": "Goes back to the window used before; holding Alt, each Tab goes one window further back, and letting Alt go switches to the chosen one"
+        },
+        {
+          "name": "switch-windows-back",
+          "default": "Alt+Shift+Tab",
+          "summary": "Goes to the window used longest ago; holding Alt, each Tab goes one window more recent"
+        },
+        {
+          "name": "focus-column-left",
+          "default": "Super+Left",
+          "summary": "Focuses the column to the left, scrolling it into view"
+        },
+        {
+          "name": "focus-column-right",
+          "default": "Super+Right",
+          "summary": "Focuses the column to the right, scrolling it into view"
+        },
+        {
+          "name": "focus-window-up",
+          "default": "Super+Up",
+          "summary": "Focuses the window above in the same column"
+        },
+        {
+          "name": "focus-window-down",
+          "default": "Super+Down",
+          "summary": "Focuses the window below in the same column"
+        },
+        {
+          "name": "move-column-left",
+          "default": "Super+Ctrl+Left",
+          "summary": "Moves the focused column one place to the left"
+        },
+        {
+          "name": "move-column-right",
+          "default": "Super+Ctrl+Right",
+          "summary": "Moves the focused column one place to the right"
+        },
+        {
+          "name": "move-window-up",
+          "default": "Super+Ctrl+Up",
+          "summary": "Moves the focused window up within its column"
+        },
+        {
+          "name": "move-window-down",
+          "default": "Super+Ctrl+Down",
+          "summary": "Moves the focused window down within its column"
+        },
+        {
+          "name": "consume-or-expel-left",
+          "default": "Super+[",
+          "summary": "Stacks a lone window into the column to the left, or takes a stacked one out into a column of its own on the left"
+        },
+        {
+          "name": "consume-or-expel-right",
+          "default": "Super+]",
+          "summary": "Stacks a lone window into the column to the right, or takes a stacked one out into a column of its own on the right"
+        },
+        {
+          "name": "switch-column-width",
+          "default": "Super+Alt+R",
+          "summary": "Widens the focused column to the next of a third, a half and two thirds of the display"
+        },
+        {
+          "name": "toggle-overview",
+          "default": "Super+Tab",
+          "summary": "Shows every window and workspace at once, or takes it back"
+        },
+        {
+          "name": "edit-desk",
+          "default": "Super+W",
+          "summary": "Shows the desktop's widgets and wallpapers to arrange, or takes them back"
+        },
+        {
+          "name": "toggle-launcher",
+          "default": "Super+P",
+          "summary": "Shows the desktop's launcher, or takes it back"
+        },
+        {
+          "name": "toggle-keyboard",
+          "default": "Super+K",
+          "summary": "Shows the desktop's on-screen keyboard, or takes it back"
+        },
+        {
+          "name": "clipboard-history",
+          "default": "Super+V",
+          "summary": "Shows what has been on the clipboard, to put one of them back"
+        },
+        {
+          "name": "emoji-picker",
+          "default": "Super+.",
+          "summary": "Shows the desktop's emoji picker, to put one where the typing is"
+        },
+        {
+          "name": "screenshot-screen",
+          "default": "Super+S",
+          "summary": "Takes a picture of the whole screen"
+        },
+        {
+          "name": "screenshot-region",
+          "default": "Super+Shift+S",
+          "summary": "Asks which rectangle or window to take a picture of"
+        },
+        {
+          "name": "record-screen",
+          "default": "Super+R",
+          "summary": "Starts recording the whole screen, or stops the recording that is running"
+        },
+        {
+          "name": "record-region",
+          "default": "Super+Shift+R",
+          "summary": "Asks which rectangle or window to record"
+        },
+        {
+          "name": "save-replay",
+          "default": "Super+Alt+G",
+          "summary": "Saves what the instant replay kept of what is in front: the focused window or the display it is on"
+        },
+        {
+          "name": "choose-replay",
+          "default": "Super+G",
+          "summary": "Shows what the instant replay kept, to cut a part of it and save it"
+        },
+        {
+          "name": "toggle-translate",
+          "default": "Super+T",
+          "summary": "Shows the desktop's translation window, or takes it back"
+        },
+        {
+          "name": "translate-region",
+          "default": "Super+Shift+T",
+          "summary": "Asks which rectangle or window to translate the text in"
+        },
+        {
+          "name": "color-picker",
+          "default": "Super+Shift+C",
+          "summary": "Picks a colour from the screen and copies it, or opens the colour editor"
+        },
+        {
+          "name": "scan-code",
+          "default": "Super+Shift+Q",
+          "summary": "Freezes the screen and reads the QR codes and barcodes on it"
+        },
+        {
+          "name": "lock-screen",
+          "default": "Super+L",
+          "summary": "Locks the screen until the password is typed again"
+        },
+        {
+          "name": "workspace-1",
+          "default": "Super+1",
+          "summary": "Shows workspace 1 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-1",
+          "default": "Super+Shift+1",
+          "summary": "Sends the focused window to workspace 1"
+        },
+        {
+          "name": "workspace-2",
+          "default": "Super+2",
+          "summary": "Shows workspace 2 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-2",
+          "default": "Super+Shift+2",
+          "summary": "Sends the focused window to workspace 2"
+        },
+        {
+          "name": "workspace-3",
+          "default": "Super+3",
+          "summary": "Shows workspace 3 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-3",
+          "default": "Super+Shift+3",
+          "summary": "Sends the focused window to workspace 3"
+        },
+        {
+          "name": "workspace-4",
+          "default": "Super+4",
+          "summary": "Shows workspace 4 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-4",
+          "default": "Super+Shift+4",
+          "summary": "Sends the focused window to workspace 4"
+        },
+        {
+          "name": "workspace-5",
+          "default": "Super+5",
+          "summary": "Shows workspace 5 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-5",
+          "default": "Super+Shift+5",
+          "summary": "Sends the focused window to workspace 5"
+        },
+        {
+          "name": "workspace-6",
+          "default": "Super+6",
+          "summary": "Shows workspace 6 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-6",
+          "default": "Super+Shift+6",
+          "summary": "Sends the focused window to workspace 6"
+        },
+        {
+          "name": "workspace-7",
+          "default": "Super+7",
+          "summary": "Shows workspace 7 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-7",
+          "default": "Super+Shift+7",
+          "summary": "Sends the focused window to workspace 7"
+        },
+        {
+          "name": "workspace-8",
+          "default": "Super+8",
+          "summary": "Shows workspace 8 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-8",
+          "default": "Super+Shift+8",
+          "summary": "Sends the focused window to workspace 8"
+        },
+        {
+          "name": "workspace-9",
+          "default": "Super+9",
+          "summary": "Shows workspace 9 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-9",
+          "default": "Super+Shift+9",
+          "summary": "Sends the focused window to workspace 9"
+        },
+        {
+          "name": "workspace-10",
+          "default": "Super+0",
+          "summary": "Shows workspace 10 on the display the pointer is on"
+        },
+        {
+          "name": "move-to-workspace-10",
+          "default": "Super+Shift+0",
+          "summary": "Sends the focused window to workspace 10"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.language",
+      "summary": "What language the desktop speaks",
+      "keys": [
+        {
+          "name": "language",
+          "default": "",
+          "summary": "A BCP 47 language tag, or nothing to follow the system's own language"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.llm",
+      "summary": "The models this desktop answers with",
+      "keys": [
+        {
+          "name": "backends",
+          "default": [],
+          "summary": "The model each backend answers with"
+        },
+        {
+          "name": "endpoints",
+          "default": [],
+          "summary": "The OpenAI-compatible endpoints the person added, and their models"
+        },
+        {
+          "name": "backend",
+          "default": "",
+          "summary": "Which of them answers when nothing else is asked for"
+        },
+        {
+          "name": "effort",
+          "default": "medium",
+          "summary": "How hard a model is asked to think before it answers"
+        },
+        {
+          "name": "language",
+          "default": "",
+          "summary": "The language an agent answers in, or nothing for the person's own"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.lock",
+      "summary": "When the screen locks by itself",
+      "keys": [
+        {
+          "name": "idle",
+          "default": 10,
+          "summary": "Minutes without input before the screen locks; 0 never locks it",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 240
+            }
+          }
+        },
+        {
+          "name": "before-sleep",
+          "default": true,
+          "summary": "Whether the screen locks before the computer goes to sleep"
+        },
+        {
+          "name": "at-login",
+          "default": true,
+          "summary": "Whether a session started on the console begins at the lock screen"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.music",
+      "summary": "Music",
+      "keys": [
+        {
+          "name": "audio-quality",
+          "default": "highest",
+          "summary": "Streaming audio quality",
+          "constraint": {
+            "choices": [
+              "low",
+              "standard",
+              "highest"
+            ]
+          }
+        },
+        {
+          "name": "image-quality",
+          "default": "highest",
+          "summary": "Artwork quality",
+          "constraint": {
+            "choices": [
+              "low",
+              "standard",
+              "highest"
+            ]
+          }
+        },
+        {
+          "name": "audio-cache",
+          "default": "10g",
+          "summary": "Played music cache size",
+          "constraint": {
+            "choices": [
+              "off",
+              "2g",
+              "10g",
+              "50g"
+            ]
+          }
+        },
+        {
+          "name": "service-order",
+          "default": [],
+          "summary": "Services tried first for songs another service cannot play"
+        },
+        {
+          "name": "output",
+          "default": "shared",
+          "summary": "Where music plays: shared, sink:<PipeWire sink> or an exclusive hw:CARD=<card>,DEV=<n>"
+        },
+        {
+          "name": "replay-gain",
+          "default": "off",
+          "summary": "ReplayGain loudness levelling",
+          "constraint": {
+            "choices": [
+              "off",
+              "track",
+              "album"
+            ]
+          }
+        },
+        {
+          "name": "replay-gain-preamp",
+          "default": 0.0,
+          "summary": "ReplayGain preamp in dB",
+          "constraint": {
+            "range": {
+              "min": -15.0,
+              "max": 15.0
+            }
+          }
+        },
+        {
+          "name": "prevent-clipping",
+          "default": true,
+          "summary": "Lower ReplayGain so the peak never clips"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.network",
+      "summary": "Network proxy for session programs",
+      "keys": [
+        {
+          "name": "proxy-mode",
+          "default": "none",
+          "summary": "Proxy mode: none, manual or automatic",
+          "constraint": {
+            "choices": [
+              "none",
+              "manual",
+              "automatic"
+            ]
+          }
+        },
+        {
+          "name": "proxy-autoconfiguration",
+          "default": "",
+          "summary": "Proxy auto-configuration (PAC) URL for automatic mode"
+        },
+        {
+          "name": "proxy-same-for-all",
+          "default": true,
+          "summary": "Use the HTTP proxy for all protocols"
+        },
+        {
+          "name": "proxy-ignored",
+          "default": "localhost, 127.0.0.0/8, ::1",
+          "summary": "Comma-separated hosts to bypass: names, suffixes, addresses and CIDR blocks"
+        },
+        {
+          "name": "proxy-http-host",
+          "default": "",
+          "summary": "Proxy host"
+        },
+        {
+          "name": "proxy-http-port",
+          "default": 0,
+          "summary": "Proxy port; zero for none",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 65535
+            }
+          }
+        },
+        {
+          "name": "proxy-https-host",
+          "default": "",
+          "summary": "Proxy host"
+        },
+        {
+          "name": "proxy-https-port",
+          "default": 0,
+          "summary": "Proxy port; zero for none",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 65535
+            }
+          }
+        },
+        {
+          "name": "proxy-ftp-host",
+          "default": "",
+          "summary": "Proxy host"
+        },
+        {
+          "name": "proxy-ftp-port",
+          "default": 0,
+          "summary": "Proxy port; zero for none",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 65535
+            }
+          }
+        },
+        {
+          "name": "proxy-socks-host",
+          "default": "",
+          "summary": "Proxy host"
+        },
+        {
+          "name": "proxy-socks-port",
+          "default": 0,
+          "summary": "Proxy port; zero for none",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 65535
+            }
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.notifications",
+      "summary": "What the desktop does with what applications tell it",
+      "keys": [
+        {
+          "name": "do-not-disturb",
+          "default": false,
+          "summary": "Whether notifications are kept off the screen; urgent ones come through anyway"
+        },
+        {
+          "name": "timeout",
+          "default": 5,
+          "summary": "Seconds a notification stands for when the application named no time",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 300
+            }
+          }
+        },
+        {
+          "name": "visible",
+          "default": 3,
+          "summary": "How many notifications are on screen at once; the rest wait their turn",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.pointer",
+      "summary": "How the session's pointers behave, and what its cursor looks like",
+      "keys": [
+        {
+          "name": "mouse-enabled",
+          "default": true,
+          "summary": "Whether a mouse or trackball reports at all"
+        },
+        {
+          "name": "mouse-speed",
+          "default": 0.0,
+          "summary": "How far the pointer travels for a given movement, from -1 to 1",
+          "constraint": {
+            "range": {
+              "min": -1.0,
+              "max": 1.0
+            }
+          }
+        },
+        {
+          "name": "mouse-acceleration",
+          "default": "adaptive",
+          "summary": "Whether pointer travel depends on how fast the mouse is moved",
+          "constraint": {
+            "choices": [
+              "adaptive",
+              "flat"
+            ]
+          }
+        },
+        {
+          "name": "mouse-natural-scroll",
+          "default": false,
+          "summary": "Whether the page follows the wheel rather than the scrollbar"
+        },
+        {
+          "name": "mouse-left-handed",
+          "default": false,
+          "summary": "Whether the left and right buttons are swapped"
+        },
+        {
+          "name": "mouse-middle-emulation",
+          "default": false,
+          "summary": "Whether pressing both buttons at once is a middle click"
+        },
+        {
+          "name": "mouse-scroll-method",
+          "default": "wheel",
+          "summary": "Whether the wheel scrolls, or moving the mouse with a button held does",
+          "constraint": {
+            "choices": [
+              "wheel",
+              "button"
+            ]
+          }
+        },
+        {
+          "name": "mouse-scroll-button",
+          "default": 274,
+          "summary": "The evdev button held to scroll by moving the mouse",
+          "constraint": {
+            "choices": [
+              273,
+              274,
+              275,
+              276,
+              277,
+              278,
+              279
+            ]
+          }
+        },
+        {
+          "name": "mouse-scroll-button-lock",
+          "default": false,
+          "summary": "Whether the scroll button latches instead of being held down"
+        },
+        {
+          "name": "mouse-scroll-factor",
+          "default": 1.0,
+          "summary": "What one notch of the wheel is multiplied by",
+          "constraint": {
+            "range": {
+              "min": 0.1,
+              "max": 10.0
+            }
+          }
+        },
+        {
+          "name": "mouse-rotation",
+          "default": 0,
+          "summary": "How far the device is turned from upright, in degrees",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 359
+            }
+          }
+        },
+        {
+          "name": "touchpad-used",
+          "default": "always",
+          "summary": "When the touchpad reports: always, never, or only with no mouse plugged in",
+          "constraint": {
+            "choices": [
+              "always",
+              "never",
+              "no-mouse"
+            ]
+          }
+        },
+        {
+          "name": "touchpad-speed",
+          "default": 0.0,
+          "summary": "How far the pointer travels for a given movement, from -1 to 1",
+          "constraint": {
+            "range": {
+              "min": -1.0,
+              "max": 1.0
+            }
+          }
+        },
+        {
+          "name": "touchpad-acceleration",
+          "default": "adaptive",
+          "summary": "Whether pointer travel depends on how fast the finger moves",
+          "constraint": {
+            "choices": [
+              "adaptive",
+              "flat"
+            ]
+          }
+        },
+        {
+          "name": "touchpad-natural-scroll",
+          "default": true,
+          "summary": "Whether the page follows the fingers rather than the scrollbar"
+        },
+        {
+          "name": "touchpad-left-handed",
+          "default": false,
+          "summary": "Whether the left and right buttons are swapped"
+        },
+        {
+          "name": "touchpad-tap",
+          "default": true,
+          "summary": "Whether a tap is a click"
+        },
+        {
+          "name": "touchpad-tap-drag",
+          "default": true,
+          "summary": "Whether a tap followed by a drag moves what was tapped"
+        },
+        {
+          "name": "touchpad-tap-drag-lock",
+          "default": false,
+          "summary": "Whether a drag survives lifting the finger for a moment"
+        },
+        {
+          "name": "touchpad-tap-buttons",
+          "default": "left-right-middle",
+          "summary": "Which button a two- or three-finger tap is",
+          "constraint": {
+            "choices": [
+              "left-right-middle",
+              "left-middle-right"
+            ]
+          }
+        },
+        {
+          "name": "touchpad-click-method",
+          "default": "areas",
+          "summary": "Whether where the pad is pressed decides the button, or how many fingers are down",
+          "constraint": {
+            "choices": [
+              "areas",
+              "fingers"
+            ]
+          }
+        },
+        {
+          "name": "touchpad-scroll-method",
+          "default": "two-finger",
+          "summary": "What scrolls: two fingers, the edge of the pad, or nothing",
+          "constraint": {
+            "choices": [
+              "two-finger",
+              "edge",
+              "none"
+            ]
+          }
+        },
+        {
+          "name": "touchpad-disable-while-typing",
+          "default": true,
+          "summary": "Whether the touchpad is ignored while the keyboard is in use"
+        },
+        {
+          "name": "touchpad-disable-while-pointing",
+          "default": true,
+          "summary": "Whether the touchpad is ignored while the trackpoint is in use"
+        },
+        {
+          "name": "touchpad-middle-emulation",
+          "default": false,
+          "summary": "Whether pressing both buttons at once is a middle click"
+        },
+        {
+          "name": "touchpad-scroll-factor",
+          "default": 1.0,
+          "summary": "What a finger's worth of scrolling is multiplied by",
+          "constraint": {
+            "range": {
+              "min": 0.1,
+              "max": 10.0
+            }
+          }
+        },
+        {
+          "name": "cursor-theme",
+          "default": "",
+          "summary": "The XCursor theme to draw the pointer from; empty follows the machine"
+        },
+        {
+          "name": "cursor-size",
+          "default": 24,
+          "summary": "How large the pointer is drawn, in logical pixels",
+          "constraint": {
+            "range": {
+              "min": 8,
+              "max": 128
+            }
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.power",
+      "summary": "When the screen turns off and the computer sleeps, and how it saves power",
+      "keys": [
+        {
+          "name": "screen-off-plugged",
+          "default": 10,
+          "summary": "Minutes without input before the screen turns off on external power; 0 never turns it off",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 240
+            }
+          }
+        },
+        {
+          "name": "screen-off-battery",
+          "default": 5,
+          "summary": "Minutes without input before the screen turns off on battery; 0 never turns it off",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 240
+            }
+          }
+        },
+        {
+          "name": "suspend-plugged",
+          "default": 30,
+          "summary": "Minutes without input before the computer sleeps on external power; 0 never sleeps",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 240
+            }
+          }
+        },
+        {
+          "name": "suspend-battery",
+          "default": 15,
+          "summary": "Minutes without input before the computer sleeps on battery; 0 never sleeps",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 240
+            }
+          }
+        },
+        {
+          "name": "dim",
+          "default": true,
+          "summary": "Whether the screen dims shortly before it turns off"
+        },
+        {
+          "name": "saver-on-low-battery",
+          "default": true,
+          "summary": "Whether power saver turns on by itself while the battery is low"
+        },
+        {
+          "name": "battery-percentage",
+          "default": false,
+          "summary": "Whether the taskbar shows the battery charge as a percentage"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.proton",
+      "summary": "Proton",
+      "keys": [
+        {
+          "name": "conversations",
+          "default": true,
+          "summary": "Group mail by conversation"
+        },
+        {
+          "name": "drive-tiles",
+          "default": true,
+          "summary": "Show Drive as tiles"
+        },
+        {
+          "name": "stay-signed-in",
+          "default": true,
+          "summary": "Keep the session and mailbox key on this device"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.remote",
+      "summary": "Remote desktop: this session in the Rikka Remote viewer, over QUIC",
+      "keys": [
+        {
+          "name": "enabled",
+          "default": false,
+          "summary": "Whether this session can be reached by a remote viewer; signing in takes the account password"
+        },
+        {
+          "name": "port",
+          "default": 47900,
+          "summary": "The UDP port viewers connect to",
+          "constraint": {
+            "range": {
+              "min": 1024,
+              "max": 65535
+            }
+          }
+        },
+        {
+          "name": "network",
+          "default": false,
+          "summary": "Whether viewers anywhere on the network may connect; this computer and the tailnet are governed separately"
+        },
+        {
+          "name": "tailscale",
+          "default": true,
+          "summary": "Whether viewers on the tailnet may connect"
+        },
+        {
+          "name": "max-bitrate",
+          "default": 60,
+          "summary": "Megabits a second the picture may take at most; less is used when the link is slower",
+          "constraint": {
+            "range": {
+              "min": 5,
+              "max": 300
+            }
+          }
+        },
+        {
+          "name": "sound",
+          "default": true,
+          "summary": "Whether the desktop's sound is sent too"
+        },
+        {
+          "name": "display",
+          "default": "",
+          "summary": "The display that is shown, by connector name; empty for the first one"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.replay",
+      "summary": "The instant replay: the last minutes of the screen, kept in memory until they are saved",
+      "keys": [
+        {
+          "name": "enabled",
+          "default": false,
+          "summary": "Whether the desktop keeps the last minutes in memory; nothing reaches the disk until a replay is saved"
+        },
+        {
+          "name": "subject",
+          "default": "screen",
+          "summary": "What is kept: every display, the windows of the chosen applications, or every window each on its own, also behind others and on other workspaces",
+          "constraint": {
+            "choices": [
+              "screen",
+              "apps",
+              "windows"
+            ]
+          }
+        },
+        {
+          "name": "apps",
+          "default": [],
+          "summary": "The application ids whose windows are kept when only chosen applications are"
+        },
+        {
+          "name": "length",
+          "default": 120,
+          "summary": "Seconds kept back",
+          "constraint": {
+            "range": {
+              "min": 30,
+              "max": 1200
+            }
+          }
+        },
+        {
+          "name": "memory",
+          "default": 1024,
+          "summary": "Mebibytes of memory the replay may hold; past it the oldest seconds go first",
+          "constraint": {
+            "range": {
+              "min": 128,
+              "max": 16384
+            }
+          }
+        },
+        {
+          "name": "fps",
+          "default": 60,
+          "summary": "Frames a second at most; a still screen costs nothing",
+          "constraint": {
+            "range": {
+              "min": 10,
+              "max": 240
+            }
+          }
+        },
+        {
+          "name": "quality",
+          "default": 70,
+          "summary": "How good the replay looks — a constant quality",
+          "constraint": {
+            "range": {
+              "min": 1,
+              "max": 100
+            }
+          }
+        },
+        {
+          "name": "codec",
+          "default": "auto",
+          "summary": "What the replay is encoded with; automatic takes H.265 where the GPU encodes it, else H.264",
+          "constraint": {
+            "choices": [
+              "auto",
+              "hevc",
+              "h264"
+            ]
+          }
+        },
+        {
+          "name": "sound",
+          "default": true,
+          "summary": "Whether the desktop's sound is kept"
+        },
+        {
+          "name": "microphone",
+          "default": false,
+          "summary": "Whether the microphone is kept too, as a track of its own"
+        },
+        {
+          "name": "microphone-device",
+          "default": "",
+          "summary": "The microphone to keep; empty for the usual one"
+        },
+        {
+          "name": "cursor",
+          "default": true,
+          "summary": "Whether the pointer is in the replay"
+        },
+        {
+          "name": "folder",
+          "default": "",
+          "summary": "Where saved replays go; empty for a Replays folder in this session's own videos"
+        }
+      ]
+    },
+    {
+      "domain": "rikka.terminal",
+      "summary": "Terminal",
+      "keys": [
+        {
+          "name": "font-family",
+          "default": "monospace",
+          "summary": "The fixed-pitch family the grid is drawn in"
+        },
+        {
+          "name": "font-size",
+          "default": 13,
+          "summary": "How big the text is, in logical pixels",
+          "constraint": {
+            "range": {
+              "min": 6,
+              "max": 48
+            }
+          }
+        },
+        {
+          "name": "scrollback",
+          "default": 10000,
+          "summary": "How many lines that have scrolled off the top are kept",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 1000000
+            }
+          }
+        },
+        {
+          "name": "clipboard-read",
+          "default": false,
+          "summary": "Whether a program may read what the selections hold"
+        },
+        {
+          "name": "clipboard-write",
+          "default": true,
+          "summary": "Whether a program may put anything on the selections"
+        },
+        {
+          "name": "clipboard-max-size",
+          "default": 16,
+          "summary": "How much one clipboard sequence may carry, in mebibytes; 0 is any amount",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 1024
+            }
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.translate",
+      "summary": "Translation window",
+      "keys": [
+        {
+          "name": "target",
+          "default": "",
+          "summary": "The language to translate into, as a BCP-47 tag or as a language written out; empty for this session's own language"
+        },
+        {
+          "name": "source",
+          "default": "",
+          "summary": "The language to translate from; empty to work it out from the text itself"
+        },
+        {
+          "name": "profile",
+          "default": "natural",
+          "summary": "How the translation is worded: natural keeps the original's tone; casual, polite and business write it that way",
+          "constraint": {
+            "choices": [
+              "natural",
+              "casual",
+              "polite",
+              "business"
+            ]
+          }
+        },
+        {
+          "name": "model-backend",
+          "default": "",
+          "summary": "The account that translates, a backend id or an endpoint:<id>; empty for the one the desktop answers with"
+        },
+        {
+          "name": "model",
+          "default": "",
+          "summary": "The model that translates; empty for the account's own"
+        },
+        {
+          "name": "effort",
+          "default": "",
+          "summary": "How hard the model thinks about a translation; empty for the desktop's own setting",
+          "constraint": {
+            "choices": [
+              "",
+              "none",
+              "minimal",
+              "low",
+              "medium",
+              "high",
+              "xhigh",
+              "max"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.weather",
+      "summary": "Where the desktop forecasts the weather for, and in which units",
+      "keys": [
+        {
+          "name": "location",
+          "default": "here",
+          "summary": "Whether the forecast follows where this machine is, or one chosen place",
+          "constraint": {
+            "choices": [
+              "here",
+              "place"
+            ]
+          }
+        },
+        {
+          "name": "place",
+          "default": {},
+          "summary": "The chosen place: name, region, country, country_code, latitude and longitude"
+        },
+        {
+          "name": "temperature-unit",
+          "default": "auto",
+          "summary": "How temperatures are given; automatic follows the measurement locale",
+          "constraint": {
+            "choices": [
+              "auto",
+              "celsius",
+              "fahrenheit"
+            ]
+          }
+        },
+        {
+          "name": "speed-unit",
+          "default": "auto",
+          "summary": "How wind speeds are given",
+          "constraint": {
+            "choices": [
+              "auto",
+              "kmh",
+              "ms",
+              "mph",
+              "knots"
+            ]
+          }
+        },
+        {
+          "name": "precipitation-unit",
+          "default": "auto",
+          "summary": "How rain and snow are measured",
+          "constraint": {
+            "choices": [
+              "auto",
+              "mm",
+              "inch"
+            ]
+          }
+        },
+        {
+          "name": "pressure-unit",
+          "default": "auto",
+          "summary": "How air pressure is given",
+          "constraint": {
+            "choices": [
+              "auto",
+              "hpa",
+              "mmhg",
+              "inhg"
+            ]
+          }
+        },
+        {
+          "name": "distance-unit",
+          "default": "auto",
+          "summary": "How far one can see is given",
+          "constraint": {
+            "choices": [
+              "auto",
+              "km",
+              "mi"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "domain": "rikka.windows",
+      "summary": "How the session arranges and presents its windows",
+      "keys": [
+        {
+          "name": "layout",
+          "default": "floating",
+          "summary": "Whether windows overlap freely or share the display",
+          "constraint": {
+            "choices": [
+              "floating",
+              "tiling"
+            ]
+          }
+        },
+        {
+          "name": "gap-inner",
+          "default": 8,
+          "summary": "Pixels left between two tiled windows",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 64
+            }
+          }
+        },
+        {
+          "name": "gap-outer",
+          "default": 8,
+          "summary": "Pixels left between a tiled window and the edge of the display",
+          "constraint": {
+            "range": {
+              "min": 0,
+              "max": 64
+            }
+          }
+        },
+        {
+          "name": "resize-on-border",
+          "default": true,
+          "summary": "Whether dragging the edge of a tiled window resizes it"
+        },
+        {
+          "name": "scrolling",
+          "default": false,
+          "summary": "Whether tiled windows stand in columns on a strip that scrolls sideways instead of sharing out the display"
+        },
+        {
+          "name": "focus-outline",
+          "default": true,
+          "summary": "Whether the focused tiled window is framed in the accent colour"
+        },
+        {
+          "name": "snap",
+          "default": true,
+          "summary": "Whether dragging a floating window to an edge or a snap zone arranges it there"
+        },
+        {
+          "name": "snap-bar",
+          "default": true,
+          "summary": "Whether dragging a window to the top of the display reveals the snap layouts"
+        },
+        {
+          "name": "snap-assist",
+          "default": true,
+          "summary": "Whether snapping a window offers the other windows for the zones left over"
+        },
+        {
+          "name": "snap-resize-together",
+          "default": true,
+          "summary": "Whether resizing a snapped window resizes the ones beside it"
+        },
+        {
+          "name": "allow-tearing",
+          "default": true,
+          "summary": "Whether a fullscreen window that asks for it shows each frame at once, tearing, instead of waiting for the display's refresh"
+        }
+      ]
+    }
+  ]
+}

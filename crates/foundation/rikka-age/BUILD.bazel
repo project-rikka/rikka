@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-age",
+    visibility = [
+        "//visibility:public",
+    ],
+    deps = [
+        "@crates//:base64",
+        "@crates//:chacha20poly1305",
+        "@crates//:getrandom",
+        "@crates//:hkdf",
+        "@crates//:hmac",
+        "@crates//:scrypt",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-age",
+    ],
+)

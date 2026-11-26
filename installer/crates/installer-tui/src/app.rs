@@ -1,4 +1,4 @@
-use installer_core::{Answers, Disk, Problem, Step, validate, validate_step};
+use installer_core::{Answers, Disk, Problem, Restored, Start, Step, validate, validate_step};
 use installer_sys::{Environment, Event};
 
 use crate::{
@@ -20,6 +20,13 @@ pub enum Outcome {
     Reboot,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Reading {
+    Idle,
+    Requested,
+    Running,
+}
+
 #[derive(Debug)]
 pub struct App {
     answers: Answers,
@@ -34,6 +41,7 @@ pub struct App {
     glyphs: Glyphs,
     outcome: Option<Outcome>,
     start_requested: bool,
+    reading: Reading,
 }
 
 impl App {
@@ -55,7 +63,7 @@ impl App {
             environment,
             disks,
             timezones,
-            step: Step::Language,
+            step: Step::Restore,
             form: Form::new(Vec::new()),
             overlay: None,
             install: InstallView::default(),
@@ -63,6 +71,7 @@ impl App {
             glyphs: Glyphs::for_terminal(&var("TERM"), &var("LANG")),
             outcome: None,
             start_requested: false,
+            reading: Reading::Idle,
         };
         app.refresh();
         app
@@ -132,6 +141,9 @@ impl App {
 
     #[must_use]
     pub fn detail(&self) -> Vec<(String, Tone)> {
+        if self.reading != Reading::Idle {
+            return vec![("Reading…".to_owned(), Tone::Plain)];
+        }
         screen::detail(self.step, &self.answers)
     }
 
@@ -145,6 +157,35 @@ impl App {
 
     pub fn take_start_request(&mut self) -> bool {
         std::mem::take(&mut self.start_requested)
+    }
+
+    pub fn take_restore_request(&mut self) -> bool {
+        if self.reading != Reading::Requested {
+            return false;
+        }
+        self.reading = Reading::Running;
+        true
+    }
+
+    pub(crate) fn is_reading(&self) -> bool {
+        self.reading != Reading::Idle
+    }
+
+    pub fn restore_read(&mut self, read: Result<Restored, String>) {
+        self.reading = Reading::Idle;
+        match read.and_then(|restored| {
+            restored
+                .prefill(&mut self.answers)
+                .map_err(|error| error.to_string())?;
+            Ok(restored)
+        }) {
+            Ok(restored) => {
+                self.answers.restored = Some(restored);
+                self.answers.restore_problem = None;
+                self.advance();
+            }
+            Err(problem) => self.answers.restore_problem = Some(problem),
+        }
     }
 
     pub(crate) fn quit(&mut self, outcome: Outcome) {
@@ -238,6 +279,13 @@ impl App {
     pub(crate) fn advance(&mut self) {
         self.refresh();
         if !self.problems().is_empty() {
+            return;
+        }
+        if self.step == Step::Restore
+            && self.answers.start != Start::Fresh
+            && self.answers.restored.is_none()
+        {
+            self.reading = Reading::Requested;
             return;
         }
 

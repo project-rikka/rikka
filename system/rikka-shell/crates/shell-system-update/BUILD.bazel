@@ -12,6 +12,7 @@ rikka_library(
         "//crates/foundation/rikka-sync",
         "//crates/nix/rikka-nix",
         "//crates/session/rikka-seam",
+        "//crates/session/rikka-settings",
         "//crates/ui/rikka-ui",
         "//system/rikka-shell/crates/shell-kit",
         "//system/rikka-shell/crates/shell-notifications",

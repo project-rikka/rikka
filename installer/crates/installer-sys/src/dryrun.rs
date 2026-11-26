@@ -17,6 +17,7 @@ const HARMLESS: &[&str] = &[
     "nixos-version",
     "ip",
     "find",
+    "mktemp",
     "udevadm",
 ];
 
@@ -50,6 +51,10 @@ impl Host for DryRunHost {
 
     fn read(&self, path: &str) -> Result<String> {
         self.inner.read(path)
+    }
+
+    fn read_bytes(&self, path: &str) -> Result<Vec<u8>> {
+        self.inner.read_bytes(path)
     }
 
     fn write(&self, path: &str, contents: &str, mode: u32) -> Result<()> {

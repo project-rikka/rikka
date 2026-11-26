@@ -1,7 +1,7 @@
+use browser_preferences::Rule;
 use browser_translators::{CodeMode, Display, Engine};
 use rikka_languages::Language;
 
-use crate::preferences::Rule;
 use crate::shell::Shell;
 use crate::translate::tabs::Choice;
 use browser_model::TabId;

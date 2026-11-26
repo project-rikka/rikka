@@ -1,7 +1,7 @@
+use browser_preferences::{Preferences, Rule, TranslationRules};
 use browser_translators::{Command, Watch};
 use rikka_languages::Language;
 
-use crate::preferences::{Preferences, Rule, TranslationRules};
 use crate::translate::tabs::{Follow, Session};
 
 #[derive(Clone, Copy, Debug)]

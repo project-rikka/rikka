@@ -1,4 +1,5 @@
 load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
 
 rikka_library(
     name = "rikka-terminal",
@@ -37,4 +38,10 @@ rikka_test(
         "//crates/graphics/rikka-theme",
         "//crates/ui/rikka-ui",
     ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "rikka_terminal::Config::schema",
+    deps = [":rikka-terminal"],
 )

@@ -14,7 +14,6 @@ mod media_previews;
 mod monitor;
 mod panel;
 mod playback;
-mod preferences;
 mod probe;
 mod quality;
 mod reformat;

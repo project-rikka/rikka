@@ -1,7 +1,6 @@
+use browser_preferences::session_language;
 use browser_translators::Engine;
 use rikka_languages::Language;
-
-use crate::preferences::session_language;
 
 const MAJOR: [&str; 20] = [
     "en", "ja", "zh-Hans", "zh-Hant", "ko", "es", "fr", "de", "it", "pt", "ru", "ar", "hi", "id",

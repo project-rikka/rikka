@@ -1,10 +1,10 @@
 use std::collections::BTreeSet;
 
 use discord_core::{ChannelId, Focus, SpaceId};
+use discord_preferences::ForumView;
 
 use super::Chat;
 use crate::account::{LinkedAccount, Location, Scope};
-use crate::preferences::ForumView;
 
 impl Chat {
     pub(crate) fn open_home(&mut self) {

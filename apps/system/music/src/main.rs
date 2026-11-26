@@ -2,7 +2,6 @@ mod accounts;
 mod artwork;
 mod blends;
 mod blocks;
-mod cache_size;
 mod desk;
 mod dialogs;
 mod gallery;
@@ -18,7 +17,6 @@ mod pages;
 mod player;
 mod player_bar;
 mod portal;
-mod preferences;
 mod queue;
 mod services;
 mod settings;
@@ -35,13 +33,13 @@ use music_blend::{Places, Store};
 use music_core::{AudioCache, Providers, Roots, SavedAccount};
 use music_library::Library;
 use music_local::Local;
+use music_preferences::Preferences;
 use rikka_account_book::Accounts;
 use rikka_app::prelude::*;
 use rikka_dirs::{Paths, UserDir, UserDirs};
 use rikka_hifi::{Hifi, Identity};
 
 use crate::music::Music;
-use crate::preferences::Preferences;
 
 fn window(
     providers: Providers,

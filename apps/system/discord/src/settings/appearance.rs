@@ -1,8 +1,8 @@
+use discord_preferences::Appearance;
 use rikka_app::prelude::*;
 use rikka_widgets::column;
 
 use crate::chat::Chat;
-use crate::preferences::Appearance;
 
 pub(super) fn view(chat: &Chat) -> Element {
     let appearance = chat.appearance();

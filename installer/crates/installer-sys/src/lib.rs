@@ -8,6 +8,7 @@ mod install;
 mod journal;
 mod output;
 mod probe;
+mod restore;
 mod stage;
 
 pub use command::{Command, Output};
@@ -18,4 +19,5 @@ pub use error::{Error, Result};
 pub use host::{Host, Mode, SystemHost};
 pub use install::{Event, install};
 pub use probe::{disks, timezones};
+pub use restore::read_restore;
 pub use stage::Stage;

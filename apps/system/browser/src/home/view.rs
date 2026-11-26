@@ -1,7 +1,7 @@
+use browser_preferences::HomePart;
 use rikka_app::prelude::*;
 
 use crate::home::{HomePage, clock, closed, favorites, search, sites};
-use crate::preferences::HomePart;
 use crate::shell::Shell;
 use browser_model::TabId;
 

@@ -1,9 +1,9 @@
+use music_preferences::{GAIN_MODES, PREAMP_DB};
 use rikka_app::prelude::*;
 use rikka_hifi::{Device, Output, OutputState, ReplayGain, ReplayGainMode};
 use rikka_widgets::{column, row};
 
 use crate::music::Music;
-use crate::preferences::{GAIN_MODES, PREAMP_DB};
 use crate::signal::refusal;
 use crate::wording::{dsd, hertz};
 

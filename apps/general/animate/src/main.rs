@@ -8,14 +8,13 @@ mod caption;
 mod command;
 mod dialogs;
 mod output;
-mod preferences;
 mod view;
 mod wording;
 
+use animate_preferences::Preferences;
 use rikka_app::prelude::*;
 
 use crate::animate::Animate;
-use crate::preferences::Preferences;
 
 const SIZE: (f32, f32) = (1360.0, 900.0);
 const SMALLEST: (f32, f32) = (760.0, 560.0);

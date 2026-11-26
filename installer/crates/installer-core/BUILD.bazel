@@ -8,6 +8,7 @@ rikka_library(
     deps = [
         "//crates/nix/rikka-nix-edit",
         "//crates/nix/rikka-nixos-layout",
+        "//crates/session/rikka-backup",
         "@crates//:getrandom",
         "@crates//:serde",
         "@crates//:serde_json",
@@ -22,6 +23,8 @@ rikka_test(
     deps = [
         ":installer-core",
         "//crates/nix/rikka-nix-edit",
+        "//crates/nix/rikka-nixos-layout",
         "//crates/nix/rikka-test-nixfmt",
+        "//crates/session/rikka-backup",
     ],
 )

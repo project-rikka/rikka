@@ -1,7 +1,7 @@
+use browser_preferences::HomePart;
 use rikka_app::prelude::*;
 use rikka_widgets::{column, row};
 
-use crate::preferences::HomePart;
 use crate::shell::Shell;
 
 pub(crate) fn view(shell: &Shell) -> Element {

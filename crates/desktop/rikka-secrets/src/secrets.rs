@@ -176,15 +176,22 @@ impl Secrets {
             return Ok(Vec::new());
         }
         let mut secrets = self.secrets(&items).await?;
-        let attributes = futures_util::future::try_join_all(items.iter().map(|item| {
-            self.property::<HashMap<String, String>>(item, ITEM_INTERFACE, "Attributes")
+        let properties = futures_util::future::try_join_all(items.iter().map(|item| async move {
+            let attributes = self
+                .property::<HashMap<String, String>>(item, ITEM_INTERFACE, "Attributes")
+                .await?;
+            let label = self
+                .property::<String>(item, ITEM_INTERFACE, "Label")
+                .await?;
+            Ok::<_, Error>((attributes, label))
         }))
         .await?;
         Ok(items
             .iter()
-            .zip(attributes)
-            .filter_map(|(item, attributes)| {
+            .zip(properties)
+            .filter_map(|(item, (attributes, label))| {
                 Some(Found {
+                    label,
                     attributes: attributes.into_iter().collect(),
                     secret: secrets.remove(item)?,
                 })

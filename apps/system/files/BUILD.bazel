@@ -8,6 +8,7 @@ rikka_library(
     ],
     deps = [
         "//apps/system/files/crates/files-archive",
+        "//apps/system/files/crates/files-config",
         "//apps/system/files/crates/files-convert",
         "//apps/system/files/crates/files-core",
         "//apps/system/files/crates/files-dialog",
@@ -32,7 +33,6 @@ rikka_library(
         "//crates/foundation/rikka-input",
         "//crates/foundation/rikka-sync",
         "//crates/graphics/rikka-image",
-        "//crates/session/rikka-settings",
         "//crates/ui/rikka-app",
         "//crates/ui/rikka-ui",
         "//crates/ui/rikka-widgets",

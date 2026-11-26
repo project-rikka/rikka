@@ -1,0 +1,24 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
+
+rikka_library(
+    name = "cut-preferences",
+    visibility = [
+        "//apps/general/cut:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/cut/crates/cut-export",
+        "//apps/general/cut/crates/cut-filmstrip",
+        "//apps/general/cut/crates/cut-project",
+        "//apps/general/cut/crates/cut-waveform",
+        "//crates/media/rikka-audio-decode",
+        "//crates/media/rikka-video",
+        "//crates/session/rikka-settings",
+    ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "cut_preferences::Preferences::schema",
+    deps = [":cut-preferences"],
+)

@@ -6,8 +6,7 @@ pub(crate) use sizing::Sizing;
 
 use animate_cast::Resolution;
 use animate_export::{Encoding, Export};
-
-use crate::preferences::Preferences;
+use animate_preferences::Preferences;
 
 #[derive(Debug)]
 pub(crate) enum Sheet {

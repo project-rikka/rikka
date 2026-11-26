@@ -6,6 +6,7 @@ rikka_binary(
     deps = [
         "//apps/system/discord/crates/discord-client",
         "//apps/system/discord/crates/discord-core",
+        "//apps/system/discord/crates/discord-preferences",
         "//apps/system/discord/crates/discord-stream",
         "//apps/system/discord/crates/discord-voice",
         "//crates/desktop/rikka-account-book",
@@ -25,7 +26,6 @@ rikka_binary(
         "//crates/media/rikka-media-format",
         "//crates/media/rikka-movie",
         "//crates/media/rikka-opus",
-        "//crates/session/rikka-settings",
         "//crates/ui/rikka-app",
         "//crates/ui/rikka-syntax",
         "//crates/ui/rikka-ui",

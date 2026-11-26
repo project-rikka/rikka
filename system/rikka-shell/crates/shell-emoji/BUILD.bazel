@@ -1,4 +1,5 @@
 load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
 
 rikka_library(
     name = "shell-emoji",
@@ -18,4 +19,10 @@ rikka_library(
         "//system/rikka-shell/crates/shell-kit",
         "@crates//:tracing",
     ],
+)
+
+rikka_settings_catalog(
+    name = "settings_catalog",
+    catalog = "shell_emoji::Emoji::schema",
+    deps = [":shell-emoji"],
 )

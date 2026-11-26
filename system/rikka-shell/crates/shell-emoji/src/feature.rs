@@ -1,6 +1,7 @@
 use rikka_emoji::Tone;
 use rikka_seam::Request;
 use rikka_session::shortcuts::Shortcut;
+use rikka_settings::Schema;
 use rikka_settings::session::emoji::{self, SKIN_TONE, TYPE, TYPE_DEFAULT};
 use rikka_types::Choice;
 use shell_kit::{EXIT_DURATION, Feature, Recents, Shell, SurfaceDesc, TOGGLE};
@@ -18,11 +19,16 @@ impl Emoji {
     pub fn new() -> Emoji {
         Emoji
     }
+
+    #[must_use]
+    pub fn schema() -> Schema {
+        emoji::schema::<Tone>()
+    }
 }
 
 impl Feature for Emoji {
     fn install(self, shell: Shell) -> Shell {
-        let shell = shell.settings(emoji::schema::<Tone>());
+        let shell = shell.settings(Self::schema());
         let (shell, inserting) = shell.hold(Inserting {
             typed: TYPE_DEFAULT,
         });

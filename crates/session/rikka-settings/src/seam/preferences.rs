@@ -99,6 +99,13 @@ impl Preferences {
     }
 
     #[must_use]
+    pub fn is_locked(&self, key: &str) -> bool {
+        self.settings
+            .as_ref()
+            .is_some_and(|settings| settings.is_locked(key))
+    }
+
+    #[must_use]
     pub fn choice<C: Choice>(&self, key: &str) -> C {
         C::of_slug(&self.get::<String>(key))
     }

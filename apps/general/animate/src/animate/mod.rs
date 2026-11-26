@@ -48,6 +48,7 @@ use animate_inspector::{Controls, Studio, StudioCore};
 use animate_look::world::Sampling;
 use animate_look::{Plans, shared_library};
 use animate_motion::{Incoming, Take};
+use animate_preferences::Preferences;
 use animate_shader::{SharedCompiler, SharedShaders, Workbench};
 use animate_stage::{Dressing, Render, SharedRender, SharedStage, Stage};
 use animate_timeline::Timeline;
@@ -63,7 +64,6 @@ use rustc_hash::FxHashSet;
 
 use crate::arrival::{self, Arrival, FigureTarget, LoadRequest, LoadTarget, Settled};
 use crate::output::Output;
-use crate::preferences::Preferences;
 use crate::{assistant, wording};
 
 const TICKING: &str = "animate.ticking";

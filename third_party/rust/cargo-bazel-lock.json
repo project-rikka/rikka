@@ -1,5 +1,5 @@
 {
-  "checksum": "6deaee0638703d365c2c0bd2784efaa886e0fd8ede07e9a6e4abfd91f4c28444",
+  "checksum": "4a11b661bc4385bbba2e1994cf6ac0d653c690da8365633e3ea2cfd948069403",
   "conditions": {
     "aarch64-linux-android": [],
     "aarch64-pc-windows-gnullvm": [],
@@ -9233,6 +9233,10 @@
             "alias": "rustls_webpki",
             "id": "rustls-webpki 0.103.15",
             "target": "webpki"
+          },
+          {
+            "id": "scrypt 0.12.0",
+            "target": "scrypt"
           },
           {
             "id": "serde 1.0.229",
@@ -43737,6 +43741,7 @@
     "rustls-pemfile 2.2.0",
     "rustls-pki-types 1.15.1",
     "rustls-webpki 0.103.15",
+    "scrypt 0.12.0",
     "serde 1.0.229",
     "serde_json 1.0.151",
     "serde_urlencoded 0.7.1",

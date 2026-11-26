@@ -12,15 +12,19 @@ pub struct Config(Preferences);
 impl Config {
     #[must_use]
     pub fn load() -> Config {
-        let schema = Schema::new(DOMAIN)
+        Config(Preferences::open(Self::schema()))
+    }
+
+    #[must_use]
+    pub fn schema() -> Schema {
+        Schema::new(DOMAIN)
             .summary("Proton")
             .key(Key::bool(CONVERSATIONS, true).summary("Group mail by conversation"))
             .key(Key::bool(DRIVE_TILES, true).summary("Show Drive as tiles"))
             .key(
                 Key::bool(STAY_SIGNED_IN, true)
                     .summary("Keep the session and mailbox key on this device"),
-            );
-        Config(Preferences::open(schema))
+            )
     }
 
     #[must_use]

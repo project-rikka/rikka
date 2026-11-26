@@ -1,8 +1,9 @@
 use std::cell::{OnceCell, RefCell};
 use std::rc::Rc;
 
+use browser_preferences::Preferences;
+
 use crate::browser::Browser;
-use crate::preferences::Preferences;
 use crate::startup::Startup;
 use browser_model::Geometry;
 

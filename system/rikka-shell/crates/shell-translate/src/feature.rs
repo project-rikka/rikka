@@ -1,6 +1,7 @@
 use rikka_llm::Effort;
 use rikka_seam::Request;
 use rikka_session::shortcuts::Shortcut;
+use rikka_settings::Schema;
 use rikka_settings::session::translate;
 use shell_capture::{CAPABILITY as CAPTURE, Mode, PICK, Snip};
 use shell_kit::{EXIT_DURATION, Feature, Shell, SurfaceDesc, TOGGLE};
@@ -22,6 +23,11 @@ impl Translator {
     pub fn new(snip: Snip) -> Translator {
         Translator { snip }
     }
+
+    #[must_use]
+    pub fn schema() -> Schema {
+        translate::schema::<Profile>(Effort::ALL.iter().map(|effort| effort.id().to_owned()))
+    }
 }
 
 impl Feature for Translator {
@@ -34,9 +40,7 @@ impl Feature for Translator {
             }
         };
 
-        let shell = shell.settings(translate::schema::<Profile>(
-            Effort::ALL.iter().map(|effort| effort.id().to_owned()),
-        ));
+        let shell = shell.settings(Self::schema());
         let (shell, choices) = choices::follow(shell);
 
         let service = TranslateService::new();

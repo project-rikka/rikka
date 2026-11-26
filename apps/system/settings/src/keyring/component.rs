@@ -201,7 +201,7 @@ fn state_named(state: KeyringState) -> Label {
     }
 }
 
-fn app_named(owner: Option<&str>) -> Label {
+pub(crate) fn app_named(owner: Option<&str>) -> Label {
     match APPS.iter().find(|(known, _)| Some(*known) == owner) {
         Some((_, key)) => Label::translated(key),
         None => tr!("settings.keyring.app.other"),

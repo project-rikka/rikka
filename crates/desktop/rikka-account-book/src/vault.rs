@@ -6,7 +6,7 @@ use serde::de::DeserializeOwned;
 
 use crate::error::Result;
 
-const FOLDER: &str = "folder";
+pub const FOLDER_ATTRIBUTE: &str = "folder";
 const KIND: &str = "kind";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -38,7 +38,7 @@ impl Vault {
     }
 
     fn folder(self, folder: &Path) -> Entry {
-        Entry::new(self.schema).attribute(FOLDER, folder.to_string_lossy())
+        Entry::new(self.schema).attribute(FOLDER_ATTRIBUTE, folder.to_string_lossy())
     }
 }
 

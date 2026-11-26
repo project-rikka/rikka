@@ -4,6 +4,10 @@ use installer_core::{Disk, Secret, byte_index};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FieldId {
+    Start,
+    BackupPath,
+    BackupPassphrase,
+    Repository,
     Locale,
     EnglishMessages,
     Keyboard,

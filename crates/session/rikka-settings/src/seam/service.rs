@@ -149,6 +149,7 @@ impl SettingsService {
                     domain,
                     changes,
                     user_values: values.clone(),
+                    reread: false,
                 },
             )
         {
@@ -159,6 +160,40 @@ impl SettingsService {
             Ok(()) => call.encode(&values),
             Err(error) => call.fail(refused(error)),
         }
+    }
+
+    fn reload(&mut self, call: Call) {
+        let mut moved = Vec::new();
+        for (domain, entry) in &mut self.stores {
+            let before = entry.store.snapshot();
+            let sources = entry.store.sources();
+            match entry.store.reload() {
+                Ok(report) => report.log_warnings(domain),
+                Err(error) => {
+                    tracing::warn!("failed to reload settings domain `{domain}`: {error}");
+                    continue;
+                }
+            }
+            let changes = before.diff(&entry.store.snapshot());
+            if changes.is_empty() && sources == entry.store.sources() {
+                continue;
+            }
+            moved.push(Changed {
+                domain: domain.clone(),
+                changes,
+                user_values: entry.store.user_values().clone(),
+                reread: true,
+            });
+        }
+        if let Some(seam) = &self.seam {
+            for changed in &moved {
+                if let Err(error) = seam.publisher().emit(protocol::CHANGED, changed) {
+                    return call.fail(error);
+                }
+            }
+        }
+        let domains: Vec<&Domain> = moved.iter().map(|changed| &changed.domain).collect();
+        call.encode(&domains);
     }
 }
 
@@ -179,9 +214,10 @@ fn disagreement(current: &Schema, proposed: &Schema) -> Option<String> {
 
 fn refused(error: Error) -> SeamError {
     match error {
-        Error::UnknownKey { .. } | Error::Refused { .. } | Error::Convert(_) => {
-            SeamError::invalid_params(error)
-        }
+        Error::UnknownKey { .. }
+        | Error::Refused { .. }
+        | Error::Locked { .. }
+        | Error::Convert(_) => SeamError::invalid_params(error),
         other => SeamError::failed(other),
     }
 }
@@ -218,6 +254,9 @@ impl<H> Service<H> for SettingsService {
                 MethodInfo::new(protocol::SOURCES)
                     .summary("Which layer answered for each of `domain`'s settings"),
             )
+            .method(MethodInfo::new(protocol::RELOAD).summary(
+                "Reads every domain's files afresh after the system configuration changed",
+            ))
             .event(
                 EventInfo::new(protocol::CHANGED).summary(
                     "A write moved something, with everything it moved and everything held",
@@ -262,6 +301,7 @@ impl<H> Service<H> for SettingsService {
             protocol::SOURCES => {
                 self.answer(call, |store, _: &DomainRef| Ok(store.sources()));
             }
+            protocol::RELOAD => self.reload(call),
             _ => call.unknown_method(),
         }
     }
