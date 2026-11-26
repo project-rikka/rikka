@@ -1,5 +1,5 @@
 diff --git a/mobile/shared/components/geckoview/components.conf b/mobile/shared/components/geckoview/components.conf
-index 6cb173bd4..46d1118bd 100644
+index 6479f441fd..ce40a59395 100644
 --- a/mobile/shared/components/geckoview/components.conf
 +++ b/mobile/shared/components/geckoview/components.conf
 @@ -33,7 +33,7 @@ Classes = [
@@ -8,6 +8,6 @@ index 6cb173bd4..46d1118bd 100644
          'cid': '{a54d84d7-98a4-4fec-b664-e42e512ae9cc}',
 -        'contract_ids': ['@mozilla.org/push/Service;1'],
 +        'contract_ids': [] if buildconfig.substs['MOZ_WIDGET_TOOLKIT'] not in ('android', 'uikit') else ['@mozilla.org/push/Service;1'],
-         'esModule': 'resource://gre/modules/GeckoViewPush.sys.mjs',
+         'esModule': 'moz-src:///mobile/shared/components/geckoview/GeckoViewPush.sys.mjs',
          'constructor': 'PushService',
      },

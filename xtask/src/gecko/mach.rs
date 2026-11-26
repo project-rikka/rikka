@@ -27,6 +27,8 @@ const RUST_TOOLCHAINS: &str = "taskcluster/kinds/toolchain/rust.yml";
 
 const RUST_TOOLCHAIN: &str = "linux64-rust";
 
+const ALIAS_KEYS: [&str; 2] = ["toolchain-alias:", "default:"];
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Profile {
     Dev,
@@ -132,6 +134,7 @@ fn rust_channel(tree: &Path) -> Result<String> {
     let path = tree.join(RUST_TOOLCHAINS);
     let toolchains = host::read(&path)?;
     let mut channel = None;
+    let mut listing_aliases = false;
     for line in toolchains.lines() {
         if !line.starts_with(' ') && line.ends_with(':') {
             channel = None;
@@ -139,9 +142,16 @@ fn rust_channel(tree: &Path) -> Result<String> {
         if line.contains("--channel") {
             channel = line.split('\'').nth(3);
         }
-        let aliased = ["toolchain-alias: ", "default: "]
-            .iter()
-            .any(|key| line.trim().strip_prefix(key) == Some(RUST_TOOLCHAIN));
+        let entry = line.trim();
+        let aliased = match entry.strip_prefix("- ") {
+            Some(item) => listing_aliases && item == RUST_TOOLCHAIN,
+            None => {
+                listing_aliases = ALIAS_KEYS.contains(&entry);
+                ALIAS_KEYS
+                    .iter()
+                    .any(|key| entry.strip_prefix(key).map(str::trim) == Some(RUST_TOOLCHAIN))
+            }
+        };
         if aliased {
             return channel.map(str::to_owned).with_context(|| {
                 format!(

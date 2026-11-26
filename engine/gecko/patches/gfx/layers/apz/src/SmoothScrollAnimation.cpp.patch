@@ -1,5 +1,5 @@
 diff --git a/gfx/layers/apz/src/SmoothScrollAnimation.cpp b/gfx/layers/apz/src/SmoothScrollAnimation.cpp
-index ec6f488e49..4d5f2c7d4c 100644
+index aaa1ae2e51..ed085d498f 100644
 --- a/gfx/layers/apz/src/SmoothScrollAnimation.cpp
 +++ b/gfx/layers/apz/src/SmoothScrollAnimation.cpp
 @@ -7,6 +7,7 @@
@@ -25,7 +25,7 @@ index ec6f488e49..4d5f2c7d4c 100644
 +        zoom == CSSToParentLayerScale(0)
 +            ? 1
 +            : CSSPixel::ToAppUnits(ParentLayerCoord(1) / zoom);
-+    mAnimationPhysics = MakeUnique<ScrollAnimationRikkaPhysics>(
++    mAnimationPhysics = std::make_unique<ScrollAnimationRikkaPhysics>(
 +        mKind == ScrollAnimationKind::Wheel
 +            ? ScrollAnimationRikkaPhysics::Drive::Impel
 +            : ScrollAnimationRikkaPhysics::Drive::Aim,
