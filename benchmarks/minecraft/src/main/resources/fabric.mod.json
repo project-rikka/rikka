@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "rikka-bench",
+	"version": "${version}",
+	"name": "Rikka Client Benchmark",
+	"description": "Drives the client through fixed scenes and records frame times and stills.",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"sh.rikka.bench.BenchMod"
+		],
+		"preLaunch": [
+			"sh.rikka.bench.BoostProfile"
+		]
+	},
+	"mixins": [
+		"rikka-bench.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=${java_release}"
+	}
+}

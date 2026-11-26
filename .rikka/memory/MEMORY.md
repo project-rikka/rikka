@@ -234,6 +234,10 @@
 
 - [Comparative benchmarks (benchmarks/)](benchmarks.md) — Suites comparing Rikka's physics, layout, UI, text and IPC with industry engines; UI tiers, fairness rules, running.
 
+## benchmarks/minecraft
+
+- [Minecraft client benchmark harness (benchmarks/minecraft)](minecraft-benchmark.md) — Fabric bench mod driving fixed scenes: stills compared pixel by pixel, timed flights, CPU/GPU spans, how to run.
+
 ## crates
 
 - [Internal crate ownership map](internal-crates-map.md) — Every crate folder under crates/<layer>/ with a one-line role or the note that documents it.
@@ -982,6 +986,7 @@
 
 ## minecraft/src/main/java/sh/rikka/client
 
+- [Rikka Client built-in optimizations (memory, startup, pacing, simulation, entities)](minecraft-performance.md) — Always-on, behaviour-identical optimizations outside the terrain renderer: packages, mixin configs, what each replaces.
 - [Rikka Client mod framework (events, mods, settings, profiles)](minecraft-client-framework.md) — sh.rikka.client packages: EventBus, ClientHooks, Mod/HudMod/ModManager, rikka-ui layers and screens, settings, profiles.
 
 ## minecraft/src/main/java/sh/rikka/client/menu
@@ -995,6 +1000,10 @@
 ## minecraft/src/main/java/sh/rikka/client/mods/animation
 
 - [Rikka Client Old Animations mod (1.7 visuals)](minecraft-old-animations.md) — mods/animation: one visual-only Mod, its mixin hooks, and the exact-matrix method that maps 1.7 item chains onto modern…
+
+## minecraft/src/main/java/sh/rikka/client/mods/boost
+
+- [Rikka Client Boost mod (opt-in optimizations that may change the look)](minecraft-boost.md) — mods/boost BoostMod/BoostFeature toggles and where each opt-in feature lives (entities, culling, terrain, render scale).
 
 ## minecraft/src/main/java/sh/rikka/client/mods/colorsaturation
 
@@ -1019,6 +1028,14 @@
 ## minecraft/src/main/java/sh/rikka/client/music
 
 - [Rikka Client music player (local files, ModMenu page, Music Info HUD)](minecraft-music.md) — sh.rikka.client.music: watched <gameDir>/rikka/music library, SoundTags covers, MusicPlayer queue, keys, HUD.
+
+## minecraft/src/main/java/sh/rikka/client/render/skin
+
+- [Rikka Client GPU skin path for entities and items (Boost GPU_ENTITIES)](minecraft-skin-rendering.md) — render/skin: retained model and item meshes, bone palette, instanced draws through twin pipelines, ordering rules, hook…
+
+## minecraft/src/main/java/sh/rikka/client/render/terrain
+
+- [Rikka Client terrain renderer (GPU-culled multi-draw over vanilla meshes)](minecraft-terrain-renderer.md) — render/terrain + render/vulkan: retained section table, compute cull into indirect draws, facing buckets, hooks.
 
 ## minecraft/src/main/java/sh/rikka/client/resource
 

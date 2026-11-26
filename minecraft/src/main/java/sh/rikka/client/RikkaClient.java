@@ -20,6 +20,7 @@ import sh.rikka.client.mod.ModManager;
 import sh.rikka.client.mods.BuiltinMods;
 import sh.rikka.client.music.MusicKeys;
 import sh.rikka.client.music.MusicPlayer;
+import sh.rikka.client.render.skin.Skins;
 import sh.rikka.client.target.TargetTracker;
 import sh.rikka.client.ui.HudOverlays;
 import sh.rikka.client.ui.RikkaUi;
@@ -32,6 +33,7 @@ public final class RikkaClient implements ClientModInitializer {
 	private static final String MUSIC_FOLDER = "music";
 	private static final EventBus EVENTS = new EventBus(RikkaClient::onListenerFailure);
 	private static final TargetTracker TARGETS = new TargetTracker();
+	private static final Skins SKINS = new Skins();
 	private static volatile @Nullable Services services;
 
 	@Override
@@ -46,6 +48,7 @@ public final class RikkaClient implements ClientModInitializer {
 		EVENTS.subscribe(new ModKeybinds(mods));
 		EVENTS.subscribe(new CombatTracker(EVENTS));
 		EVENTS.subscribe(TARGETS);
+		EVENTS.subscribe(SKINS);
 		EVENTS.subscribe(new HudOverlays(mods));
 		EVENTS.subscribe(new KeyPresses(new MenuKeys(preferences)));
 		EVENTS.subscribe(new KeyPresses(new MusicKeys(preferences, music)));
@@ -60,6 +63,10 @@ public final class RikkaClient implements ClientModInitializer {
 
 	public static TargetTracker targets() {
 		return TARGETS;
+	}
+
+	public static Skins skins() {
+		return SKINS;
 	}
 
 	public static ModManager mods() {
@@ -80,6 +87,7 @@ public final class RikkaClient implements ClientModInitializer {
 
 	public static void shutdown() {
 		RikkaUi.shutdown();
+		SKINS.close();
 		Services current = services;
 		if (current != null) {
 			current.music().close();

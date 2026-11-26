@@ -27,7 +27,6 @@ import net.minecraft.client.renderer.SkyRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollection;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayerGroup;
-import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
@@ -52,6 +51,8 @@ import org.joml.Vector4f;
 import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 import sh.rikka.client.mixin.LevelExtractorInvoker;
+import sh.rikka.client.render.terrain.TerrainRenderer;
+import sh.rikka.client.render.terrain.TerrainView;
 
 final class RearviewRenderer implements AutoCloseable {
 	private static final String LABEL = "Rikka rearview";
@@ -71,6 +72,7 @@ final class RearviewRenderer implements AutoCloseable {
 	private final SubmitNodeStorage submits = new SubmitNodeStorage();
 	private final ObjectArrayList<SectionRenderDispatcher.RenderSection> sections = new ObjectArrayList<>();
 	private final ObjectArrayList<SectionRenderDispatcher.RenderSection> nearbySections = new ObjectArrayList<>();
+	private final ObjectArrayList<SectionRenderDispatcher.RenderSection> builtSections = new ObjectArrayList<>();
 	private final FogData fogData = new FogData();
 	private final Matrix4f viewRotation = new Matrix4f();
 	private final Matrix4f projection = new Matrix4f();
@@ -81,6 +83,9 @@ final class RearviewRenderer implements AutoCloseable {
 	private @Nullable GlobalSettingsUniform globals;
 	private @Nullable ProjectionMatrixBuffer projectionBuffer;
 	private @Nullable Request pending;
+	private @Nullable TerrainView terrain;
+	private @Nullable TerrainRenderer terrainRenderer;
+	private int sectionsVersion;
 
 	RearviewRenderer() {
 		this.levelState.cameraRenderState = this.cameraState;
@@ -124,6 +129,7 @@ final class RearviewRenderer implements AutoCloseable {
 	@Override
 	public void close() {
 		closeSky();
+		closeTerrain();
 		if (this.target != null) {
 			this.target.destroyBuffers();
 			this.target = null;
@@ -271,6 +277,30 @@ final class RearviewRenderer implements AutoCloseable {
 		this.sections.clear();
 		this.nearbySections.clear();
 		minecraft.levelRenderer.sectionOcclusionGraph().addSectionsInFrustum(frustum, this.sections, this.nearbySections);
+		if (!this.sections.equals(this.builtSections)) {
+			this.builtSections.clear();
+			this.builtSections.addAll(this.sections);
+			this.sectionsVersion++;
+		}
+	}
+
+	private TerrainView terrain(TerrainRenderer renderer) {
+		TerrainView view = this.terrain;
+		if (view == null || this.terrainRenderer != renderer) {
+			closeTerrain();
+			view = renderer.createView();
+			this.terrain = view;
+			this.terrainRenderer = renderer;
+		}
+		return view;
+	}
+
+	private void closeTerrain() {
+		if (this.terrain != null) {
+			this.terrain.close();
+			this.terrain = null;
+			this.terrainRenderer = null;
+		}
 	}
 
 	private void drawLevel(Minecraft minecraft, Frame frame, LevelRenderState mainLevel, OptionsRenderState options, GpuBufferSlice fogBuffer) {
@@ -290,12 +320,11 @@ final class RearviewRenderer implements AutoCloseable {
 
 		LevelRenderer levelRenderer = minecraft.levelRenderer;
 		RearviewLevel level = (RearviewLevel) levelRenderer;
-		ChunkSectionsToRender chunks;
+		TerrainRenderer terrainRenderer = TerrainRenderer.get();
+		TerrainView terrain = this.terrain(terrainRenderer);
+		terrainRenderer.prepare(terrain, levelRenderer, this.sections, this.sectionsVersion, this.projection, this.viewRotation, this.cameraState.pos, this.fogData);
 		level.rikka$overrideSections(this.sections);
 		try {
-			chunks = levelRenderer.isChunkRenderingUsingMultiDrawIndirect()
-				? levelRenderer.prepareChunkRendersIndirect(this.viewRotation, true)
-				: levelRenderer.prepareChunkRenders(this.viewRotation, true);
 			((LevelExtractorInvoker) minecraft.levelExtractor).rikka$extractVisibleBlockEntities(this.camera, mainLevel.worldPartialTicks, this.levelState);
 		} finally {
 			level.rikka$overrideSections(null);
@@ -321,10 +350,10 @@ final class RearviewRenderer implements AutoCloseable {
 				OptionalDouble.empty()
 			)) {
 				RenderSystem.bindDefaultUniforms(pass);
-				chunks.renderGroup(ChunkSectionLayerGroup.OPAQUE, pass, frame.terrainSampler(), atlas, wireframe);
+				terrain.draw(ChunkSectionLayerGroup.OPAQUE, pass, frame.terrainSampler(), atlas, wireframe);
 				features.executeSolid(pass);
 				features.executeTranslucent(pass);
-				chunks.renderGroup(ChunkSectionLayerGroup.TRANSLUCENT, pass, frame.terrainSampler(), atlas, wireframe);
+				terrain.draw(ChunkSectionLayerGroup.TRANSLUCENT, pass, frame.terrainSampler(), atlas, wireframe);
 				features.executeTranslucentAfterTerrain(pass);
 				drawSurroundings(minecraft.levelRenderer, pass, frame.main().camera(), mainLevel, options);
 			}

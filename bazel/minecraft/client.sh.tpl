@@ -5,7 +5,7 @@ if [ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]; then
     exit 1
 fi
 runfiles="$PWD"
-game="$BUILD_WORKSPACE_DIRECTORY/{run_directory}"
+game="${RIKKA_MINECRAFT_RUN:-$BUILD_WORKSPACE_DIRECTORY/{run_directory}}"
 assets="$game/assets"
 natives="$game/natives"
 mkdir -p "$assets" "$natives"

@@ -1,0 +1,23 @@
+{
+	"required": true,
+	"package": "sh.rikka.client.mixin.culling",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"BlockEntityMixin",
+		"EntityMixin",
+		"LevelChunkMixin"
+	],
+	"client": [
+		"ClientChunkCacheMixin",
+		"ClientLevelMixin",
+		"EntityRendererInvoker",
+		"EntityRendererMixin",
+		"LevelExtractorMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

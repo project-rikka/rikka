@@ -1,0 +1,27 @@
+load("//bazel/minecraft:defs.bzl", "fabric_mod", "minecraft_client")
+
+fabric_mod(
+    name = "bench",
+    testonly = True,
+    srcs = glob(["src/main/java/**/*.java"]),
+    resources = glob(["src/main/resources/**"]),
+    tags = ["manual"],
+    version = "0.1.0",
+)
+
+minecraft_client(
+    name = "vanilla",
+    testonly = True,
+    mods = [":bench"],
+    tags = ["manual"],
+)
+
+minecraft_client(
+    name = "rikka",
+    testonly = True,
+    mods = [
+        ":bench",
+        "//minecraft:rikka",
+    ],
+    tags = ["manual"],
+)

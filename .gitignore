@@ -19,3 +19,4 @@ reference
 __pycache__/
 /minecraft/mcsrc/
 /minecraft/run/
+/benchmarks/minecraft/run/

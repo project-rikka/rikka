@@ -1,0 +1,27 @@
+{
+	"required": true,
+	"package": "sh.rikka.client.mixin.terrain",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"ByteBufferBuilderResultAccessor",
+		"CompiledSectionMeshMixin",
+		"FogRendererAccessor",
+		"LevelExtractorLeafMixin",
+		"ModelBlockRendererMixin",
+		"OcclusionGraphNodeAccessor",
+		"OcclusionGraphStateAccessor",
+		"RenderSectionMixin",
+		"SectionCompilerMixin",
+		"SectionCompilerResultsMixin",
+		"SectionOcclusionGraphMixin",
+		"SectionRenderDispatcherMixin",
+		"SectionUpdateTrackerMixin",
+		"UberGpuBufferMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

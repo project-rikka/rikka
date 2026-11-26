@@ -15,6 +15,7 @@ import sh.rikka.client.events.ClientHooks;
 import sh.rikka.client.mods.colorsaturation.ColorSaturationHooks;
 import sh.rikka.client.mods.motionblur.MotionBlurHooks;
 import sh.rikka.client.mods.rearview.RearviewHooks;
+import sh.rikka.client.render.terrain.TerrainRenderer;
 
 @Mixin(GameRenderer.class)
 abstract class GameRendererMixin {
@@ -42,6 +43,7 @@ abstract class GameRendererMixin {
 		@Local(name = "cameraState") CameraRenderState cameraState,
 		@Local(name = "projectionMatrix") Matrix4f projectionMatrix
 	) {
+		TerrainRenderer.renderProjection(projectionMatrix);
 		MotionBlurHooks.levelStarting(cameraState, projectionMatrix);
 	}
 
