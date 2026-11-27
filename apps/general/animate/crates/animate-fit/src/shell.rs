@@ -3,6 +3,11 @@ use std::f32::consts::TAU;
 use rikka_model_core::glam::Vec3;
 
 const SECTORS: usize = 32;
+const OCTANTS: usize = 8;
+const OCTANT: usize = SECTORS / OCTANTS;
+const OCTANT_MARGIN: isize = 2;
+const PEAK_SLACK: f32 = 1.0001;
+const PEAK_FLOOR: f32 = 1e-6;
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Shell {
@@ -11,12 +16,34 @@ pub(crate) struct Shell {
     from: f32,
     slice: f32,
     rings: Vec<[f32; SECTORS]>,
+    peaks: Vec<[f32; OCTANTS]>,
 }
 
 struct Spot {
     height: f32,
-    sector: f32,
+    across: (f32, f32),
     radius: f32,
+}
+
+impl Spot {
+    fn sector(&self) -> f32 {
+        let (x, y) = self.across;
+        let turn = y.atan2(x) / TAU;
+        let wrapped = match turn < 0.0 {
+            true => turn + 1.0,
+            false => turn,
+        };
+        wrapped * SECTORS as f32
+    }
+}
+
+fn octant(x: f32, y: f32) -> usize {
+    match (y >= 0.0, x >= 0.0) {
+        (true, true) => usize::from(y >= x),
+        (true, false) => 2 + usize::from(y <= -x),
+        (false, false) => 4 + usize::from(-y >= -x),
+        (false, true) => 6 + usize::from(-y <= x),
+    }
 }
 
 enum Level {
@@ -32,13 +59,13 @@ impl Shell {
             fill(ring);
         }
         fill_between(&mut shell.rings, &sampled);
-        Some(shell)
+        Some(shell.peaked())
     }
 
     pub(crate) fn open(axis: Vec3, slice: f32, insets: &[(Vec3, f32)]) -> Option<Self> {
         let (mut shell, sampled) = Self::gathered(axis, slice, insets.iter().copied())?;
         fill_between(&mut shell.rings, &sampled);
-        Some(shell)
+        Some(shell.peaked())
     }
 
     fn gathered(
@@ -53,6 +80,7 @@ impl Shell {
             from: 0.0,
             slice,
             rings: Vec::new(),
+            peaks: Vec::new(),
         };
         let (from, to) = insets
             .clone()
@@ -70,7 +98,7 @@ impl Shell {
         for (point, inset) in insets {
             let spot = shell.spot(point);
             let level = ((spot.height - from) / slice) as usize;
-            let sector = (spot.sector as usize).min(SECTORS - 1);
+            let sector = (spot.sector() as usize).min(SECTORS - 1);
             rings[level][sector] = rings[level][sector].max(spot.radius - inset);
             sampled[level] = true;
         }
@@ -78,11 +106,27 @@ impl Shell {
         Some((shell, sampled))
     }
 
+    fn peaked(mut self) -> Self {
+        self.peaks = self
+            .rings
+            .iter()
+            .map(|ring| {
+                std::array::from_fn(|octant| {
+                    let first = (octant * OCTANT) as isize - OCTANT_MARGIN;
+                    (first..first + (OCTANT as isize) + 2 * OCTANT_MARGIN)
+                        .map(|sector| ring[sector.rem_euclid(SECTORS as isize) as usize])
+                        .fold(0.0f32, f32::max)
+                })
+            })
+            .collect();
+        self
+    }
+
     fn spot(&self, local: Vec3) -> Spot {
         let (x, y) = (local.dot(self.across[0]), local.dot(self.across[1]));
         Spot {
             height: local.dot(self.axis),
-            sector: (y.atan2(x) / TAU).rem_euclid(1.0) * SECTORS as f32,
+            across: (x, y),
             radius: x.hypot(y),
         }
     }
@@ -102,7 +146,22 @@ impl Shell {
         let spot = self.spot(local);
         match self.level(&spot) {
             Level::Beyond(beyond) => beyond * self.slice + spot.radius,
-            Level::Within(level) => spot.radius - self.edge_at(level, spot.sector),
+            Level::Within(level) => spot.radius - self.edge_at(level, spot.sector()),
+        }
+    }
+
+    pub(crate) fn clears(&self, local: Vec3, clearance: f32) -> bool {
+        match self.level_at(local.dot(self.axis)) {
+            Level::Beyond(_) => false,
+            Level::Within(level) => {
+                let below = level.floor() as usize;
+                let above = (below + 1).min(self.rings.len() - 1);
+                let (x, y) = (local.dot(self.across[0]), local.dot(self.across[1]));
+                let octant = octant(x, y);
+                let peak = self.peaks[below][octant].max(self.peaks[above][octant]);
+                let reach = (clearance + peak * PEAK_SLACK + PEAK_FLOOR) * PEAK_SLACK;
+                reach <= 0.0 || x * x + y * y > reach * reach
+            }
         }
     }
 
@@ -110,12 +169,16 @@ impl Shell {
         let spot = self.spot(local);
         match self.level(&spot) {
             Level::Beyond(_) => None,
-            Level::Within(level) => Some(self.edge_at(level, spot.sector)),
+            Level::Within(level) => Some(self.edge_at(level, spot.sector())),
         }
     }
 
     fn level(&self, spot: &Spot) -> Level {
-        let level = (spot.height - self.from) / self.slice - 0.5;
+        self.level_at(spot.height)
+    }
+
+    fn level_at(&self, height: f32) -> Level {
+        let level = (height - self.from) / self.slice - 0.5;
         let last = self.rings.len() as f32 - 1.0;
         let beyond = (-0.5 - level).max(level - last - 0.5);
         match beyond > 0.0 {

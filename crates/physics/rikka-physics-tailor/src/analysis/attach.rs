@@ -4,6 +4,7 @@ use rikka_model_core::Bounds;
 
 use super::features::MeshFeatures;
 use super::parts::Part;
+use crate::PARALLEL;
 use crate::cloth_settings::Role;
 use crate::geometry::{PointGrid, Union, groups};
 
@@ -63,8 +64,11 @@ pub(crate) fn attach(
     let mut union = Union::new(parts.len());
     let mut objects = Union::new(parts.len());
     let mut contacts: Vec<Vec<Contact>> = vec![Vec::new(); parts.len()];
-    for guest in &sheets {
-        contacts[*guest] = touching(features, &grid, &owner, *guest, &parts[*guest].members);
+    let touched = PARALLEL.map(&sheets, |guest| {
+        touching(features, &grid, &owner, *guest, &parts[*guest].members)
+    });
+    for (guest, touched) in sheets.iter().zip(touched) {
+        contacts[*guest] = touched;
         for contact in contacts[*guest]
             .iter()
             .filter(|contact| joined(*guest, contact))
@@ -137,21 +141,24 @@ fn touching(
     members: &[u32],
 ) -> Vec<Contact> {
     let mut counts: BTreeMap<usize, (usize, usize)> = BTreeMap::new();
+    let mut closest: Vec<(usize, f32)> = Vec::new();
     for vertex in members {
         let at = features.position(*vertex);
-        let mut closest: BTreeMap<usize, f32> = BTreeMap::new();
+        closest.clear();
         for other in grid.near(at, LYING) {
             let host = owner[other as usize];
             let distance = features.position(other).distance(at);
             if host != guest && distance <= LYING {
-                let best = closest.entry(host).or_insert(f32::MAX);
-                *best = best.min(distance);
+                match closest.iter_mut().find(|(known, _)| *known == host) {
+                    Some((_, best)) => *best = best.min(distance),
+                    None => closest.push((host, distance)),
+                }
             }
         }
-        for (host, distance) in closest {
-            let counted = counts.entry(host).or_default();
+        for (host, distance) in &closest {
+            let counted = counts.entry(*host).or_default();
             counted.1 += 1;
-            if distance <= TOUCH {
+            if *distance <= TOUCH {
                 counted.0 += 1;
             }
         }

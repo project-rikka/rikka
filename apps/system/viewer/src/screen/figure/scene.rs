@@ -6,7 +6,7 @@ use futures_channel::oneshot;
 use rikka_model::glam::Vec3;
 use rikka_model::{Instance, Shading};
 use rikka_model_gpu::{Error as UploadError, GpuModel, Prepared};
-use rikka_renderer::Renderer;
+use rikka_renderer::{Renderer, Uploads};
 use rikka_renderer_3d::{Frame, Light, Outline, ShadowQuality, ToneMapping};
 use rikka_types::PixelSize;
 use rikka_viewport::SceneCtx;
@@ -34,6 +34,7 @@ pub(crate) struct Scene {
     size: PixelSize,
     drawn_at: Option<Instant>,
     dirty: bool,
+    uploads: Option<Uploads>,
 }
 
 struct LoadedModel {
@@ -55,6 +56,7 @@ impl Scene {
             size: PixelSize::ZERO,
             drawn_at: None,
             dirty: true,
+            uploads: None,
         }
     }
 
@@ -145,6 +147,10 @@ impl Scene {
         self.error.as_ref()
     }
 
+    pub(crate) fn uploads(&self) -> Option<Uploads> {
+        self.uploads.clone()
+    }
+
     pub(crate) fn build(&mut self, ctx: SceneCtx<'_>) -> Option<Frame> {
         let aspect = ctx.aspect();
         let SceneCtx {
@@ -152,6 +158,7 @@ impl Scene {
             width,
             height,
         } = ctx;
+        self.uploads.get_or_insert_with(|| renderer.uploads());
         if let Some(prepared) = self.desired.take() {
             self.upload(renderer, prepared);
         }

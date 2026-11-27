@@ -1,13 +1,12 @@
-use std::collections::HashMap;
-
 use glam::Vec3;
+use rustc_hash::FxHashMap;
 
 pub(crate) fn subdivide(
     positions: &mut Vec<Vec3>,
     pinned: &mut Vec<bool>,
     triangles: &mut Vec<[u32; 3]>,
 ) -> Vec<[u32; 2]> {
-    let mut wings: HashMap<(u32, u32), Vec<u32>> = HashMap::new();
+    let mut wings: FxHashMap<(u32, u32), Vec<u32>> = FxHashMap::default();
     for triangle in triangles.iter() {
         for side in 0..3 {
             let (a, b) = (triangle[side], triangle[(side + 1) % 3]);
@@ -54,7 +53,7 @@ pub(crate) fn subdivide(
             }
         })
         .collect();
-    let mut middle: HashMap<(u32, u32), u32> = HashMap::new();
+    let mut middle: FxHashMap<(u32, u32), u32> = FxHashMap::default();
     let mut added: Vec<Vec3> = Vec::with_capacity(sides.len());
     let mut added_pins: Vec<bool> = Vec::with_capacity(sides.len());
     for &(a, b) in &sides {

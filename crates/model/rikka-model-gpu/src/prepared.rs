@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use rikka_model_core::Model;
 use rikka_model_core::glam::Vec3;
+use rikka_renderer::Uploads;
 use rustc_hash::FxHashSet;
 
 use crate::materials;
@@ -49,6 +50,23 @@ impl Prepared {
             pictures,
             outline_normals,
         }
+    }
+
+    #[must_use]
+    pub fn with_uploads(
+        model: Arc<Model>,
+        options: &UploadOptions,
+        uploads: Option<&Uploads>,
+    ) -> Self {
+        let mut prepared = Self::new(model, options);
+        if let Some(uploads) = uploads {
+            prepared.create_textures(uploads);
+        }
+        prepared
+    }
+
+    pub fn create_textures(&mut self, uploads: &Uploads) {
+        self.pictures.create(uploads);
     }
 
     #[must_use]

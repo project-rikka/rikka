@@ -3,10 +3,12 @@ use rikka_model_core::{Bounds, HumanBone, NodeId};
 
 use super::class::{Class, classify};
 use super::hints::carried;
+use crate::PARALLEL;
 use crate::figure::Figure;
 use crate::geometry::{Graph, PointGrid, Shell, Union, groups};
 
 const SAME: f32 = 2e-5;
+const DUPLICATES_GRAIN: usize = 8192;
 const REACH: f32 = 0.25;
 pub(crate) const FREE_SHARE: f32 = 0.25;
 
@@ -18,7 +20,7 @@ pub(crate) struct Region {
     pub(crate) hinted: bool,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct Head {
     pub(crate) node: NodeId,
     pub(crate) centre: Vec3,
@@ -174,21 +176,26 @@ fn duplicates(figure: &Figure<'_>, class: &[Class]) -> Vec<(u32, u32)> {
             .map(|(index, vertex)| (index as u32, vertex.position)),
         SAME * 4.0,
     );
-    let mut pairs = Vec::new();
-    for (index, vertex) in figure.vertices.iter().enumerate() {
-        let index = index as u32;
-        for other in grid.near(vertex.position, SAME) {
-            let other_vertex = &figure.vertices[other as usize];
-            if other > index
-                && other_vertex.part == vertex.part
-                && class[other as usize] == class[index as usize]
-                && other_vertex.position.distance(vertex.position) <= SAME
-            {
-                pairs.push((index, other));
+    PARALLEL
+        .grain(DUPLICATES_GRAIN)
+        .concat_chunks(figure.vertices.len(), |range| {
+            let mut pairs = Vec::new();
+            for index in range {
+                let vertex = &figure.vertices[index];
+                let index = index as u32;
+                for other in grid.near(vertex.position, SAME) {
+                    let other_vertex = &figure.vertices[other as usize];
+                    if other > index
+                        && other_vertex.part == vertex.part
+                        && class[other as usize] == class[index as usize]
+                        && other_vertex.position.distance(vertex.position) <= SAME
+                    {
+                        pairs.push((index, other));
+                    }
+                }
             }
-        }
-    }
-    pairs
+            pairs
+        })
 }
 
 fn regions(

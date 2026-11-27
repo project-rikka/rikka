@@ -1,5 +1,5 @@
-use animate_body::{HumanBone, Joint, Worlds};
-use rikka_model_core::glam::Vec3;
+use animate_body::{HumanBone, Worlds};
+use rikka_model_core::glam::{Quat, Vec3};
 
 use crate::physique::{Mask, Physique};
 use crate::region::Region;
@@ -8,13 +8,41 @@ use crate::region::Region;
 pub(crate) struct Scene<'a> {
     physique: &'a Physique,
     worlds: Worlds,
+    holders: Vec<Holder>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Holder {
+    position: Vec3,
+    inverse: Quat,
+}
+
+impl Holder {
+    fn local(&self, point: Vec3) -> Vec3 {
+        self.inverse * (point - self.position)
+    }
 }
 
 pub(crate) type Pair = (usize, usize);
 
 impl<'a> Scene<'a> {
     pub(crate) fn new(physique: &'a Physique, worlds: Worlds) -> Self {
-        Self { physique, worlds }
+        let holders = physique
+            .obstacles
+            .iter()
+            .map(|obstacle| {
+                let joint = worlds.joint(obstacle.bone);
+                Holder {
+                    position: joint.position,
+                    inverse: joint.rotation.inverse(),
+                }
+            })
+            .collect();
+        Self {
+            physique,
+            worlds,
+            holders,
+        }
     }
 
     fn probe(&self, index: usize) -> Vec3 {
@@ -26,12 +54,8 @@ impl<'a> Scene<'a> {
         self.worlds.position(bone)
     }
 
-    fn holder(&self, obstacle: usize) -> Joint {
-        self.worlds.joint(self.physique.obstacles[obstacle].bone)
-    }
-
     pub(crate) fn local(&self, probe: usize, obstacle: usize) -> Vec3 {
-        self.holder(obstacle).local(self.probe(probe))
+        self.holders[obstacle].local(self.probe(probe))
     }
 
     pub(crate) fn depth(&self, probe: usize, obstacle: usize) -> f32 {
@@ -49,6 +73,17 @@ impl<'a> Scene<'a> {
         clearance - distance
     }
 
+    fn intrusion_at(&self, probe: usize, obstacle: usize, local: Vec3) -> Option<f32> {
+        let clearance = self.physique.clearance(probe, obstacle);
+        let shape = &self.physique.obstacles[obstacle];
+        let outside = local.distance(shape.centre) - shape.radius;
+        if outside > clearance.max(0.0) || shape.shell.clears(local, clearance) {
+            return None;
+        }
+        let depth = clearance - shape.shell.distance(local);
+        (depth > 0.0).then_some(depth)
+    }
+
     pub(crate) fn inside(&self, desired: impl Fn(Region) -> bool) -> Vec<(Pair, f32)> {
         let margin = self.physique.cull_margin();
         let mut pairs = Vec::new();
@@ -62,7 +97,7 @@ impl<'a> Scene<'a> {
             let near = bits(cluster.facing)
                 .filter(|obstacle| {
                     let shape = &self.physique.obstacles[*obstacle];
-                    let apart = self.holder(*obstacle).local(centre).distance(shape.centre);
+                    let apart = self.holders[*obstacle].local(centre).distance(shape.centre);
                     apart - shape.radius - cluster.radius <= margin
                 })
                 .fold(0, |mask: Mask, obstacle| mask | 1 << obstacle);
@@ -70,9 +105,10 @@ impl<'a> Scene<'a> {
                 continue;
             }
             for probe in cluster.probes.clone() {
+                let point = self.probe(probe);
                 for obstacle in bits(self.physique.probes[probe].facing & near) {
-                    let depth = self.depth(probe, obstacle);
-                    if depth > 0.0 {
+                    let local = self.holders[obstacle].local(point);
+                    if let Some(depth) = self.intrusion_at(probe, obstacle, local) {
                         pairs.push(((probe, obstacle), depth));
                     }
                 }
@@ -89,5 +125,12 @@ impl<'a> Scene<'a> {
 }
 
 fn bits(mask: Mask) -> impl Iterator<Item = usize> {
-    (0..Mask::BITS as usize).filter(move |index| mask & 1 << index != 0)
+    let mut rest = mask;
+    std::iter::from_fn(move || {
+        (rest != 0).then(|| {
+            let index = rest.trailing_zeros() as usize;
+            rest &= rest - 1;
+            index
+        })
+    })
 }

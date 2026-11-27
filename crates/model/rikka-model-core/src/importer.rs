@@ -1,6 +1,10 @@
 use std::path::Path;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
+use rustc_hash::FxHashMap;
+
+use crate::PARALLEL;
 use crate::build::ModelBuilder;
 use crate::error::{Error, Result};
 use crate::journal::Journal;
@@ -80,6 +84,7 @@ pub struct ImportCtx<'a> {
     journal: Journal<'a>,
     spent: u64,
     keyframes: u64,
+    prefetched: FxHashMap<String, Result<Arc<[u8]>>>,
 }
 
 impl<'a> ImportCtx<'a> {
@@ -94,6 +99,7 @@ impl<'a> ImportCtx<'a> {
             journal,
             spent: 0,
             keyframes: 0,
+            prefetched: FxHashMap::default(),
         }
     }
 
@@ -123,11 +129,58 @@ impl<'a> ImportCtx<'a> {
         self.options.limits.check(Limit::Keyframes, self.keyframes)
     }
 
+    pub fn prefetch_resources(&mut self, uris: &[&str]) -> Result<()> {
+        self.checkpoint()?;
+        let mut wanted: Vec<&str> = uris
+            .iter()
+            .copied()
+            .filter(|uri| !self.prefetched.contains_key(*uri))
+            .collect();
+        wanted.sort_unstable();
+        wanted.dedup();
+        let limits = &self.options.limits;
+        let held: u64 = self
+            .prefetched
+            .values()
+            .filter_map(|bytes| bytes.as_ref().ok())
+            .map(|bytes| bytes.len() as u64)
+            .sum();
+        let left = AtomicU64::new(
+            limits
+                .max_total_bytes
+                .saturating_sub(self.spent)
+                .saturating_sub(held),
+        );
+        let resolver = self.resolver;
+        let read = PARALLEL.map(&wanted, |uri| {
+            let allowed = left.load(Ordering::Relaxed).min(limits.max_resource_bytes);
+            let bytes = resolver.read(uri, allowed);
+            match &bytes {
+                Ok(read) => left
+                    .try_update(Ordering::Relaxed, Ordering::Relaxed, |left| {
+                        left.checked_sub(read.len() as u64)
+                    })
+                    .is_ok()
+                    .then_some(bytes),
+                Err(_) => (allowed == limits.max_resource_bytes).then_some(bytes),
+            }
+        });
+        for (uri, bytes) in wanted.into_iter().zip(read) {
+            if let Some(bytes) = bytes {
+                self.prefetched.insert(uri.to_owned(), bytes);
+            }
+        }
+        Ok(())
+    }
+
     pub fn read_resource(&mut self, uri: &str) -> Result<Arc<[u8]>> {
         self.checkpoint()?;
-        let bytes = self
-            .resolver
-            .read(uri, self.options.limits.max_resource_bytes)?;
+        let bytes = match self.prefetched.remove(uri) {
+            Some(bytes) => bytes?,
+            None => self
+                .resolver
+                .read(uri, self.options.limits.max_resource_bytes)?,
+        };
         self.charge(bytes.len() as u64)?;
         Ok(bytes)
     }

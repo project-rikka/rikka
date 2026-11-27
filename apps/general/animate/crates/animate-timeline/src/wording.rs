@@ -68,6 +68,13 @@ impl Names {
                 .copied()
                 .map(animate_ui::wind_setting_label)
                 .collect(),
+            placement: tr!("animate.track.placement"),
+            props: animate_prop::PropSetting::ALL
+                .iter()
+                .copied()
+                .map(animate_ui::prop_setting_label)
+                .collect(),
+            anchor: animate_ui::anchor_label(),
             hands: Side::BOTH.map(animate_ui::holding_hand_label),
             sound,
         }

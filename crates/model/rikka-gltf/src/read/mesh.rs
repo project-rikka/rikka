@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use rikka_model_core::glam::{Vec2, Vec3, Vec4};
 
+use crate::PARALLEL;
 use crate::document::{self, Document, Index, Shape, TRIANGLE_FAN, TRIANGLE_STRIP, TRIANGLES};
 use crate::read::accessor::Accessors;
 use rikka_model_core::Bounds;
@@ -13,6 +14,8 @@ use rikka_model_core::Stage;
 use rikka_model_core::Warning;
 use rikka_model_core::{Error, Result};
 use rikka_model_core::{INFLUENCES, Mesh, MeshId, MorphTarget, Submesh, Vertices};
+
+const TARGETS_GRAIN: usize = 4;
 
 #[derive(Debug, Default)]
 struct Deltas {
@@ -405,9 +408,7 @@ fn targets(
     what: &str,
     ctx: &mut ImportCtx<'_>,
 ) -> Result<Vec<Deltas>> {
-    let mut targets = Vec::with_capacity(primitive.targets.len());
-    let mut dropped = false;
-    for target in &primitive.targets {
+    let decoded = PARALLEL.map(&primitive.targets, |target| -> Result<Deltas> {
         let mut deltas = Deltas::default();
         if let Some(&positions) = target.get("POSITION") {
             deltas.positions = accessors.vec3(positions)?;
@@ -415,6 +416,12 @@ fn targets(
         if let Some(&normals) = target.get("NORMAL") {
             deltas.normals = accessors.vec3(normals)?;
         }
+        Ok(deltas)
+    });
+    let mut targets = Vec::with_capacity(primitive.targets.len());
+    let mut dropped = false;
+    for (target, deltas) in primitive.targets.iter().zip(decoded) {
+        let deltas = deltas?;
         dropped |= target.contains_key("TANGENT");
         for stream in [&deltas.positions, &deltas.normals] {
             if !stream.is_empty() && stream.len() != count {
@@ -544,9 +551,12 @@ fn append(merged: &mut Merged, piece: Piece, names: &[String]) {
         ));
         merged.shaped.push(false);
     }
-    for (slot, deltas) in piece.targets.iter().enumerate() {
-        let target = &mut merged.targets[slot];
-        merged.shaped[slot] |= !deltas.normals.is_empty();
+    for (shaped, deltas) in merged.shaped.iter_mut().zip(&piece.targets) {
+        *shaped |= !deltas.normals.is_empty();
+    }
+    let targets = &mut merged.targets[..piece.targets.len()];
+    PARALLEL.grain(TARGETS_GRAIN).fill(targets, |slot, target| {
+        let deltas = &piece.targets[slot];
         for vertex in 0..added {
             let position = deltas.positions.get(vertex).copied().unwrap_or(Vec3::ZERO);
             let normal = deltas.normals.get(vertex).copied().unwrap_or(Vec3::ZERO);
@@ -554,7 +564,7 @@ fn append(merged: &mut Merged, piece: Piece, names: &[String]) {
                 target.push((base + vertex) as u32, position, Some(normal));
             }
         }
-    }
+    });
 }
 
 fn extend(into: &mut Vertices, from: &Vertices) {

@@ -21,18 +21,20 @@ mod slopes;
 mod take;
 mod tuning;
 
+const PARALLEL: rikka_parallel::Parallel = rikka_parallel::Parallel::new("rikka-motion");
+
 pub use camera::CameraMotion;
 pub use detail_playback::DetailPlayback;
 pub use error::{Error, Result};
 pub use evaluate::Evaluator;
 pub use file::{CameraFile, TakeFile};
-pub use import::{Clip, Target};
+pub use import::{Clip, Recipient, Retarget, Target};
 pub use incoming::{Incoming, Merge};
 pub use intensity::Intensity;
 pub use morph_playback::MorphPlayback;
 pub use morphs::{MorphKey, Morphs};
 pub use motion::{Automation, HumanMotion};
-pub use motion_bake::MotionBake;
+pub use motion_bake::{MotionBake, Written};
 pub use part::{Gaze, GazeMode, Goal, Part, PartKey, PartValues, Tag};
 pub use sample::{Pinned, PoseSample};
 pub use slopes::{Slope, Slopes};

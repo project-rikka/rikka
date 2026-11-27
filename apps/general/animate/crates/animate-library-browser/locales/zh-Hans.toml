@@ -1,0 +1,54 @@
+[i18n]
+locale = "zh-Hans"
+name = "简体中文"
+
+[animate.library]
+title = "素材库"
+options = "素材库选项"
+open_folder = "打开文件夹"
+add_folder = "向{shelf}添加文件夹…"
+remove_folder = "移除文件夹"
+reading = "正在读取文件"
+rescan = "重新扫描"
+search = "搜索{shelf}"
+all_folders = "全部"
+no_matches = "没有匹配项"
+empty = "将{shelf}文件放入 {folder} 即可在此显示"
+load = "载入"
+reveal = "在文件夹中显示"
+performed_by = "以 {name} 预览"
+performed_by_mannequin = "以人体模型预览"
+belongs = "应放在{shelf}中"
+empty_file = "此文件没有可用内容"
+unsupported = "此处不支持"
+unreadable = "无法读取"
+author = "作者：{name}"
+vertices = "{count} 个顶点"
+has_body = "身体"
+has_morphs = "表情"
+has_camera = "镜头"
+frames = "{count} 帧"
+made_for = "为 {name} 制作"
+
+[animate.library.shelf]
+models = "模型"
+motions = "动作"
+cameras = "镜头"
+stages = "舞台"
+accessories = "配饰"
+music = "音乐"
+
+[animate.library.size]
+small = "小缩略图"
+medium = "中缩略图"
+large = "大缩略图"
+
+[animate.library.avatar]
+onlyAuthor = "虚拟形象使用：仅作者"
+onlySeparatelyLicensedPerson = "虚拟形象使用：仅获授权者"
+everyone = "虚拟形象使用：所有人"
+
+[animate.library.commercial]
+personalNonProfit = "商业使用：不允许"
+personalProfit = "商业使用：仅个人"
+corporation = "商业使用：允许"

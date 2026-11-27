@@ -10,6 +10,7 @@ use rikka_model_core::{ExportCtx, Exporter, ExporterInfo, Supports};
 
 const NAME: &str = "FBX";
 const TEXT_NAME: &str = "FBX Text";
+const PARALLEL: rikka_parallel::Parallel = rikka_parallel::Parallel::new("rikka-fbx");
 
 pub(crate) const KTIME: i64 = 46_186_158_000;
 

@@ -32,7 +32,16 @@ pub(crate) struct Skin {
     pub(crate) normals: Vec<Vec3>,
 }
 
-pub(crate) fn skin(figure: &Figure<'_>, roles: &[Role]) -> Skin {
+pub(crate) fn skin_of(body: Body) -> Skin {
+    let positions: Vec<Vec3> = body.vertices.iter().map(|vertex| vertex.rest).collect();
+    Skin {
+        shell: Shell::new(&positions, &body.triangles),
+        normals: particle_normals(&positions, &body.triangles),
+        body,
+    }
+}
+
+pub(crate) fn skin_body(figure: &Figure<'_>, roles: &[Role]) -> Body {
     let members: Vec<u32> = (0..roles.len() as u32)
         .filter(|vertex| roles[*vertex as usize] == Role::Body)
         .collect();
@@ -86,14 +95,10 @@ pub(crate) fn skin(figure: &Figure<'_>, roles: &[Role]) -> Skin {
             }
         })
         .collect();
-    Skin {
-        shell: Shell::new(&positions, &triangles),
-        normals: particle_normals(&positions, &triangles),
-        body: Body {
-            vertices,
-            triangles,
-            colliders: Vec::new(),
-        },
+    Body {
+        vertices,
+        triangles,
+        colliders: Vec::new(),
     }
 }
 

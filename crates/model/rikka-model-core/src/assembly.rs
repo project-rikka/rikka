@@ -1,3 +1,5 @@
+use std::collections::hash_map::Entry;
+
 use glam::{Vec2, Vec3, Vec4};
 use rustc_hash::FxHashMap;
 
@@ -108,10 +110,12 @@ impl MeshAssembler {
             uv: bits(corner.uv.unwrap_or(Vec2::ZERO).to_array()),
             color: corner.color,
         };
-        if let Some(&vertex) = self.welded.get(&key) {
-            return vertex;
-        }
+        let slot = match self.welded.entry(key) {
+            Entry::Occupied(welded) => return *welded.get(),
+            Entry::Vacant(slot) => slot,
+        };
         let vertex = self.controls.len() as u32;
+        slot.insert(vertex);
         self.vertices.positions.push(corner.position);
         self.vertices.normals.push(corner.normal);
         self.vertices
@@ -123,7 +127,6 @@ impl MeshAssembler {
         self.uvs |= corner.uv.is_some();
         self.colors |= corner.color.is_some();
         self.controls.push(control);
-        self.welded.insert(key, vertex);
         vertex
     }
 

@@ -1,6 +1,7 @@
 use animate_fluid::EmitterKey;
 use animate_look::LookKey;
 use animate_motion::{MorphKey, PartKey};
+use animate_prop::{AnchorKey, PropKey};
 use animate_sheet::Lane;
 use animate_track::Keyframe;
 use animate_wind::WindKey;
@@ -30,6 +31,8 @@ pub enum KeyKind {
     Look,
     Fluid,
     Wind,
+    Prop,
+    Anchor,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -41,6 +44,8 @@ pub enum Key {
     Look(LookKey),
     Fluid(EmitterKey),
     Wind(WindKey),
+    Prop(PropKey),
+    Anchor(AnchorKey),
 }
 
 macro_rules! each_key {
@@ -53,6 +58,8 @@ macro_rules! each_key {
             $crate::keys::Key::Look($bound) => $body,
             $crate::keys::Key::Fluid($bound) => $body,
             $crate::keys::Key::Wind($bound) => $body,
+            $crate::keys::Key::Prop($bound) => $body,
+            $crate::keys::Key::Anchor($bound) => $body,
         }
     };
 }
@@ -67,6 +74,8 @@ macro_rules! map_key {
             $crate::keys::Key::Look($bound) => $crate::keys::Key::Look($body),
             $crate::keys::Key::Fluid($bound) => $crate::keys::Key::Fluid($body),
             $crate::keys::Key::Wind($bound) => $crate::keys::Key::Wind($body),
+            $crate::keys::Key::Prop($bound) => $crate::keys::Key::Prop($body),
+            $crate::keys::Key::Anchor($bound) => $crate::keys::Key::Anchor($body),
         }
     };
 }
@@ -118,6 +127,7 @@ laned! {
     LookKey => Look;
     EmitterKey => Fluid;
     WindKey => Wind;
+    PropKey => Prop;
 }
 
 impl Laned for VmdCameraFrame {
@@ -136,6 +146,27 @@ impl Laned for VmdCameraFrame {
     fn from_key(key: &Key) -> Option<&Self> {
         match key {
             Key::Camera(key) => Some(key),
+            _ => None,
+        }
+    }
+}
+
+impl Laned for AnchorKey {
+    fn id_in(lane: &Lane) -> Option<&()> {
+        matches!(lane, Lane::Anchor).then_some(&())
+    }
+
+    fn lane((): &()) -> Lane {
+        Lane::Anchor
+    }
+
+    fn into_key(self) -> Key {
+        Key::Anchor(self)
+    }
+
+    fn from_key(key: &Key) -> Option<&Self> {
+        match key {
+            Key::Anchor(key) => Some(key),
             _ => None,
         }
     }
@@ -171,6 +202,8 @@ impl Key {
             Self::Look(_) => KeyKind::Look,
             Self::Fluid(_) => KeyKind::Fluid,
             Self::Wind(_) => KeyKind::Wind,
+            Self::Prop(_) => KeyKind::Prop,
+            Self::Anchor(_) => KeyKind::Anchor,
         }
     }
 }

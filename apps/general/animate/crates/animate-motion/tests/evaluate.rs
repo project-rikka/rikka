@@ -1,7 +1,10 @@
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
+use std::time::Duration;
 
 use animate_body::{HumanBone, HumanPose, LEFT_LEG, Side, TORSO};
-use animate_motion::{Evaluator, Goal, HumanMotion, MotionBake, Part, PartKey, PoseSample, Tag};
+use animate_motion::{
+    Evaluator, Goal, HumanMotion, MotionBake, Part, PartKey, PoseSample, Tag, Written,
+};
 use rikka_model_core::glam::{Quat, Vec3};
 use rikka_model_core::{NodeId, Pose};
 
@@ -155,17 +158,29 @@ pub(crate) fn dancing(torso: f32) -> HumanMotion {
     motion
 }
 
+pub(crate) fn baked(motion_bake: MotionBake) -> MotionBake {
+    motion_bake.wait();
+    assert!(motion_bake.is_complete());
+    motion_bake
+}
+
 pub(crate) fn same(one: &MotionBake, two: &MotionBake) {
     assert_eq!(one.frames(), two.frames());
-    for frame in 0..one.frames() {
-        let (one, two) = (one.pose_at(frame), two.pose_at(frame));
+    for (one, two) in poses(one).iter().zip(poses(two)) {
         for (a, b) in one.muscles.iter().zip(&two.muscles) {
-            assert!((a - b).abs() < 1e-4, "frame {frame}: {a} against {b}");
+            assert!((a - b).abs() < 1e-4, "{a} against {b}");
         }
         let apart = one.root_rot.inverse() * two.root_rot;
         let angle = 2.0 * apart.xyz().length().atan2(apart.w.abs());
-        assert!(angle < 1e-4, "frame {frame}: the root turns {angle} apart");
+        assert!(angle < 1e-4, "the root turns {angle} apart");
     }
+}
+
+pub(crate) fn poses(motion_bake: &MotionBake) -> Vec<HumanPose> {
+    motion_bake.wait();
+    (0..motion_bake.frames())
+        .map(|frame| *motion_bake.baked_pose_at(frame).expect("a baked frame"))
+        .collect()
 }
 
 #[test]
@@ -174,27 +189,32 @@ fn partial_rebake_matches_full_bake() {
     let before = dancing(0.0);
     let after = dancing(0.6);
     let motion_bake = MotionBake::new(Arc::clone(&body), None, &before, eye);
+    let baked = poses(&motion_bake);
     let dirty = after.dirty_since(&before).expect("the edit is seen");
     assert!(
         dirty.start > 0 && dirty.end < motion_bake.frames(),
         "{dirty:?}"
     );
-    let rebaked = motion_bake.rebaked(&after, dirty.clone(), eye);
-    same(&rebaked, &MotionBake::new(body, None, &after, eye));
-    for frame in 0..dirty.start {
-        assert_eq!(rebaked.pose_at(frame), motion_bake.pose_at(frame));
-    }
-    assert_ne!(rebaked.pose_at(200), motion_bake.pose_at(200));
+    let rebaked = poses(&motion_bake.rebaked(&after, dirty.clone(), eye));
+    same(
+        &motion_bake.rebaked(&after, dirty.clone(), eye),
+        &MotionBake::new(body, None, &after, eye),
+    );
+    assert_eq!(
+        rebaked[..dirty.start as usize],
+        baked[..dirty.start as usize]
+    );
+    assert_ne!(rebaked[200], baked[200]);
     assert_eq!(after.dirty_since(&after), None);
 }
 
 #[test]
 fn baked_write_interpolates_frames() {
     let motion = dancing(0.0);
-    let motion_bake = MotionBake::new(Arc::clone(&BODY), None, &motion, eye);
+    let motion_bake = baked(MotionBake::new(Arc::clone(&BODY), None, &motion, eye));
     let pose_at = |seconds: f32| {
         let mut pose = Pose::rest(&MODEL);
-        motion_bake.write(seconds, &mut pose);
+        assert_eq!(motion_bake.write(seconds, &mut pose), Written::Baked);
         pose
     };
     let (before, after, between) = (
@@ -228,4 +248,33 @@ fn baked_write_interpolates_frames() {
     for node in BODY.driven_nodes() {
         assert_eq!(last.local(*node), pose_at(2000.0).local(*node));
     }
+}
+
+#[test]
+fn unbaked_frames_are_estimated_until_the_bake_lands() {
+    let motion = dancing(0.3);
+    let motion_bake = MotionBake::new(Arc::clone(&BODY), None, &motion, eye);
+    let estimate = |frame: u32| {
+        motion
+            .sample(frame as f32, BODY.rest_pose())
+            .reached(&BODY, || eye(frame))
+    };
+    let (sender, landed) = mpsc::channel();
+    let listener: Arc<dyn Fn() + Send + Sync> =
+        Arc::new(move || sender.send(()).expect("the test listens"));
+    while !motion_bake.is_complete() {
+        for frame in 0..motion_bake.frames() {
+            let pose = motion_bake.pose_at(frame);
+            if !motion_bake.is_baked(frame) {
+                assert_eq!(pose, estimate(frame));
+            }
+        }
+        motion_bake.watch(&listener);
+        landed
+            .recv_timeout(Duration::from_secs(30))
+            .expect("the bake progresses");
+    }
+    let mut pose = Pose::rest(&MODEL);
+    assert_eq!(motion_bake.write(1.0, &mut pose), Written::Baked);
+    assert!((0..motion_bake.frames()).all(|frame| motion_bake.is_baked(frame)));
 }

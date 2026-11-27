@@ -40,6 +40,7 @@ pub(super) struct FitRequest {
     model: Arc<Model>,
     anatomy: Arc<Anatomy>,
     cloth_settings: Arc<ClothSettings>,
+    analysis: Option<Arc<ClothAnalysis>>,
     current: Option<FigureAsset>,
 }
 
@@ -72,19 +73,29 @@ pub(super) struct ClothAssets {
     current: FxHashMap<FigureId, FigureAsset>,
     requested: FxHashMap<FigureId, (u64, Budget)>,
     refused: FxHashMap<FigureId, (u64, Budget)>,
+    ready: Vec<(FigureId, Result<Fit, ClothError>)>,
     worker: Option<Worker>,
 }
 
+pub(crate) struct Wanted<'a> {
+    pub(crate) figure: FigureId,
+    pub(crate) model: &'a Arc<Model>,
+    pub(crate) anatomy: &'a Arc<Anatomy>,
+    pub(crate) cloth_settings: &'a Arc<ClothSettings>,
+    pub(crate) analysis: Option<&'a Arc<ClothAnalysis>>,
+    pub(crate) revision: u64,
+}
+
 impl ClothAssets {
-    pub(super) fn want(
-        &mut self,
-        figure: FigureId,
-        model: &Arc<Model>,
-        anatomy: &Arc<Anatomy>,
-        cloth_settings: &Arc<ClothSettings>,
-        revision: u64,
-        budget: Budget,
-    ) -> Result<(), ClothError> {
+    pub(super) fn want(&mut self, wanted: Wanted<'_>, budget: Budget) -> Result<(), ClothError> {
+        let Wanted {
+            figure,
+            model,
+            anatomy,
+            cloth_settings,
+            analysis,
+            revision,
+        } = wanted;
         if let Some((requested, requested_budget)) = self.requested.get(&figure) {
             if *requested == revision && *requested_budget == budget {
                 return Ok(());
@@ -104,6 +115,7 @@ impl ClothAssets {
             model: Arc::clone(model),
             anatomy: Arc::clone(anatomy),
             cloth_settings: Arc::clone(cloth_settings),
+            analysis: analysis.cloned(),
             current: self.current.get(&figure).cloned(),
         };
         self.worker()?
@@ -122,47 +134,62 @@ impl ClothAssets {
     }
 
     pub(super) fn collect(&mut self) -> Vec<(FigureId, Result<Fit, ClothError>)> {
-        let Some(worker) = &self.worker else {
-            return Vec::new();
-        };
-        let mut loaded = Vec::new();
-        loop {
-            let fitted = match worker.fitted.try_recv() {
-                Ok(fitted) => fitted,
+        let mut loaded = std::mem::take(&mut self.ready);
+        while let Some(worker) = &self.worker {
+            match worker.fitted.try_recv() {
+                Ok(fitted) => self.take(fitted, &mut loaded),
                 Err(TryRecvError::Empty) => break,
-                Err(TryRecvError::Disconnected) => {
-                    for figure in self.requested.keys() {
-                        loaded.push((*figure, Err(ClothError::WorkerStopped)));
-                    }
-                    self.requested.clear();
-                    self.worker = None;
-                    break;
-                }
-            };
-            if self.requested.get(&fitted.figure) != Some(&(fitted.revision, fitted.budget)) {
-                continue;
-            }
-            self.requested.remove(&fitted.figure);
-            match fitted.outcome {
-                Ok((current, fit)) => {
-                    self.refused.remove(&fitted.figure);
-                    self.current.insert(fitted.figure, current);
-                    loaded.push((fitted.figure, Ok(fit)));
-                }
-                Err(error) => {
-                    self.refused
-                        .insert(fitted.figure, (fitted.revision, fitted.budget));
-                    loaded.push((fitted.figure, Err(error)));
-                }
+                Err(TryRecvError::Disconnected) => self.stop(&mut loaded),
             }
         }
         loaded
+    }
+
+    pub(super) fn wait(&mut self) {
+        let mut ready = std::mem::take(&mut self.ready);
+        while !self.requested.is_empty()
+            && let Some(worker) = &self.worker
+        {
+            match worker.fitted.recv() {
+                Ok(fitted) => self.take(fitted, &mut ready),
+                Err(_) => self.stop(&mut ready),
+            }
+        }
+        self.ready = ready;
+    }
+
+    fn stop(&mut self, loaded: &mut Vec<(FigureId, Result<Fit, ClothError>)>) {
+        for figure in self.requested.keys() {
+            loaded.push((*figure, Err(ClothError::WorkerStopped)));
+        }
+        self.requested.clear();
+        self.worker = None;
+    }
+
+    fn take(&mut self, fitted: FitResult, loaded: &mut Vec<(FigureId, Result<Fit, ClothError>)>) {
+        if self.requested.get(&fitted.figure) != Some(&(fitted.revision, fitted.budget)) {
+            return;
+        }
+        self.requested.remove(&fitted.figure);
+        match fitted.outcome {
+            Ok((current, fit)) => {
+                self.refused.remove(&fitted.figure);
+                self.current.insert(fitted.figure, current);
+                loaded.push((fitted.figure, Ok(fit)));
+            }
+            Err(error) => {
+                self.refused
+                    .insert(fitted.figure, (fitted.revision, fitted.budget));
+                loaded.push((fitted.figure, Err(error)));
+            }
+        }
     }
 
     pub(super) fn forget(&mut self, figure: FigureId) {
         self.current.remove(&figure);
         self.requested.remove(&figure);
         self.refused.remove(&figure);
+        self.ready.retain(|(ready, _)| *ready != figure);
     }
 
     pub(super) fn holds(&self, figure: FigureId) -> bool {
@@ -189,6 +216,7 @@ impl ClothAssets {
             current: self.current.clone(),
             requested: FxHashMap::default(),
             refused: self.refused.clone(),
+            ready: Vec::new(),
             worker: None,
         }
     }
@@ -234,23 +262,24 @@ pub(super) fn fit(request: &FitRequest) -> Result<(FigureAsset, Fit), ClothError
                     .cloth_settings
                     .same_topology(&current.cloth_settings)
         })
-        .and_then(|current| {
-            restyle(
-                &request.model,
-                &request.anatomy,
-                &request.cloth_settings,
-                &current.cloth_asset,
-            )
-        });
+        .and_then(|current| restyle(request, &current.cloth_asset));
     let (cloth_asset, fit) = match restyled {
         Some((cloth_asset, changed)) => (cloth_asset, Fit::Restyled(changed)),
         None => {
-            let cloth_asset = ClothAsset::build(
-                &request.model,
-                &request.anatomy,
-                &request.cloth_settings,
-                request.budget,
-            )?;
+            let cloth_asset = match &request.analysis {
+                Some(analysis) => ClothAsset::from_analysis(
+                    &request.model,
+                    &request.anatomy,
+                    analysis,
+                    request.budget,
+                )?,
+                None => ClothAsset::build(
+                    &request.model,
+                    &request.anatomy,
+                    &request.cloth_settings,
+                    request.budget,
+                )?,
+            };
             (Arc::new(cloth_asset), Fit::Cut)
         }
     };
@@ -265,13 +294,13 @@ pub(super) fn fit(request: &FitRequest) -> Result<(FigureAsset, Fit), ClothError
     ))
 }
 
-fn restyle(
-    model: &Model,
-    anatomy: &Anatomy,
-    cloth_settings: &ClothSettings,
-    cloth_asset: &ClothAsset,
-) -> Option<(Arc<ClothAsset>, Restyles)> {
-    let analysis = ClothAnalysis::new(model, anatomy, cloth_settings).ok()?;
+fn restyle(request: &FitRequest, cloth_asset: &ClothAsset) -> Option<(Arc<ClothAsset>, Restyles)> {
+    let analysis = match &request.analysis {
+        Some(analysis) => Arc::clone(analysis),
+        None => Arc::new(
+            ClothAnalysis::new(&request.model, &request.anatomy, &request.cloth_settings).ok()?,
+        ),
+    };
     let mut restyled = cloth_asset.clone();
     let mut changed = Vec::new();
     for (index, piece) in restyled.pieces.iter_mut().enumerate() {

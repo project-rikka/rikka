@@ -8,6 +8,7 @@ use crate::slopes::{Slope, Slopes};
 use crate::tuning::{FIT_RIDGE, FLAT_TURN, REDUCE_DEGREES, REDUCE_POSITION};
 
 const FALLBACKS: [Tag; 5] = [Tag::Smooth, Tag::Linear, Tag::Ease, Tag::Hit, Tag::Step];
+const CURVE_BEHIND: usize = 2;
 
 struct Channels {
     scalars: Vec<Vec<f32>>,
@@ -142,8 +143,12 @@ impl Fitting<'_> {
     }
 
     fn error_at(&self, frame: u32) -> f32 {
+        self.error_within(0, frame)
+    }
+
+    fn error_within(&self, first: usize, frame: u32) -> f32 {
         let at = frame as usize;
-        Curve::locate(&self.keys, frame as f32).map_or(0.0, |curve| {
+        Curve::locate(&self.keys[first..], frame as f32).map_or(0.0, |curve| {
             mismatch(
                 self.part,
                 &sampled_values(&curve),
@@ -154,9 +159,13 @@ impl Fitting<'_> {
     }
 
     fn measure(&mut self, from: u32, to: u32) -> f32 {
+        self.measure_within(0, from, to)
+    }
+
+    fn measure_within(&mut self, first: usize, from: u32, to: u32) -> f32 {
         let mut worst: f32 = 0.0;
         for frame in from..=to {
-            let error = self.error_at(frame);
+            let error = self.error_within(first, frame);
             self.errors[frame as usize] = error;
             worst = worst.max(error);
         }
@@ -172,19 +181,38 @@ impl Fitting<'_> {
         self.measure(self.keys[at - 1].frame, self.keys[at + 1].frame);
     }
 
-    fn spare(&mut self, at: usize) -> bool {
+    fn spare_all(&mut self, forced: &[u32]) {
+        let mut alive = vec![true; self.keys.len()];
+        let mut behind = 1;
+        for at in 1..self.keys.len().saturating_sub(1) {
+            let carried = behind.min(CURVE_BEHIND);
+            match !forced.contains(&self.keys[at].frame) && self.spare(at, carried) {
+                true => {
+                    alive[at] = false;
+                    alive[at - carried..=at].rotate_right(1);
+                    behind = carried;
+                }
+                false => behind += 1,
+            }
+        }
+        let mut alive = alive.into_iter();
+        self.keys.retain(|_| alive.next().unwrap_or(true));
+    }
+
+    fn spare(&mut self, at: usize, carried: usize) -> bool {
         let (from, to) = (self.keys[at - 1].frame, self.keys[at + 1].frame);
         let neighbour_slopes = (
             self.keys[at - 1].slopes.clone(),
             self.keys[at + 1].slopes.clone(),
         );
         let errors = self.errors[from as usize..=to as usize].to_vec();
-        let removed = self.keys.remove(at);
-        self.fit(at - 1);
-        if self.measure(from, to) <= 1.0 {
+        let start = at - carried;
+        self.keys[start..=at].rotate_right(1);
+        self.fit(at);
+        if self.measure_within(start + 1, from, to) <= 1.0 {
             return true;
         }
-        self.keys.insert(at, removed);
+        self.keys[start..=at].rotate_left(1);
         self.keys[at - 1].slopes = neighbour_slopes.0;
         self.keys[at + 1].slopes = neighbour_slopes.1;
         self.errors[from as usize..=to as usize].copy_from_slice(&errors);
@@ -251,12 +279,7 @@ pub(super) fn reduce(
     {
         fitting.insert(worst as u32);
     }
-    let mut at = 1;
-    while at + 1 < fitting.keys.len() {
-        if forced.contains(&fitting.keys[at].frame) || !fitting.spare(at) {
-            at += 1;
-        }
-    }
+    fitting.spare_all(forced);
     for at in 0..fitting.keys.len() {
         fitting.fallback(at);
     }

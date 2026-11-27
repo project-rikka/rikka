@@ -15,6 +15,7 @@ rikka_library(
         "//xtask:__subpackages__",
     ],
     deps = [
+        "//crates/foundation/rikka-parallel",
         "//crates/model/rikka-model-core",
         "@crates//:base64",
         "@crates//:serde",

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use glam::Vec3;
+use rustc_hash::FxHashMap;
 
 use crate::geometry::{Shell, Union, area, is_proper};
 use crate::proxy::UNMAPPED;
@@ -30,7 +29,7 @@ pub(crate) struct Envelope {
     pub(crate) blended: Vec<(u32, [u32; 2])>,
 }
 
-type Sides = HashMap<(u32, u32), Vec<u32>>;
+type Sides = FxHashMap<(u32, u32), Vec<u32>>;
 
 impl Envelope {
     pub(crate) fn build(
@@ -76,7 +75,7 @@ impl Envelope {
 }
 
 fn candidates(positions: &[Vec3], index: &[u32], seeds: &[([u32; 3], f32)]) -> Vec<[u32; 3]> {
-    let mut support: HashMap<[u32; 3], (f32, [u32; 3])> = HashMap::new();
+    let mut support: FxHashMap<[u32; 3], (f32, [u32; 3])> = FxHashMap::default();
     for (corners, size) in seeds {
         let mapped = corners.map(|corner| index[corner as usize]);
         if mapped.contains(&u32::MAX)
@@ -111,7 +110,7 @@ fn candidates(positions: &[Vec3], index: &[u32], seeds: &[([u32; 3], f32)]) -> V
 }
 
 fn manifold(positions: &[Vec3], candidates: Vec<[u32; 3]>) -> Vec<[u32; 3]> {
-    let mut sides: Sides = HashMap::new();
+    let mut sides: Sides = FxHashMap::default();
     let mut accepted: Vec<[u32; 3]> = Vec::new();
     for triangle in candidates {
         let fits = (0..3).all(|side| {
@@ -227,7 +226,7 @@ fn part_pinches(positions: &mut [Vec3], triangles: &[[u32; 3]], pinches: &[(u32,
 }
 
 fn sides_of(triangles: &[[u32; 3]]) -> Sides {
-    let mut sides: Sides = HashMap::new();
+    let mut sides: Sides = FxHashMap::default();
     for (index, triangle) in triangles.iter().enumerate() {
         for side in 0..3 {
             sides
@@ -241,7 +240,7 @@ fn sides_of(triangles: &[[u32; 3]]) -> Sides {
 
 fn loops(triangles: &[[u32; 3]]) -> Vec<Vec<u32>> {
     let sides = sides_of(triangles);
-    let mut next: HashMap<u32, u32> = HashMap::new();
+    let mut next: FxHashMap<u32, u32> = FxHashMap::default();
     let mut starts: Vec<u32> = Vec::new();
     for triangle in triangles {
         for side in 0..3 {
@@ -253,7 +252,7 @@ fn loops(triangles: &[[u32; 3]]) -> Vec<Vec<u32>> {
         }
     }
     starts.sort_unstable();
-    let mut visited: HashMap<u32, bool> = HashMap::new();
+    let mut visited: FxHashMap<u32, bool> = FxHashMap::default();
     let mut found = Vec::new();
     for start in starts {
         if visited.contains_key(&start) {

@@ -1,0 +1,56 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-booth",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-cast",
+        "//apps/general/animate/crates/animate-document",
+        "//apps/general/animate/crates/animate-look",
+        "//apps/general/animate/crates/animate-mannequin",
+        "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-shader",
+        "//apps/general/animate/crates/animate-stage",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-gpu",
+        "//crates/graphics/rikka-picture",
+        "//crates/graphics/rikka-renderer",
+        "//crates/graphics/rikka-renderer-3d",
+        "//crates/graphics/rikka-shader-graph",
+        "//crates/model/rikka-model",
+        "//crates/model/rikka-model-gpu",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    data = [
+        "//crates/model/rikka-mmd:assets/mmd/motion.vmd",
+    ],
+    deps = [
+        ":animate-booth",
+        "//apps/general/animate/crates/animate-body",
+        "//apps/general/animate/crates/animate-mannequin",
+        "//apps/general/animate/crates/animate-motion",
+        "//crates/model/rikka-model",
+    ],
+)
+
+rikka_test(
+    name = "gpu",
+    data = [
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-mmd:assets/mmd/motion.vmd",
+    ],
+    gpu = True,
+    deps = [
+        ":animate-booth",
+        "//crates/foundation/rikka-types",
+    ],
+)

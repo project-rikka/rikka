@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, SyncSender, TryRecvError, channel, sync_channel};
 
-use animate_stage::{Recorder, StageError};
+use animate_stage::{Recorder, Replica, StageError};
 use rikka_audio_decode::Sound;
 use rikka_renderer::{Readback, Renderer};
 use rikka_types::PixelSize;
@@ -26,9 +26,14 @@ enum Halt {
     Failed(StageError),
 }
 
-pub(crate) fn run(request: Request, report: &Reporter, cancel: &Arc<AtomicBool>) {
+pub(crate) fn run(
+    request: Request,
+    staged: &Receiver<Replica>,
+    report: &Reporter,
+    cancel: &Arc<AtomicBool>,
+) {
     let path = request.path.clone();
-    let ended = film(request, report, cancel);
+    let ended = film(request, staged, report, cancel);
     let last = match ended {
         Ok(Some(summary)) => Report::Finished(summary),
         Ok(None) => {
@@ -53,11 +58,11 @@ fn discard(path: &std::path::Path) {
 
 fn film(
     request: Request,
+    staged: &Receiver<Replica>,
     report: &Reporter,
     cancel: &Arc<AtomicBool>,
 ) -> Result<Option<Summary>, ExportError> {
     let Request {
-        stage,
         export,
         sound,
         path,
@@ -73,6 +78,12 @@ fn film(
             .map_err(ExportError::Renderer)?,
     )
     .map_err(ExportError::Renderer)?;
+    let Ok(stage) = staged.recv() else {
+        return Ok(None);
+    };
+    if cancel.load(Ordering::Relaxed) {
+        return Ok(None);
+    }
     let mut recorder = Recorder::open(stage, renderer, size)?;
     if cancel.load(Ordering::Relaxed) {
         return Ok(None);

@@ -2,8 +2,8 @@ use std::borrow::Cow;
 use std::ops::Range;
 
 use animate_body::{Body, HumanPose};
-use rikka_parallel::Parallel;
 
+use crate::PARALLEL;
 use crate::intrusion::{Inside, PATH_FRAMES, intrusions, scan};
 use crate::mover::{MOST, Mover, STILL};
 use crate::physique::Physique;
@@ -13,7 +13,6 @@ const BLOCK: usize = 64;
 const OVERLAP: usize = 16;
 const CONTEXT: usize = 2 * PATH_FRAMES;
 const SCANNED_TOGETHER: usize = 32;
-const FIT: Parallel = Parallel::new("rikka-fit");
 
 type Turns = [Vec<[f32; MOST]>; Mover::ALL.len()];
 
@@ -41,10 +40,10 @@ impl Physique {
         let end = first + desired.end;
         let blocks: Vec<usize> =
             (start.saturating_sub(OVERLAP) / BLOCK..=(end - 1 + OVERLAP) / BLOCK).collect();
-        let inside: Vec<Inside> = FIT
+        let inside: Vec<Inside> = PARALLEL
             .grain(SCANNED_TOGETHER)
             .collect(unfitted.len(), |at| scan(self, body, &unfitted[at].0));
-        let solved = FIT.map(&blocks, |block| {
+        let solved = PARALLEL.map(&blocks, |block| {
             self.window(body, first, unfitted, &inside, *block)
         });
         desired

@@ -1,3 +1,4 @@
+#[derive(Clone)]
 pub(crate) struct BitReader<'d> {
     data: &'d [u8],
     position: usize,

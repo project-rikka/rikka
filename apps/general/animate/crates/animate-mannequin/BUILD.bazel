@@ -1,0 +1,21 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-mannequin",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//crates/model/rikka-model-core",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-mannequin",
+        "//apps/general/animate/crates/animate-body",
+        "//crates/model/rikka-humanoid",
+        "//crates/model/rikka-model-core",
+    ],
+)

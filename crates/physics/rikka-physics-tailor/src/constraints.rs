@@ -1,8 +1,9 @@
 use std::cmp::Ordering;
-use std::collections::{BinaryHeap, HashMap};
+use std::collections::BinaryHeap;
 
 use glam::Vec3;
 use rikka_model_core::{INFLUENCES, NodeId};
+use rustc_hash::FxHashMap;
 
 use crate::asset::{Anchor, Bend, BindTarget, Edge, EdgeKind, Particle, Piece, PieceKind, Tether};
 use crate::bind::{Binding, bind};
@@ -156,7 +157,7 @@ pub(crate) fn build_constraints(
 }
 
 fn add_cross_links(edges: &mut Vec<Edge>, proxy: &Proxy) {
-    let edge_index: HashMap<[u32; 2], usize> = edges
+    let edge_index: FxHashMap<[u32; 2], usize> = edges
         .iter()
         .enumerate()
         .map(|(at, edge)| (edge.ends, at))
@@ -174,7 +175,7 @@ fn add_cross_links(edges: &mut Vec<Edge>, proxy: &Proxy) {
 }
 
 fn edges(proxy: &Proxy) -> Vec<Edge> {
-    let mut kinds: HashMap<(u32, u32), EdgeKind> = HashMap::new();
+    let mut kinds: FxHashMap<(u32, u32), EdgeKind> = FxHashMap::default();
     let mut order: Vec<(u32, u32)> = Vec::new();
     let mut add = |a: u32, b: u32, kind: EdgeKind| {
         if a == b {
@@ -217,7 +218,7 @@ struct EdgeWing {
 }
 
 pub(crate) fn bends(positions: &[Vec3], triangles: &[[u32; 3]]) -> Vec<Bend> {
-    let mut sides: HashMap<(u32, u32), Vec<EdgeWing>> = HashMap::new();
+    let mut sides: FxHashMap<(u32, u32), Vec<EdgeWing>> = FxHashMap::default();
     for triangle in triangles {
         for side in 0..3 {
             let edge_wing = EdgeWing {

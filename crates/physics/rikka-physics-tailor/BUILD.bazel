@@ -7,9 +7,11 @@ rikka_library(
     ],
     deps = [
         "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-parallel",
         "//crates/model/rikka-humanoid",
         "//crates/model/rikka-model-core",
         "@crates//:glam",
+        "@crates//:rustc-hash",
         "@crates//:serde",
         "@crates//:thiserror",
     ],

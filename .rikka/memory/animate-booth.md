@@ -1,0 +1,19 @@
+---
+title: Animate asset booth (thumbnails, live previews) and mannequin
+description: animate-booth renders library thumbnails and hover previews off-screen; animate-mannequin is the stand-in humanoid.
+about: apps/general/animate/crates/animate-booth
+tags: [application, rendering]
+---
+
+- `animate_booth::Booth::new()` owns two `rikka-animate-booth-load` workers (newest task first) and one `rikka-animate-booth` thread with its own `Gpu` + `Renderer`; nothing touches disk caches or UI.
+- `Booth::render(Order { sitter, size }, done) -> Ticket` delivers a `Picture { width, height, rgba }` once; dropping the `Ticket` cancels. `Booth::preview(Order, Feed) -> Preview` streams `Feed::show` frames at 30 fps, looping motions and cameras; a static sitter shows one settled frame; dropping the `Preview` stops it.
+- `Sitter::{Model, Stage, Accessory, Motion { motion, performer }, Camera}`; `Performer::Figure { key, model, body, faces }` reuses the app's loaded figure (GPU upload cached by `key`) or `Performer::Mannequin`.
+- Workers build a `Setup` (pose source, framing, still time, loop length): models are imported; motions never bake: VMD is read with `Vmd::read`, clips and `.rmotion` takes go to `animate_motion::Retarget` (`from_vmd`/`from_clip`/`from_take`), held in the setup behind a `Mutex` and `write`n per frame (no springs, pins or fitting, so it drifts slightly from the viewport); cameras use VMD or `.rmotion` camera keys on the standing mannequin. Motion and camera setups are memoised per (file, performer key).
+- Files are identified by a `Stamp` (path, size, mtime): file seats are `ModelKey::File(Stamp)` and every memoised setup is keyed by stamp, so a rewritten file never reuses a stale seat. Memoised model/stage/accessory setups keep only `Source::File`, so a later order skips the import and the GPU thread's `Prepare` task imports only if the seat is gone. Format comes from one place, `loader::Format` (`.rmotion`, `.vmd` via `Vmd::read` for motions and cameras, anything else through `Import`).
+- The GPU thread asks the pool for `Prepared` only when a key is not seated, parks jobs until it arrives, keeps 4 seated models (LRU, never evicting one a preview uses) and 4 offscreen viewports by size.
+- Drawing reuses the stage: `animate_stage::Studio` (`src/booth.rs` in animate-stage) wraps `Dressing` with the booth's own look (default world, dark backdrop, shadow-catcher floor, no grid), `Studio::still` (warm-up renders) / `frame`, `animate_stage::rest` (the stage's `perform` without playback + refresh) and `still_viewport` (the capture `ViewportConfig`).
+- Framing (`framing.rs`): humanoid portraits and motions turn 25° off `Anatomy::forward()` with silhouette fitting; accessories, stages and non-humanoids use enclosing box fitting. Motion stills frame the still pose; previews frame the union over the loop, both following the hips horizontally. Posed bounds come from per-joint flesh spheres (`flesh.rs`), since `Instance::bounds` ignores skinning.
+- `expressive_frame(last, rest, pose_at)` samples at most 96 candidate frames after the first second through `Retarget::pose_at` and picks the most bent pose, discounting back-facing roots (non-humanoid performers take the middle frame); `camera_frame(camera)` is the middle of the longest cut (cuts = keys one frame apart). Both are public and unit-tested.
+- The first draw of each new material kind compiles pipelines (about 1–2 s once per process); afterwards a motion on a seated figure costs about 0.2–0.4 s in a development build, mostly candidate sampling and framing.
+- `animate_mannequin::model()` is a cached `Arc<Model>`: VRoid-named T-pose skeleton (fingers included), rigid capsule/ellipsoid segments, two PBR materials, 1.78 m, faces +Z; recognition maps every required bone and `Body::from_anatomy` builds.
+- Tests: booth `main` (frame choice), booth `gpu` (`gpu = True`: miku portrait and motion on the mannequin), mannequin `main` (recognition, body).

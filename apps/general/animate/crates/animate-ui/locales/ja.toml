@@ -38,6 +38,19 @@ speed = "風速 (m/s)"
 turbulence = "乱れ"
 gust = "突風 (Hz)"
 
+[animate.prop]
+anchor = "取り付け先"
+
+[animate.prop.setting]
+x = "位置 X (m)"
+y = "位置 Y (m)"
+z = "位置 Z (m)"
+pitch = "回転 X (°)"
+yaw = "回転 Y (°)"
+roll = "回転 Z (°)"
+scale = "拡大率"
+visible = "表示"
+
 [animate.liquid.setting]
 rate = "流量 (L/s)"
 volume = "量 (L)"

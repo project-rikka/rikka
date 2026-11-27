@@ -9,6 +9,7 @@ use animate_shader_editor::{
 };
 use rikka_app::prelude::*;
 use rikka_dialog::{Chooser, ChooserResponse, Filter};
+use rikka_model::Model;
 use rikka_renderer_3d::TextureKind;
 use rikka_shader_graph::SocketValue;
 
@@ -84,37 +85,62 @@ impl ShaderEditing for Animate {
 
 impl MaterialGraphs for Animate {
     fn slot_figure(&self) -> Option<SlotFigure> {
-        let Some(Subject::Figure(id)) = self.subject else {
-            return None;
-        };
-        let figure = self.cast.figure(id)?;
-        Some(SlotFigure {
-            name: Name::new(&figure.name),
-            materials: figure
-                .model
-                .materials
-                .iter()
-                .enumerate()
-                .map(|(index, material)| SlotMaterial {
-                    index: index as u32,
-                    name: material.name.clone(),
-                    class: figure.material_class(index as u32),
-                })
-                .collect(),
-        })
+        match self.subject? {
+            Subject::Figure(id) => {
+                let figure = self.cast.figure(id)?;
+                Some(slot_figure(&figure.name, &figure.model, |index| {
+                    figure.material_class(index)
+                }))
+            }
+            subject @ (Subject::Stage | Subject::Accessory(_)) => {
+                let prop = &self.cast.prop(subject)?.prop;
+                Some(slot_figure(&prop.name, &prop.model, |index| {
+                    prop.material_class(index)
+                }))
+            }
+            Subject::Emitter(_) | Subject::Camera | Subject::Look | Subject::Wind => None,
+        }
     }
 
     fn highlight_slots(&mut self, figure: Name, materials: &[u32]) {
-        let Some(id) = self
+        if let Some(id) = self
             .cast
             .figures()
             .iter()
             .find(|held| figure == held.name.as_str())
             .map(|held| held.id)
-        else {
+        {
+            self.stage.lock().highlight(id, materials);
             return;
-        };
-        self.stage.lock().highlight(id, materials);
+        }
+        if let Some(id) = self
+            .cast
+            .props()
+            .find(|track| figure == track.prop.name.as_str())
+            .map(|track| track.prop.id)
+        {
+            self.stage.lock().highlight_prop(id, materials);
+        }
+    }
+}
+
+fn slot_figure(
+    name: &str,
+    model: &Model,
+    class: impl Fn(u32) -> Option<&'static str>,
+) -> SlotFigure {
+    SlotFigure {
+        name: Name::new(name),
+        materials: model
+            .materials
+            .iter()
+            .enumerate()
+            .map(|(index, material)| SlotMaterial {
+                index: index as u32,
+                name: material.name.clone(),
+                class: class(index as u32),
+            })
+            .collect(),
     }
 }
 

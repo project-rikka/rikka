@@ -1,0 +1,26 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-prop",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-track",
+        "//crates/foundation/rikka-keyframe",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "@crates//:serde",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-prop",
+        "//crates/model/rikka-mmd",
+        "//crates/model/rikka-model-core",
+        "@crates//:serde_json",
+    ],
+)

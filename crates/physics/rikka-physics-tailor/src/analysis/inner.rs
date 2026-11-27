@@ -1,9 +1,10 @@
-use std::collections::HashMap;
 use std::f32::consts::TAU;
 
 use glam::Vec3;
 use rikka_model_core::{HumanBone, NodeId};
+use rustc_hash::FxHashMap;
 
+use crate::PARALLEL;
 use crate::figure::Figure;
 
 const ALONG: f32 = 0.015;
@@ -11,6 +12,7 @@ const SECTORS: f32 = 16.0;
 const SLACK: f32 = 0.005;
 const LEAST: f32 = 0.01;
 const FACIAL: [HumanBone; 3] = [HumanBone::LeftEye, HumanBone::RightEye, HumanBone::Jaw];
+const PLACED_GRAIN: usize = 4096;
 
 #[derive(Clone, Copy, Debug)]
 struct Segment {
@@ -54,32 +56,32 @@ pub(crate) fn innermost(figure: &Figure<'_>, carried: &[bool]) -> Vec<bool> {
     if segments.is_empty() {
         return inner;
     }
-    let placed: Vec<Option<(Bin, f32)>> = figure
-        .vertices
-        .iter()
-        .map(|vertex| {
-            if carried[vertex.strongest().index()] {
-                return None;
-            }
-            let (index, (along, radial)) = segments
-                .iter()
-                .enumerate()
-                .map(|(index, segment)| (index, segment.radial(vertex.position)))
-                .min_by(|a, b| a.1.1.length_squared().total_cmp(&b.1.1.length_squared()))?;
-            let segment = &segments[index];
-            let turn = radial
-                .dot(segment.other)
-                .atan2(radial.dot(segment.across))
-                .rem_euclid(TAU);
-            let bin = Bin {
-                segment: index,
-                along: (along / ALONG).floor() as i32,
-                sector: (turn / TAU * SECTORS) as u8,
-            };
-            Some((bin, radial.length()))
-        })
-        .collect();
-    let mut nearest: HashMap<Bin, f32> = HashMap::new();
+    let placed: Vec<Option<(Bin, f32)>> =
+        PARALLEL
+            .grain(PLACED_GRAIN)
+            .collect(figure.vertices.len(), |vertex| {
+                let vertex = &figure.vertices[vertex];
+                if carried[vertex.strongest().index()] {
+                    return None;
+                }
+                let (index, (along, radial)) = segments
+                    .iter()
+                    .enumerate()
+                    .map(|(index, segment)| (index, segment.radial(vertex.position)))
+                    .min_by(|a, b| a.1.1.length_squared().total_cmp(&b.1.1.length_squared()))?;
+                let segment = &segments[index];
+                let turn = radial
+                    .dot(segment.other)
+                    .atan2(radial.dot(segment.across))
+                    .rem_euclid(TAU);
+                let bin = Bin {
+                    segment: index,
+                    along: (along / ALONG).floor() as i32,
+                    sector: (turn / TAU * SECTORS) as u8,
+                };
+                Some((bin, radial.length()))
+            });
+    let mut nearest: FxHashMap<Bin, f32> = FxHashMap::default();
     for (bin, radial) in placed.iter().flatten() {
         let smallest = nearest.entry(*bin).or_insert(f32::MAX);
         *smallest = smallest.min(*radial);

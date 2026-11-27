@@ -35,6 +35,7 @@ fn main() -> rikka_app::Result<()> {
                 .embedded(animate_viewport::CATALOGS)
                 .embedded(animate_inspector::CATALOGS)
                 .embedded(animate_shader_editor::CATALOGS)
+                .embedded(animate_library_browser::CATALOGS)
                 .embedded(animate_export::CATALOGS),
         )
         .windows(windows)

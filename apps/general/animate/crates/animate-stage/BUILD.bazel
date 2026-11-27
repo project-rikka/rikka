@@ -13,6 +13,7 @@ rikka_library(
         "//apps/general/animate/crates/animate-hold",
         "//apps/general/animate/crates/animate-look",
         "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-prop",
         "//apps/general/animate/crates/animate-shader",
         "//apps/general/animate/crates/animate-wind",
         "//crates/foundation/rikka-color-lookup",

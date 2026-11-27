@@ -132,6 +132,10 @@ bounce = "上下動"
 title = "風"
 front = "正面"
 
+[animate.placement]
+world = "なし (ワールド)"
+bone = "ボーン"
+
 [animate.liquid]
 emitter = "エミッター"
 name = "名前"

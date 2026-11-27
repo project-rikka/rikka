@@ -6,6 +6,8 @@ use rikka_model::{Error, Import, Model, registry};
 use rikka_model_gpu::{Prepared, UploadOptions};
 use rikka_types::CancelToken;
 
+use crate::screen::figure::scene::Shared;
+
 #[derive(Debug)]
 pub(crate) enum Purpose {
     Motion,
@@ -24,12 +26,17 @@ pub(crate) struct Load {
     pub(crate) read: Result<Loaded, Error>,
 }
 
-pub(crate) fn read(path: PathBuf, purpose: Purpose, cancel: CancelToken) -> Load {
-    let read = open(&path, purpose, cancel);
+pub(crate) fn read(path: PathBuf, purpose: Purpose, scene: &Shared, cancel: CancelToken) -> Load {
+    let read = open(&path, purpose, scene, cancel);
     Load { path, read }
 }
 
-fn open(path: &Path, purpose: Purpose, cancel: CancelToken) -> Result<Loaded, Error> {
+fn open(
+    path: &Path,
+    purpose: Purpose,
+    scene: &Shared,
+    cancel: CancelToken,
+) -> Result<Loaded, Error> {
     let mut model = Import::open(path, registry()).cancel(cancel).run()?;
     let Purpose::Figure(motion) = purpose else {
         return Ok(Loaded::Motion(Arc::new(model)));
@@ -40,8 +47,10 @@ fn open(path: &Path, purpose: Purpose, cancel: CancelToken) -> Result<Loaded, Er
     {
         model.animations.push(vmd.animation(&model));
     }
-    Ok(Loaded::Figure(Prepared::new(
-        Arc::new(model),
-        &UploadOptions::default(),
-    )))
+    let mut prepared = Prepared::new(Arc::new(model), &UploadOptions::default());
+    let uploads = scene.lock().uploads();
+    if let Some(uploads) = uploads {
+        prepared.create_textures(&uploads);
+    }
+    Ok(Loaded::Figure(prepared))
 }

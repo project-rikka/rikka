@@ -46,6 +46,8 @@ mod transform;
 mod unfollowed;
 mod warning;
 
+const PARALLEL: rikka_parallel::Parallel = rikka_parallel::Parallel::new("rikka-model-read");
+
 pub use animation::{
     Animation, AnimationId, Channel, Curve, Interpolate, Interpolation, Track, Weights,
 };

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use animate_cast::{FigureId, Shot, frame_of};
+use animate_cast::{FigureId, PropId, PropRole, Shot, frame_of};
 use animate_fluid::{Emitter, EmitterId, EmitterState};
 use animate_look::Look;
 use animate_motion::CameraMotion;
@@ -14,12 +14,14 @@ use crate::cloth::FigureCloth;
 use crate::fluid::Liquids;
 use crate::pending::Pending;
 use crate::pour::CastMember;
+use crate::props::PropMember;
 use crate::unkeyed::Drafts;
 use crate::wind::Blowing;
 
 #[derive(Clone, Debug)]
 pub(super) struct Scene {
     pub(super) members: Vec<CastMember>,
+    pub(super) props: Vec<PropMember>,
     pub(super) camera: Option<Arc<CameraMotion>>,
     pub(super) follows_camera: bool,
     pub(super) free: Shot,
@@ -28,6 +30,8 @@ pub(super) struct Scene {
     pub(super) quality: Quality,
     pub(super) look: Arc<Look>,
     pub(super) highlight: Option<(FigureId, Arc<[MaterialId]>)>,
+    pub(super) prop_highlight: Option<(PropId, Arc<[MaterialId]>)>,
+    pub(super) chosen_prop: Option<PropRole>,
     pub(super) liquids: Arc<Liquids>,
     pub(super) pouring: Option<EmitterId>,
     pub(super) wind: Arc<WindMotion>,
@@ -45,6 +49,7 @@ impl Scene {
     pub(super) fn new(physics: bool, quality: Quality) -> Self {
         Self {
             members: Vec::new(),
+            props: Vec::new(),
             camera: None,
             follows_camera: false,
             free: Shot::default(),
@@ -53,6 +58,8 @@ impl Scene {
             quality,
             look: Arc::default(),
             highlight: None,
+            prop_highlight: None,
+            chosen_prop: None,
             liquids: Arc::default(),
             pouring: None,
             wind: Arc::default(),

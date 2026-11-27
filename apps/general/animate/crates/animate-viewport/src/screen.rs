@@ -2,7 +2,7 @@ use std::sync::{Arc, MutexGuard};
 use std::time::Instant;
 
 use animate_body::{Body, Faces, MorphWeights};
-use animate_cast::{FigureId, Resolution, Skeleton, TakePlayback};
+use animate_cast::{FigureId, PropRole, Resolution, Skeleton, TakePlayback};
 use animate_cloth::Brush;
 use animate_fluid::EmitterId;
 use animate_motion::Take;
@@ -24,6 +24,7 @@ use crate::emitter::EmitterGizmo;
 use crate::fluid::{self, Gizmo};
 use crate::handles::{self, Handle, Layout, Offer, Target};
 use crate::overlay::{self, Lettering};
+use crate::prop::{self, PropGizmo};
 use crate::wind::{self, Grip};
 
 #[derive(Clone, Debug)]
@@ -76,6 +77,7 @@ pub enum Aim {
     Emitter(EmitterId),
     Camera,
     Wind,
+    Prop(PropRole),
 }
 
 pub struct Screen {
@@ -99,6 +101,7 @@ pub struct ScreenState {
     easy: easy::EasyDragState,
     gizmo: Gizmo,
     emitter: EmitterGizmo,
+    prop: PropGizmo,
     grip: Grip,
     stroke: Option<Stroke>,
     pointer: Option<Point>,
@@ -112,6 +115,7 @@ enum Grab {
     Easy,
     Gizmo,
     Emitter,
+    Prop,
     Vane,
     Paint,
 }
@@ -261,7 +265,8 @@ impl Screen {
             | Aim::Cloth(_)
             | Aim::Emitter(_)
             | Aim::Camera
-            | Aim::Wind => Offer {
+            | Aim::Wind
+            | Aim::Prop(_) => Offer {
                 target: None,
                 turns: false,
                 slides: false,
@@ -292,6 +297,16 @@ impl Screen {
                 .is_some_and(|marks| state.emitter.press(marks, node, frame, position))
         {
             return Some(Grab::Emitter);
+        }
+        if let Aim::Prop(role) = self.aim
+            && !self.transport.is_playing()
+            && self
+                .stage()
+                .prop_frame()
+                .filter(|placed| placed.role == role)
+                .is_some_and(|placed| state.prop.press(placed, frame, position))
+        {
+            return Some(Grab::Prop);
         }
         if self.is_easy() {
             let Some(scene) = self.scene(frame) else {
@@ -401,7 +416,7 @@ impl Screen {
             }
             (
                 Handle::Turn(_) | Handle::Slide(_),
-                Aim::Idle | Aim::Cloth(_) | Aim::Emitter(_) | Aim::Wind,
+                Aim::Idle | Aim::Cloth(_) | Aim::Emitter(_) | Aim::Wind | Aim::Prop(_),
             )
             | (Handle::Space, _) => {}
         }
@@ -443,6 +458,13 @@ impl Screen {
             position,
         ) {
             ctx.request_paint();
+        }
+        if let Aim::Prop(role) = self.aim {
+            let stage = self.stage();
+            let placed = stage.prop_frame().filter(|placed| placed.role == role);
+            if state.prop.hover(placed, frame, position) {
+                ctx.request_paint();
+            }
         }
         if matches!(self.aim, Aim::Cloth(_)) {
             if state.pointer != position {
@@ -585,7 +607,10 @@ impl Screen {
         ctx.release_pointer();
         ctx.keep_focus();
         ctx.request_paint();
-        if state.stroke.take().is_some() || state.emitter.cancel() {
+        if state.stroke.take().is_some()
+            || state.emitter.cancel()
+            || state.prop.cancel(&mut self.stage())
+        {
             return;
         }
         if let Aim::Emitter(id) = self.aim
@@ -647,6 +672,12 @@ impl Widget for Screen {
             && let Some(marks) = stage.emitter_marks()
         {
             state.emitter.paint(ctx, marks, marked, frame);
+        }
+        if let Aim::Prop(role) = self.aim
+            && !playing
+            && let Some(placed) = stage.prop_frame().filter(|placed| placed.role == role)
+        {
+            prop::paint(ctx, placed, frame, &state.prop);
         }
         if let Aim::Figure(figure_aim) = &self.aim
             && figure_aim.body.is_none()
@@ -723,7 +754,14 @@ impl Widget for Screen {
             } => {
                 if matches!(
                     state.grab,
-                    Some(Grab::Easy | Grab::Gizmo | Grab::Emitter | Grab::Vane | Grab::Paint)
+                    Some(
+                        Grab::Easy
+                            | Grab::Gizmo
+                            | Grab::Emitter
+                            | Grab::Prop
+                            | Grab::Vane
+                            | Grab::Paint
+                    )
                 ) {
                     self.cancel(state, frame, ctx);
                     return;
@@ -746,6 +784,7 @@ impl Widget for Screen {
                     | Grab::Easy
                     | Grab::Gizmo
                     | Grab::Emitter
+                    | Grab::Prop
                     | Grab::Vane
                     | Grab::Paint => {
                         ctx.capture_pointer();
@@ -774,6 +813,11 @@ impl Widget for Screen {
                 Some(Grab::Easy) => self.travel(state, frame, position, ctx),
                 Some(Grab::Gizmo) => self.pour(state, frame, position, ctx),
                 Some(Grab::Emitter) => self.place(state, frame, position, ctx),
+                Some(Grab::Prop) => {
+                    let at = self.transport.frame();
+                    state.prop.travel(&mut self.stage(), at, position);
+                    ctx.request_paint();
+                }
                 Some(Grab::Vane) => self.blow(state, frame, position, ctx),
                 Some(Grab::Paint) => self.paint_cloth(state, frame, position, ctx),
                 Some(Grab::Handle(..)) => {}
@@ -788,6 +832,11 @@ impl Widget for Screen {
                     Some(Grab::Gizmo) => self.release_gizmo(state, frame, position, ctx),
                     Some(Grab::Emitter) => {
                         if let Some(gesture) = state.emitter.release() {
+                            ctx.call(&self.on_gesture, (gesture,));
+                        }
+                    }
+                    Some(Grab::Prop) => {
+                        if let Some(gesture) = state.prop.release() {
                             ctx.call(&self.on_gesture, (gesture,));
                         }
                     }

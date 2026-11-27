@@ -10,6 +10,7 @@ mod render;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Sender};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
@@ -33,7 +34,6 @@ pub type Reporter = Arc<dyn Fn(Report) + Send + Sync>;
 
 #[derive(Debug)]
 pub struct Request {
-    pub stage: Replica,
     pub export: Export,
     pub sound: Option<Sound>,
     pub path: PathBuf,
@@ -78,6 +78,7 @@ pub struct Job {
     preview: Option<ImageSource>,
     phase: Phase,
     cancel: Arc<AtomicBool>,
+    stager: Option<Sender<Replica>>,
     worker: Option<JoinHandle<()>>,
 }
 
@@ -87,9 +88,10 @@ impl Job {
         let path = request.path.clone();
         let cancel = Arc::new(AtomicBool::new(false));
         let stopping = Arc::clone(&cancel);
+        let (stager, staged) = mpsc::channel();
         let worker = std::thread::Builder::new()
             .name("rikka-animate-export".to_owned())
-            .spawn(move || render::run(request, &report, &stopping))
+            .spawn(move || render::run(request, &staged, &report, &stopping))
             .map_err(ExportError::Thread)?;
         Ok(Self {
             path,
@@ -100,6 +102,7 @@ impl Job {
             preview: None,
             phase: Phase::Preparing,
             cancel,
+            stager: Some(stager),
             worker: Some(worker),
         })
     }
@@ -128,8 +131,21 @@ impl Job {
     pub fn cancel(&mut self) {
         if self.can_cancel() {
             self.cancel.store(true, Ordering::Relaxed);
+            self.stager = None;
             self.phase = Phase::Cancelling;
         }
+    }
+
+    pub fn stage(&mut self, replica: Replica) {
+        if let Some(stager) = self.stager.take()
+            && stager.send(replica).is_err()
+        {
+            tracing::debug!("export stopped before its stage arrived");
+        }
+    }
+
+    pub fn awaits_stage(&self) -> bool {
+        self.stager.is_some()
     }
 
     pub fn can_cancel(&self) -> bool {
@@ -184,6 +200,7 @@ impl Job {
 impl Drop for Job {
     fn drop(&mut self) {
         self.cancel.store(true, Ordering::Relaxed);
+        self.stager = None;
         if let Some(worker) = self.worker.take() {
             let _ = worker.join();
         }

@@ -1,8 +1,9 @@
+use rikka_simd::prelude::*;
+
 const ADLER_MODULUS: u32 = 65521;
-const ADLER_BLOCK: usize = 32;
 const ADLER_CHUNK: usize = 5536;
 const CRC_POLYNOMIAL: u32 = 0xEDB8_8320;
-const SLICES: usize = 8;
+const SLICES: usize = 16;
 
 static CRC_TABLES: [[u32; 256]; SLICES] = {
     let mut tables = [[0u32; 256]; SLICES];
@@ -36,27 +37,77 @@ static CRC_TABLES: [[u32; 256]; SLICES] = {
 
 #[must_use]
 pub fn adler32(data: &[u8]) -> u32 {
-    let (mut a, mut b) = (1u32, 0u32);
-    for chunk in data.chunks(ADLER_CHUNK) {
-        let (blocks, tail) = chunk.as_chunks::<ADLER_BLOCK>();
-        for block in blocks {
-            let mut sum = 0u32;
-            let mut weighted = 0u32;
-            for (position, &byte) in block.iter().enumerate() {
-                sum += u32::from(byte);
-                weighted += (ADLER_BLOCK - position) as u32 * u32::from(byte);
-            }
-            b += ADLER_BLOCK as u32 * a + weighted;
-            a += sum;
-        }
-        for &byte in tail {
-            a += u32::from(byte);
-            b += a;
-        }
-        a %= ADLER_MODULUS;
-        b %= ADLER_MODULUS;
+    let mut adler = Adler32::new();
+    adler.update(data);
+    adler.finish()
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Adler32 {
+    a: u64,
+    b: u64,
+}
+
+impl Adler32 {
+    #[must_use]
+    pub const fn new() -> Adler32 {
+        Adler32 { a: 1, b: 0 }
     }
-    (b << 16) | a
+
+    pub fn update(&mut self, data: &[u8]) {
+        let (a, b) = (self.a, self.b);
+        (self.a, self.b) =
+            rikka_simd::dispatch!(Level::detect(), simd => adler32_lanes(simd, a, b, data));
+    }
+
+    #[must_use]
+    pub const fn finish(self) -> u32 {
+        ((self.b as u32) << 16) | self.a as u32
+    }
+}
+
+impl Default for Adler32 {
+    fn default() -> Adler32 {
+        Adler32::new()
+    }
+}
+
+#[inline(always)]
+fn adler32_lanes<S: Simd>(_: S, mut a: u64, mut b: u64, data: &[u8]) -> (u64, u64) {
+    let lanes = S::U8s::LANES;
+    let block = ADLER_CHUNK / lanes * lanes;
+    let mut weights = [0u16; 64];
+    for (index, weight) in weights.iter_mut().enumerate() {
+        *weight = (lanes - index.min(lanes)) as u16;
+    }
+    let low_weights = S::U16s::load(&weights[..lanes / 2]);
+    let high_weights = S::U16s::load(&weights[lanes / 2..lanes]);
+    let (whole, tail) = data.split_at(data.len() / lanes * lanes);
+    for chunk in whole.chunks(block) {
+        let mut sums = S::U32s::splat(0);
+        let mut before = S::U32s::splat(0);
+        let mut weighted = S::U32s::splat(0);
+        for bytes in chunk.chunks_exact(lanes) {
+            let bytes = S::U8s::load(bytes);
+            let (low, high) = (bytes.widen_low(), bytes.widen_high());
+            before += sums;
+            let total = low + high;
+            sums += total.widen_low() + total.widen_high();
+            let products = low * low_weights + high * high_weights;
+            weighted += products.widen_low() + products.widen_high();
+        }
+        let count = (chunk.len() / lanes) as u64;
+        let total = |lanes: S::U32s| u64::from(lanes.reduce_add());
+        b += count * lanes as u64 * a + total(before) * lanes as u64 + total(weighted);
+        a += total(sums);
+        a %= u64::from(ADLER_MODULUS);
+        b %= u64::from(ADLER_MODULUS);
+    }
+    for &byte in tail {
+        a += u64::from(byte);
+        b += a;
+    }
+    (a % u64::from(ADLER_MODULUS), b % u64::from(ADLER_MODULUS))
 }
 
 #[must_use]
@@ -81,16 +132,17 @@ impl Crc32 {
         let mut state = self.state;
         let (words, tail) = data.as_chunks::<SLICES>();
         for word in words {
-            let low = u32::from_le_bytes([word[0], word[1], word[2], word[3]]) ^ state;
-            let high = u32::from_le_bytes([word[4], word[5], word[6], word[7]]);
-            state = CRC_TABLES[7][(low & 0xFF) as usize]
-                ^ CRC_TABLES[6][((low >> 8) & 0xFF) as usize]
-                ^ CRC_TABLES[5][((low >> 16) & 0xFF) as usize]
-                ^ CRC_TABLES[4][(low >> 24) as usize]
-                ^ CRC_TABLES[3][(high & 0xFF) as usize]
-                ^ CRC_TABLES[2][((high >> 8) & 0xFF) as usize]
-                ^ CRC_TABLES[1][((high >> 16) & 0xFF) as usize]
-                ^ CRC_TABLES[0][(high >> 24) as usize];
+            let first = u32::from_le_bytes([word[0], word[1], word[2], word[3]]) ^ state;
+            let mut folded = 0;
+            for (at, byte) in first
+                .to_le_bytes()
+                .into_iter()
+                .chain(word[4..].iter().copied())
+                .enumerate()
+            {
+                folded ^= CRC_TABLES[SLICES - 1 - at][usize::from(byte)];
+            }
+            state = folded;
         }
         for &byte in tail {
             state = CRC_TABLES[0][usize::from(state as u8 ^ byte)] ^ (state >> 8);

@@ -3,6 +3,7 @@ use std::error::Error;
 use animate_body::Side;
 use animate_fluid::EmitterSetting;
 use animate_motion::Part;
+use animate_prop::PropSetting;
 use animate_wind::WindSetting;
 use rikka_i18n::{Label, tr};
 use rikka_model::mmd::FRAMES_PER_SECOND;
@@ -49,6 +50,14 @@ pub fn emitter_setting_label(setting: EmitterSetting) -> Label {
 
 pub fn wind_setting_label(setting: WindSetting) -> Label {
     tr!(&format!("animate.wind.setting.{}", setting.id()))
+}
+
+pub fn prop_setting_label(setting: PropSetting) -> Label {
+    tr!(&format!("animate.prop.setting.{}", setting.id()))
+}
+
+pub fn anchor_label() -> Label {
+    tr!("animate.prop.anchor")
 }
 
 pub fn holding_hand_label(side: Side) -> Label {

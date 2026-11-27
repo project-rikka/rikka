@@ -8,15 +8,18 @@ rikka_library(
     deps = [
         "//apps/general/animate/crates/animate-body",
         "//apps/general/animate/crates/animate-cloth",
+        "//apps/general/animate/crates/animate-edit",
         "//apps/general/animate/crates/animate-fit",
         "//apps/general/animate/crates/animate-fluid",
         "//apps/general/animate/crates/animate-hold",
         "//apps/general/animate/crates/animate-look",
         "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-prop",
         "//apps/general/animate/crates/animate-sheet",
         "//apps/general/animate/crates/animate-wind",
         "//crates/foundation/rikka-sync",
         "//crates/foundation/rikka-types",
+        "//crates/graphics/rikka-renderer",
         "//crates/graphics/rikka-renderer-3d",
         "//crates/model/rikka-model",
         "//crates/model/rikka-model-gpu",
@@ -30,6 +33,8 @@ rikka_test(
     name = "main",
     deps = [
         ":animate-cast",
+        "//apps/general/animate/crates/animate-prop",
         "//crates/foundation/rikka-types",
+        "//crates/model/rikka-model",
     ],
 )

@@ -14,6 +14,8 @@ use rikka_model_core::{ExportCtx, Exporter, ExporterInfo, Supports};
 
 const NAME: &str = "glTF";
 
+const PARALLEL: rikka_parallel::Parallel = rikka_parallel::Parallel::new("rikka-gltf");
+
 const BINARY_NAME: &str = "glTF Binary";
 
 #[derive(Clone, Copy, Debug, Default)]

@@ -1,7 +1,7 @@
 use std::sync::{Arc, LazyLock};
 
-use animate_body::{Body, Faces, HumanBone, HumanPose};
-use animate_motion::{Clip, Evaluator, Part, PartValues, Take, Target};
+use animate_body::{Body, Faces, HumanBone, HumanPose, MUSCLE_COUNT};
+use animate_motion::{Clip, Evaluator, Part, PartValues, Recipient, Retarget, Take, Target};
 use rikka_humanoid::Anatomy;
 use rikka_mmd::{Puppet, Vmd, VmdMorphFrame};
 use rikka_model::glam::{Quat, Vec3};
@@ -301,4 +301,63 @@ fn fbx_clip_drives_vrm_and_its_own_figure() {
             );
         }
     }
+}
+
+fn recipient(target: Target<'_>) -> Recipient {
+    Recipient {
+        model: Arc::clone(target.model),
+        body: target.body.cloned().map(Arc::new),
+        faces: Arc::new(target.faces.clone()),
+    }
+}
+
+#[test]
+fn vmd_preview_follows_imported_take() {
+    let motion = dance();
+    for (figure, body) in [
+        (miku(true), &**BODY),
+        (AVATAR_FIGURE.target(), &AVATAR_FIGURE.body),
+    ] {
+        let take = Take::from_vmd(figure, motion.clone());
+        let human = take.human.as_ref().expect("the dance moves the figure");
+        let mut retarget = Retarget::from_vmd(recipient(figure), &motion);
+        assert_eq!(retarget.frames(), motion.last_frame() + 1);
+        let mut instance = Instance::new(Arc::clone(figure.model));
+        let frames: Vec<u32> = (0..retarget.frames()).step_by(7).collect();
+        let apart: f32 = frames
+            .iter()
+            .map(|frame| {
+                let preview = retarget
+                    .write(*frame as f32 / 30.0, Vec3::ZERO, &mut instance)
+                    .expect("the preview poses the figure");
+                let keyed = human.sample(*frame as f32, body.rest_pose()).pose;
+                preview
+                    .muscles
+                    .iter()
+                    .zip(keyed.muscles)
+                    .map(|(one, two)| (one - two).abs())
+                    .sum::<f32>()
+            })
+            .sum();
+        let mean = apart / (frames.len() * MUSCLE_COUNT) as f32;
+        assert!(mean < 0.01, "the preview strays {mean} from the take");
+    }
+}
+
+#[test]
+fn clip_preview_lowers_the_hand() {
+    let clip = Clip::new(wave(), 0).expect("the wave has a clip");
+    let avatar = &*AVATAR_FIGURE;
+    let mut retarget = Retarget::from_clip(recipient(avatar.target()), &clip);
+    let last = retarget.frames() - 1;
+    let [rest, lowered] = [0, last].map(|frame| {
+        let pose = retarget
+            .pose_at(frame as f32, Vec3::ZERO)
+            .expect("the wave poses the avatar");
+        hand_below_shoulder(&avatar.model, &avatar.body, &pose, HumanBone::LeftUpperArm)
+    });
+    assert!(
+        lowered > rest + 0.2,
+        "the left hand drops: {rest} → {lowered}"
+    );
 }

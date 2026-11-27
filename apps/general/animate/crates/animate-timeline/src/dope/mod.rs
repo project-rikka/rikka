@@ -29,6 +29,9 @@ pub struct Names {
     pub pour: Label,
     pub wind: Label,
     pub winds: Vec<Label>,
+    pub placement: Label,
+    pub props: Vec<Label>,
+    pub anchor: Label,
     pub hands: [Label; 2],
     pub sound: Option<String>,
 }
@@ -59,6 +62,7 @@ impl Names {
                 .get(*section as usize)
                 .map_or("", Label::as_str),
             GroupKind::Wind => self.wind.as_str(),
+            GroupKind::Prop => self.placement.as_str(),
         })
     }
 
@@ -68,6 +72,8 @@ impl Names {
             Lane::Part(part) => label(&self.part, part.index()),
             Lane::Fluid(setting) => label(&self.settings, *setting as usize),
             Lane::Wind(setting) => label(&self.winds, *setting as usize),
+            Lane::Prop(setting) => label(&self.props, *setting as usize),
+            Lane::Anchor => self.anchor.as_str(),
             _ => track.name(),
         }
     }

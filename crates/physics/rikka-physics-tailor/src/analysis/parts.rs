@@ -2,12 +2,14 @@ use std::collections::BTreeMap;
 
 use super::class::Class;
 use super::features::MeshFeatures;
+use crate::PARALLEL;
 use crate::cloth_settings::Role;
 use crate::figure::RestVertex;
 use crate::geometry::{PointGrid, Union, groups};
 
 const RIGID_WEIGHT: f32 = 0.9;
 const RIGID_SHARE: f32 = 0.9;
+const WELD_GRAIN: usize = 4096;
 
 #[derive(Clone, Debug)]
 pub(crate) struct Part {
@@ -43,16 +45,28 @@ pub(crate) fn parts(
             .map(|vertex| (vertex, features.position(vertex))),
         same * 2.0,
     );
-    for vertex in (0..roles.len() as u32).filter(|vertex| selected(*vertex)) {
-        let at = features.position(vertex);
-        for other in grid.near(at, same) {
-            if other > vertex
-                && strands[other as usize] == strands[vertex as usize]
-                && features.position(other).distance(at) <= same
-            {
-                union.join(vertex, other);
+    let picked: Vec<u32> = (0..roles.len() as u32)
+        .filter(|vertex| selected(*vertex))
+        .collect();
+    let welded = PARALLEL
+        .grain(WELD_GRAIN)
+        .concat_chunks(picked.len(), |range| {
+            let mut welded = Vec::new();
+            for vertex in &picked[range] {
+                let at = features.position(*vertex);
+                for other in grid.near(at, same) {
+                    if other > *vertex
+                        && strands[other as usize] == strands[*vertex as usize]
+                        && features.position(other).distance(at) <= same
+                    {
+                        welded.push((*vertex, other));
+                    }
+                }
             }
-        }
+            welded
+        });
+    for (vertex, other) in welded {
+        union.join(vertex, other);
     }
     let (labels, count) = union.labels();
     let mut parts = Vec::new();

@@ -25,6 +25,10 @@
 - [Animate Easy mode and humanoid motion crates](animate-easy-mode.md) — animate-body/solve/motion turn PMX figures into muscle-space humanoid motion that Easy mode poses by direct drag.
 - [Animate crate map, panel traits and catalogs](animate-crates.md) — rikka-animate's app-private crates: layers, what each owns, Studio/Workshop panel traits, Desk/Reach, catalogs.
 
+## apps/general/animate/crates/animate-booth
+
+- [Animate asset booth (thumbnails, live previews) and mannequin](animate-booth.md) — animate-booth renders library thumbnails and hover previews off-screen; animate-mannequin is the stand-in humanoid.
+
 ## apps/general/animate/crates/animate-fit
 
 - [Animate body fitting and motion style (animate-fit, intensity, jiggle)](animate-fit.md) — animate-fit removes limb-body intrusions from baked motion; animate-motion adds intensity shaping and bust jiggle.
@@ -37,9 +41,21 @@
 
 - [Animate holds (hands and pins gripping cloth)](animate-holds.md) — animate-hold's keyed Hold spans, the Easy palm-ring grasp, hold timeline rows, finger pinch and the cloth Grab path.
 
+## apps/general/animate/crates/animate-library
+
+- [Animate asset library (animate-library, animate-library-browser)](animate-library.md) — Library folders, Catalog snapshots, thumbnail cache, the left sidebar browser and how the binary applies entries.
+
 ## apps/general/animate/crates/animate-look
 
 - [Animate look model (node graphs, world nodes, slots, keys, plans)](animate-look.md) — animate-look's node-based look: World/Composite/Material graphs, world record nodes, typed World, slots, keys, plans.
+
+## apps/general/animate/crates/animate-motion
+
+- [Animate motion loading, background bake and retarget previews](animate-motion-loading.md) — Fast paths from motion files to playback: parallel import, background MotionBake, Retarget previews, exactness rules.
+
+## apps/general/animate/crates/animate-prop
+
+- [Animate stage and accessories (props)](animate-props.md) — animate-prop placement motion, cast Prop, the single Stage, bone-attached accessories, rendering and undo.
 
 ## apps/general/animate/crates/animate-shader
 
@@ -635,7 +651,7 @@
 ## crates/model
 
 - [3D model data, import/export and runtime](model-import.md) — Public model crates (core data, codecs, humanoid, GPU, rikka-model): codec kit, limits, conversion, upload, poses.
-- [Model library performance rules and threading](model-performance.md) — Threading model, caches and complexity rules for the crates/model mesh libraries.
+- [Model library performance rules and threading](model-performance.md) — Threading, caches and complexity rules for crates/model, the model-load path (import → Figure::load → upload).
 
 ## crates/model/rikka-blend
 

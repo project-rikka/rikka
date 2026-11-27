@@ -1,7 +1,7 @@
 use animate_cast::Subject;
 
 use super::{Animate, Batch};
-use crate::arrival::{Choice, Settled, Usage};
+use crate::arrival::{Choice, Placement, Settled, Usage};
 
 #[derive(Debug)]
 pub(crate) struct Choosing {
@@ -83,6 +83,7 @@ impl Animate {
                 model: choosing.choice.model,
                 usage: choosing.usage,
             }),
+            placement: Placement::Figure,
         });
         self.next_load();
     }

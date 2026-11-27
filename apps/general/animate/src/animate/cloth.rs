@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use animate_cast::{AnalysisResult, BodyFit, Figure, FigureId, Garment, Subject, fit_physique};
+use animate_cast::{
+    AnalysisResult, BodyFit, Figure, FigureId, Garment, Subject, Survey, Surveyed, fit_physique,
+};
 use animate_cloth::{Field, Knob, Reading};
 use animate_fit::Physique;
 use animate_inspector::{ClothEditing, Dial, Pane};
@@ -90,36 +92,36 @@ impl Animate {
         };
         figure.cloth.set_settings(Arc::clone(&cloth_settings));
         let mirror = Arc::clone(figure.cloth.mirror());
-        let model = Arc::clone(&figure.model);
-        let anatomy = Arc::clone(&figure.anatomy);
-        let body = figure.body.clone();
-        let edits = figure.cloth.edits();
         self.stage
             .lock()
-            .set_cloth_settings(id, Arc::clone(&cloth_settings), mirror);
+            .set_cloth_settings(id, cloth_settings, mirror);
+        self.survey(id);
+    }
+
+    pub(super) fn survey(&mut self, id: FigureId) {
+        let Some(figure) = self.cast.figure(id) else {
+            return;
+        };
+        let survey = Survey::of(figure);
         let sender = self.sender.clone();
         let spawned = std::thread::Builder::new()
             .name(CLOTH_ANALYSIS_THREAD.to_owned())
             .spawn(move || {
-                let analysis = animate_cast::analyze(&model, &anatomy, &cloth_settings);
-                let body_fit =
-                    fit_physique(body.as_deref(), &model, &anatomy, analysis.as_deref().ok());
-                let _ = sender.send(move |animate: &mut Animate| {
-                    animate.finish_analysis(id, edits, analysis, body_fit);
-                });
+                let surveyed = survey.run();
+                let _ = sender.send(move |animate: &mut Animate| animate.finish_analysis(surveyed));
             });
         if let Err(error) = spawned {
             self.notice = Some(Label::from(error.to_string()));
         }
     }
 
-    pub(crate) fn finish_analysis(
-        &mut self,
-        id: FigureId,
-        edits: u64,
-        analysis: AnalysisResult,
-        body_fit: BodyFit,
-    ) {
+    pub(crate) fn finish_analysis(&mut self, surveyed: Surveyed) {
+        let Surveyed {
+            figure: id,
+            edits,
+            analysis,
+            body_fit,
+        } = surveyed;
         let Some(figure) = self.cast.figure_mut(id) else {
             return;
         };
@@ -161,6 +163,7 @@ impl Animate {
             }
         };
         self.refit(id, physique);
+        self.stage_export();
     }
 
     fn refit(&mut self, id: FigureId, physique: Option<Arc<Physique>>) {

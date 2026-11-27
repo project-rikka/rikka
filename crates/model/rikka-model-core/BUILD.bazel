@@ -7,6 +7,7 @@ rikka_library(
     ],
     deps = [
         "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-parallel",
         "//crates/foundation/rikka-sync",
         "//crates/foundation/rikka-types",
         "@crates//:glam",

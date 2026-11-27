@@ -1,10 +1,12 @@
 use std::sync::Arc;
 
-use animate_document::Motion;
+use animate_cast::Prop;
+use animate_document::{Motion, PropRecord};
 use animate_edit::{Key, KeyId, KeyKind, Keyed};
 use animate_fluid::Emitter;
 use animate_look::Look;
 use animate_motion::{CameraMotion, Take};
+use animate_prop::PropKind;
 use animate_wind::WindMotion;
 use rustc_hash::FxHashSet;
 
@@ -15,6 +17,7 @@ pub(crate) enum SubjectMotion {
     Look(Arc<Look>),
     Emitter(Arc<Emitter>),
     Wind(Arc<WindMotion>),
+    Prop(Arc<Prop>),
 }
 
 macro_rules! each_motion {
@@ -25,6 +28,7 @@ macro_rules! each_motion {
             SubjectMotion::Look($bound) => $body,
             SubjectMotion::Emitter($bound) => $body,
             SubjectMotion::Wind($bound) => $body,
+            SubjectMotion::Prop($bound) => $body,
         }
     };
 }
@@ -58,6 +62,7 @@ subjective! {
     Look => Look;
     Emitter => Emitter;
     WindMotion => Wind;
+    Prop => Prop;
 }
 
 impl SubjectMotion {
@@ -68,6 +73,7 @@ impl SubjectMotion {
             Self::Look(_) => false,
             Self::Emitter(_) => false,
             Self::Wind(wind) => wind.is_empty(),
+            Self::Prop(prop) => prop.motion.is_empty() && prop.take.is_still(),
         }
     }
 
@@ -78,6 +84,16 @@ impl SubjectMotion {
             Self::Look(look) => Motion::Look(Box::new((**look).clone())),
             Self::Emitter(emitter) => Motion::Fluid(Box::new((**emitter).clone())),
             Self::Wind(wind) => Motion::Wind(Box::new((**wind).clone())),
+            Self::Prop(prop) => {
+                let record = Box::new(PropRecord {
+                    motion: prop.motion.clone(),
+                    take: (*prop.take).clone(),
+                });
+                match prop.kind {
+                    PropKind::Stage => Motion::Stage(record),
+                    PropKind::Accessory => Motion::Accessory(record),
+                }
+            }
         }
     }
 
@@ -89,6 +105,8 @@ impl SubjectMotion {
             (Self::Look(_), KeyKind::Look) => true,
             (Self::Emitter(_), KeyKind::Fluid) => true,
             (Self::Wind(_), KeyKind::Wind) => true,
+            (Self::Prop(_), KeyKind::Prop | KeyKind::Bone | KeyKind::Morph) => true,
+            (Self::Prop(prop), KeyKind::Anchor) => prop.kind.attaches(),
             _ => false,
         }
     }

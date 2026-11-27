@@ -1,0 +1,54 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[animate.library]
+title = "Library"
+options = "Library Options"
+open_folder = "Open Folder"
+add_folder = "Add Folder to {shelf}…"
+remove_folder = "Remove Folder"
+reading = "Reading files"
+rescan = "Rescan"
+search = "Search {shelf}"
+all_folders = "All"
+no_matches = "Nothing matches"
+empty = "Put {shelf} files in {folder} and they appear here"
+load = "Load"
+reveal = "Show in Folder"
+performed_by = "On {name}"
+performed_by_mannequin = "On mannequin"
+belongs = "Belongs in {shelf}"
+empty_file = "Nothing usable in this file"
+unsupported = "Not supported here"
+unreadable = "Cannot be read"
+author = "By {name}"
+vertices = "{count} vertices"
+has_body = "Body"
+has_morphs = "Face"
+has_camera = "Camera"
+frames = "{count} frames"
+made_for = "Made for {name}"
+
+[animate.library.shelf]
+models = "Models"
+motions = "Motions"
+cameras = "Cameras"
+stages = "Stages"
+accessories = "Accessories"
+music = "Music"
+
+[animate.library.size]
+small = "Small Thumbnails"
+medium = "Medium Thumbnails"
+large = "Large Thumbnails"
+
+[animate.library.avatar]
+onlyAuthor = "Avatar use: author only"
+onlySeparatelyLicensedPerson = "Avatar use: licensed people only"
+everyone = "Avatar use: everyone"
+
+[animate.library.commercial]
+personalNonProfit = "Commercial use: not allowed"
+personalProfit = "Commercial use: individuals"
+corporation = "Commercial use: allowed"

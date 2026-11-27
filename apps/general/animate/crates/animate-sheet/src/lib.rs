@@ -7,6 +7,7 @@ mod keys;
 mod look;
 mod morphs;
 mod parts;
+mod prop;
 mod sheet;
 mod wind;
 

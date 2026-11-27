@@ -53,26 +53,21 @@ pub struct Cloth {
     path: Option<PathBuf>,
     cloth_settings: Arc<ClothSettings>,
     saved: Arc<ClothSettings>,
-    analysis: AnalysisResult,
+    analysis: Option<AnalysisResult>,
     edits: u64,
     analyzed: u64,
     mirror: Arc<Mirror>,
 }
 
 impl Cloth {
-    pub fn new(
-        model: &Model,
-        anatomy: &Anatomy,
-        path: Option<PathBuf>,
-        cloth_settings: ClothSettings,
-    ) -> Self {
+    pub fn new(model: &Model, path: Option<PathBuf>, cloth_settings: ClothSettings) -> Self {
         let cloth_settings = Arc::new(cloth_settings);
         Self {
             path,
-            analysis: analyze(model, anatomy, &cloth_settings),
+            analysis: None,
             saved: Arc::clone(&cloth_settings),
             cloth_settings,
-            edits: 0,
+            edits: 1,
             analyzed: 0,
             mirror: Arc::new(Mirror::from_surface(&Surface::rest(model))),
         }
@@ -91,11 +86,11 @@ impl Cloth {
     }
 
     pub fn analysis(&self) -> Option<&Arc<ClothAnalysis>> {
-        self.analysis.as_ref().ok()
+        self.analysis.as_ref()?.as_ref().ok()
     }
 
     pub fn error(&self) -> Option<&rikka_physics_tailor::Error> {
-        self.analysis.as_ref().err().map(Arc::as_ref)
+        self.analysis.as_ref()?.as_ref().err().map(Arc::as_ref)
     }
 
     pub fn edits(&self) -> u64 {
@@ -126,18 +121,19 @@ impl Cloth {
         if edits != self.edits {
             return false;
         }
-        self.analysis = analysis;
+        self.analysis = Some(analysis);
         self.analyzed = edits;
         true
     }
 
     pub fn analyze_now(&mut self, model: &Model, anatomy: &Anatomy) -> AnalysisResult {
-        if self.is_analyzing() {
-            let edits = self.edits;
-            let analysis = analyze(model, anatomy, &self.cloth_settings);
-            self.finish_analysis(edits, analysis);
+        if let (false, Some(analysis)) = (self.is_analyzing(), &self.analysis) {
+            return analysis.clone();
         }
-        self.analysis.clone()
+        let edits = self.edits;
+        let analysis = analyze(model, anatomy, &self.cloth_settings);
+        self.finish_analysis(edits, analysis.clone());
+        analysis
     }
 
     pub fn save(&mut self) -> Result<(), SaveError> {

@@ -6,7 +6,7 @@ use crate::error::{Error, Result};
 use crate::expand::{Palette, Transparency, is_verbatim, native_row, read_transparency, rgba8_row};
 use crate::header::{Color, Header};
 use crate::layout::{Layout, Limits, Picture, Samples};
-use crate::unfilter::unfilter;
+use crate::unfilter::{unfilter, unfilter_compact};
 
 const MAX_PROFILE: usize = 64 << 20;
 const SEQUENCE_NUMBER: usize = 4;
@@ -176,12 +176,13 @@ impl Decoder {
         plausible(&header, &parsed.image)?;
         let samples = if is_verbatim(&header, parsed.transparency) {
             let mut raw = Vec::new();
-            self.inflate(&header, &parsed.image, &mut raw)?;
-            let row = header.row_bytes(header.width);
-            for y in 0..header.height {
-                let start = y * (row + 1) + 1;
-                raw.copy_within(start..start + row, y * row);
-            }
+            self.inflate_filtered(&header, &parsed.image, &mut raw)?;
+            unfilter_compact(
+                &mut raw,
+                header.row_bytes(header.width),
+                header.height,
+                header.filter_stride(),
+            )?;
             raw.truncate(bytes);
             Samples::U8(raw)
         } else if layout.is_deep() {
@@ -263,6 +264,23 @@ impl Decoder {
     }
 
     fn inflate(&mut self, header: &Header, stream: &Stream<'_>, raw: &mut Vec<u8>) -> Result<()> {
+        self.inflate_filtered(header, stream, raw)?;
+        let mut offset = 0;
+        for pass in header.passes() {
+            let row = header.row_bytes(pass.width);
+            let len = pass.height * (1 + row);
+            unfilter(&mut raw[offset..offset + len], row, header.filter_stride())?;
+            offset += len;
+        }
+        Ok(())
+    }
+
+    fn inflate_filtered(
+        &mut self,
+        header: &Header,
+        stream: &Stream<'_>,
+        raw: &mut Vec<u8>,
+    ) -> Result<()> {
         let expected = header.raw_len();
         plausible(header, stream)?;
         let compressed = match stream.pieces.as_slice() {
@@ -280,13 +298,6 @@ impl Decoder {
         self.inflater.zlib(compressed, raw, expected)?;
         if raw.len() != expected {
             return Err(Error::Data(rikka_deflate::Error::Truncated));
-        }
-        let mut offset = 0;
-        for pass in header.passes() {
-            let row = header.row_bytes(pass.width);
-            let len = pass.height * (1 + row);
-            unfilter(&mut raw[offset..offset + len], row, header.filter_stride())?;
-            offset += len;
         }
         Ok(())
     }

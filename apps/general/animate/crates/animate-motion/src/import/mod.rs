@@ -2,6 +2,7 @@ mod adopting;
 mod clip;
 mod contact;
 mod reduce;
+mod retarget;
 mod seeds;
 mod standard;
 mod vmd;
@@ -12,6 +13,7 @@ use animate_body::{Body, Faces, HumanPose, Limb, Side, Worlds};
 use rikka_model_core::{Model, NodeId};
 use rustc_hash::FxHashMap;
 
+use crate::PARALLEL;
 use crate::motion::HumanMotion;
 use crate::part::{Goal, Part};
 use crate::sample::{Pinned, PoseSample};
@@ -21,6 +23,9 @@ use reduce::reduce;
 use seeds::Seeds;
 
 pub use clip::Clip;
+pub use retarget::{Recipient, Retarget};
+
+const FRAMES_PER_WORKER: usize = 32;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Target<'a> {
@@ -41,9 +46,9 @@ struct Source<'a> {
     body: &'a Body,
 }
 
-struct Performer {
-    model: Arc<Model>,
-    body: Body,
+pub(crate) struct Performer {
+    pub(crate) model: Arc<Model>,
+    pub(crate) body: Arc<Body>,
 }
 
 impl Performer {
@@ -77,7 +82,9 @@ fn human_motion(source: Source<'_>, target: &Body, recording: &Recording) -> Opt
 }
 
 fn add_body(human: &mut HumanMotion, body: &Body, poses: &[HumanPose], seeds: &Seeds) {
-    let worlds: Vec<Worlds> = poses.iter().map(|pose| body.fk(pose)).collect();
+    let worlds: Vec<Worlds> = PARALLEL
+        .grain(FRAMES_PER_WORKER)
+        .collect(poses.len(), |frame| body.fk(&poses[frame]));
     let feet = Side::BOTH.map(|side| footing(body, &worlds, side));
     let footing_of = |limb: Limb| match limb {
         Limb::LeftLeg => Some(&feet[0]),
@@ -85,22 +92,20 @@ fn add_body(human: &mut HumanMotion, body: &Body, poses: &[HumanPose], seeds: &S
         Limb::LeftArm | Limb::RightArm => None,
     };
     let scale = body.scale();
-    let pose_sample: Vec<PoseSample> = poses
-        .iter()
-        .zip(&worlds)
-        .enumerate()
-        .map(|(frame, (pose, worlds))| {
-            let mut pose_sample = PoseSample::resting(pose);
-            for limb in Limb::ALL {
-                pose_sample.pins[limb.index()] = match footing_of(limb) {
-                    Some(footing) => Pinned::new(footing.pinned[frame], footing.goals[frame]),
-                    None => Pinned::new(false, Goal::from_worlds(worlds, limb, scale)),
-                };
-            }
-            pose_sample
-        })
-        .collect();
-    for part in Part::ALL {
+    let pose_sample: Vec<PoseSample> =
+        PARALLEL
+            .grain(FRAMES_PER_WORKER)
+            .collect(poses.len(), |frame| {
+                let mut pose_sample = PoseSample::resting(&poses[frame]);
+                for limb in Limb::ALL {
+                    pose_sample.pins[limb.index()] = match footing_of(limb) {
+                        Some(footing) => Pinned::new(footing.pinned[frame], footing.goals[frame]),
+                        None => Pinned::new(false, Goal::from_worlds(&worlds[frame], limb, scale)),
+                    };
+                }
+                pose_sample
+            });
+    let reduced = PARALLEL.map(Part::ALL, |part| {
         let values: Vec<_> = pose_sample
             .iter()
             .map(|sample| sample.values(part))
@@ -109,15 +114,16 @@ fn add_body(human: &mut HumanMotion, body: &Body, poses: &[HumanPose], seeds: &S
             .limb()
             .and_then(footing_of)
             .map_or(&[], |footing: &Footing| footing.pinned.as_slice());
-        for key in reduce(
+        reduce(
             part,
             &values,
             &switches(pinned),
             pinned,
             seeds.keyed_frames(part),
-        ) {
-            human.insert(key);
-        }
+        )
+    });
+    for key in reduced.into_iter().flatten() {
+        human.insert(key);
     }
 }
 

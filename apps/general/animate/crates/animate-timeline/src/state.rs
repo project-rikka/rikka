@@ -332,7 +332,9 @@ impl Timeline {
             | Lane::Part(_)
             | Lane::Look(_)
             | Lane::Fluid(_)
-            | Lane::Wind(_) => None,
+            | Lane::Wind(_)
+            | Lane::Prop(_)
+            | Lane::Anchor => None,
         }
     }
 

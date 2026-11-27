@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use glam::{Vec2, Vec3};
+use rustc_hash::FxHashMap;
 
 use super::{Feature, TriangleTree, doubled_area_normal};
 
@@ -10,7 +9,7 @@ pub(crate) struct Shell {
     triangles: Vec<[u32; 3]>,
     faces: Vec<Vec3>,
     corners: Vec<Vec3>,
-    sides: HashMap<(u32, u32), Vec3>,
+    sides: FxHashMap<(u32, u32), Vec3>,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -29,7 +28,7 @@ impl Shell {
             .map(|triangle| doubled_area_normal(corners_of(triangle)).normalize_or_zero())
             .collect();
         let mut corners = vec![Vec3::ZERO; positions.len()];
-        let mut sides: HashMap<(u32, u32), Vec3> = HashMap::new();
+        let mut sides: FxHashMap<(u32, u32), Vec3> = FxHashMap::default();
         for (triangle, face) in triangles.iter().zip(&faces) {
             let at = corners_of(triangle);
             for corner in 0..3 {

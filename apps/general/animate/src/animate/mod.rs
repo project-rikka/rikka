@@ -1,4 +1,5 @@
 mod baking;
+mod booth;
 mod cloth;
 mod curves;
 mod edit;
@@ -7,12 +8,14 @@ mod exporting;
 mod focusing;
 mod holding;
 mod importing;
+mod library;
 mod liquids;
 mod look;
 mod morphing;
 mod placing;
 mod posing;
 mod pouring;
+mod props;
 mod saving;
 mod serving;
 mod settings;
@@ -24,10 +27,12 @@ mod wind;
 mod workshop;
 
 use animate_inspector::EmitterNaming;
+use animate_library_browser::Shelving;
 use animate_shader_editor::{ShaderEditor, Workshop};
 use curves::Curves;
 use edit::{Edit, Pair};
 pub(crate) use importing::Choosing;
+use library::Shelves;
 use subject_motion::SubjectMotion;
 
 pub(crate) use look::{LookPart, Starter};
@@ -39,7 +44,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use animate_body::Body;
-use animate_cast::{Cast, Eye, FigureId, Mode, Subject, TakePlayback, time_of};
+use animate_cast::{Cast, Eye, FigureId, Mode, PropId, PropRole, Subject, TakePlayback, time_of};
 use animate_document::Motion;
 use animate_edit::{Channel, Clip, History};
 use animate_export::Job;
@@ -62,7 +67,9 @@ use rikka_ui::{DragOffer, StateAccess};
 use rikka_viewport::Viewport3d;
 use rustc_hash::FxHashSet;
 
-use crate::arrival::{self, Arrival, FigureTarget, LoadRequest, LoadTarget, Settled};
+use crate::arrival::{
+    self, Arrival, FigureTarget, LoadRequest, LoadTarget, Placement, PropTarget, Settled,
+};
 use crate::output::Output;
 use crate::{assistant, wording};
 
@@ -98,6 +105,7 @@ struct Loading {
 struct Batch {
     paths: Vec<PathBuf>,
     settled: Option<Settled>,
+    placement: Placement,
 }
 
 #[derive(Debug, Default)]
@@ -173,6 +181,8 @@ pub(crate) struct Animate {
     sampling: Sampling,
     shader: ShaderEditor,
     dock: Dock,
+    preparing: FxHashSet<PropId>,
+    shelves: Shelves,
 }
 
 impl Animate {
@@ -206,6 +216,7 @@ impl Animate {
         let render_stage = Arc::clone(&stage);
         let drawing = Arc::clone(&render);
         viewport.set_scene(move |ctx| animate_stage::draw(&render_stage, &drawing, ctx));
+        let (shelves, problems) = Shelves::open(&preferences, &sender);
         Self {
             cast: Cast::default(),
             subject: None,
@@ -219,7 +230,7 @@ impl Animate {
                 opening,
                 ..Loading::default()
             },
-            notice: None,
+            notice: (!problems.is_empty()).then(|| Label::from(problems.join("\n"))),
             folder: None,
             physics,
             history: History::default(),
@@ -254,6 +265,8 @@ impl Animate {
                 split: false,
                 ratio: Ratio::new(RESTING_DOCK),
             },
+            preparing: FxHashSet::default(),
+            shelves,
         }
     }
 
@@ -424,14 +437,7 @@ impl Animate {
     }
 
     pub(crate) fn load(&mut self, paths: Vec<PathBuf>) {
-        if paths.is_empty() {
-            return;
-        }
-        self.loading.queue.push_back(Batch {
-            paths,
-            settled: None,
-        });
-        self.next_load();
+        self.load_as(paths, Placement::Figure);
     }
 
     pub(crate) fn dropped(offer: DragOffer) {
@@ -513,9 +519,11 @@ impl Animate {
         let order = LoadRequest {
             paths: batch.paths,
             settled: batch.settled,
+            placement: batch.placement,
             target: self.load_target(),
             camera: self.camera_motion(),
             emitter: self.chosen_emitter().map(|emitter| emitter.id),
+            uploads: self.stage.lock().uploads(),
         };
         spawn_blocking(
             move || arrival::load(order),
@@ -524,12 +532,18 @@ impl Animate {
     }
 
     fn load_target(&self) -> LoadTarget {
-        let Some(Subject::Figure(id)) = self.subject else {
-            return LoadTarget::Camera;
-        };
-        match self.cast.figure(id) {
-            Some(figure) => LoadTarget::Figure(FigureTarget::from_figure(figure)),
-            None => LoadTarget::Camera,
+        match self.subject {
+            Some(Subject::Figure(id)) => {
+                self.cast.figure(id).map_or(LoadTarget::Camera, |figure| {
+                    LoadTarget::Figure(FigureTarget::from_figure(figure))
+                })
+            }
+            Some(subject @ (Subject::Stage | Subject::Accessory(_))) => {
+                self.cast.prop(subject).map_or(LoadTarget::Camera, |track| {
+                    LoadTarget::Prop(PropTarget::from_prop(&track.prop))
+                })
+            }
+            _ => LoadTarget::Camera,
         }
     }
 
@@ -553,8 +567,10 @@ impl Animate {
                 self.stage.lock().add_figure(&figure, prepared);
                 self.cast.add_figure(figure);
                 self.load_cloth(id);
+                self.survey(id);
                 self.subject = Some(Subject::Figure(id));
             }
+            Arrival::Prop { prop, prepared } => self.accept_prop(prop, prepared),
             Arrival::Motion {
                 figure,
                 onto,
@@ -562,6 +578,12 @@ impl Animate {
                 take,
                 playback,
             } => self.land_take(figure, &onto, &incoming, take, playback),
+            Arrival::PropMotion {
+                role,
+                onto,
+                incoming,
+                take,
+            } => self.land_prop_take(role, &onto, &incoming, take),
             Arrival::Camera {
                 onto,
                 incoming,
@@ -583,6 +605,7 @@ impl Animate {
             Arrival::Look(look) => self.replace(Subject::Look, Some(SubjectMotion::Look(look))),
             Arrival::Emitter { emitter, replacing } => self.add_loaded_emitter(*emitter, replacing),
             Arrival::Wind(wind) => self.replace(Subject::Wind, Some(SubjectMotion::Wind(wind))),
+            Arrival::Placed { file, kind, record } => self.land_placement(&file, kind, *record),
             Arrival::Choose(choice) => self.choose(*choice),
             Arrival::Rejected { file, rejection } => {
                 self.notice = Some(wording::rejection(&file, &rejection));
@@ -648,15 +671,23 @@ impl Animate {
         let mut stage = self.stage.lock();
         stage.follow_camera(subject == Some(Subject::Camera));
         stage.show_wind(subject == Some(Subject::Wind));
+        stage.show_prop(subject.and_then(PropRole::of));
         stage.focus(match subject {
             Some(Subject::Figure(id)) => Some(id),
-            Some(Subject::Emitter(_) | Subject::Camera | Subject::Look | Subject::Wind) | None => {
-                None
-            }
+            Some(
+                Subject::Stage
+                | Subject::Accessory(_)
+                | Subject::Emitter(_)
+                | Subject::Camera
+                | Subject::Look
+                | Subject::Wind,
+            )
+            | None => None,
         });
         stage.set_look(Arc::clone(&self.cast.look().motion));
         stage.set_wind(Arc::clone(&self.cast.wind().motion));
         drop(stage);
+        self.sync_props();
         self.sync_shaders();
         self.follow_sampling();
         self.fit_cloth();
@@ -675,8 +706,14 @@ impl Animate {
         let Some(subject) = self.cast.subjects().get(index).copied() else {
             return;
         };
-        if let Some(Subject::Figure(left)) = self.subject.replace(subject) {
-            self.stage.lock().highlight(left, &[]);
+        match self.subject.replace(subject) {
+            Some(Subject::Figure(left)) => self.stage.lock().highlight(left, &[]),
+            Some(left @ (Subject::Stage | Subject::Accessory(_))) => {
+                if let Some(track) = self.cast.prop(left) {
+                    self.stage.lock().highlight_prop(track.prop.id, &[]);
+                }
+            }
+            _ => {}
         }
         self.controls.card = None;
         self.refresh();
@@ -686,7 +723,7 @@ impl Animate {
         let Some(subject) = self.subject else {
             return;
         };
-        if let Subject::Emitter(_) = subject {
+        if let Subject::Emitter(_) | Subject::Stage | Subject::Accessory(_) = subject {
             self.replace(subject, None);
             return;
         }
@@ -709,8 +746,13 @@ impl Animate {
     }
 
     pub(crate) fn clear_motion(&mut self) {
-        let Some(Subject::Figure(id)) = self.subject else {
-            return;
+        let id = match self.subject {
+            Some(Subject::Figure(id)) => id,
+            Some(subject) if PropRole::of(subject).is_some() => {
+                self.clear_prop_motion(subject);
+                return;
+            }
+            _ => return,
         };
         let Some(figure) = self.cast.figure_mut(id) else {
             return;
@@ -906,6 +948,14 @@ pub(crate) fn studio<'a>(
     access
         .get::<Animate>()
         .map(|animate| animate as &mut (dyn Studio + 'static))
+}
+
+pub(crate) fn shelving<'a>(
+    access: &'a mut StateAccess<'_>,
+) -> Option<&'a mut (dyn Shelving + 'static)> {
+    access
+        .get::<Animate>()
+        .map(|animate| animate as &mut (dyn Shelving + 'static))
 }
 
 pub(crate) fn workshop<'a>(

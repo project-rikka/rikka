@@ -224,6 +224,39 @@
           "default": true,
           "summary": "Show the expressions and morphs in the Motion tab",
           "role": "state"
+        },
+        {
+          "name": "library-locations",
+          "default": [],
+          "summary": "Folders added to the library, each a whole library or one shelf"
+        },
+        {
+          "name": "library-shelf",
+          "default": "models",
+          "summary": "The library shelf shown last",
+          "constraint": {
+            "choices": [
+              "models",
+              "motions",
+              "cameras",
+              "stages",
+              "accessories",
+              "music"
+            ]
+          },
+          "role": "state"
+        },
+        {
+          "name": "library-thumbnail-size",
+          "default": "medium",
+          "summary": "Size of library thumbnails",
+          "constraint": {
+            "choices": [
+              "small",
+              "medium",
+              "large"
+            ]
+          }
         }
       ]
     },

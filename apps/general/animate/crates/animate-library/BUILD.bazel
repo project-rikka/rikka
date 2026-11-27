@@ -1,0 +1,41 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "animate-library",
+    visibility = [
+        "//apps/general/animate:__subpackages__",
+    ],
+    deps = [
+        "//apps/general/animate/crates/animate-document",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-encoding",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-sync",
+        "//crates/foundation/rikka-types",
+        "//crates/foundation/rikka-watch",
+        "//crates/foundation/rikka-worker",
+        "//crates/graphics/rikka-image",
+        "//crates/media/rikka-audio-tags",
+        "//crates/media/rikka-media-format",
+        "//crates/model/rikka-model",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    compile_data = [
+        "//crates/model/rikka-mmd:assets/mmd/miku.pmx",
+        "//crates/model/rikka-mmd:assets/mmd/motion.vmd",
+        "//crates/model/rikka-vrm:assets/avatar.vrm",
+    ],
+    deps = [
+        ":animate-library",
+        "//crates/foundation/rikka-fs",
+        "@crates//:tempfile",
+    ],
+)

@@ -38,25 +38,18 @@ impl<'a> Evaluator<'a> {
     }
 
     pub(crate) fn evaluate_sampled(&mut self, pose_sample: PoseSample, eye: Vec3) -> HumanPose {
-        let body = self.body;
-        let settings = &self.motion.settings;
+        let lagged = self.lag(&pose_sample);
+        settle(self.body, lagged, &pose_sample, || eye)
+    }
+
+    pub(crate) fn lag(&mut self, pose_sample: &PoseSample) -> HumanPose {
         let mut pose = pose_sample.pose;
-        self.springs
-            .lag(body, &mut pose, &pose_sample.pins, settings.secondary);
-        for limb in Limb::ALL {
-            let pinned = pose_sample.pins[limb.index()];
-            if pinned.weight > 0.0 {
-                reach(
-                    body,
-                    &mut pose,
-                    limb,
-                    pinned.goal.position * body.scale(),
-                    Some(pinned.goal.rotation),
-                    pinned.weight,
-                );
-            }
-        }
-        stand(body, &mut pose, &pose_sample, || eye);
+        self.springs.lag(
+            self.body,
+            &mut pose,
+            &pose_sample.pins,
+            self.motion.settings.secondary,
+        );
         pose
     }
 }
@@ -68,6 +61,34 @@ impl PoseSample {
         stand(body, &mut pose, self, eye);
         pose
     }
+
+    #[must_use]
+    pub fn reached(&self, body: &Body, eye: impl FnOnce() -> Vec3) -> HumanPose {
+        settle(body, self.pose, self, eye)
+    }
+}
+
+pub(crate) fn settle(
+    body: &Body,
+    mut pose: HumanPose,
+    pose_sample: &PoseSample,
+    eye: impl FnOnce() -> Vec3,
+) -> HumanPose {
+    for limb in Limb::ALL {
+        let pinned = pose_sample.pins[limb.index()];
+        if pinned.weight > 0.0 {
+            reach(
+                body,
+                &mut pose,
+                limb,
+                pinned.goal.position * body.scale(),
+                Some(pinned.goal.rotation),
+                pinned.weight,
+            );
+        }
+    }
+    stand(body, &mut pose, pose_sample, eye);
+    pose
 }
 
 fn stand(body: &Body, pose: &mut HumanPose, pose_sample: &PoseSample, eye: impl FnOnce() -> Vec3) {

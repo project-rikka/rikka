@@ -15,13 +15,18 @@ pub use document::{
 };
 pub use switches::VmdSwitches;
 
-use rikka_model_core::Limit;
 use rikka_model_core::Model;
 use rikka_model_core::Result;
 use rikka_model_core::{Confidence, ImportCtx, Importer, ImporterInfo, Input};
+use rikka_model_core::{Conversion, CoordinateSystem, Extension, ImportOptions, Limit, Limits};
 use rikka_model_core::{ExportCtx, Exporter, ExporterInfo, Supports};
+use rikka_parallel::Parallel;
+
+use crate::MMD_UNIT_SCALE;
 
 const NAME: &str = "VMD";
+
+pub(crate) const PARALLEL: Parallel = Parallel::new("rikka-mmd");
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct VmdImporter;
@@ -42,13 +47,34 @@ impl Importer for VmdImporter {
     }
 
     fn read(&self, input: &Input<'_>, ctx: &mut ImportCtx<'_>) -> Result<Model> {
-        let motion = read::read(input.bytes(), ctx)?;
-        let limits = &ctx.options().limits;
-        limits.check(Limit::Keyframes, u64::from(motion.last_frame()) + 1)?;
-        let sampled = animation::sampled_keyframes(&motion);
-        ctx.charge_keyframes(usize::try_from(sampled).unwrap_or(usize::MAX))?;
-        animation::model_of(motion)
+        let motion = read::read(input.bytes(), &|| ctx.checkpoint())?;
+        check_span(&motion, &ctx.options().limits)?;
+        animation::model_of(motion, ctx)
     }
+}
+
+impl Vmd {
+    pub fn read(bytes: &[u8], options: &ImportOptions) -> Result<Vmd> {
+        let mut motion = read::read(bytes, &|| Ok(()))?;
+        check_span(&motion, &options.limits)?;
+        let units = match options.normalize_units {
+            true => MMD_UNIT_SCALE,
+            false => 1.0,
+        };
+        let conversion = Conversion::new(
+            CoordinateSystem::LEFT_HANDED_Y_UP,
+            options.coordinates,
+            units * options.scale,
+        );
+        if !conversion.is_identity() {
+            motion.convert(&conversion);
+        }
+        Ok(motion)
+    }
+}
+
+fn check_span(motion: &Vmd, limits: &Limits) -> Result<()> {
+    limits.check(Limit::Keyframes, u64::from(motion.last_frame()) + 1)
 }
 
 #[derive(Clone, Copy, Debug, Default)]
