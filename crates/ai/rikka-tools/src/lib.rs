@@ -4,6 +4,7 @@ mod bash;
 mod edit;
 mod error;
 mod facts;
+mod file_access;
 mod file_history;
 mod job;
 mod jobs;

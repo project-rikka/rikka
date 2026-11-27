@@ -2,11 +2,13 @@ use std::collections::BTreeSet;
 use std::fmt;
 use std::ops::Range;
 
+use crate::text::cut_line;
+
 const CONTEXT_LINES: usize = 2;
 const EDGE_LINES: usize = 2;
 const MAX_FULL_SPAN: usize = 6;
 const MAX_LINES: usize = 160;
-const MAX_LINE_CHARS: usize = 240;
+const MAX_LINE_CHARS: usize = 2000;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Row {
@@ -37,11 +39,27 @@ impl Excerpt {
             }
             rows.push(Row::Line {
                 number: at + 1,
-                text: truncate_line(lines[at]),
+                text: cut_line(lines[at], MAX_LINE_CHARS).into_owned(),
             });
             last = Some(at);
         }
 
+        Excerpt { rows }
+    }
+
+    pub(crate) fn span(lines: &[&str], span: Range<usize>) -> Excerpt {
+        let end = span.end.min(lines.len());
+        let start = span.start.min(end);
+        let mut rows: Vec<Row> = (start..end)
+            .take(MAX_LINES)
+            .map(|at| Row::Line {
+                number: at + 1,
+                text: cut_line(lines[at], MAX_LINE_CHARS).into_owned(),
+            })
+            .collect();
+        if end - start > MAX_LINES {
+            rows.push(Row::Truncated);
+        }
         Excerpt { rows }
     }
 
@@ -82,11 +100,4 @@ fn excerpt_after(spans: &[Range<usize>], count: usize) -> BTreeSet<usize> {
         excerpt_after.extend(end..(end + CONTEXT_LINES).min(count));
     }
     excerpt_after
-}
-
-fn truncate_line(line: &str) -> String {
-    match line.char_indices().nth(MAX_LINE_CHARS) {
-        Some((cut, _)) => format!("{}…", &line[..cut]),
-        None => line.to_owned(),
-    }
 }

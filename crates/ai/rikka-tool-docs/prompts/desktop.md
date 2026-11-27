@@ -23,16 +23,13 @@ scroll_amount = "Wheel turns: {{turns}} by default, at most {{most_turns}}."
 duration = "Seconds for `wait` or `hold_key`; at most {{longest_seconds}}."
 +++
 
-Works the person's own desktop through a pointer and keyboard of your own, drawn as a coloured ring. Theirs stay where they are, so never ask them to move anything; what you click takes your typing without taking their focus.
+Works the person's own desktop with a pointer and keyboard of your own, drawn as a coloured ring. Theirs stay where they are, so never ask them to move anything; what you click takes your typing without taking their focus.
 
-Each call runs its `actions` in order and lets the screen settle after every action that changes it. A call ending on such an action returns one screenshot of the display your pointer is on, or says the screen is unchanged since your last screenshot. `screenshot` and `zoom` always return an image. If an action fails, the rest are not run and the reply says which failed and which were skipped.
+Each call runs `actions` in order, letting the screen settle (at most {{idle_timeout_ms}} ms) after each change, and ends with a screenshot of the display your pointer is on, unless it is unchanged since your last one. `screenshot` and `zoom` always return an image; `windows` and `cursor_position` answer in text. The first failing action stops the rest, and the reply names both.
 
-- Coordinates are pixels of the full screenshot from top-left `[0, 0]`, also after a `zoom`.
-- Batch steps such as clicking a field, typing and pressing `Return`; look again before acting on what changed.
-- `zoom` shows `region` at full resolution, for small text and dense controls. `cursor_position` and `windows` answer in text.
-- `mouse_move` hovers. Clicks use `coordinate` when given, otherwise the pointer, and hold modifiers from `text`. `left_mouse_down` and `left_mouse_up` press and release separately; `left_click_drag` drags from `start_coordinate` or the pointer to `coordinate`.
-- `scroll` turns the wheel by `scroll_amount` in `scroll_direction`, optionally at `coordinate` and with `text` modifiers.
-- `type` enters `text`. `key` presses a shortcut such as `ctrl+s`, `alt+Tab`, `Return`, `Escape`, `F5`, or `super`, `repeat` times; `hold_key` holds it for `duration`. Shortcuts reach menus, lists and dropdowns more reliably than the pointer.
-- `launch` starts the command in `text` in this session and waits up to {{window_timeout_ms}} ms for its window. `wait` pauses for `duration`.
-- The screen counts as settled once it stops changing, at most {{idle_timeout_ms}} ms after an action.
-- An X11 window under Xwayland answers to one pointer only, so clicking one moves the person's pointer with yours; say so rather than fighting it.
+- Coordinates are full-screenshot pixels from the top-left, also after `zoom`, which shows `region` at full resolution for small text and dense controls.
+- Batch predictable steps, such as clicking a field, typing and pressing `Return`; look again before acting on what changed.
+- Clicks hit `coordinate`, or the pointer, holding the modifiers in `text`; `mouse_move` only hovers.
+- Keyboard shortcuts reach menus, lists and dropdowns more reliably than the pointer.
+- `launch` runs the command in `text` in this session and waits up to {{window_timeout_ms}} ms for its window.
+- An X11 window under Xwayland follows one pointer only, so clicking it moves the person's pointer too; say so rather than fighting it.

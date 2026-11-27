@@ -1,6 +1,6 @@
 ---
 title: Shared agent tool runtime
-description: rikka-tools declares Bash, jobs, Edit/Write, questions, deferred search and Computer from prompts; web() asks for hosted web tools.
+description: rikka-tools declares Bash, jobs, View/Edit/Write, questions, deferred search and Computer; web() adds hosted tools.
 about: crates/ai/rikka-tools
 tags: [agent, tools]
 ---
@@ -13,9 +13,10 @@ tags: [agent, tools]
 - `facts_for(language)` is `facts()` plus the four shared facts `model` (`{{model}}`), `language`, `platform`, `date`; both apps start their prompt facts from it. `facts()` names tools for app prompts. `naming()` is the cached `&'static Naming` mapping a called name to its stem; apps extend a clone with their own stems (`ade_prompt::naming()`).
 - `ToolAction::classify(naming, tool, input)` interprets a call for display; `action.name(tool)` and `subject()` are shared by both assistants. A Bash command that only reads, searches or lists (the `look` module: exact tokenizing via `words::exact_segments`, its own table of reading commands in `look/known.rs`) is `ToolAction::Inspect { look }` with `Inspection::{Read, Search, List}`. Hosted calls (`ServerTool::from_name`: `web_search`, `web_fetch`) are `Search`/`Fetch`. Stems the crate does not own are `ToolAction::Tool { stem, input }` for the app to draw.
 - `words.rs` is the one shell tokenizer: lenient `segments` for build detection, exact `exact_segments` (refuses substitutions, file redirects, background `&`) for looking.
-- Bash is the only reader. `View` returns its picture as `shown`, so apps can draw it. `Edit` (`replace/delete` with start/end, `insert_before` with line) and `Write` are the only writers, atomic per call.
-- Edit text follows how models write it (`rikka-file-edit` `op.rs`): `replace` text is lines joined by newlines (a final newline is an empty last line, empty text removes the range); `insert_before` text is newline-terminated lines (a missing final newline is added).
-- An Edit reply is the summary line plus `rikka_file_edit::Excerpt`: every changed place in the new numbering, `cat -n` style, two lines either side, long spans and gaps elided with `…`. Refusals (`echoed_line`, `broken_syntax`) come from `rikka-file-edit`'s gates; `prompts/edit.md` names the boundary rules they enforce.
+- There is no file-read tool: text is read through Bash (`rg -n`, then `sed -n` ranges). `View` (`view.rs`) only shows PNG/JPEG/GIF/WebP by extension as `shown` pictures; it reads any path, while `Edit` and `Write` are confined to the root.
+- `Edit` takes `path` plus `old_string`/`new_string`/`replace_all`, or `edits: [..]` (exclusive), mapped to `rikka_file_edit::Replacement`s; `Write` writes whole files and always overwrites. Both are atomic per call; the file-edit-gates note has the matching and refusal rules.
+- `FileAccess` (files, `FileHistory`, aside) is shared by Edit and Write.
+- An Edit reply is the summary line plus `rikka_file_edit::Excerpt`: every changed place in the new numbering, `cat -n` style, two lines either side, long spans and gaps elided with `…`; the `Change` rides as `detail`, and rikka-chat draws arriving edits from `new_string`/`edits[].new_string`.
 - Bash: fresh shell, closed stdin, fixed answer size. `background` or timeout turns it into a `Jobs` job.
 - Output streams to `.rikka/tmp` logs (`logs.rs`: self-ignoring, keeps the newest `kept_logs`, stays under 0.5 GB, never drops live logs).
 - `known.rs` spots ~90 build and test tools through wrappers (`env`, `sudo`, `nix develop --command`, `npx`, `bash -c`). Those reply with status plus log path only. Others reply with output, and keep a log only if it overflowed or went background.
@@ -28,6 +29,6 @@ tags: [agent, tools]
 - ToolSearch loads matches by reference (`Reply::load_tool`) without revealing them; its description is static and the deferred list is `Toolbox::searchable()` (`prompts/deferred.md`), a standing instruction. With a rack, ToolSearch uses `tool_search_apps.md`, searches the racked kits live, loads every tool of a kit on `select:<ToolKit>` and prepends `<instructions for="ToolKit">` the first time a kit is introduced (`Deferred::introduce`). `Toolbox::open_toolkit` reveals a kit for an `@` mention and returns `ToolKitEntry`.
 - Bash calls `Machine::enter(command)` per call (`ComputerUse` applies `Computer::environment()`), which never waits on machine actions: the machine reads `session.env` once at start into a `Presence` beside its state lock and checks the compositor's pidfd. While it runs, `Environment::apply` sets its variables and removes the `rikka_session::environment::SESSION_VARIABLES` it leaves undefined, so GUI programs open in the machine; otherwise (desktop kind, not started, exited) they run in the person's session. There is no `run` action.
 - Questions pause the tool and are withdrawn on cancel. `OutputBuffer` keeps head and tail within budget.
-- `ToolboxBuilder::read_only()` fits Bash from `prompts/reading.md` (runs only what `look` classifies as reading, searching or listing), Jobs and View, with no Write, Edit or Computer. Because `look` is now a safety gate, a running flag (`-exec`, `-x`) counts only when written alone, and any flag or subcommand that writes (`tree -o/-R`, `bat cache`, `--generate-config-file`) must be forbidden in `look/known.rs`.
+- `ToolboxBuilder::read_only()` fits Bash from `prompts/reading.md` (runs only what `look` classifies as reading, searching or listing), Jobs and Read, with no Write, Edit or Computer. Because `look` is now a safety gate, a running flag (`-exec`, `-x`) counts only when written alone, and any flag or subcommand that writes (`tree -o/-R`, `bat cache`, `--generate-config-file`) must be forbidden in `look/known.rs`.
 - No approvals: tools run with full access; nothing asks before a command, file change or extension call.
 - Gap: no command blocklist.

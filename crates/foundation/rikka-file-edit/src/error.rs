@@ -15,22 +15,17 @@ pub enum Error {
     #[error("error: concurrent_modification {0} changed during the write")]
     ConcurrentModification(String),
 
-    #[error("error: overlap op{one} and op{two} cover the same lines")]
-    Overlap { one: usize, two: usize },
+    #[error("error: empty_old_string {path}: nothing was written.\n{report}")]
+    EmptyOld { path: String, report: String },
 
-    #[error("error: out_of_range line {line}, {path} has {count}")]
-    OutOfRange {
-        path: String,
-        line: usize,
-        count: usize,
-    },
+    #[error("error: unchanged {path}: nothing was written.\n{report}")]
+    Unchanged { path: String, report: String },
 
-    #[error("error: backwards_range line {end} comes before line {start} in {path}")]
-    ReversedRange {
-        path: String,
-        start: usize,
-        end: usize,
-    },
+    #[error("error: no_match {path}: nothing was written.\n{report}")]
+    NoMatch { path: String, report: String },
+
+    #[error("error: ambiguous {path}: nothing was written.\n{report}")]
+    Ambiguous { path: String, report: String },
 
     #[error("error: echoed_line {path}: nothing was written.\n{report}")]
     EchoedLine { path: String, report: String },
@@ -44,8 +39,8 @@ pub enum Error {
     #[error("error: history_unavailable cannot record {path} for undo: {reason}")]
     HistoryWrite { path: String, reason: String },
 
-    #[error("error: empty no operations given")]
-    NoOps,
+    #[error("error: empty no replacements given")]
+    NoEdits,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

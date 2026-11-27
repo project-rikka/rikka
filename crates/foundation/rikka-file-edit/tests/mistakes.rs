@@ -1,4 +1,6 @@
-use crate::support::{Project, delete_op, insert_op, replace_op};
+use rikka_file_edit::Replacement;
+
+use crate::support::Project;
 
 const USES: &str = "use a::One;\nuse b::Two;\nuse c::Three;\n";
 
@@ -6,43 +8,42 @@ const USES: &str = "use a::One;\nuse b::Two;\nuse c::Three;\n";
 fn rejects_echoed_neighbour_line() {
     let cases = [
         (
-            replace_op(2, 2, "use a::One;\nuse d::Four;"),
-            "The text for line 2 begins with line 1, which stays above it:",
-            "start the range at 1",
+            Replacement::new("use b::Two;\n", "use a::One;\nuse d::Four;\n"),
+            "new_string begins with line 1, which stays above the replaced text:",
         ),
         (
-            replace_op(1, 1, "use z::Zero;\nuse b::Two;"),
-            "The text for line 1 ends with line 2, which stays below it:",
-            "end the range at 2",
+            Replacement::new("use b::Two;", "use a::One;\nuse d::Four;"),
+            "new_string begins with line 1, which stays above the replaced text:",
         ),
         (
-            replace_op(1, 2, "use z::Zero;\nuse y::Nine;\nuse c::Three;"),
-            "The text for lines 1-2 ends with line 3, which stays below it:",
-            "end the range at 3",
+            Replacement::new("use a::One;\n", "use z::Zero;\nuse b::Two;\n"),
+            "new_string ends with line 2, which stays below the replaced text:",
         ),
         (
-            insert_op(3, "use b::Two;\nuse d::Four;\n"),
-            "The text put before line 3 begins with line 2, which stays above it:",
-            "replace line 2 with the text if it should appear twice",
-        ),
-        (
-            insert_op(2, "use d::Four;\nuse b::Two;\n"),
-            "The text put before line 2 ends with line 2, which stays below it:",
-            "replace line 2 with the text if it should appear twice",
+            Replacement::new(
+                "use a::One;\nuse b::Two;\n",
+                "use z::Zero;\nuse y::Nine;\nuse c::Three;\n",
+            ),
+            "new_string ends with line 3, which stays below the replaced text:",
         ),
     ];
-    for (op, expected, cure) in cases {
+    for (replacement, expected) in cases {
         let project = Project::open();
         project.write_file("uses.txt", USES);
 
-        let refused = project.edit("uses.txt", vec![op]).expect_err(expected);
+        let refused = project
+            .edit("uses.txt", vec![replacement])
+            .expect_err(expected);
 
         assert!(
             refused.starts_with("error: echoed_line uses.txt: nothing was written."),
             "{refused}"
         );
         assert!(refused.contains(expected), "{refused}");
-        assert!(refused.contains(cure), "{refused}");
+        assert!(
+            refused.contains("include it in old_string to rewrite it too"),
+            "{refused}"
+        );
         assert!(refused.contains("     2\tuse b::Two;"), "{refused}");
         assert_eq!(project.read_file("uses.txt"), USES);
     }
@@ -53,38 +54,49 @@ fn allows_intended_neighbour_repeats() {
     let cases = [
         (
             "x();\nx();\ny();\n",
-            vec![replace_op(2, 3, "x();\nz();")],
+            vec![Replacement::new("x();\ny();", "x();\nz();")],
             "x();\nx();\nz();\n",
         ),
         (
             USES,
-            vec![replace_op(2, 2, "use b::Two;\nuse b::Two;")],
+            vec![Replacement::new(
+                "use b::Two;\n",
+                "use b::Two;\nuse b::Two;\n",
+            )],
             "use a::One;\nuse b::Two;\nuse b::Two;\nuse c::Three;\n",
         ),
         (
             USES,
             vec![
-                replace_op(1, 1, "use z::Zero;"),
-                replace_op(2, 2, "use a::One;\nuse b::Two;"),
+                Replacement::new("use a::One;", "use z::Zero;"),
+                Replacement::new("use b::Two;\n", "use a::One;\nuse b::Two;\n"),
             ],
             "use z::Zero;\nuse a::One;\nuse b::Two;\nuse c::Three;\n",
         ),
         (
             "a {\n}\n}\n",
-            vec![replace_op(2, 2, "}\n}")],
+            vec![Replacement::new("}\n}\n", "}\n}\n}\n")],
             "a {\n}\n}\n}\n",
         ),
         (
-            "one\n\ntwo\n",
-            vec![insert_op(3, "\nthree\n")],
-            "one\n\n\nthree\ntwo\n",
+            "a();\nb();\nc();\n",
+            vec![
+                Replacement::new("c();", "b();"),
+                Replacement::new("a();\nb();", "a();\nx();"),
+            ],
+            "a();\nx();\nb();\n",
+        ),
+        (
+            "let x = a;\nlet y = a;\n",
+            vec![Replacement::new("x = a", "x = y")],
+            "let x = y;\nlet y = a;\n",
         ),
     ];
-    for (write_file, ops, became) in cases {
+    for (written, replacements, became) in cases {
         let project = Project::open();
-        project.write_file("a.txt", write_file);
+        project.write_file("a.txt", written);
 
-        project.edit("a.txt", ops).expect(became);
+        project.edit("a.txt", replacements).expect(became);
 
         assert_eq!(project.read_file("a.txt"), became);
     }
@@ -98,40 +110,45 @@ fn rejects_edit_that_breaks_syntax() {
         (
             "a.rs",
             RUST,
-            replace_op(2, 2, "    let a = 10;\n}"),
+            Replacement::new("    let a = 1;\n", "    let a = 10;\n}\n"),
             "rust that no longer parses",
         ),
         (
             "a.rs",
             RUST,
-            replace_op(2, 3, "    let a = 10;"),
+            Replacement::new("    let a = 1;\n}\n", "    let a = 10;\n"),
             "rust that no longer parses",
         ),
-        ("a.rs", RUST, delete_op(3, 3), "- 1 `{` more than `}`\n"),
+        (
+            "a.rs",
+            RUST,
+            Replacement::new("}\n\nfn two", "\nfn two"),
+            "- 1 `{` more than `}`\n",
+        ),
         (
             "a.json",
             "{\n  \"a\": 1,\n  \"b\": 2\n}\n",
-            replace_op(3, 3, "  \"b\": 2,"),
+            Replacement::new("\"b\": 2", "\"b\": 2,"),
             "json that no longer parses",
         ),
         (
             "a.comp",
             "void main() {\n    x = f(1);\n}\n",
-            replace_op(2, 2, "    x = f(1;"),
+            Replacement::new("f(1)", "f(1"),
             "1 `(` more than `)`",
         ),
         (
             "a.comp",
             "void main() {\n    x = 1;\n}\n",
-            delete_op(3, 3),
+            Replacement::new("    x = 1;\n}", "    x = 1;"),
             "1 `{` more than `}`",
         ),
     ];
-    for (path, write_file, op, expected) in cases {
+    for (path, written, replacement, expected) in cases {
         let project = Project::open();
-        project.write_file(path, write_file);
+        project.write_file(path, written);
 
-        let refused = project.edit(path, vec![op]).expect_err(expected);
+        let refused = project.edit(path, vec![replacement]).expect_err(expected);
 
         assert!(
             refused.starts_with(&format!(
@@ -145,7 +162,7 @@ fn rejects_edit_that_breaks_syntax() {
             "{refused}"
         );
         assert!(refused.contains("They read now:\n"), "{refused}");
-        assert_eq!(project.read_file(path), write_file);
+        assert_eq!(project.read_file(path), written);
     }
 }
 
@@ -157,8 +174,11 @@ fn broken_file_rejects_only_new_errors() {
         .edit(
             "a.rs",
             vec![
-                replace_op(2, 2, "    let a = 10;"),
-                insert_op(8, "\nfn three() {}\n"),
+                Replacement::new("let a = 1;", "let a = 10;"),
+                Replacement::new(
+                    "fn two() {\n    let b = 2;\n}\n",
+                    "fn two() {\n    let b = 2;\n}\n\nfn three() {}\n",
+                ),
             ],
         )
         .expect("it still parses");
@@ -171,21 +191,24 @@ fn broken_file_rejects_only_new_errors() {
     project
         .edit(
             "a.cu",
-            vec![insert_op(2, "    if (c == '(') { g(\"{\"); }\n")],
+            vec![Replacement::new(
+                "void f(char c) {\n",
+                "void f(char c) {\n    if (c == '(') { g(\"{\"); }\n",
+            )],
         )
         .expect("brackets inside literals are not counted");
 
     let broken = "fn one() {\n    let a = ;\n}\n\nfn two() {\n    let b = 2;\n}\n";
     project.write_file("b.rs", broken);
     project
-        .edit("b.rs", vec![replace_op(6, 6, "    let b = 20;")])
+        .edit("b.rs", vec![Replacement::new("let b = 2;", "let b = 20;")])
         .expect("it breaks nothing more");
     let refused = project
-        .edit("b.rs", vec![replace_op(6, 6, "    let b = ;")])
+        .edit("b.rs", vec![Replacement::new("let b = 20;", "let b = ;")])
         .expect_err("it breaks a second place");
     assert!(refused.contains("broken_syntax"), "{refused}");
     project
-        .edit("b.rs", vec![replace_op(2, 2, "    let a = 1;")])
+        .edit("b.rs", vec![Replacement::new("let a = ;", "let a = 1;")])
         .expect("it mends the first place");
     assert_eq!(project.read_file("b.rs"), RUST.replace("b = 2", "b = 20"));
 }

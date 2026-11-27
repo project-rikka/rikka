@@ -1,4 +1,4 @@
-use rikka_file_edit::{EditOutcome, EditRequest, Files, Op};
+use rikka_file_edit::{EditOutcome, EditRequest, Files, Replacement};
 
 pub(crate) struct Project {
     pub(crate) folder: tempfile::TempDir,
@@ -24,32 +24,22 @@ impl Project {
         std::fs::read_to_string(self.folder.path().join(path)).expect("it is there")
     }
 
-    pub(crate) fn apply(&self, path: &str, ops: Vec<Op>) -> Result<EditOutcome, String> {
+    pub(crate) fn apply(
+        &self,
+        path: &str,
+        replacements: Vec<Replacement>,
+    ) -> Result<EditOutcome, String> {
         self.files
-            .edit(&EditRequest { path, ops })
+            .edit(&EditRequest { path, replacements })
             .map_err(|error| error.to_string())
     }
 
-    pub(crate) fn edit(&self, path: &str, ops: Vec<Op>) -> Result<String, String> {
-        self.apply(path, ops).map(|outcome| outcome.summary)
+    pub(crate) fn edit(
+        &self,
+        path: &str,
+        replacements: Vec<Replacement>,
+    ) -> Result<String, String> {
+        self.apply(path, replacements)
+            .map(|outcome| outcome.summary)
     }
-}
-
-pub(crate) fn replace_op(start: usize, end: usize, text: &str) -> Op {
-    Op::Replace {
-        start,
-        end,
-        text: text.to_owned(),
-    }
-}
-
-pub(crate) fn insert_op(line: usize, text: &str) -> Op {
-    Op::InsertBefore {
-        line,
-        text: text.to_owned(),
-    }
-}
-
-pub(crate) fn delete_op(start: usize, end: usize) -> Op {
-    Op::Delete { start, end }
 }

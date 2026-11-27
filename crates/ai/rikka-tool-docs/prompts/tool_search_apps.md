@@ -9,6 +9,6 @@ query = "Use `select:Name` or `select:One,Two` for exact tools, and `select:Kit`
 max_results = "Maximum word-search results; {{results}} by default."
 +++
 
-Finds deferred tools and loads their complete declarations, making them callable for the rest of the conversation. Use exact selection for a known name and word search for a capability. The deferred tools are listed in your instructions.
+Loads the declarations of deferred tools, listed in your instructions, so they can be called for the rest of the conversation.
 
-Running apps and connected MCP servers keep their tools here too, each as one kit named after the app or the server. The first time any of a kit's tools loads, its instructions come with it in an `<instructions>` block; follow them while using that kit.
+Each running app and connected MCP server keeps its tools here as one kit under its name. A kit's instructions arrive in an `<instructions>` block the first time any of its tools loads; follow them while using it.

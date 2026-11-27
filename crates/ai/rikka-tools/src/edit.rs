@@ -1,174 +1,125 @@
 use std::sync::Arc;
 
 use rikka_agent::{Function, Reply};
-use rikka_file_edit::{EditOutcome, EditRequest, Files, Op};
+use rikka_file_edit::{EditOutcome, EditRequest, Replacement};
 use rikka_llm::{Schema, Tool, Value};
 use rikka_prompt::{Facts, Prompt};
 use serde::Deserialize;
 
 use crate::error::{Error, Result};
-use crate::file_history::FileHistory;
+use crate::file_access::FileAccess;
 use crate::path_instructions::PathInstructions;
 
-const REPLACE: &str = "replace";
-const INSERT_BEFORE: &str = "insert_before";
-const DELETE: &str = "delete";
+const OLD: &str = "old_string";
+const NEW: &str = "new_string";
+const ALL: &str = "replace_all";
+const EDITS: &str = "edits";
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Args {
     path: String,
-    ops: Vec<Value>,
+    old_string: Option<String>,
+    new_string: Option<String>,
+    replace_all: Option<bool>,
+    edits: Option<Vec<RawEdit>>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
-enum RawOp {
-    Replace {
-        start_line: usize,
-        end_line: usize,
-        text: String,
-    },
-    InsertBefore {
-        line: usize,
-        text: String,
-    },
-    Delete {
-        start_line: usize,
-        end_line: usize,
-    },
+#[serde(deny_unknown_fields)]
+struct RawEdit {
+    old_string: String,
+    new_string: String,
+    replace_all: Option<bool>,
 }
 
-impl From<RawOp> for Op {
-    fn from(value: RawOp) -> Op {
-        match value {
-            RawOp::Replace {
-                start_line,
-                end_line,
-                text,
-            } => Op::Replace {
-                start: start_line,
-                end: end_line,
-                text,
-            },
-            RawOp::InsertBefore { line, text } => Op::InsertBefore { line, text },
-            RawOp::Delete {
-                start_line,
-                end_line,
-            } => Op::Delete {
-                start: start_line,
-                end: end_line,
-            },
-        }
+impl From<RawEdit> for Replacement {
+    fn from(edit: RawEdit) -> Replacement {
+        replacement(edit.old_string, edit.new_string, edit.replace_all)
     }
 }
 
 pub(crate) fn declare(
-    files: &Arc<Files>,
-    history: &FileHistory,
-    aside: &Arc<dyn PathInstructions>,
+    access: &Arc<FileAccess>,
     prompt: &Prompt,
     facts: &Facts,
 ) -> Result<Function> {
     let tool = Tool::new(prompt.name())
         .description(prompt.body(facts)?)
         .string("path", prompt.param("path", facts)?)
-        .param("ops", ops(prompt, facts)?)
+        .string(OLD, prompt.param(OLD, facts)?)
+        .string(NEW, prompt.param(NEW, facts)?)
+        .boolean(ALL, prompt.param(ALL, facts)?)
+        .param(EDITS, edits(prompt, facts)?)
+        .optional(OLD)
+        .optional(NEW)
+        .optional(ALL)
+        .optional(EDITS)
         .build()
         .map_err(|error| Error::Undeclarable {
             name: prompt.name().to_owned(),
             reason: error.to_string(),
         })?;
 
-    let files = Arc::clone(files);
-    let history = history.clone();
-    let aside = Arc::clone(aside);
+    let access = Arc::clone(access);
     Ok(Function::new(tool, move |input: Value| {
-        let files = Arc::clone(&files);
-        let history = history.clone();
-        let aside = Arc::clone(&aside);
+        let access = Arc::clone(&access);
         async move {
-            tokio::task::spawn_blocking(move || run(&files, &history, aside.as_ref(), input))
+            tokio::task::spawn_blocking(move || run(&access, input))
                 .await
                 .map_err(|error| format!("nothing was edited: {error}"))?
         }
     }))
 }
 
-fn ops(prompt: &Prompt, facts: &Facts) -> Result<Schema> {
-    Ok(Schema::array(Schema::any_of([
-        covering(prompt, facts, REPLACE)?
-            .param(
-                "text",
-                described(prompt, facts, "replace_text", Schema::string())?,
-            )
-            .closed(),
-        Schema::object()
-            .param("op", named(prompt, facts, INSERT_BEFORE)?)
-            .param("line", described(prompt, facts, "line", Schema::integer())?)
-            .param(
-                "text",
-                described(prompt, facts, "insert_text", Schema::string())?,
-            )
-            .closed(),
-        covering(prompt, facts, DELETE)?.closed(),
-    ]))
-    .describe(prompt.param("ops", facts)?))
+fn edits(prompt: &Prompt, facts: &Facts) -> Result<Schema> {
+    let item = Schema::object()
+        .param(OLD, Schema::string().describe(prompt.param(OLD, facts)?))
+        .param(NEW, Schema::string().describe(prompt.param(NEW, facts)?))
+        .optional(ALL, Schema::boolean().describe(prompt.param(ALL, facts)?))
+        .closed();
+    Ok(Schema::array(item).describe(prompt.param(EDITS, facts)?))
 }
 
-fn covering(prompt: &Prompt, facts: &Facts, op: &str) -> Result<Schema> {
-    Ok(Schema::object()
-        .param("op", named(prompt, facts, op)?)
-        .param(
-            "start_line",
-            described(prompt, facts, "start_line", Schema::integer())?,
-        )
-        .param(
-            "end_line",
-            described(prompt, facts, "end_line", Schema::integer())?,
-        ))
-}
-
-fn named(prompt: &Prompt, facts: &Facts, op: &str) -> Result<Schema> {
-    described(prompt, facts, op, Schema::string().enumerate([op]))
-}
-
-fn described(prompt: &Prompt, facts: &Facts, name: &str, schema: Schema) -> Result<Schema> {
-    Ok(schema.describe(prompt.param(name, facts)?))
-}
-
-fn run(
-    files: &Files,
-    history: &FileHistory,
-    aside: &dyn PathInstructions,
-    input: Value,
-) -> std::result::Result<Reply, String> {
+fn run(access: &FileAccess, input: Value) -> std::result::Result<Reply, String> {
     let args: Args =
         serde_json::from_value(input).map_err(|error| format!("invalid arguments: {error}"))?;
+    let path = args.path.clone();
+    let replacements = replacements(args)?;
 
-    let ops = args
-        .ops
-        .into_iter()
-        .enumerate()
-        .map(|(at, value)| parse_op(at + 1, value))
-        .collect::<std::result::Result<Vec<Op>, String>>()?;
-
-    let outcome = history
+    let outcome = access
+        .history
         .edit(
-            files,
+            &access.files,
             &EditRequest {
-                path: &args.path,
-                ops,
+                path: &path,
+                replacements,
             },
         )
         .map_err(|error| error.to_string())?;
 
-    Ok(edit_reply(aside, outcome))
+    Ok(edit_reply(access.aside.as_ref(), outcome))
 }
 
-fn parse_op(at: usize, value: Value) -> std::result::Result<Op, String> {
-    serde_json::from_value::<RawOp>(value)
-        .map(Op::from)
-        .map_err(|error| format!("invalid op{at}: {error}"))
+fn replacements(args: Args) -> std::result::Result<Vec<Replacement>, String> {
+    match (args.old_string, args.new_string, args.edits) {
+        (Some(old), Some(new), None) => Ok(vec![replacement(old, new, args.replace_all)]),
+        (None, None, Some(edits)) if args.replace_all.is_none() => {
+            Ok(edits.into_iter().map(Replacement::from).collect())
+        }
+        (None, None, Some(_)) => Err(format!("set {ALL} inside each of {EDITS}")),
+        (_, _, Some(_)) => Err(format!("set either {OLD} and {NEW}, or {EDITS}, not both")),
+        (Some(_), None, None) => Err(format!("{NEW} is missing")),
+        (None, Some(_), None) => Err(format!("{OLD} is missing")),
+        (None, None, None) => Err(format!("set {OLD} and {NEW}, or {EDITS}")),
+    }
+}
+
+fn replacement(old: String, new: String, all: Option<bool>) -> Replacement {
+    match all.unwrap_or(false) {
+        true => Replacement::all(old, new),
+        false => Replacement::new(old, new),
+    }
 }
 
 fn edit_reply(aside: &dyn PathInstructions, outcome: EditOutcome) -> Reply {

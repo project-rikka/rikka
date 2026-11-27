@@ -1,4 +1,6 @@
-use crate::support::{Project, replace_op};
+use rikka_file_edit::Replacement;
+
+use crate::support::Project;
 
 #[test]
 fn write_creates_parents_and_keeps_line_endings() {
@@ -30,7 +32,7 @@ fn rejects_paths_outside_workspace() {
 
     assert!(
         project
-            .edit("../escaped.rs", vec![replace_op(1, 1, "x\n")])
+            .edit("../escaped.rs", vec![Replacement::new("a", "b")])
             .is_err()
     );
     assert!(project.files.write("../escaped.rs", "x").is_err());

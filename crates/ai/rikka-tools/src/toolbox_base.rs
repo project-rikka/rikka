@@ -6,6 +6,7 @@ use rikka_llm::{ServerTool, Tool};
 use rikka_prompt::Facts;
 
 use crate::error::{Error, Result};
+use crate::file_access::FileAccess;
 use crate::file_history::FileHistory;
 use crate::jobs::Jobs;
 use crate::limits::most;
@@ -109,9 +110,14 @@ impl ToolboxBase {
             if let Some(machine) = &machine {
                 functions.push(machine.tool(docs.get(machine.document())?, facts)?);
             }
+            let access = Arc::new(FileAccess {
+                files: Arc::clone(&self.files),
+                history: history.clone(),
+                aside: Arc::clone(&self.aside),
+            });
             functions.extend([
-                write::declare(&self.files, history, &self.aside, docs.get(WRITE)?, facts)?,
-                edit::declare(&self.files, history, &self.aside, docs.get(EDIT)?, facts)?,
+                write::declare(&access, docs.get(WRITE)?, facts)?,
+                edit::declare(&access, docs.get(EDIT)?, facts)?,
             ]);
         }
 

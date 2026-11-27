@@ -1,4 +1,5 @@
 use crate::assistant::Assistant;
+use crate::revision;
 use crate::thread::Thread;
 
 #[derive(Debug)]
@@ -20,8 +21,8 @@ impl Instructing {
         };
 
         let sent = sent.instructions().unwrap_or_default().to_vec();
-        let changed = changed(conveyed.instructions().unwrap_or_default(), &standing);
-        if changed.is_empty() {
+        let sections = revision::sections(conveyed.instructions().unwrap_or_default(), &standing);
+        if sections.is_empty() {
             return Instructing {
                 sent,
                 restated: None,
@@ -30,7 +31,7 @@ impl Instructing {
         }
 
         let restated = std::iter::once(assistant.revision_heading())
-            .chain(changed)
+            .chain(sections.iter().map(String::as_str))
             .collect::<Vec<&str>>()
             .join("\n\n");
         Instructing {
@@ -46,16 +47,4 @@ impl Instructing {
             None => assistant.standing(model),
         }
     }
-}
-
-fn changed<'a>(conveyed: &[String], standing: &'a [String]) -> Vec<&'a str> {
-    let dropped = conveyed.iter().any(|block| !standing.contains(block));
-    if dropped && standing.len() < conveyed.len() {
-        return standing.iter().map(String::as_str).collect();
-    }
-    standing
-        .iter()
-        .filter(|block| !conveyed.contains(block))
-        .map(String::as_str)
-        .collect()
 }

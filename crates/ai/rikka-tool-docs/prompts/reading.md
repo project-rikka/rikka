@@ -10,13 +10,13 @@ kept_logs = 200
 
 [params]
 command = "The command to run: only commands that read, search or list."
-timeout = "Foreground wait in milliseconds: {{timeout_ms}} by default, capped at {{max_timeout_ms}}."
-background = "Return immediately with a background job ID instead of waiting."
+timeout = "Foreground wait in milliseconds: {{timeout_ms}} by default, at most {{max_timeout_ms}}."
+background = "Return a job ID at once instead of waiting."
 +++
 
-Runs `bash -lc` in the working folder to look at files, never to change them. Standard output and error return interleaved.
+Runs `bash -lc` in the working folder to look at files, never to change them: a fresh shell per call, stdin closed, pagers off, stdout and stderr interleaved.
 
-- Only reading, searching and listing runs: `cat`, `head`, `tail`, `nl`, `bat`, `sed -n '<range>p'`, `grep`, `rg`, `ag`, `ack`, `find`, `fd`, `ls` and `tree`, joined with `|`, `&&` or `;`, after an optional `cd`. Anything else, redirection into a file, substitution and background `&` are refused before they run.
-- Each call uses a fresh shell; directories and variables do not persist. Standard input is closed and pagers are disabled.
-- Only the first {{output_bytes}} bytes come back; when there is more, the whole of it is in a log whose path is given.
-- At `timeout`, a running command becomes a job and returns its output so far. Read later output with `{{job_tool}}` after its completion notice.
+- Only `cat`, `head`, `tail`, `nl`, `bat`, `sed -n '<range>p'`, `grep`, `rg`, `ag`, `ack`, `find`, `fd`, `ls` and `tree` run, joined with `|`, `&&` or `;` after an optional `cd`. Anything else, file redirection, substitution and background `&` are refused.
+- Output comes back up to {{output_bytes}} bytes, and whole in a log past that.
+- A command still running at `timeout` becomes a `{{job_tool}}` job whose completion is announced.
+- Read only what you need: find it with `rg -n`, then print that range with `sed -n '<first>,<last>p'`; `cat` a file only when it is small or needed whole.

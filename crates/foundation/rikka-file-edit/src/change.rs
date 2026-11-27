@@ -31,8 +31,12 @@ pub struct Change {
 }
 
 impl Change {
-    pub(crate) fn diff(path: String, before: &[&str], after: &[&str]) -> Change {
-        let edits = &diff::changes(before, after);
+    pub(crate) fn from_edits(
+        path: String,
+        before: &[&str],
+        after: &[&str],
+        edits: &[diff::DiffHunk],
+    ) -> Change {
         Change {
             path,
             added: edits.iter().map(|edit| edit.side.len()).sum(),

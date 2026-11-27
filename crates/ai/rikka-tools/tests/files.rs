@@ -4,29 +4,40 @@ use rikka_tools::{EDIT, VIEW, WRITE};
 use crate::support::Project;
 
 #[tokio::test]
-async fn edit_applies_all_operations() {
+async fn edit_applies_one_replacement_or_several() {
     let project = Project::open();
-    project.holds("a.txt", "one\ntwo\nthree\n");
+    project.holds("a.rs", "fn a() {\n    one();\n}\n");
 
     let reply = project
         .call(
             EDIT,
+            json!({ "path": "a.rs", "old_string": "one()", "new_string": "two()" }),
+        )
+        .await
+        .expect("edit should apply");
+    assert_eq!(project.read("a.rs"), "fn a() {\n    two();\n}\n");
+    assert_eq!(
+        reply.text(),
+        "ok a.rs (3 lines, +0)\n     1\tfn a() {\n     2\t    two();\n     3\t}"
+    );
+
+    project
+        .call(
+            EDIT,
             json!({
-                "path": "a.txt",
-                "ops": [
-                    { "op": "replace", "start_line": 1, "end_line": 1, "text": "ONE" },
-                    { "op": "insert_before", "line": 2, "text": "AND\n" },
-                    { "op": "delete", "start_line": 3, "end_line": 3 },
+                "path": "a.rs",
+                "edits": [
+                    { "old_string": "fn a()", "new_string": "fn b()" },
+                    { "old_string": "two", "new_string": "three", "replace_all": true },
+                    { "old_string": "}\n", "new_string": "}\n\nfn c() {}\n", "replace_all": null },
                 ],
             }),
         )
         .await
-        .expect("edit should apply");
-
-    assert_eq!(project.read("a.txt"), "ONE\nAND\ntwo\n");
+        .expect("edits should apply");
     assert_eq!(
-        reply.text(),
-        "ok a.txt (3 lines, +0)\n     1\tONE\n     2\tAND\n     3\ttwo"
+        project.read("a.rs"),
+        "fn b() {\n    three();\n}\n\nfn c() {}\n"
     );
 }
 
@@ -35,26 +46,41 @@ async fn invalid_edit_writes_nothing() {
     let project = Project::open();
     project.holds("a.txt", "one\n");
 
-    for (ops, expected) in [
+    for (input, expected) in [
         (
-            json!([
-                { "op": "replace", "start_line": 1, "end_line": 1, "text": "ONE\n" },
-                { "op": "replace", "start_line": 9, "end_line": 9, "text": "x\n" },
-            ]),
-            "out_of_range",
+            json!({ "path": "a.txt", "old_string": "one", "new_string": "x", "edits": [] }),
+            "not both",
         ),
         (
-            json!([{ "op": "replace", "start_line": 1, "text": "x\n" }]),
-            "end_line",
+            json!({ "path": "a.txt", "old_string": "one" }),
+            "new_string is missing",
         ),
         (
-            json!([{ "op": "insert_before", "start_line": 1, "line": 1, "text": "x\n" }]),
-            "start_line",
+            json!({ "path": "a.txt" }),
+            "set old_string and new_string, or edits",
         ),
-        (json!([{ "op": "rename", "line": 1 }]), "op1"),
+        (
+            json!({
+                "path": "a.txt",
+                "replace_all": true,
+                "edits": [{ "old_string": "one", "new_string": "x" }],
+            }),
+            "inside each",
+        ),
+        (
+            json!({
+                "path": "a.txt",
+                "edits": [{ "old_string": "one", "new_string": "x", "line": 1 }],
+            }),
+            "unknown field",
+        ),
+        (
+            json!({ "path": "a.txt", "old_string": "two", "new_string": "x" }),
+            "no_match",
+        ),
     ] {
         let refused = project
-            .call(EDIT, json!({ "path": "a.txt", "ops": ops }))
+            .call(EDIT, input)
             .await
             .expect_err("the edit is refused");
         assert!(refused.contains(expected), "{refused}");
@@ -100,10 +126,7 @@ async fn writes_outside_project_are_rejected() {
         (WRITE, json!({ "path": "/tmp/escaped.txt", "content": "x" })),
         (
             EDIT,
-            json!({
-                "path": "../escaped.txt",
-                "ops": [{ "op": "replace", "start_line": 1, "end_line": 1, "text": "x\n" }],
-            }),
+            json!({ "path": "../escaped.txt", "old_string": "a", "new_string": "b" }),
         ),
     ] {
         let refused = project.call(stem, input).await.expect_err("it is outside");
@@ -113,7 +136,7 @@ async fn writes_outside_project_are_rejected() {
 }
 
 #[tokio::test]
-async fn view_rejects_oversized_image() {
+async fn view_shows_pictures_and_refuses_the_rest() {
     let project = Project::open();
     std::fs::write(project.at("shot.png"), [0x89, b'P', b'N', b'G'])
         .expect("file should be written");
@@ -125,14 +148,17 @@ async fn view_rejects_oversized_image() {
         .await
         .expect("view should return the picture");
     assert_eq!(reply.text(), "shot.png, 4 bytes");
+    assert_eq!(reply.displayed_images().len(), 1);
 
-    let refused = project
-        .call(VIEW, json!({ "path": "a.rs" }))
-        .await
-        .expect_err("it is not a picture");
-    assert!(refused.contains("not a picture"), "{refused}");
-    assert!(refused.contains("cat"), "{refused}");
-    for path in ["shots", "nowhere.png"] {
-        assert!(project.call(VIEW, json!({ "path": path })).await.is_err());
+    for (path, expected) in [
+        ("a.rs", "not a picture"),
+        ("shots", "is a folder"),
+        ("nowhere.png", "there is no file"),
+    ] {
+        let refused = project
+            .call(VIEW, json!({ "path": path }))
+            .await
+            .expect_err("it is refused");
+        assert!(refused.contains(expected), "{path}: {refused}");
     }
 }

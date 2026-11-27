@@ -498,6 +498,47 @@ async fn instructions_are_pinned_and_changes_noticed() {
 }
 
 #[tokio::test]
+async fn long_instruction_changes_are_sent_as_a_diff() {
+    let folder = tempfile::tempdir().expect("temp dir should be created");
+    let notes = |renamed: &str| {
+        std::iter::once("# Project memory".to_owned())
+            .chain((1..=40).map(|n| match n {
+                20 => format!("- topic 20: {renamed}."),
+                n => format!("- topic {n}: about {n}."),
+            }))
+            .collect::<Vec<String>>()
+            .join("\n")
+    };
+    let before = instructed(folder.path(), &notes("about 20"));
+    let after = instructed(folder.path(), &notes("renamed"));
+    let scripted = Scripted::new();
+    scripted.says("one").says("two");
+
+    let mut desk = equipped(before);
+    answered(&mut desk, connected_model(&scripted), "first").await;
+    let _before = desk.equip(after);
+    answered(&mut desk, connected_model(&scripted), "second").await;
+
+    let requests = scripted.requests();
+    let revised = requests[1]
+        .messages()
+        .last()
+        .map(Turn::text)
+        .expect("second request should exist");
+    assert!(revised.starts_with(REVISED), "{revised}");
+    assert!(revised.contains("\"# Project memory\""), "{revised}");
+    assert!(
+        revised.contains("\n-- topic 20: about 20.\n+- topic 20: renamed.\n"),
+        "{revised}"
+    );
+    assert!(revised.contains("\n - topic 18: about 18."), "{revised}");
+    assert!(!revised.contains("topic 2:"), "{revised}");
+    assert!(revised.ends_with("second"), "{revised}");
+
+    drop(folder);
+}
+
+#[tokio::test]
 async fn screenshot_is_kept_with_its_call() {
     const PNG: [u8; 72] = [
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44,

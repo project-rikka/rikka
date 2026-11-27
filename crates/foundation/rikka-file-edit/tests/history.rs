@@ -1,6 +1,6 @@
-use rikka_file_edit::{EditRequest, History};
+use rikka_file_edit::{EditRequest, History, Replacement};
 
-use crate::support::{Project, replace_op};
+use crate::support::Project;
 
 #[test]
 fn rewind_restores_checkpoint_state() {
@@ -22,7 +22,7 @@ fn rewind_restores_checkpoint_state() {
     recorded
         .edit(&EditRequest {
             path: "a.txt",
-            ops: vec![replace_op(1, 1, "three\n")],
+            replacements: vec![Replacement::new("two and a half", "three")],
         })
         .expect("edited");
     recorded
