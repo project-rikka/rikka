@@ -5,7 +5,7 @@ about: crates/web/rikka-html
 tags: [web, html]
 ---
 
-- Public, no I/O, only `thiserror`. Users: `browser-translate` (service markup), `browser-reader` and the browser's interstitial (escaping), Proton mail bodies (`to_markdown`, `to_text`).
+- Public, no I/O, only `thiserror`. Users: `browser-translate` (service markup), `browser-reader` and the browser's interstitial (escaping). `to_markdown` and `to_text` turn mail-style HTML bodies into Markdown or plain text.
 - `tokens(html)` yields `Token::{Text, Open(Tag), Close}`; names are lowercased, text and attribute values are entity-decoded, comments, doctypes and processing instructions are skipped, and a `<` that starts no tag stays text.
 - `script`, `style`, `iframe`, `noembed`, `noframes`, `noscript`, `xmp` are raw text; `textarea` and `title` are raw text with entities decoded.
 - `Document::parse` never fails. Nodes are stored in document order with their end index, so descendants are a slice. It applies void elements, implied end tags (`p`, `li`, `dt`/`dd`, `option`, headings, table rows and cells) and scope-limited end tags; it does not insert `html`/`head`/`body`/`tbody`, foster-parent, or run the adoption agency.

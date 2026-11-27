@@ -2,7 +2,6 @@ mod blocking;
 mod disk_cache;
 mod download;
 mod http;
-mod pinning;
 mod sse;
 mod support;
 mod upload;

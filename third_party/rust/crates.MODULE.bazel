@@ -133,10 +133,6 @@ crate.spec(
     version = "0.10",
 )
 crate.spec(
-    package = "curve25519-dalek",
-    version = "5",
-)
-crate.spec(
     package = "davey",
     version = "0.1.4",
 )
@@ -151,10 +147,6 @@ crate.spec(
 crate.spec(
     package = "drm-fourcc",
     version = "2.2",
-)
-crate.spec(
-    package = "ed25519-dalek",
-    version = "3",
 )
 crate.spec(
     package = "encoding_rs",
@@ -275,10 +267,6 @@ crate.spec(
     version = "0.2",
 )
 crate.spec(
-    package = "jiff-tzdb",
-    version = "0.1",
-)
-crate.spec(
     package = "libc",
     version = "0.2",
 )
@@ -365,15 +353,6 @@ crate.spec(
     version = "0.10",
 )
 crate.spec(
-    features = [
-        "encryption",
-        "pem",
-        "std",
-    ],
-    package = "pkcs8",
-    version = "0.11",
-)
-crate.spec(
     package = "png",
     version = "0.18",
 )
@@ -384,14 +363,6 @@ crate.spec(
 crate.spec(
     package = "prost",
     version = "0.14",
-)
-crate.spec(
-    package = "proton-rpgp",
-    version = "0.3.1",
-)
-crate.spec(
-    package = "proton-srp",
-    version = "0.8",
 )
 crate.spec(
     default_features = False,
@@ -535,10 +506,6 @@ crate.spec(
     version = "0.8",
 )
 crate.spec(
-    package = "rustls-pemfile",
-    version = "2",
-)
-crate.spec(
     package = "rustls-pki-types",
     version = "1",
 )
@@ -638,16 +605,6 @@ crate.spec(
     ],
     package = "tokio",
     version = "1.53",
-)
-crate.spec(
-    default_features = False,
-    features = [
-        "aws_lc_rs",
-        "logging",
-        "tls12",
-    ],
-    package = "tokio-rustls",
-    version = "0.26",
 )
 crate.spec(
     default_features = False,
@@ -884,14 +841,6 @@ crate.spec(
     ],
     package = "x11rb-protocol",
     version = "0.13",
-)
-crate.spec(
-    package = "x25519-dalek",
-    version = "3",
-)
-crate.spec(
-    package = "x509-cert",
-    version = "0.2",
 )
 crate.spec(
     features = ["wayland"],

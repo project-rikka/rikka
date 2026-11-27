@@ -2389,27 +2389,6 @@
       ]
     },
     {
-      "domain": "rikka.proton",
-      "summary": "Proton",
-      "keys": [
-        {
-          "name": "conversations",
-          "default": true,
-          "summary": "Group mail by conversation"
-        },
-        {
-          "name": "drive-tiles",
-          "default": true,
-          "summary": "Show Drive as tiles"
-        },
-        {
-          "name": "stay-signed-in",
-          "default": true,
-          "summary": "Keep the session and mailbox key on this device"
-        }
-      ]
-    },
-    {
       "domain": "rikka.remote",
       "summary": "Remote desktop: this session in the Rikka Remote viewer, over QUIC",
       "keys": [

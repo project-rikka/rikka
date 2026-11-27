@@ -31,12 +31,6 @@ pub(crate) fn write(draft: &mut Draft, addressing: &Addressing<'_>) {
     write_family(draft, dbus::IPV6, addressing, true);
 }
 
-pub(crate) fn has_family(addresses: &[Address], six: bool) -> bool {
-    addresses
-        .iter()
-        .any(|address| is_six(&address.address) == six)
-}
-
 pub(crate) fn is_interface(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= INTERFACE_LENGTH

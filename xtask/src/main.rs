@@ -68,8 +68,6 @@ enum Task {
     },
     #[command(about = "regenerate the emoji list and its localized names")]
     EmojiData,
-    #[command(about = "regenerate the CLDR Windows time-zone table")]
-    WindowsZones,
     #[command(about = "regenerate rikka-video's FFmpeg ABI layout assertions")]
     FfmpegLayout,
     #[command(about = "refit rikka-ltc's GGX area-light tables")]
@@ -213,7 +211,6 @@ fn main() -> Result<()> {
             arguments,
         } => run::app(&workspace, &application, build.profile(), &arguments),
         Task::EmojiData => unicode::emoji(&workspace),
-        Task::WindowsZones => unicode::windows_zones(&workspace),
         Task::FfmpegLayout => ffmpeg_layout::run(&workspace),
         Task::Ltc => ltc::run(&workspace),
         Task::Sdk => sdk::regenerate(&workspace),

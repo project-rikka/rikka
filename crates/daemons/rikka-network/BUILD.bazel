@@ -10,8 +10,6 @@ rikka_library(
         "//crates/daemons/rikka-bus",
         "//crates/foundation/rikka-dirs",
         "@crates//:futures-util",
-        "@crates//:serde",
-        "@crates//:serde_json",
         "@crates//:thiserror",
         "@crates//:tracing",
         "@crates//:zbus",

@@ -40,7 +40,4 @@ pub use security::Security;
 pub use snapshot::{Connectivity, Radio, Snapshot};
 pub use ssid::Ssid;
 pub use state::{Network, State};
-pub use tunnel::{
-    OpenVpnTransport, OpenVpnTunnel, ProtunPeer, ProtunTunnel, SavedTunnel, Tunnel, TunnelKind,
-    TunnelReason, TunnelState, Tunnels, WireGuardPeer, WireGuardTunnel,
-};
+pub use tunnel::{WireGuardPeer, WireGuardTunnel};

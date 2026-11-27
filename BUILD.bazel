@@ -9,7 +9,6 @@ SETTINGS_CATALOG_PARTS = [
     "//apps/system/discord/crates/discord-preferences:settings_catalog",
     "//apps/system/files/crates/files-config:settings_catalog",
     "//apps/system/music/crates/music-preferences:settings_catalog",
-    "//apps/system/proton/crates/proton-config:settings_catalog",
     "//apps/system/settings/crates/settings-backup:settings_catalog",
     "//crates/ai/rikka-llm-accounts:settings_catalog",
     "//crates/session/rikka-session:settings_catalog",

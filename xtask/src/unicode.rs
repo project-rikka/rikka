@@ -13,7 +13,6 @@ const CLDR_VERSION: &str = "47.0.0";
 
 const EMOJI_DATA: &str = "crates/foundation/rikka-emoji/data";
 const EMOJI_TABLE: &str = "emoji.txt";
-const ZONE_TABLE: &str = "crates/proton/rikka-proton-calendar/data/windows-zones.txt";
 
 const TONES: [char; 5] = [
     '\u{1f3fb}',
@@ -42,8 +41,6 @@ const GROUPS: &[(&str, &str)] = &[
 
 const COMPONENTS: &str = "Component";
 
-const WORLD: &str = "001";
-
 pub(crate) fn emoji(workspace: &Path) -> Result<()> {
     let directory = workspace.join(EMOJI_DATA);
     let emoji = read_emoji()?;
@@ -63,33 +60,6 @@ pub(crate) fn emoji(workspace: &Path) -> Result<()> {
             catalogue.unnamed
         );
     }
-    Ok(())
-}
-
-pub(crate) fn windows_zones(workspace: &Path) -> Result<()> {
-    let source = "cldr-core/supplemental/windowsZones.json";
-    let document: ZoneDocument = cldr(source)?;
-
-    let mut table = format!("# CLDR {CLDR_VERSION} windowsZones, territory {WORLD}\n");
-    let mut zone_count = 0;
-    for mapping in document.supplemental.windows_zones.map_timezones {
-        let zone = mapping.map_zone;
-        if zone.territory != WORLD {
-            continue;
-        }
-        let Some(iana) = zone.iana.split_whitespace().next() else {
-            continue;
-        };
-        writeln!(table, "{}\t{iana}", zone.windows)?;
-        zone_count += 1;
-    }
-    if zone_count == 0 {
-        bail!("{source} contains no Windows zones; has the format changed?");
-    }
-
-    let path = workspace.join(ZONE_TABLE);
-    host::write(&path, &table)?;
-    println!("wrote {zone_count} Windows zones to {}", path.display());
     Ok(())
 }
 
@@ -307,37 +277,4 @@ fn read_annotations(locale: &str) -> Result<Annotations> {
     let mut annotations = derived.body.annotations;
     annotations.extend(named.body.annotations);
     Ok(annotations)
-}
-
-#[derive(Deserialize)]
-struct ZoneDocument {
-    supplemental: Supplemental,
-}
-
-#[derive(Deserialize)]
-struct Supplemental {
-    #[serde(rename = "windowsZones")]
-    windows_zones: WindowsZones,
-}
-
-#[derive(Deserialize)]
-struct WindowsZones {
-    #[serde(rename = "mapTimezones")]
-    map_timezones: Vec<Mapping>,
-}
-
-#[derive(Deserialize)]
-struct Mapping {
-    #[serde(rename = "mapZone")]
-    map_zone: MapZone,
-}
-
-#[derive(Deserialize)]
-struct MapZone {
-    #[serde(rename = "_other")]
-    windows: String,
-    #[serde(rename = "_type")]
-    iana: String,
-    #[serde(rename = "_territory")]
-    territory: String,
 }

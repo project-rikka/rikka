@@ -3,15 +3,12 @@ use std::time::Duration;
 
 use http::{HeaderMap, HeaderName, HeaderValue};
 
-use crate::certificate::Certificate;
 use crate::client::{Client, Shared};
 use crate::error::{Error, Result};
 use crate::headers;
 use crate::proxy::Proxy;
 use crate::redirect::Redirect;
 use crate::retry::RetryPolicy;
-use crate::spki_pin::SpkiPin;
-use crate::tls::{Pinning, SocketTls, TlsConfig};
 
 const DEFAULT_USER_AGENT: &str = concat!("rikka-net/", env!("CARGO_PKG_VERSION"));
 
@@ -20,7 +17,6 @@ pub struct ClientBuilder {
     error: Option<Error>,
     headers: HeaderMap,
     retry: RetryPolicy,
-    tls: TlsConfig,
     connect_timeout: Option<Duration>,
 }
 
@@ -40,7 +36,6 @@ impl ClientBuilder {
             error: None,
             headers: HeaderMap::new(),
             retry: RetryPolicy::default(),
-            tls: TlsConfig::default(),
             connect_timeout: None,
         }
     }
@@ -133,36 +128,6 @@ impl ClientBuilder {
     }
 
     #[must_use]
-    pub fn root_certificate(mut self, certificate: Certificate) -> Self {
-        self.tls.roots.push(certificate);
-        self
-    }
-
-    #[must_use]
-    pub fn only_root_certificates(
-        mut self,
-        certificates: impl IntoIterator<Item = Certificate>,
-    ) -> Self {
-        self.tls.roots = certificates.into_iter().collect();
-        self.tls.system_roots = false;
-        self
-    }
-
-    #[must_use]
-    pub fn pin_public_keys(mut self, pins: impl IntoIterator<Item = SpkiPin>) -> Self {
-        let pins: Vec<SpkiPin> = pins.into_iter().collect();
-        self.tls.pinning = (!pins.is_empty()).then_some(Pinning::Chain(pins));
-        self
-    }
-
-    #[must_use]
-    pub fn trust_leaf_public_keys(mut self, pins: impl IntoIterator<Item = SpkiPin>) -> Self {
-        let pins: Vec<SpkiPin> = pins.into_iter().collect();
-        self.tls.pinning = (!pins.is_empty()).then_some(Pinning::Leaf(pins));
-        self
-    }
-
-    #[must_use]
     pub fn resolve(mut self, host: &str, address: std::net::SocketAddr) -> Self {
         self.inner = self.inner.resolve(host, address);
         self
@@ -179,16 +144,14 @@ impl ClientBuilder {
             return Err(error);
         }
 
-        let inner = self
-            .tls
-            .apply_to_http(self.inner.default_headers(self.headers.clone()))?;
-
-        let http = inner.build().map_err(|error| Error::Tls(Box::new(error)))?;
-        let socket_tls = SocketTls::new(self.tls);
+        let http = self
+            .inner
+            .default_headers(self.headers.clone())
+            .build()
+            .map_err(|error| Error::Tls(Box::new(error)))?;
 
         Ok(Client::from_shared(Shared {
             http,
-            socket_tls,
             retry: self.retry,
             headers: self.headers,
             connect_timeout: self.connect_timeout,
@@ -214,7 +177,6 @@ impl fmt::Debug for ClientBuilder {
         f.debug_struct("ClientBuilder")
             .field("headers", &self.headers)
             .field("retry", &self.retry)
-            .field("tls", &self.tls)
             .finish_non_exhaustive()
     }
 }

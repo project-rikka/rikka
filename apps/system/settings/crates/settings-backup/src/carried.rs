@@ -10,48 +10,29 @@ use crate::dirs::Dirs;
 use crate::error::{Error, Result};
 
 const PRIVATE_DIR: u32 = 0o700;
-const SEALED: &str = "sealed";
-const CACHE: &str = "cache";
-const SEALED_DEPTH: usize = 2;
-
-#[derive(Clone, Copy, Debug)]
-enum Keep {
-    File,
-    Sealed,
-}
 
 #[derive(Clone, Copy, Debug)]
 struct Carried {
     base: Base,
     path: &'static str,
-    keep: Keep,
 }
 
-const CARRIED: [Carried; 5] = [
+const CARRIED: [Carried; 4] = [
     Carried {
         base: Base::State,
         path: "discord/accounts.json",
-        keep: Keep::File,
     },
     Carried {
         base: Base::State,
         path: "music/accounts.json",
-        keep: Keep::File,
-    },
-    Carried {
-        base: Base::State,
-        path: "proton",
-        keep: Keep::Sealed,
     },
     Carried {
         base: Base::Config,
         path: "remote-viewer/hosts.json",
-        keep: Keep::File,
     },
     Carried {
         base: Base::Config,
         path: "launcher/accounts.json",
-        keep: Keep::File,
     },
 ];
 
@@ -60,51 +41,11 @@ pub(crate) fn collect(dirs: &Dirs) -> Result<Vec<File>> {
     for carried in CARRIED {
         let root = dirs.of(carried.base);
         let relative = PathBuf::from(carried.path);
-        match carried.keep {
-            Keep::File => {
-                if let Some(file) = read(root, carried.base, &relative)? {
-                    files.push(file);
-                }
-            }
-            Keep::Sealed => sealed(root, carried.base, &relative, 0, &mut files)?,
+        if let Some(file) = read(root, carried.base, &relative)? {
+            files.push(file);
         }
     }
     Ok(files)
-}
-
-fn sealed(
-    root: &Path,
-    base: Base,
-    relative: &Path,
-    depth: usize,
-    into: &mut Vec<File>,
-) -> Result<()> {
-    let folder = root.join(relative);
-    let entries = match std::fs::read_dir(&folder) {
-        Ok(entries) => entries,
-        Err(error) if error.kind() == ErrorKind::NotFound => return Ok(()),
-        Err(error) => return Err(Error::io(&folder)(error)),
-    };
-    let mut names = Vec::new();
-    for entry in entries {
-        let entry = entry.map_err(Error::io(&folder))?;
-        let kind = entry.file_type().map_err(Error::io(entry.path()))?;
-        names.push((entry.file_name(), kind));
-    }
-    names.sort_by(|(left, _), (right, _)| left.cmp(right));
-    for (name, kind) in names {
-        let child = relative.join(&name);
-        if kind.is_dir() && depth < SEALED_DEPTH && name != CACHE {
-            sealed(root, base, &child, depth + 1, into)?;
-        } else if kind.is_file()
-            && Path::new(&name)
-                .extension()
-                .is_some_and(|ext| ext == SEALED)
-        {
-            into.extend(read(root, base, &child)?);
-        }
-    }
-    Ok(())
 }
 
 pub(crate) fn restore(bundle: &Bundle, dirs: &Dirs) -> Result<()> {

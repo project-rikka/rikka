@@ -15,8 +15,6 @@ use crate::into_url::IntoUrl;
 use crate::request::RequestBuilder;
 use crate::response::Response;
 use crate::retry::{self, RetryPolicy};
-
-use crate::tls::SocketTls;
 use crate::upload::UploadBuilder;
 use crate::websocket::WebSocketBuilder;
 
@@ -30,7 +28,6 @@ pub(crate) struct Shared {
     pub(crate) http: reqwest::Client,
     pub(crate) retry: RetryPolicy,
     pub(crate) headers: HeaderMap,
-    pub(crate) socket_tls: SocketTls,
     pub(crate) connect_timeout: Option<Duration>,
 }
 

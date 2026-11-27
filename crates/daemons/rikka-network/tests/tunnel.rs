@@ -1,9 +1,9 @@
-use rikka_network::{Error, OpenVpnTunnel, WireGuardTunnel};
+use rikka_network::{Error, WireGuardTunnel};
 
 const CONFIG: &str = "[Interface]
 PrivateKey = MHyDhk8oM8tCei7xwAoBPP3/J2jZgMCjpSDwBpBN6U8=
 Address = 10.2.0.2/32, 2a07:b944::2:2/128
-DNS = 10.2.0.1 # Proton's resolver
+DNS = 10.2.0.1 # the tunnel's resolver
 
 [Peer]
 PublicKey = hSDwCYkwp1R0i33ctD73Wg2/Og0mOBr066SpjqqbTmo=
@@ -14,9 +14,9 @@ PersistentKeepalive = 60
 
 #[test]
 fn imports_wg_quick_and_rejects_invalid() {
-    let tunnel = WireGuardTunnel::from_config("Proton VPN CH#1", CONFIG).unwrap();
-    assert_eq!(tunnel.name(), "Proton VPN CH#1");
-    assert_eq!(tunnel.interface_name(), "ProtonVPNCH1");
+    let tunnel = WireGuardTunnel::from_config("Office VPN #1", CONFIG).unwrap();
+    assert_eq!(tunnel.name(), "Office VPN #1");
+    assert_eq!(tunnel.interface_name(), "OfficeVPN1");
     let peer = &tunnel.peers()[0];
     assert_eq!(
         peer.public_key(),
@@ -35,23 +35,4 @@ fn imports_wg_quick_and_rejects_invalid() {
             Err(Error::Invalid { .. })
         ));
     }
-}
-
-#[test]
-fn openvpn_remotes_match_plugin_format() {
-    let tunnel = OpenVpnTunnel::new("Proton VPN CH#1")
-        .encrypted_key("-----BEGIN ENCRYPTED PRIVATE KEY-----", "secret")
-        .remote("185.159.157.1", 80)
-        .remote("2a07:b944::2:1", 443)
-        .remote("node-ch-01.protonvpn.net", 1194);
-
-    assert_eq!(
-        tunnel.remotes(),
-        [
-            "185.159.157.1:80",
-            "[2a07:b944::2:1]:443",
-            "node-ch-01.protonvpn.net:1194"
-        ]
-    );
-    assert!(!format!("{tunnel:?}").contains("secret"));
 }

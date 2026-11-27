@@ -11,12 +11,11 @@ use crate::session::Session;
 const FOLLOWING: &str = "keyring-following";
 const READING: &str = "keyring-reading";
 
-const APPS: [(&str, &str); 7] = [
+const APPS: [(&str, &str); 6] = [
     (schema::LLM, "settings.keyring.app.llm"),
     (schema::MCP, "settings.keyring.app.mcp"),
     (schema::DISCORD, "settings.keyring.app.discord"),
     (schema::MUSIC, "settings.keyring.app.music"),
-    (schema::PROTON, "settings.keyring.app.proton"),
     (schema::REMOTE, "settings.keyring.app.remote"),
     (schema::MINECRAFT, "settings.keyring.app.minecraft"),
 ];

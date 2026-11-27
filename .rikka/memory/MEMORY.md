@@ -198,10 +198,6 @@
 
 - [Packages application](packages-app.md) — Browses and searches a local nixpkgs catalog and stages declarative package and module changes into one rebuild.
 
-## apps/system/proton
-
-- [Proton application](proton-app.md) — apps/system/proton is one window over a Proton account: Mail, Drive, Pass, Codes and Account over private crates and ca…
-
 ## apps/system/settings
 
 - [Settings application](settings-app.md) — Adopts desktop schemas, drives daemons directly, owns rikka.llm, and stages all NixOS edits in one draft.
@@ -351,10 +347,6 @@
 - [Desktop layer: opening, dialogs, clipboard, entries](xdg-desktop-integration.md) — rikka-open, dialog, clipboard, instance, mime, xdg, trash, mounts, thumbnails, xcursor, icons: freedesktop for apps.
 - [Windows backends of the foundation, desktop and session crates](windows-desktop-integration.md) — What dirs, watch, i18n, log, open, dialog, instance, secrets, mime, xdg, seam and assist do on Windows.
 
-## crates/desktop/rikka-fido
-
-- [FIDO2 security key client (rikka-fido)](fido-client.md) — rikka-fido is the workspace's CTAP2/U2F client over hidraw with WebAuthn client data, PIN, extensions and ceremonies.
-
 ## crates/desktop/rikka-file-operations
 
 - [Local file operations (rikka-file-operations)](file-operations.md) — rikka-file-operations: copy/move/trash/delete engine with progress, conflicts, links and staged writes over a Store.
@@ -370,10 +362,6 @@
 ## crates/foundation/rikka-archive
 
 - [Archive processing](archive-processing.md) — rikka-archive reads and writes common formats with streaming batches, AES, cancellation and traversal defence.
-
-## crates/foundation/rikka-certificate-transparency
-
-- [Certificate Transparency log list and SCTs](certificate-transparency.md) — rikka-certificate-transparency fetches and verifies Chrome's signed CT log list, caches it, and checks embedded SCTs.
 
 ## crates/foundation/rikka-color-formats
 
@@ -755,54 +743,6 @@
 ## crates/physics/rikka-physics-world
 
 - [Physics World facade (rikka-physics-world)](physics-facade.md) — rikka_physics_world::World is the rigid-only facade: fixed ticks, interpolation, seek/rebuild history, async steps.
-
-## crates/proton
-
-- [Proton client library and crypto](proton-library.md) — crates/proton's crate stack, product feeds, public crates, rikka-proton-pgp crypto and SRP, references, tests.
-
-## crates/proton/rikka-proton-account
-
-- [Proton account and keys](proton-account.md) — rikka-proton-account owns SRP sign-in, second factors, keys and SKLs, devices, orgs, addresses, settings and forks.
-
-## crates/proton/rikka-proton-api
-
-- [Proton API transport](proton-api-transport.md) — rikka-proton-api owns Proton's HTTP envelope, hosts, sessions, refresh, retries, pinning, DoH routing and multipart.
-
-## crates/proton/rikka-proton-authenticator
-
-- [Proton Authenticator codes and sync](proton-authenticator.md) — rikka-proton-authenticator parses otpauth entries, computes codes from given time, and syncs sealed entries.
-
-## crates/proton/rikka-proton-client
-
-- [Proton cache, client session, accounts and event loop](proton-cache-and-client.md) — rikka-proton-cache's sealed per-account SQLite store and rikka-proton-client's Proton, Session, Accounts and EventLoop.
-
-## crates/proton/rikka-proton-contacts
-
-- [Proton Contacts and Calendar](proton-contacts-calendar.md) — rikka-proton-contacts (vCard, send preferences) and rikka-proton-calendar (keys, events, RRULE, iTIP) over contentline.
-
-## crates/proton/rikka-proton-drive
-
-- [Proton Drive client](proton-drive.md) — rikka-proton-drive walks the node key hierarchy on v2 volume endpoints: files, photos, sharing, devices, docs, events.
-
-## crates/proton/rikka-proton-drive-sync
-
-- [Proton Drive sync engine](proton-drive-sync.md) — rikka-proton-drive-sync syncs local folders with Drive both ways as a Computers device over a SQLite state.
-
-## crates/proton/rikka-proton-key-transparency
-
-- [Proton Key Transparency](proton-key-transparency.md) — rikka-proton-key-transparency verifies others' keys and self-audits SKLs against Proton's KT log over the CT list.
-
-## crates/proton/rikka-proton-mail
-
-- [Proton Mail client](proton-mail.md) — rikka-proton-mail reads, decrypts, parses MIME, searches, filters and sends mail with web-equivalent send preferences.
-
-## crates/proton/rikka-proton-pass
-
-- [Proton Pass client and item model](proton-pass.md) — rikka-proton-pass holds the item protobufs and PassClient over shares, items, invites, files, links, aliases and orgs.
-
-## crates/proton/rikka-proton-vpn
-
-- [Proton VPN client](proton-vpn.md) — rikka-proton-vpn picks servers, gets certificates, connects through NetworkManager and runs the in-tunnel local agent.
 
 ## crates/remote
 

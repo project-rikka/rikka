@@ -147,7 +147,7 @@ impl WebSocketBuilder {
             headers,
             protocols: self.protocols,
             config,
-            tls: shared.socket_tls.client_config()?,
+            tls: crate::tls::client_config()?,
             connect_timeout: shared.connect_timeout,
         };
 
