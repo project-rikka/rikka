@@ -20,7 +20,6 @@ pub(crate) struct Sequences {
     pub(crate) favorite: Sequence,
     pub(crate) folder: Sequence,
     pub(crate) pinned_tab: Sequence,
-    pub(crate) download: Sequence,
     pub(crate) archived_tab: Sequence,
     pub(crate) tab: Sequence,
     pub(crate) split_group: Sequence,
@@ -45,7 +44,6 @@ impl Sequences {
             favorite: issued("favorites")?,
             folder: issued("pinned_folders")?,
             pinned_tab: issued("pinned_tabs")?,
-            download: issued("downloads")?,
             archived_tab: issued("archived_tabs")?,
             tab: Sequence(AtomicI64::new(highest(
                 connection,

@@ -82,31 +82,24 @@ fn rejects_unknown_messages() {
 }
 
 #[test]
-fn translator_travels_only_to_frames_without_it() {
-    let watch = |translator: bool| match Message::parse(&json!({
+fn watches_parse_and_commands_answer() {
+    let watch = Message::parse(&json!({
         "kind": "watch",
         "top": false,
-        "session": null,
-        "display": null,
-        "translator": translator,
-    })) {
-        Ok(Message::Watch(watch)) => watch,
-        other => panic!("expected a watch, got {other:?}"),
-    };
-    let bare = watch(false);
-    let loaded = watch(true);
+        "session": 3,
+        "display": "bilingual",
+    }));
     assert_eq!(
-        bare,
-        Watch {
+        watch.expect("watch message"),
+        Message::Watch(Watch {
             top: false,
-            session: None,
-            display: None,
-            translator: false,
-        }
+            session: Some(3),
+            display: Some(Display::Bilingual),
+        })
     );
     assert!(matches!(
-        Message::parse(&json!({"kind": "watch", "top": true})),
-        Err(Error::Malformed("translator"))
+        Message::parse(&json!({"kind": "watch"})),
+        Err(Error::Malformed("top"))
     ));
 
     let translate = Command::Translate {
@@ -115,16 +108,11 @@ fn translator_travels_only_to_frames_without_it() {
         display: Display::Replace,
         code: CodeMode::Comments,
     };
-    let sent = translate.answer(&bare);
-    assert_eq!(sent["do"], "translate");
-    assert_eq!(sent["to"], "ja");
-    assert!(
-        sent["translator"]
-            .as_str()
-            .is_some_and(|source| source.starts_with("((host) =>"))
+    assert_eq!(
+        translate.answer(),
+        json!({"do": "translate", "session": 3, "to": "ja", "display": "replace", "code": "comments"})
     );
-    assert!(translate.answer(&loaded).get("translator").is_none());
-    assert!(Command::Restore.answer(&bare).get("translator").is_none());
+    assert_eq!(Command::Restore.answer(), json!({"do": "restore"}));
 }
 
 #[test]

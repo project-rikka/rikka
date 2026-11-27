@@ -18,8 +18,7 @@ mkShell {
   ]
   ++ env.runtimeTools
   ++ env.bindingTools
-  ++ env.websiteTools
-  ++ [ env.geckoBuild ];
+  ++ env.websiteTools;
 
   env =
     env.shipped

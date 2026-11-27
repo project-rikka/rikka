@@ -181,7 +181,7 @@ pub(crate) fn act_symbol(act: Act) -> MaterialSymbol {
             Command::ReaderMode => MaterialSymbol::CHROME_READER_MODE,
             Command::ToggleSidebar => MaterialSymbol::VIEW_SIDEBAR,
             Command::ToggleSplit => MaterialSymbol::VERTICAL_SPLIT,
-            Command::Find => MaterialSymbol::FIND_IN_PAGE,
+            Command::Print => MaterialSymbol::PRINT,
             Command::ViewSource => MaterialSymbol::CODE,
             Command::Translate => MaterialSymbol::TRANSLATE,
             Command::Downloads => MaterialSymbol::DOWNLOAD,

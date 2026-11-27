@@ -3,7 +3,7 @@ use std::process::Command;
 
 use anyhow::{Context, Result};
 
-use crate::dist::{GECKO_PIN, GeckoPin, RELEASE, Release};
+use crate::dist::{RELEASE, Release};
 use crate::host;
 
 pub(crate) const REPOSITORY: &str = "project-rikka/packages";
@@ -44,7 +44,7 @@ impl Checkout {
     pub(crate) fn history(&self, generations: usize) -> Result<Vec<Release>> {
         let mut releases = Vec::new();
         for back in 0..generations {
-            let Some(text) = self.shown(back, RELEASE)? else {
+            let Some(text) = self.shown(back)? else {
                 break;
             };
             releases.push(
@@ -55,20 +55,10 @@ impl Checkout {
         Ok(releases)
     }
 
-    pub(crate) fn gecko_history(&self, generations: usize) -> Result<Vec<GeckoPin>> {
-        let mut pins = Vec::new();
-        for back in 0..generations {
-            if let Some(text) = self.shown(back, GECKO_PIN)? {
-                pins.push(GeckoPin::parse(&text)?);
-            }
-        }
-        Ok(pins)
-    }
-
-    fn shown(&self, back: usize, file: &str) -> Result<Option<String>> {
+    fn shown(&self, back: usize) -> Result<Option<String>> {
         let shown = self
             .git()?
-            .args(["show", &format!("HEAD~{back}:{file}")])
+            .args(["show", &format!("HEAD~{back}:{RELEASE}")])
             .output()
             .context("failed to run git show")?;
         if !shown.status.success() {
@@ -76,7 +66,7 @@ impl Checkout {
         }
         String::from_utf8(shown.stdout)
             .map(Some)
-            .with_context(|| format!("HEAD~{back}:{file} is not UTF-8"))
+            .with_context(|| format!("HEAD~{back}:{RELEASE} is not UTF-8"))
     }
 
     pub(crate) fn ensure_started(&self) -> Result<()> {

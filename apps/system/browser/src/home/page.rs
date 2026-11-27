@@ -1,21 +1,20 @@
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
-use browser_store::{ClosedTab, Place, PlaceId, ProfileId, SpaceId, Store};
+use browser_store::{ClosedTab, SpaceId, Store};
 use rikka_app::prelude::*;
+use rikka_web::{History, HistoryItem, HistoryQuery};
 
 use crate::home::clock::Minute;
 use browser_model::TabId;
 
 const CLOCK: &str = "rikka-browser-home-clock";
 const SHELF: &str = "rikka-browser-home-shelf";
+const SITES: &str = "rikka-browser-home-sites";
 const SITES_READ: usize = 24;
+const VISITS_READ: u32 = 500;
+const VISITS_SPAN: Duration = Duration::from_secs(90 * 24 * 60 * 60);
 const CLOSED_SHOWN: usize = 5;
-
-#[derive(Debug, Default)]
-struct Shelf {
-    sites: Vec<Place>,
-    closed: Vec<ClosedTab>,
-}
 
 #[derive(State)]
 pub(crate) struct HomePage {
@@ -24,11 +23,11 @@ pub(crate) struct HomePage {
     #[untracked]
     store: Option<Store>,
     #[untracked]
-    profile: Option<ProfileId>,
+    history: Option<History>,
     #[untracked]
     spaces: Vec<SpaceId>,
     now: Tracked<Minute>,
-    sites: Tracked<Arc<[Place]>>,
+    sites: Tracked<Arc<[HistoryItem]>>,
     closed: Tracked<Arc<[ClosedTab]>>,
 }
 
@@ -37,7 +36,7 @@ impl HomePage {
         HomePage {
             shown_in: None,
             store: None,
-            profile: None,
+            history: None,
             spaces: Vec::new(),
             now: Tracked::new(Minute::now().0),
             sites: Tracked::new(Arc::from([])),
@@ -52,13 +51,13 @@ impl HomePage {
     pub(crate) fn open(
         &mut self,
         tab: TabId,
-        store: Store,
-        profile: Option<ProfileId>,
+        store: Option<Store>,
+        history: Option<History>,
         spaces: Vec<SpaceId>,
     ) {
         self.shown_in = Some(tab);
-        self.store = Some(store);
-        self.profile = profile;
+        self.store = store;
+        self.history = history;
         self.spaces = spaces;
         self.tick();
         self.refresh();
@@ -68,13 +67,14 @@ impl HomePage {
         self.shown_in = None;
         cancel(CLOCK);
         cancel(SHELF);
+        cancel(SITES);
     }
 
     pub(crate) fn now(&self) -> Minute {
         *self.now
     }
 
-    pub(crate) fn sites(&self) -> &Arc<[Place]> {
+    pub(crate) fn sites(&self) -> &Arc<[HistoryItem]> {
         &self.sites
     }
 
@@ -82,16 +82,8 @@ impl HomePage {
         &self.closed
     }
 
-    pub(crate) fn site(&self, place: PlaceId) -> Option<&Place> {
-        self.sites.iter().find(|site| site.id == place)
-    }
-
-    pub(crate) fn hide(&mut self, url: &str) {
-        let (Some(store), Some(profile)) = (&self.store, self.profile) else {
-            return;
-        };
-        store.hide_top_site(profile, url);
-        self.refresh();
+    pub(crate) fn site(&self, id: &str) -> Option<&HistoryItem> {
+        self.sites.iter().find(|site| site.id == id)
     }
 
     fn tick(&mut self) {
@@ -101,37 +93,64 @@ impl HomePage {
     }
 
     fn refresh(&mut self) {
-        let (Some(store), Some(profile)) = (self.store.clone(), self.profile) else {
-            self.loaded(Shelf::default());
-            return;
-        };
-        let spaces = self.spaces.clone();
-        spawn_blocking_keyed(
-            SHELF,
-            move || read(&store, profile, &spaces),
-            |page: &mut HomePage, shelf: browser_store::Result<Shelf>| match shelf {
-                Ok(shelf) => page.loaded(shelf),
-                Err(error) => tracing::warn!(%error, "failed to read home page data"),
-            },
-        );
-    }
-
-    fn loaded(&mut self, shelf: Shelf) {
-        self.sites.set(Arc::from(shelf.sites));
-        self.closed.set(Arc::from(shelf.closed));
+        match self.store.clone() {
+            Some(store) => {
+                let spaces = self.spaces.clone();
+                spawn_blocking_keyed(
+                    SHELF,
+                    move || closed(&store, &spaces),
+                    |page: &mut HomePage, closed: browser_store::Result<Vec<ClosedTab>>| {
+                        match closed {
+                            Ok(closed) => page.closed.set(Arc::from(closed)),
+                            Err(error) => tracing::warn!(%error, "failed to read closed tabs"),
+                        }
+                    },
+                );
+            }
+            None => self.closed.set(Arc::from([])),
+        }
+        match self.history.clone() {
+            Some(history) => {
+                let since = SystemTime::now()
+                    .checked_sub(VISITS_SPAN)
+                    .unwrap_or(SystemTime::UNIX_EPOCH);
+                let query = HistoryQuery::new("").since(since).limit(VISITS_READ);
+                spawn_keyed(
+                    SITES,
+                    history.search(&query),
+                    |page: &mut HomePage, visited: rikka_web::Result<Vec<HistoryItem>>| {
+                        match visited {
+                            Ok(visited) => page.sites.set(Arc::from(top_sites(visited))),
+                            Err(error) => tracing::warn!(%error, "failed to read top sites"),
+                        }
+                    },
+                );
+            }
+            None => self.sites.set(Arc::from([])),
+        }
     }
 }
 
-fn read(store: &Store, profile: ProfileId, spaces: &[SpaceId]) -> browser_store::Result<Shelf> {
+fn top_sites(mut visited: Vec<HistoryItem>) -> Vec<HistoryItem> {
+    visited.retain(|item| item.url.starts_with("https://") || item.url.starts_with("http://"));
+    visited.sort_by(|left, right| {
+        right
+            .visit_count
+            .cmp(&left.visit_count)
+            .then(right.last_visit_time.cmp(&left.last_visit_time))
+    });
+    visited.truncate(SITES_READ);
+    visited
+}
+
+fn closed(store: &Store, spaces: &[SpaceId]) -> browser_store::Result<Vec<ClosedTab>> {
     store.flush()?;
-    let sites = store.top_sites(profile, SITES_READ)?;
-    let closed = store
+    Ok(store
         .closed_tabs()?
         .into_iter()
         .filter(|closed| spaces.contains(&closed.space) && !closed.url.is_empty())
         .take(CLOSED_SHOWN)
-        .collect();
-    Ok(Shelf { sites, closed })
+        .collect())
 }
 
 impl std::fmt::Debug for HomePage {

@@ -7,6 +7,7 @@ use std::time::Duration;
 use rikka_clipboard::Clipboard;
 use rikka_picture::SharedGpu;
 
+use crate::claim::Claim;
 use crate::command::{Command, Link};
 use crate::error::{Error, Result};
 use crate::event::{EventSender, Events};
@@ -96,8 +97,8 @@ impl Nested {
     }
 
     #[must_use]
-    pub fn view(&self, app_id: impl Into<String>) -> View {
-        View::adopt(&self.0.link, app_id.into())
+    pub fn view(&self, claim: Claim) -> View {
+        View::adopt(&self.0.link, claim)
     }
 
     #[must_use]

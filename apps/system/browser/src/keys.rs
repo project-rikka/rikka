@@ -23,7 +23,7 @@ const CONTROL_ALT: Modifiers = Modifiers {
     logo: false,
 };
 
-const TABLE: [(Modifiers, Key, Command); 64] = [
+const TABLE: [(Modifiers, Key, Command); 59] = [
     (CONTROL, Key::Char('t'), Command::NewTab),
     (CONTROL, Key::Char('l'), Command::FocusAddress),
     (ALT, Key::Char('d'), Command::FocusAddress),
@@ -63,12 +63,7 @@ const TABLE: [(Modifiers, Key, Command); 64] = [
     (CONTROL_SHIFT, Key::Char('_'), Command::ZoomOut),
     (CONTROL, Key::Char('0'), Command::ZoomReset),
     (CONTROL, Key::Char('d'), Command::TogglePin),
-    (CONTROL, Key::Char('s'), Command::SavePage),
-    (CONTROL, Key::Char('f'), Command::Find),
-    (CONTROL, Key::Char('g'), Command::FindNext),
-    (NONE, Key::F(3), Command::FindNext),
-    (CONTROL_SHIFT, Key::Char('g'), Command::FindPrevious),
-    (SHIFT, Key::F(3), Command::FindPrevious),
+    (CONTROL, Key::Char('s'), Command::Print),
     (CONTROL, Key::Char('u'), Command::ViewSource),
     (CONTROL, Key::Char('j'), Command::Downloads),
     (NONE, Key::F(11), Command::Fullscreen),

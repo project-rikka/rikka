@@ -9,8 +9,11 @@ impl State {
     pub(crate) fn popups_of(&self, toplevel: ToplevelId) -> Vec<PopupId> {
         self.shell
             .popups()
-            .filter(|(popup, _)| {
-                self.shell.popup_root(*popup) == Some(PopupParent::Toplevel(toplevel))
+            .filter(|(popup, _)| match self.shell.popup_root(*popup) {
+                Some(PopupParent::Toplevel(parent)) => {
+                    parent == toplevel || self.root_of(parent) == Some(toplevel)
+                }
+                Some(PopupParent::Popup(_) | PopupParent::Layer(_)) | None => false,
             })
             .map(|(popup, _)| popup)
             .collect()
@@ -18,7 +21,7 @@ impl State {
 
     fn view_of_popup(&self, popup: PopupId) -> Option<ViewId> {
         match self.shell.popup_root(popup)? {
-            PopupParent::Toplevel(toplevel) => self.views.toplevels.get(toplevel)?.view,
+            PopupParent::Toplevel(toplevel) => self.owner_of(toplevel),
             PopupParent::Popup(_) | PopupParent::Layer(_) => None,
         }
     }
@@ -57,7 +60,7 @@ impl State {
         let positioner = *state.positioner();
         let parent = match state.parent() {
             Some(PopupParent::Popup(parent)) => self.popup_window_origin(parent),
-            Some(PopupParent::Toplevel(_)) => Some(Point::zero()),
+            Some(PopupParent::Toplevel(toplevel)) => Some(self.toplevel_origin(toplevel)),
             Some(PopupParent::Layer(_)) | None => None,
         };
         let bounds = view
@@ -145,8 +148,10 @@ impl State {
             return Some(KeyboardFocus::Surface(state.surface()));
         }
         let toplevel = record.toplevel?;
-        Some(KeyboardFocus::Surface(
-            self.shell.toplevel(toplevel)?.surface(),
-        ))
+        self.dependent_focus(toplevel).or_else(|| {
+            Some(KeyboardFocus::Surface(
+                self.shell.toplevel(toplevel)?.surface(),
+            ))
+        })
     }
 }

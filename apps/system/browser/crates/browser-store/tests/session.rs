@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use browser_store::{
     PinnedPlace, Session, SessionSplit, SessionTab, SessionWindow, SpaceId, SpaceSession,
     SplitAxis, SplitMember, Store, TabRecord, Timestamp, WindowBounds,
@@ -7,14 +5,13 @@ use browser_store::{
 
 use crate::support;
 
-fn tab(store: &Store, url: &str, state: Option<Vec<u8>>) -> SessionTab {
+fn tab(store: &Store, url: &str) -> SessionTab {
     SessionTab {
         id: store.new_tab_id(),
         pinned: None,
         favorite: None,
         url: url.to_owned(),
         title: url.to_owned(),
-        state: state.map(Arc::from),
         last_active: Timestamp::from_unix_millis(1_700_000_000_000),
         split: None,
     }
@@ -46,11 +43,11 @@ fn session_round_trips() {
     let (_, space) = support::space(&store, "Home");
     let pinned = store.pin_tab(PinnedPlace::root(space), "https://mail.example/", None);
     let group = store.new_split_group_id();
-    let mut live = tab(&store, "https://mail.example/inbox", Some(vec![7; 40_000]));
+    let mut live = tab(&store, "https://mail.example/inbox");
     live.pinned = Some(pinned);
-    let mut left = tab(&store, "https://a.example/", Some(vec![1, 2, 3]));
+    let mut left = tab(&store, "https://a.example/");
     left.split = Some(SplitMember { group, order: 0 });
-    let mut right = tab(&store, "https://b.example/", None);
+    let mut right = tab(&store, "https://b.example/");
     right.split = Some(SplitMember { group, order: 1 });
     let mut saved = session(space, vec![live, left, right], 1);
     saved.windows[0].splits.push(SessionSplit {
@@ -70,11 +67,7 @@ fn session_survives_reopen() {
     let path = folder.path().join("browser.sqlite");
     let store = Store::open(&path).unwrap();
     let (_, space) = support::space(&store, "Home");
-    let saved = session(
-        space,
-        vec![tab(&store, "https://a.example/", Some(vec![5; 64]))],
-        0,
-    );
+    let saved = session(space, vec![tab(&store, "https://a.example/")], 0);
     store.save_session(saved.clone());
     drop(store);
 
@@ -99,7 +92,7 @@ fn split_groups_are_validated_and_normalized() {
     let [intact, lonely, negative, unrecorded, empty, removed] =
         std::array::from_fn(|_| store.new_split_group_id());
     let mut tabs: Vec<SessionTab> = (0..6)
-        .map(|index| tab(&store, &format!("https://t{index}.example/"), None))
+        .map(|index| tab(&store, &format!("https://t{index}.example/")))
         .collect();
     member(&mut tabs[0], intact, 1);
     member(&mut tabs[1], intact, 0);
@@ -108,7 +101,7 @@ fn split_groups_are_validated_and_normalized() {
     member(&mut tabs[4], negative, 1);
     member(&mut tabs[5], unrecorded, 0);
     let mut work_tabs: Vec<SessionTab> = (0..2)
-        .map(|index| tab(&store, &format!("https://w{index}.example/"), None))
+        .map(|index| tab(&store, &format!("https://w{index}.example/")))
         .collect();
     member(&mut work_tabs[0], removed, 0);
     member(&mut work_tabs[1], removed, 1);
@@ -175,7 +168,6 @@ fn closed_tab_pops_without_flush() {
             TabRecord {
                 url: url.to_owned(),
                 title: url.to_owned(),
-                state: None,
             },
         );
     }

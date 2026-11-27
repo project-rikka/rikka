@@ -6,8 +6,8 @@ fn internal_addresses_round_trip() {
         ("rikka://home", Internal::Home),
         ("rikka://settings", Internal::Settings(None)),
         (
-            "rikka://settings/https-only",
-            Internal::Settings(Some(Section::HttpsOnly)),
+            "rikka://settings/chrome",
+            Internal::Settings(Some(Section::Chrome)),
         ),
         (
             "rikka://settings/clear-browsing-data",
@@ -15,10 +15,7 @@ fn internal_addresses_round_trip() {
         ),
         ("rikka://history", Internal::History),
         ("rikka://downloads", Internal::Downloads),
-        (
-            "rikka://source?url=https%3A%2F%2Fexample.com%2F%3Fq%3D1",
-            Internal::Source("https://example.com/?q=1".to_owned()),
-        ),
+        ("rikka://extensions", Internal::Extensions),
     ];
     for (address, internal) in cases {
         assert_eq!(
@@ -28,14 +25,14 @@ fn internal_addresses_round_trip() {
         );
         assert_eq!(internal.address(), address);
     }
-    assert_eq!(
-        Internal::parse("view-source:https://example.com/"),
-        Some(Internal::Source("https://example.com/".to_owned()))
-    );
-    assert_eq!(
-        Internal::parse("rikka://nowhere"),
-        Some(Internal::Missing("rikka://nowhere".to_owned()))
-    );
+    assert_eq!(Internal::parse("view-source:https://example.com/"), None);
+    for missing in ["rikka://nowhere", "rikka://settings/https-only"] {
+        assert_eq!(
+            Internal::parse(missing),
+            Some(Internal::Missing(missing.to_owned()))
+        );
+    }
     assert_eq!(Internal::parse("https://example.com/"), None);
+    assert_eq!(Internal::parse("chrome://settings"), None);
     assert_eq!(Section::ClearData.listed_under(), Section::Privacy);
 }

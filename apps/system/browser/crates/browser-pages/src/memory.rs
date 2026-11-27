@@ -14,7 +14,6 @@ pub struct TabActivity {
     pub seen: bool,
     pub last_active: Timestamp,
     pub playing: bool,
-    pub capturing: bool,
     pub asking: bool,
     pub exempt: bool,
 }
@@ -27,7 +26,6 @@ impl TabActivity {
             && !self.asking
             && !self.exempt
             && !self.playing
-            && !self.capturing
             && self.last_active <= now.saturating_sub(idle)
     }
 }

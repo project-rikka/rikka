@@ -150,7 +150,7 @@ impl Signing {
         };
         match event {
             Event::NewSession(opening) => portal.follow(opening),
-            Event::ScriptMessage(message) => {
+            Event::Message(message) => {
                 let Some(posted) = portal.posted(&message) else {
                     return;
                 };

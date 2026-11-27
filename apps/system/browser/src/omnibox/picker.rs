@@ -14,8 +14,6 @@ pub(crate) struct Picker {
     pub(crate) deleting: bool,
     #[untracked]
     pub(crate) store: Option<Store>,
-    #[untracked]
-    pub(crate) anticipated: Option<String>,
     listing: Tracked<Option<Listing>>,
 }
 
@@ -26,7 +24,6 @@ impl Picker {
             arrowed: false,
             deleting: false,
             store: None,
-            anticipated: None,
             listing: Tracked::new(None),
         }
     }
@@ -46,7 +43,6 @@ impl Picker {
     pub(crate) fn hide(&mut self) {
         self.show(None);
         self.arrowed = false;
-        self.anticipated = None;
     }
 
     pub(crate) fn reset(&mut self) {

@@ -5,7 +5,7 @@ use anyhow::{Context, Result, bail};
 use rikka_instance::TAG_ENV;
 
 use crate::bazel::{self, Profile};
-use crate::components::COMPONENTS;
+use crate::components::{COMPONENTS, WEB_HOST};
 use crate::shipped::{Contents, Program, SHARED};
 use crate::{host, tree};
 
@@ -16,6 +16,8 @@ const COMPOSITOR: &str = "rikka-compositor";
 const DATA_DIRS_ENV: &str = "XDG_DATA_DIRS";
 
 const DEFAULT_DATA_DIRS: &str = "/usr/local/share:/usr/share";
+
+const WEB_HOST_PATH_ENV: &str = "RIKKA_WEB_HOST_PATH";
 
 const SESSION_TREES: &str = ".bazel/session";
 
@@ -112,14 +114,18 @@ pub(crate) fn app(
             names.join(", ")
         );
     };
-    let built = bazel::build(workspace, profile, [application.target])?;
+    let built = bazel::build(workspace, profile, [application.target, WEB_HOST.target])?;
     let program = built.program(application)?;
+    let web_host = built.program(&WEB_HOST)?;
 
     println!("\n===== starting {} as {TAG} =====", program.display());
     println!("  app id `{named}-{TAG}`; settings and data are shared with the installed {named}");
 
     let mut command = host::clean_command(program);
-    command.args(arguments).env(TAG_ENV, TAG);
+    command
+        .args(arguments)
+        .env(TAG_ENV, TAG)
+        .env(WEB_HOST_PATH_ENV, web_host);
     for shared in SHARED {
         command.env(shared.found_by, tree::supplied(shared.variable)?);
     }

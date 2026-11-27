@@ -43,6 +43,12 @@ pub(crate) struct Package {
 }
 
 #[derive(Clone, Copy, Debug)]
+pub(crate) struct ChromeExtension {
+    pub(crate) target: &'static str,
+    pub(crate) into: &'static str,
+}
+
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct Contents {
     pub(crate) programs: &'static [Program],
     pub(crate) data: &'static [DataFile],
@@ -51,6 +57,7 @@ pub(crate) struct Contents {
     pub(crate) completions: &'static [Completion],
     pub(crate) libraries: &'static [Library],
     pub(crate) packages: &'static [Package],
+    pub(crate) extensions: &'static [ChromeExtension],
 }
 
 impl Contents {
@@ -62,6 +69,7 @@ impl Contents {
         completions: &[],
         libraries: &[],
         packages: &[],
+        extensions: &[],
     };
 }
 
@@ -125,14 +133,6 @@ pub(crate) struct Shared {
 }
 
 pub(crate) const SHARED: &[Shared] = &[
-    Shared {
-        name: "gecko",
-        library: "//crates/web/rikka-web",
-        variable: "RIKKA_GECKO",
-        found_by: "RIKKA_GECKO_PATH",
-        into: "lib/rikka-gecko",
-        distributed: Distributed::Flake,
-    },
     Shared {
         name: "grammars",
         library: "//crates/foundation/rikka-grammars",

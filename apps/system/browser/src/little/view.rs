@@ -44,14 +44,12 @@ fn site(shell: &Shell) -> Element {
     let Some(tab_entry) = model.active(shell.id()) else {
         return Element::empty();
     };
-    let (symbol, tint) = security_glyph(&tab_entry.meta.security);
+    let (symbol, tint) = security_glyph(*tab_entry.meta.security);
     let shown = crate::address::display_address(&tab_entry.meta.url);
     let web = browser_pages::web_host(&tab_entry.meta.url).is_some();
-    let capture = *tab_entry.meta.capture;
     row! {
         favicon(tab_entry.meta.favicon.as_ref(), MaterialSymbol::PUBLIC, GLYPH);
         site_info::badge(symbol, tint, web);
-        site_info::capturing(capture);
         text(shown.host).label().no_wrap();
         text(shown.rest).label().muted().no_wrap().shrink(1.0).min_width(0.0);
     }

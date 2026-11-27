@@ -10,6 +10,7 @@ use rikka_compositor_types::OutputId;
 use slotmap::SecondaryMap;
 
 use super::state::State;
+use crate::claim::Claim;
 use crate::shared::Shared;
 use crate::view::ViewId;
 
@@ -47,7 +48,7 @@ pub(crate) struct Placement {
 }
 
 pub(crate) struct ViewRecord {
-    pub(crate) app_id: String,
+    pub(crate) claim: Claim,
     pub(crate) pacing: OutputId,
     pub(crate) shared: Arc<Shared>,
     pub(crate) toplevel: Option<ToplevelId>,
@@ -65,9 +66,9 @@ pub(crate) struct ViewRecord {
 }
 
 impl ViewRecord {
-    pub(crate) fn new(app_id: String, pacing: OutputId, shared: Arc<Shared>) -> Self {
+    pub(crate) fn new(claim: Claim, pacing: OutputId, shared: Arc<Shared>) -> Self {
         Self {
-            app_id,
+            claim,
             pacing,
             shared,
             toplevel: None,
@@ -97,6 +98,9 @@ impl ViewRecord {
 pub(crate) struct Tracked {
     pub(crate) view: Option<ViewId>,
     pub(crate) frame_pending: bool,
+    pub(crate) announced: bool,
+    pub(crate) owner: Option<ViewId>,
+    pub(crate) adopted: Option<ToplevelId>,
 }
 
 #[derive(Default)]
@@ -120,7 +124,7 @@ impl State {
 
     pub(crate) fn view_of(&self, surface: SurfaceId) -> Option<ViewId> {
         let toplevel = self.toplevel_of(surface)?;
-        self.views.toplevels.get(toplevel)?.view
+        self.owner_of(toplevel)
     }
 
     pub(crate) fn record(&mut self, view: ViewId) -> Option<&mut ViewRecord> {

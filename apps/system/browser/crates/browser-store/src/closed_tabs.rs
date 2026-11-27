@@ -24,16 +24,10 @@ impl Store {
         self.write(move |connection, _| {
             connection
                 .prepare_cached(
-                    "INSERT INTO closed_tabs (space_id, url, title, state, closed_at) \
-                     VALUES (?1, ?2, ?3, ?4, ?5)",
+                    "INSERT INTO closed_tabs (space_id, url, title, closed_at) \
+                     VALUES (?1, ?2, ?3, ?4)",
                 )?
-                .execute(params![
-                    space,
-                    tab.url,
-                    tab.title,
-                    tab.state.as_deref(),
-                    closed_at
-                ])?;
+                .execute(params![space, tab.url, tab.title, closed_at])?;
             connection
                 .prepare_cached(
                     "DELETE FROM closed_tabs WHERE id NOT IN \
@@ -69,16 +63,16 @@ impl Store {
                 .prepare_cached(
                     "DELETE FROM closed_tabs WHERE id = \
                      (SELECT id FROM closed_tabs ORDER BY closed_at DESC, id DESC LIMIT 1) \
-                     RETURNING space_id, url, title, state, id, closed_at",
+                     RETURNING space_id, url, title, id, closed_at",
                 )?
                 .query_row([], |row| {
                     let restored = Restored::from_row(row)?;
                     let closed = ClosedTab {
-                        id: row.get(4)?,
+                        id: row.get(3)?,
                         space: restored.space,
                         url: restored.tab.url.clone(),
                         title: restored.tab.title.clone(),
-                        closed_at: row.get(5)?,
+                        closed_at: row.get(4)?,
                     };
                     Ok((closed, restored))
                 })

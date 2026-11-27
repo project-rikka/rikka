@@ -3,12 +3,13 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use memchr::memmem;
+use rikka_web_crx::Version;
 
 use crate::bazel::{self, Profile};
 use crate::components::COMPONENTS;
-use crate::dist::about;
 use crate::dist::archive::{ARCHIVE_SUFFIX, pack_as, pack_named};
 use crate::dist::release::{Entry, Fragment, Packed, SYSTEM, Source, write_json};
+use crate::dist::{about, extension};
 use crate::host;
 use crate::shipped::{Component, Contents, Distributed, PORTALS, SHARED, Shared};
 use crate::tree::{self, Laid};
@@ -56,6 +57,19 @@ pub(crate) fn build(workspace: &Path, orders: &[Order], out: &Path) -> Result<Ve
     for order in orders {
         check_version(&order.version)?;
     }
+    let stamps = orders
+        .iter()
+        .map(|order| {
+            let ships_extensions = order
+                .component
+                .contents()
+                .iter()
+                .any(|contents| !contents.extensions.is_empty());
+            ships_extensions
+                .then(|| extension::stamp(workspace, &order.version))
+                .transpose()
+        })
+        .collect::<Result<Vec<_>>>()?;
     let parts: Vec<Contents> = orders
         .iter()
         .flat_map(|order| order.component.contents())
@@ -65,9 +79,9 @@ pub(crate) fn build(workspace: &Path, orders: &[Order], out: &Path) -> Result<Ve
 
     let stage = out.join(STAGE);
     let mut fragments = Vec::new();
-    for order in orders {
+    for (order, stamp) in orders.iter().zip(stamps) {
         host::reset_dir(&stage)?;
-        let fragment = pack_component(workspace, &built, order, &revision, &stage, out)?;
+        let fragment = pack_component(workspace, &built, order, stamp, &revision, &stage, out)?;
         write_json(&out.join(format!("{}.json", fragment.id)), &fragment)?;
         println!(
             "packed {} {} into {}",
@@ -83,6 +97,7 @@ fn pack_component(
     workspace: &Path,
     built: &bazel::BuildOutput,
     order: &Order,
+    stamp: Option<Version>,
     revision: &str,
     stage: &Path,
     out: &Path,
@@ -97,6 +112,10 @@ fn pack_component(
         &tree,
     )?;
     refuse_store_paths(&laid)?;
+    let extensions = match stamp {
+        Some(stamp) => extension::sign(&component.contents(), built, stamp, &tree)?,
+        None => Vec::new(),
+    };
 
     let mut assets = BTreeMap::new();
     let mut links = BTreeMap::new();
@@ -140,6 +159,7 @@ fn pack_component(
             .any(|contents| contents.data.iter().any(|data| data.into == PORTALS)),
         templates: relative(&tree, &laid.templates)?,
         links,
+        extensions,
         source: Source::Local {
             file: packed.file.clone(),
         },

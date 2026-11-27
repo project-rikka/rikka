@@ -1,21 +1,29 @@
 load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//crates/web/rikka-web/extension:defs.bzl", "rikka_web_extension", "rikka_web_machine_test")
 
 rikka_library(
     name = "browser-reader",
     target_compatible_with = ["@platforms//os:linux"],
-    compile_data = [
-        "scripts/extract.js",
-        "scripts/probe.js",
-    ],
     visibility = [
         "//apps/system/browser:__subpackages__",
     ],
     deps = [
         "//crates/foundation/rikka-types",
         "//crates/web/rikka-html",
+        "//crates/web/rikka-web",
         "@crates//:serde_json",
         "@crates//:thiserror",
     ],
+)
+
+exports_files(
+    [
+        "scripts/extract.js",
+        "scripts/probe.js",
+        "scripts/reader.html",
+        "scripts/reader.js",
+    ],
+    visibility = ["//system/rikka-web-host:__pkg__"],
 )
 
 rikka_test(
@@ -31,21 +39,29 @@ rikka_test(
     ],
 )
 
-rikka_test(
+rikka_web_extension(
+    name = "test_extension",
+    testonly = True,
+    scripts = {
+        "browser-reader/extract.js": "scripts/extract.js",
+        "browser-reader/probe.js": "scripts/probe.js",
+        "browser-reader/reader.html": "scripts/reader.html",
+        "browser-reader/reader.js": "scripts/reader.js",
+    },
+)
+
+rikka_web_machine_test(
     name = "machine",
     compile_data = [
         "tests/fixtures/hostile.html",
         "tests/fixtures/index.html",
         "tests/fixtures/news.html",
     ],
-    machine = True,
+    extension = ":test_extension",
     deps = [
         ":browser-reader",
-        "//crates/graphics/rikka-picture",
-        "//crates/graphics/rikka-test-renderer",
         "//crates/web/rikka-web",
         "@crates//:futures-util",
-        "@crates//:serde_json",
         "@crates//:tokio",
     ],
 )

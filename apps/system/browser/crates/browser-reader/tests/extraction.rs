@@ -1,28 +1,15 @@
 use std::time::Duration;
 
-use browser_reader::{
-    Article, Block, EXTRACT_SCRIPT, Inline, Labels, Look, PROBE_SCRIPT, parse, readable, render,
-};
+use browser_reader::{Article, Block, Error, Inline, Labels, Look, Result, extract, probe, render};
 use futures_util::StreamExt;
-use rikka_picture::SharedGpu;
-use rikka_test_renderer::TestRenderer;
-use rikka_web::{Event, Load, Runtime, RuntimeEvent, SessionSettings, World};
-use serde_json::Value;
+use rikka_web::{Event, Runtime, SessionSettings};
 
-const PATIENCE: Duration = Duration::from_secs(30);
-const STARTUP: Duration = Duration::from_secs(45);
-const WORLD: &str = "rikka-reader";
+use crate::support::{PATIENCE, block_on, ready, served};
 
 struct Page {
-    probe: Value,
-    extract: Value,
+    readable: bool,
+    article: Result<Article>,
     took: Duration,
-}
-
-fn gpu() -> TestRenderer {
-    let renderer = rikka_test_renderer::renderer("browser-reader-test").expect("Vulkan 1.3 device");
-    SharedGpu::from_gpu(renderer.gpu()).publish();
-    renderer
 }
 
 fn based(html: &str, url: &str) -> String {
@@ -34,63 +21,40 @@ fn based(html: &str, url: &str) -> String {
 }
 
 fn read(html: &str, url: &str) -> Page {
-    let _gpu = gpu();
-    let engine = Runtime::builder().start().expect("start installed engine");
-    let mut started = engine.events().expect("events not yet taken");
-    let runtime = tokio::runtime::Builder::new_current_thread()
-        .enable_time()
-        .build()
-        .expect("create tokio runtime");
-    let page = runtime.block_on(async {
-        tokio::time::timeout(STARTUP, async {
-            while let Some(event) = started.next().await {
-                match event {
-                    RuntimeEvent::Started { .. } => return,
-                    RuntimeEvent::Exited(exit) => panic!("engine exited: {exit:?}"),
-                    _ => {}
-                }
-            }
-        })
-        .await
-        .expect("engine started in time");
+    let address = served(based(html, url));
+    let engine = Runtime::builder().start().expect("Chrome starts");
+    let page = block_on(async {
+        ready(&engine).await;
         let view = engine
-            .session(SessionSettings::new())
+            .session(SessionSettings::new().url(&address))
             .expect("open session");
         let mut events = view.events().expect("events not yet taken");
-        view.load(Load::html(based(html, url)));
-        let loaded = tokio::time::timeout(PATIENCE, async {
+        tokio::time::timeout(PATIENCE, async {
             while let Some(event) = events.next().await {
                 match event {
-                    Event::PageStopped { success: true } => return,
-                    Event::PageStopped { success: false } => panic!("page load failed"),
+                    Event::Finished { url } if url == address => return,
                     Event::Closed(reason) => panic!("session closed: {reason:?}"),
-                    Event::LoadError(failure) => {
-                        panic!("page load failed: {:?}", failure.error)
-                    }
                     _ => {}
                 }
             }
             panic!("page events ended before load");
         })
-        .await;
-        loaded.expect("page loaded in time");
-        let world = World::isolated(WORLD);
+        .await
+        .expect("page loaded in time");
         let reading = std::time::Instant::now();
-        let probe = view
-            .evaluate(PROBE_SCRIPT, &world)
+        let readable = tokio::time::timeout(PATIENCE, probe(&view))
             .await
-            .expect("run probe script");
-        let extract = view
-            .evaluate(EXTRACT_SCRIPT, &world)
+            .expect("probe in time")
+            .expect("valid probe result");
+        let article = tokio::time::timeout(PATIENCE, extract(&view))
             .await
-            .expect("run extraction script");
+            .expect("extraction in time");
         Page {
-            probe,
-            extract,
+            readable,
+            article,
             took: reading.elapsed(),
         }
     });
-    drop(started);
     drop(engine);
     rikka_web::wait_for_closed_runtimes();
     page
@@ -152,12 +116,8 @@ fn news_article_keeps_story() {
         include_str!("fixtures/news.html"),
         "https://daily.example/2024/04/18/park",
     );
-    assert!(
-        readable(&page.probe).expect("valid probe result"),
-        "{}",
-        page.probe
-    );
-    let article = parse(&page.extract).unwrap_or_else(|error| panic!("{error}: {}", page.extract));
+    assert!(page.readable);
+    let article = page.article.unwrap_or_else(|error| panic!("{error}"));
     assert_eq!(
         article.title(),
         "City council approves the new riverside park"
@@ -245,12 +205,8 @@ fn portal_is_not_readable() {
         include_str!("fixtures/index.html"),
         "https://portal.example/",
     );
-    assert!(
-        !readable(&page.probe).expect("valid probe result"),
-        "{}",
-        page.probe
-    );
-    assert!(parse(&page.extract).is_err(), "{}", page.extract);
+    assert!(!page.readable);
+    assert!(matches!(page.article, Err(Error::NotReadable)));
 }
 
 #[test]
@@ -259,7 +215,7 @@ fn hostile_page_cannot_inject_markup() {
         include_str!("fixtures/hostile.html"),
         "https://hostile.example/story",
     );
-    let article = parse(&page.extract).unwrap_or_else(|error| panic!("{error}: {}", page.extract));
+    let article = page.article.unwrap_or_else(|error| panic!("{error}"));
     let html = render(&article, &Look::default(), &Labels::default());
     let body = &html[html.find("<body>").expect("body element")..];
     assert!(!html.contains("<script"), "{html}");
@@ -287,8 +243,8 @@ fn large_page_extracts_in_bounded_time() {
     );
     let page = read(&html, "https://long.example/read");
     assert!(page.took < Duration::from_secs(20));
-    assert!(readable(&page.probe).expect("valid probe result"));
-    let article = parse(&page.extract).unwrap_or_else(|error| panic!("{error}"));
+    assert!(page.readable);
+    let article = page.article.unwrap_or_else(|error| panic!("{error}"));
     assert!(article.blocks().len() > 1_000);
     assert!(!text_of(&article).contains("Navigation entry"));
 }

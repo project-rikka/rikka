@@ -4,8 +4,6 @@ use serde_json::{Value, json};
 
 use crate::code_mode::CodeMode;
 use crate::display::Display;
-use crate::message::Watch;
-use crate::script::TRANSLATOR_SCRIPT;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Command {
@@ -20,15 +18,7 @@ pub enum Command {
 
 impl Command {
     #[must_use]
-    pub fn answer(&self, frame: &Watch) -> Value {
-        let mut answer = self.to_json();
-        if matches!(self, Command::Translate { .. }) && !frame.translator {
-            answer["translator"] = Value::from(TRANSLATOR_SCRIPT);
-        }
-        answer
-    }
-
-    fn to_json(&self) -> Value {
+    pub fn answer(&self) -> Value {
         match self {
             Command::Translate {
                 session,

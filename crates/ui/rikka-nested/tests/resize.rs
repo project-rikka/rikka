@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use rikka_nested::{Input, View};
+use rikka_nested::{Claim, Input, View};
 use rikka_types::Size;
 
 use crate::support::{self, Client, Window, roundtrip_until};
@@ -34,7 +34,7 @@ fn configured(client: &mut Client, width: i32, height: i32) -> Vec<u32> {
 }
 
 fn mapped(nested: &rikka_nested::Nested, app_id: &str) -> (View, Client, Window) {
-    let view = nested.view(app_id);
+    let view = nested.view(Claim::app_id(app_id));
     view.resize(Size::new(100.0, 80.0), 1.0);
     let mut client = Client::connect(nested.socket());
     client.follow(&view);

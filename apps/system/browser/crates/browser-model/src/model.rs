@@ -9,7 +9,7 @@ use crate::split::Splits;
 use crate::{
     Favorite, Favorites, Home, Layout, Loaded, Node, PinPlace, Pinned, PinnedItem, Profile,
     ProfileId, ProfileKey, Profiles, Saved, Slot, Space, SpaceIcon, SpaceId, Spaces, Symbol, Tab,
-    TabId, Tabs, WindowId, Windows, Zooms, same_zoom,
+    TabId, Tabs, WindowId, Windows,
 };
 
 #[derive(Debug)]
@@ -20,7 +20,6 @@ pub struct Model<L> {
     pub pinned: Pinned,
     pub tabs: Tabs<L>,
     pub windows: Windows,
-    pub zooms: Zooms,
     pub splits: Splits,
     pub(crate) store: Store,
     pub(crate) window_ids: WindowIds,
@@ -101,7 +100,6 @@ impl<L: LivePage> Model<L> {
             pinned: Pinned::new(pinned),
             tabs: Tabs::default(),
             windows: Windows::default(),
-            zooms: Zooms::new(loaded.zooms.clone()),
             splits: Splits::default(),
             store,
             window_ids: WindowIds::default(),
@@ -205,19 +203,6 @@ impl<L: LivePage> Model<L> {
             .is_some_and(|layout| !layout.private && !layout.little)
     }
 
-    pub fn zoom_for(&self, tab: TabId, default: f64) -> f64 {
-        let Some(tab_entry) = self.tab(tab) else {
-            return default;
-        };
-        let (Some(profile), Some(host)) = (
-            tab_entry.persistent_profile(),
-            browser_pages::web_host(&tab_entry.meta.url),
-        ) else {
-            return default;
-        };
-        self.zooms.get(profile, &host).unwrap_or(default)
-    }
-
     pub fn remember_home(&mut self, tab: TabId) {
         let Some(tab_entry) = self.tab(tab) else {
             return;
@@ -230,38 +215,7 @@ impl<L: LivePage> Model<L> {
         }
     }
 
-    pub fn remember_zoom(&mut self, tab: TabId, zoom: f64, default: f64) {
-        let Some(tab_entry) = self.tab(tab) else {
-            return;
-        };
-        let (Some(profile), Some(host)) = (
-            tab_entry.persistent_profile(),
-            browser_pages::web_host(&tab_entry.meta.url),
-        ) else {
-            return;
-        };
-        if same_zoom(zoom, default) {
-            self.zooms.set(profile, &host, None);
-            self.store.clear_zoom(profile, &host);
-            return;
-        }
-        self.zooms.set(profile, &host, Some(zoom));
-        if let Err(error) = self.store.set_zoom(profile, &host, zoom) {
-            tracing::warn!(%error, "failed to store zoom level");
-        }
-    }
-
-    pub fn insert_linked_tab(&mut self, profile: ProfileKey, home: Home, url: String) -> TabId {
-        let id = self.insert_tab(profile, home, Saved::new(url, ""));
-        if let Some(tab_entry) = self.tab_mut(id) {
-            tab_entry
-                .visit_tracker
-                .set_cause(browser_pages::Cause::Link);
-        }
-        id
-    }
-
-    pub(crate) fn insert_tab(&mut self, profile: ProfileKey, home: Home, saved: Saved) -> TabId {
+    pub fn insert_tab(&mut self, profile: ProfileKey, home: Home, saved: Saved) -> TabId {
         let id = self.store.new_tab_id();
         self.tabs.insert(Tab::new(id, profile, home, saved));
         id

@@ -9,7 +9,7 @@ pub(crate) fn button(shell: &Shell) -> Element {
     let profile = shell.model().profile_here(shell.id());
     let page_services = shell.browser().page_services();
     let downloads = page_services.downloads();
-    if downloads.items(profile).next().is_none() {
+    if downloads.items(profile).is_empty() {
         return Element::empty();
     }
     let activity = downloads.activity(profile);

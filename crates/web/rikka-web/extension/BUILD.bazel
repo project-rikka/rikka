@@ -1,0 +1,6 @@
+load(":defs.bzl", "CORE")
+
+exports_files(
+    CORE,
+    visibility = ["//visibility:public"],
+)

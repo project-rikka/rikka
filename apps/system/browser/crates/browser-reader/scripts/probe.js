@@ -1,4 +1,4 @@
-(() => {
+(globalThis[Symbol.for("rikka")] ??= {})["browser-reader.probe"] = () => {
   "use strict";
   const MAX_NODES = 3000;
   const MIN_UNIT = 80;
@@ -101,4 +101,4 @@
   } catch (error) {
     return { readable: false };
   }
-})()
+};

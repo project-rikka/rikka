@@ -34,18 +34,11 @@ impl Store {
         let rows = ids.clone();
         self.write(move |connection, _| {
             let mut insert = connection.prepare_cached(
-                "INSERT INTO archived_tabs (id, space_id, url, title, state, archived_at) \
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                "INSERT INTO archived_tabs (id, space_id, url, title, archived_at) \
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
             )?;
             for (id, tab) in rows.into_iter().zip(tabs) {
-                insert.execute(params![
-                    id,
-                    space,
-                    tab.url,
-                    tab.title,
-                    tab.state.as_deref(),
-                    archived_at
-                ])?;
+                insert.execute(params![id, space, tab.url, tab.title, archived_at])?;
             }
             Ok(())
         });
@@ -73,7 +66,7 @@ impl Store {
             }
         }
         for term in text.split_whitespace() {
-            push_like(&mut sql, &mut values, "", &like_pattern(term));
+            push_like(&mut sql, &mut values, &like_pattern(term));
         }
         sql.push_str(" ORDER BY archived_at DESC, id DESC LIMIT ?");
         values.push(Value::Integer(count(limit)));

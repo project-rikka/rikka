@@ -135,6 +135,21 @@ impl Store {
         });
     }
 
+    pub fn update_pinned_tab(
+        &self,
+        id: PinnedTabId,
+        url: impl Into<String>,
+        title: Option<String>,
+    ) {
+        let url = url.into();
+        self.write(move |connection, _| {
+            connection
+                .prepare_cached("UPDATE pinned_tabs SET url = ?2, title = ?3 WHERE id = ?1")?
+                .execute(params![id, url, title])?;
+            Ok(())
+        });
+    }
+
     pub fn set_pinned_folder_expanded(&self, id: FolderId, expanded: bool) {
         self.write(move |connection, _| {
             connection

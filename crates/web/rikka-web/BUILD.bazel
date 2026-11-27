@@ -1,4 +1,5 @@
-load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//bazel/rust:defs.bzl", "rikka_library")
+load("//crates/web/rikka-web/extension:defs.bzl", "rikka_web_extension", "rikka_web_machine_test")
 
 rikka_library(
     name = "rikka-web",
@@ -8,18 +9,19 @@ rikka_library(
     ],
     deps = [
         "//crates/desktop/rikka-clipboard",
+        "//crates/foundation/rikka-dirs",
         "//crates/foundation/rikka-input",
-        "//crates/foundation/rikka-shipped",
         "//crates/foundation/rikka-sync",
         "//crates/foundation/rikka-types",
         "//crates/graphics/rikka-gpu-drivers",
         "//crates/graphics/rikka-picture",
         "//crates/ui/rikka-nested",
         "//crates/ui/rikka-ui",
-        "//crates/web/rikka-gecko-protocol",
+        "//crates/web/rikka-web-crx",
         "@crates//:base64",
         "@crates//:futures-channel",
-        "@crates//:percent-encoding",
+        "@crates//:getrandom",
+        "@crates//:jiff",
         "@crates//:rustix",
         "@crates//:serde",
         "@crates//:serde_json",
@@ -29,37 +31,23 @@ rikka_library(
     ],
 )
 
-rikka_test(
-    name = "main",
-    deps = [
-        ":rikka-web",
-        "//crates/foundation/rikka-sync",
-        "//crates/foundation/rikka-types",
-        "//crates/graphics/rikka-picture",
-        "//crates/ui/rikka-ui",
-        "//crates/web/rikka-gecko-protocol",
-        "@crates//:futures-channel",
-        "@crates//:futures-util",
-        "@crates//:rustix",
-        "@crates//:serde_json",
-        "@crates//:tempfile",
-        "@crates//:tokio",
-    ],
+rikka_web_extension(
+    name = "test_extension",
+    testonly = True,
+    scripts = {
+        "rikka-web-test/loaded.js": "tests/loaded.js",
+        "rikka-web-test/probe.js": "tests/probe.js",
+    },
 )
 
-rikka_test(
+rikka_web_machine_test(
     name = "machine",
-    machine = True,
+    extension = ":test_extension",
     deps = [
         ":rikka-web",
-        "//crates/foundation/rikka-input",
-        "//crates/foundation/rikka-types",
-        "//crates/graphics/rikka-renderer",
-        "//crates/graphics/rikka-theme",
-        "//crates/ui/rikka-ui",
+        "//crates/foundation/rikka-worker",
         "@crates//:futures-channel",
         "@crates//:futures-util",
         "@crates//:serde_json",
-        "@crates//:tokio",
     ],
 )

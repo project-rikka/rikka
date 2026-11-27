@@ -173,10 +173,11 @@ impl State {
         match command {
             Command::Adopt {
                 view,
-                app_id,
+                claim,
                 shared,
-            } => self.adopt(view, app_id, shared),
+            } => self.adopt(view, claim, shared),
             Command::Forget(view) => self.forget(view),
+            Command::Reclaim { view, claim } => self.reclaim(view, claim),
             Command::Resize { view, size, scale } => self.resize(view, size, scale),
             Command::Visible { view, visible } => self.set_visible(view, visible),
             Command::Fullscreen { view, fullscreen } => self.set_fullscreen(view, fullscreen),

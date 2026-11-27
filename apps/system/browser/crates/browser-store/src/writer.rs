@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use rusqlite::{Connection, TransactionBehavior};
 
 use crate::error::{Error, Result};
-use crate::ids::{DownloadId, ProfileId};
+use crate::ids::ProfileId;
 use crate::session::{Session, SessionCache};
 
 const WRITE_BEHIND: Duration = Duration::from_secs(1);
@@ -26,10 +26,7 @@ pub(crate) struct CallOutcome {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) enum Coalesce {
-    Title(ProfileId, String),
     Favicon(String),
-    Zoom(ProfileId, String),
-    Download(DownloadId),
     ProfileSettings(ProfileId),
 }
 

@@ -9,9 +9,8 @@ use browser_store::Timestamp;
 use rikka_app::prelude::*;
 use rikka_web::Session;
 
-use crate::page::Page;
 use crate::shell::Shell;
-use browser_model::{Capturing, Sound, TabId};
+use browser_model::{Sound, TabId};
 
 const PRESSURE: &str = "/proc/pressure/memory";
 
@@ -51,18 +50,10 @@ impl Shell {
     }
 
     pub(crate) fn discard(&mut self, tab: TabId) {
-        let Some(view) = self.discardable_view(tab) else {
-            return;
-        };
-        let state = view.state();
-        if state.is_empty() {
-            return;
+        if let Some(view) = self.discardable_view(tab) {
+            view.set_visible(false);
+            view.discard();
         }
-        view.set_visible(false);
-        if let Some(tab_entry) = self.browser().edit().tab_mut(tab) {
-            tab_entry.set_page(Page::Discarded(state.to_bytes().into()));
-        }
-        self.changed();
     }
 
     fn discardable_view(&self, tab: TabId) -> Option<Session> {
@@ -89,7 +80,10 @@ impl Shell {
         let model = self.model();
         let layout = model.window(self.id())?;
         let tab_entry = model.tab(tab)?;
-        let live = tab_entry.page().live();
+        let awake = tab_entry
+            .page()
+            .view()
+            .is_some_and(|view| !view.page().discarded);
         let seen = layout.active() == Some(tab)
             || model
                 .shown_split(self.id())
@@ -98,24 +92,12 @@ impl Shell {
         let never = self.browser().preferences().never_discarded();
         Some(TabActivity {
             tab,
-            live: live.is_some() && tab_entry.internal.is_none(),
+            live: awake && tab_entry.internal.is_none(),
             seen,
             last_active: tab_entry.last_active,
             playing: *tab_entry.meta.sound == Sound::Playing,
-            capturing: *tab_entry.meta.capture != Capturing::default(),
-            asking: self.awaits_user(tab),
+            asking: false,
             exempt: is_exempt(web_host(&tab_entry.meta.url).as_deref(), &never),
-        })
-    }
-
-    fn awaits_user(&self, tab: TabId) -> bool {
-        let page_services = self.browser().page_services();
-        let requests = page_services.requests();
-        requests.get(tab).is_some_and(|tab_requests| {
-            tab_requests.dialogs.current().is_some()
-                || !tab_requests.prompts.is_empty()
-                || tab_requests.signing.is_some()
-                || tab_requests.picking_files
         })
     }
 }

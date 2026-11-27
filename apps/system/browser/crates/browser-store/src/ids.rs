@@ -50,8 +50,5 @@ ids!(
     SplitGroupId,
     ArchivedTabId,
     ClosedTabId,
-    PlaceId,
-    VisitId,
     FaviconId,
-    DownloadId,
 );

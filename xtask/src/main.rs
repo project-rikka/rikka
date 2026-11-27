@@ -11,7 +11,6 @@ mod committed;
 mod components;
 mod dist;
 mod ffmpeg_layout;
-mod gecko;
 mod host;
 mod ltc;
 mod minecraft;
@@ -46,13 +45,9 @@ enum Task {
     Dist(DistTask),
     #[command(
         about = "release a new version as a GitHub release of project-rikka/rikka and the \
-                 project-rikka/packages flake (needs write access to both)",
-        args_conflicts_with_subcommands = true,
-        subcommand_negates_reqs = true
+                 project-rikka/packages flake (needs write access to both)"
     )]
-    Release(ReleaseArgs),
-    #[command(about = "assemble, build and package the Gecko engine and follow Firefox releases")]
-    Gecko(GeckoArgs),
+    Release(BumpArgs),
     #[command(
         about = "build the session into a tree of its own and start its compositor in a window \
                  of this session"
@@ -136,70 +131,6 @@ enum DistTask {
 }
 
 #[derive(Args)]
-struct ReleaseArgs {
-    #[command(subcommand)]
-    task: Option<ReleaseTask>,
-    #[command(flatten)]
-    bump: BumpArgs,
-}
-
-#[derive(Subcommand)]
-enum ReleaseTask {
-    #[command(about = "publish the Gecko engine that CI built for HEAD and pin it in nix/dist")]
-    Gecko,
-}
-
-#[derive(Args)]
-struct GeckoArgs {
-    #[arg(
-        long,
-        global = true,
-        value_name = "DIR",
-        help = "folder holding the Firefox tree and its builds (default .bazel/gecko)"
-    )]
-    work: Option<PathBuf>,
-    #[command(subcommand)]
-    task: GeckoTask,
-}
-
-#[derive(Subcommand)]
-enum GeckoTask {
-    #[command(about = "check out the pinned Firefox, apply the patches and add the Rikka project")]
-    Assemble,
-    #[command(about = "assemble and build the engine")]
-    Build {
-        #[command(flatten)]
-        build: GeckoBuild,
-    },
-    #[command(about = "build the engine and pack it as a content-addressed archive")]
-    Package {
-        #[command(flatten)]
-        build: GeckoBuild,
-        #[arg(long, help = "folder that receives the archive")]
-        out: PathBuf,
-    },
-    #[command(about = "turn edits in the Firefox tree into engine/gecko/patches")]
-    ExportPatches,
-    #[command(about = "carry the patches onto the newest Firefox release and pin it")]
-    Follow,
-}
-
-#[derive(Args)]
-struct GeckoBuild {
-    #[arg(long, help = "build with cross-language LTO, as published engines are")]
-    release: bool,
-}
-
-impl GeckoBuild {
-    fn profile(&self) -> gecko::Profile {
-        match self.release {
-            true => gecko::Profile::Release,
-            false => gecko::Profile::Dev,
-        }
-    }
-}
-
-#[derive(Args)]
 #[command(group(ArgGroup::new("bump").required(true).multiple(false)))]
 struct BumpArgs {
     #[arg(long, group = "bump", help = "raise the patch version")]
@@ -272,26 +203,7 @@ fn main() -> Result<()> {
             &bazel::invoked_at(&out)?,
         )
         .map(drop),
-        Task::Release(ReleaseArgs {
-            task: Some(ReleaseTask::Gecko),
-            ..
-        }) => release::gecko(&workspace),
-        Task::Release(ReleaseArgs { task: None, bump }) => {
-            release::release(&workspace, &bump.bump()?)
-        }
-        Task::Gecko(GeckoArgs { work, task }) => {
-            let work = work.map(|work| bazel::invoked_at(&work)).transpose()?;
-            let engine = gecko::Engine::new(&workspace, work);
-            match task {
-                GeckoTask::Assemble => engine.assemble(),
-                GeckoTask::Build { build } => engine.build(build.profile()),
-                GeckoTask::Package { build, out } => engine
-                    .package(build.profile(), &bazel::invoked_at(&out)?)
-                    .map(drop),
-                GeckoTask::ExportPatches => engine.export_patches(),
-                GeckoTask::Follow => engine.follow(),
-            }
-        }
+        Task::Release(bump) => release::release(&workspace, &bump.bump()?),
         Task::Compositor { build, arguments } => {
             run::compositor(&workspace, build.profile(), &arguments)
         }

@@ -3,7 +3,7 @@ use std::collections::{HashMap, VecDeque};
 use browser_translators::{CodeMode, Command, Display, Engine, Watch};
 use rikka_languages::Language;
 use rikka_ui::Revision;
-use rikka_web::ScriptReply;
+use rikka_web::ScriptAsk;
 
 use crate::translate::failure::TranslateFailure;
 use browser_model::TabId;
@@ -67,7 +67,7 @@ pub(crate) struct PendingCommand {
 impl PendingCommand {
     pub(crate) fn send(self) {
         for watcher in self.watchers {
-            watcher.reply.send(self.command.answer(&watcher.frame));
+            watcher.ask.respond(self.command.answer());
         }
     }
 }
@@ -75,7 +75,7 @@ impl PendingCommand {
 #[derive(Debug)]
 struct Watcher {
     frame: Watch,
-    reply: ScriptReply,
+    ask: ScriptAsk,
 }
 
 #[derive(Debug)]
@@ -167,16 +167,11 @@ impl Tabs {
         }
     }
 
-    pub(crate) fn hold(
-        &mut self,
-        tab: TabId,
-        frame: Watch,
-        reply: ScriptReply,
-    ) -> Option<ScriptReply> {
+    pub(crate) fn hold(&mut self, tab: TabId, frame: Watch, ask: ScriptAsk) -> Option<ScriptAsk> {
         let Some(state) = self.tabs.get_mut(&tab) else {
-            return Some(reply);
+            return Some(ask);
         };
-        state.watchers.push_back(Watcher { frame, reply });
+        state.watchers.push_back(Watcher { frame, ask });
         if state.watchers.len() <= MAX_WATCHERS {
             return None;
         }
@@ -184,7 +179,7 @@ impl Tabs {
             .watchers
             .iter()
             .position(|watcher| !watcher.frame.top)?;
-        state.watchers.remove(oldest).map(|watcher| watcher.reply)
+        state.watchers.remove(oldest).map(|watcher| watcher.ask)
     }
 
     pub(crate) fn start(

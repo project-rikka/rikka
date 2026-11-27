@@ -1,7 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
-use std::sync::Arc;
 
 use rusqlite::{Connection, params};
 
@@ -49,7 +48,6 @@ pub struct SessionTab {
     pub favorite: Option<FavoriteId>,
     pub url: String,
     pub title: String,
-    pub state: Option<Arc<[u8]>>,
     pub last_active: Timestamp,
     pub split: Option<SplitMember>,
 }
@@ -131,24 +129,22 @@ fn load(connection: &Connection) -> Result<Session> {
     }
 
     let mut statement = connection.prepare_cached(
-        "SELECT window_index, space_id, id, pinned_id, url, title, state, last_active, \
+        "SELECT window_index, space_id, id, pinned_id, url, title, last_active, \
          split_group, split_order, favorite_id FROM session_tabs ORDER BY window_index, space_id, position, id",
     )?;
     let rows = statement.query_map([], |row| {
-        let state: Option<Vec<u8>> = row.get(6)?;
-        let group: Option<SplitGroupId> = row.get(8)?;
-        let order: Option<u32> = row.get(9)?;
+        let group: Option<SplitGroupId> = row.get(7)?;
+        let order: Option<u32> = row.get(8)?;
         Ok((
             row.get::<_, i64>(0)?,
             row.get::<_, SpaceId>(1)?,
             SessionTab {
                 id: row.get(2)?,
                 pinned: row.get(3)?,
-                favorite: row.get(10)?,
+                favorite: row.get(9)?,
                 url: row.get(4)?,
                 title: row.get(5)?,
-                state: state.map(Arc::from),
-                last_active: row.get(7)?,
+                last_active: row.get(6)?,
                 split: group
                     .zip(order)
                     .map(|(group, order)| SplitMember { group, order }),
@@ -341,9 +337,9 @@ pub(crate) fn write(
 
     let mut upsert = connection.prepare_cached(
         "INSERT OR REPLACE INTO session_tabs \
-         (id, window_index, space_id, pinned_id, position, url, title, state, last_active, \
+         (id, window_index, space_id, pinned_id, position, url, title, last_active, \
          split_group, split_order, favorite_id) \
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
     )?;
     for Placed {
         window,
@@ -365,7 +361,6 @@ pub(crate) fn write(
             position,
             tab.url,
             tab.title,
-            tab.state.as_deref(),
             tab.last_active,
             split.map(|split| split.group),
             split.map(|split| split.order),

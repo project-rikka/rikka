@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use rikka_nested::LayerContent;
+use rikka_nested::{Claim, LayerContent};
 use rikka_picture::Tick;
 use rikka_types::Size;
 
@@ -9,7 +9,7 @@ use crate::support::{self, Client, roundtrip_until};
 #[test]
 fn shm_buffer_copied_and_released() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-shm");
+    let view = nested.view(Claim::app_id("rikka-view-shm"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let window = client.window(Some("rikka-view-shm"));
@@ -29,7 +29,7 @@ fn shm_buffer_copied_and_released() {
 #[test]
 fn dmabuf_released_after_hold_ends() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-dmabuf");
+    let view = nested.view(Claim::app_id("rikka-view-dmabuf"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let window = client.window(Some("rikka-view-dmabuf"));
@@ -60,7 +60,7 @@ fn dmabuf_released_after_hold_ends() {
 #[test]
 fn frame_callbacks_follow_presentation() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-frames");
+    let view = nested.view(Claim::app_id("rikka-view-frames"));
     view.resize(Size::new(30.0, 20.0), 1.0);
     let mut client = Client::connect(nested.socket());
     client.follow(&view);

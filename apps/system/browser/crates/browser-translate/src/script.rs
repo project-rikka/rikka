@@ -1,4 +1,13 @@
-pub const PROBE_SCRIPT: &str = include_str!("../scripts/probe.js");
-pub(crate) const TRANSLATOR_SCRIPT: &str = include_str!("../scripts/translator.js");
-pub const WORLD: &str = "rikka-translate";
-pub const HANDLER: &str = "rikkaTranslate";
+use rikka_web::{Frames, InjectAt, Script, UserScript};
+
+pub const MESSAGE: &str = "browser-translate";
+
+const PROBE: Script = Script::bundled("browser-translate/probe.js");
+
+const PROBE_ID: &str = "browser-translate-probe";
+
+pub fn probe_script() -> UserScript {
+    UserScript::new(PROBE_ID, PROBE)
+        .frames(Frames::All)
+        .inject_at(InjectAt::End)
+}

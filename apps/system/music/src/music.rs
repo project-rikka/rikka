@@ -705,7 +705,7 @@ impl Music {
         };
         match event {
             Event::NewSession(opening) => portal.follow(opening),
-            Event::Changed | Event::PageStopped { .. } if portal.is_on_landing_host() => {
+            Event::Changed | Event::Finished { .. } if portal.is_on_landing_host() => {
                 spawn_keyed(
                     PORTAL_COOKIES,
                     portal.cookies(),

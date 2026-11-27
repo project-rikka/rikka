@@ -43,7 +43,7 @@ pub(super) fn row(shell: &Shell, row: &Row) -> Element {
             RowTarget::Tab(tab) => shell.select(tab),
             RowTarget::Slot(slot) => shell.select_slot(slot),
         })
-        .aim(move |menus: &mut Menus| menus.aim(subject))
+        .aim(move |menus: &mut Menus| menus.aim(subject.clone()))
         .drag_item(DragItem {
             row,
             symbol: face.symbol,

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use browser_store::{ArchiveScope, ClosedTab, Restored, Store};
 
 use crate::ids::{SpaceId, TabId};
@@ -10,7 +8,6 @@ pub struct Closed {
     pub tab: TabId,
     pub space: Option<SpaceId>,
     pub saved: Saved,
-    pub session: Option<Arc<[u8]>>,
 }
 
 const SAME_MOMENT: i64 = 2_000;

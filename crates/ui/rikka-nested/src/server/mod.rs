@@ -3,6 +3,7 @@ mod attach;
 mod bridge;
 mod configure;
 mod content;
+mod dependents;
 mod drag;
 mod gpu;
 mod host;

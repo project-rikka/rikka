@@ -22,6 +22,7 @@
       pkgs = import nixpkgs {
         inherit system;
         overlays = [ self.overlays.default ];
+        config.allowUnfreePredicate = pkg: nixpkgs.lib.getName pkg == "google-chrome";
       };
     in
     {
@@ -30,8 +31,6 @@
           rikka-fonts = import ./nix/packages/fonts.nix final;
 
           rikka-fonts-conf = final.makeFontsConf { fontDirectories = final.rikka-fonts; };
-
-          rikka-gecko = final.callPackage ./nix/dist/gecko.nix { };
         }
       );
 

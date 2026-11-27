@@ -12,6 +12,7 @@ pub(crate) struct Reading {
     pub(crate) tab: TabId,
     pub(crate) view: Session,
     pub(crate) article: Arc<Article>,
+    pub(crate) document: Arc<str>,
     pub(crate) dark: bool,
 }
 
@@ -20,6 +21,7 @@ impl PartialEq for Reading {
         self.tab == other.tab
             && self.view == other.view
             && Arc::ptr_eq(&self.article, &other.article)
+            && Arc::ptr_eq(&self.document, &other.document)
     }
 }
 
@@ -61,6 +63,16 @@ impl Reader {
 
     pub(crate) fn show(&mut self, reading: Reading) {
         self.open.set(Some(reading));
+    }
+
+    pub(crate) fn restyle(&mut self, document: Arc<str>) {
+        if let Some(reading) = self.open.as_ref() {
+            let reading = Reading {
+                document,
+                ..reading.clone()
+            };
+            self.open.set(Some(reading));
+        }
     }
 
     pub(crate) fn close(&mut self) -> Option<Reading> {

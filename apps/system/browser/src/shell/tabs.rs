@@ -30,7 +30,7 @@ impl Shell {
         if let Some(successor) = successor {
             self.browser.edit().select(self.id, successor);
         }
-        self.save_sessions(closing);
+        self.close_views(closing);
         self.changed();
     }
 
@@ -43,13 +43,13 @@ impl Shell {
 
     pub(crate) fn close_below(&mut self, tab: TabId) {
         let closing = self.browser.edit().close_below(self.id, tab);
-        self.save_sessions(closing);
+        self.close_views(closing);
         self.changed();
     }
 
     pub(crate) fn clear_today(&mut self) {
         let closing = self.browser.edit().clear_today(self.id);
-        self.save_sessions(closing);
+        self.close_views(closing);
         self.changed();
     }
 
@@ -87,19 +87,11 @@ impl Shell {
     }
 
     pub(crate) fn toggle_mute(&mut self, tab: TabId) {
-        let page = {
-            let mut model = self.browser.edit();
-            let Some(live) = model
-                .tab_mut(tab)
-                .and_then(|tab_entry| tab_entry.live_mut())
-            else {
-                return;
-            };
-            live.muted = !live.muted;
-            live.view.media(rikka_web::MediaCommand::Mute(live.muted));
-            live.view.page()
+        let Some(view) = self.view_of(tab) else {
+            return;
         };
-        self.follow(tab, &page);
+        view.set_muted(!view.page().muted);
+        self.follow(tab, &view.page());
     }
 
     pub(crate) fn copy_link(&mut self, tab: TabId) {

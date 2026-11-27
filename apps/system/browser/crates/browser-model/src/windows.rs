@@ -184,17 +184,6 @@ impl Layout {
         self.closed.push(closed);
     }
 
-    pub fn attach_session(&mut self, tab: TabId, session: std::sync::Arc<[u8]>) {
-        if let Some(closed) = self
-            .closed
-            .iter_mut()
-            .rev()
-            .find(|closed| closed.tab == tab)
-        {
-            closed.session = Some(session);
-        }
-    }
-
     pub fn take_closed(&mut self) -> Option<Closed> {
         self.closed.pop()
     }

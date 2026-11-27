@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use rikka_nested::{Input, View, nested_view};
+use rikka_nested::{Claim, Input, View, nested_view};
 use rikka_renderer::Scene;
 use rikka_theme::Theme;
 use rikka_types::{Modifiers, Point, PointerButton, Size};
@@ -95,7 +95,7 @@ fn retained_focus_keeps_the_client_focused_until_released() {
     for retained in [true, false] {
         let (nested, _events) = support::start();
         let app_id = format!("rikka-view-retain-{retained}");
-        let view = nested.view(&app_id);
+        let view = nested.view(Claim::app_id(&app_id));
         let mut client = Client::connect(nested.socket());
         client.follow(&view);
         let _pointer = client.pointer();

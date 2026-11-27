@@ -4,7 +4,7 @@ use rikka_app::prelude::*;
 use crate::address;
 use crate::internal::route::Presented;
 use crate::model::{Model, Tab};
-use browser_model::{Capturing, Saved, Slot, Sound, TabId, WindowId};
+use browser_model::{Saved, Slot, Sound, TabId, WindowId};
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Face {
@@ -15,7 +15,6 @@ pub(crate) struct Face {
     pub(crate) lit: bool,
     pub(crate) loading: bool,
     pub(crate) sound: Sound,
-    pub(crate) capture: Capturing,
     pub(crate) discarded: bool,
 }
 
@@ -59,8 +58,9 @@ impl Face {
             lit,
             loading: *tab.meta.loading,
             sound: *tab.meta.sound,
-            capture: *tab.meta.capture,
-            discarded: tab.internal.is_none() && !tab.is_blank() && tab.page().live().is_none(),
+            discarded: tab.internal.is_none()
+                && !tab.is_blank()
+                && tab.page().view().is_none_or(|view| view.page().discarded),
         }
     }
 
@@ -73,7 +73,6 @@ impl Face {
             lit: false,
             loading: false,
             sound: Sound::Silent,
-            capture: Capturing::default(),
             discarded: false,
         }
     }

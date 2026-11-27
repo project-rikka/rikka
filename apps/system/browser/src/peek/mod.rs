@@ -1,12 +1,12 @@
 mod site;
 
-pub(crate) use site::{crosses, peeks_from, wants_peek};
+pub(crate) use site::{crosses, peeks_from};
 
 use std::rc::Rc;
 
 use rikka_app::prelude::*;
 use rikka_input::Chord;
-use rikka_web::{Event, Load, LoadRequest};
+use rikka_web::Event;
 use rikka_widgets::row;
 
 use crate::browser::Browser;
@@ -16,7 +16,7 @@ use crate::page::{Live, Page};
 use crate::shell::Shell;
 use crate::widgets::{favicon, glyph_button};
 use browser_model::Arrangement;
-use browser_model::{Home, TabId};
+use browser_model::{Home, Saved, TabId};
 
 const WIRE: &str = "rikka-browser-peek";
 const SHARE: f32 = 0.8;
@@ -31,8 +31,11 @@ struct Floating {
 impl Drop for Floating {
     fn drop(&mut self) {
         let mut model = self.browser.edit();
-        if model.windows.window_of(self.tab).is_none() {
-            model.tabs.remove(self.tab);
+        if model.windows.window_of(self.tab).is_none()
+            && let Some(tab) = model.tabs.remove(self.tab)
+            && let Some(view) = tab.page().view()
+        {
+            view.close();
         }
     }
 }
@@ -73,55 +76,28 @@ impl std::fmt::Debug for Peek {
 }
 
 impl Shell {
-    pub(crate) fn peek(&mut self, url: String) {
-        let opener = self.active_tab();
-        if let Some(opener) = opener {
-            self.peek_from(opener, url);
-        }
-    }
-
-    pub(crate) fn peeks(&self, tab: TabId, request: &LoadRequest) -> bool {
+    pub(crate) fn peeks(&self, tab: TabId, address: &str) -> bool {
         if self.peek.holds(tab) {
             return false;
         }
         let model = self.model();
-        model
-            .tab(tab)
-            .is_some_and(|tab_entry| wants_peek(tab_entry.home, &tab_entry.meta.url, request))
+        model.tab(tab).is_some_and(|tab_entry| {
+            peeks_from(tab_entry.home) && crosses(&tab_entry.meta.url, address)
+        })
     }
 
-    pub(crate) fn peek_from(&mut self, opener: TabId, url: String) {
-        let Some((key, home)) = self.model().tab(opener).map(|tab_entry| {
-            let space = self
-                .model()
-                .window(self.id())
-                .and_then(|layout| layout.space());
-            (tab_entry.profile, Home::Today(space))
-        }) else {
+    pub(crate) fn peek_link(&mut self, opener: TabId, url: String) {
+        let Some(key) = self.model().tab(opener).map(|tab_entry| tab_entry.profile) else {
             return;
         };
-        self.close_peek();
-        let browser = Rc::clone(self.browser());
-        let tab = browser.edit().insert_linked_tab(key, home, url.clone());
-        let floating = Floating {
-            browser: Rc::clone(&browser),
-            tab,
-        };
-        let opened = browser.engine(key).and_then(|runtime| Live::open(&runtime));
-        let live = match opened {
-            Ok(live) => live,
-            Err(error) => {
-                tracing::warn!(%error, "failed to open peek");
-                return;
-            }
-        };
-        browser.dress(key, &live.view);
-        let load = match self.view_of(opener) {
-            Some(source) => Load::uri(url).referrer_session(&source),
-            None => Load::uri(url),
-        };
-        live.view.load(load);
-        self.show_peek(floating, live);
+        let opened = self
+            .browser()
+            .engine(key)
+            .and_then(|runtime| Live::open(&runtime, &url));
+        match opened {
+            Ok(live) => self.peek_adopted(opener, live, url),
+            Err(error) => tracing::warn!(%error, "failed to open a link in Peek"),
+        }
     }
 
     pub(crate) fn peek_adopted(&mut self, opener: TabId, live: Live, url: String) {
@@ -132,13 +108,14 @@ impl Shell {
                 .and_then(|layout| layout.space());
             (tab_entry.profile, space)
         }) else {
+            live.view.close();
             return;
         };
         self.close_peek();
         let browser = Rc::clone(self.browser());
         let tab = browser
             .edit()
-            .insert_linked_tab(key, Home::Today(space), url);
+            .insert_tab(key, Home::Today(space), Saved::new(url, ""));
         let floating = Floating {
             browser: Rc::clone(&browser),
             tab,
@@ -157,10 +134,7 @@ impl Shell {
         stream_keyed(
             (WIRE, tab),
             events,
-            move |shell: &mut Shell, event: Event| match event {
-                Event::CloseRequested => shell.close_peek(),
-                event => shell.handle_event(tab, event),
-            },
+            move |shell: &mut Shell, event: Event| shell.handle_event(tab, event),
         );
     }
 
@@ -283,7 +257,7 @@ fn header(tab_entry: &Tab) -> Element {
         column_of([
             text(title).label().no_wrap().any(),
             row! {
-                crate::site_info::peek_badge(tab_entry.id, &tab_entry.meta.security, 12.0);
+                crate::site_info::peek_badge(tab_entry.id, *tab_entry.meta.security, 12.0);
                 text(shown.host).caption().muted().no_wrap().shrink(1.0).min_width(0.0);
             }
             .gap(Space::TIGHT)

@@ -5,6 +5,7 @@ use std::time::Instant;
 use rikka_types::Size;
 use rikka_ui::Pulse;
 
+use crate::claim::Claim;
 use crate::command::{Command, Link};
 use crate::frame::Frame;
 use crate::input::Input;
@@ -28,13 +29,12 @@ pub struct View(Arc<Inner>);
 #[derive(Debug)]
 struct Inner {
     id: ViewId,
-    app_id: String,
     link: Link,
     shared: Arc<Shared>,
 }
 
 impl View {
-    pub(crate) fn adopt(link: &Link, app_id: String) -> View {
+    pub(crate) fn adopt(link: &Link, claim: Claim) -> View {
         let id = ViewId::next_id();
         let tick_link = link.clone();
         let pulse = Pulse::new(move |tick| {
@@ -43,12 +43,11 @@ impl View {
         let shared = Arc::new(Shared::new(pulse));
         let _ = link.send(Command::Adopt {
             view: id,
-            app_id: app_id.clone(),
+            claim,
             shared: Arc::clone(&shared),
         });
         View(Arc::new(Inner {
             id,
-            app_id,
             link: link.clone(),
             shared,
         }))
@@ -59,9 +58,11 @@ impl View {
         self.0.id
     }
 
-    #[must_use]
-    pub fn app_id(&self) -> &str {
-        &self.0.app_id
+    pub fn reclaim(&self, claim: Claim) {
+        self.send(Command::Reclaim {
+            view: self.0.id,
+            claim,
+        });
     }
 
     #[must_use]

@@ -207,8 +207,7 @@ pub(crate) fn collect_garbage(connection: &Connection) -> Result<()> {
     connection
         .prepare_cached(
             "DELETE FROM favicon_pages WHERE url NOT IN ( \
-                 SELECT url FROM places \
-                 UNION SELECT url FROM favorites \
+                 SELECT url FROM favorites \
                  UNION SELECT url FROM pinned_tabs \
                  UNION SELECT url FROM session_tabs \
                  UNION SELECT url FROM archived_tabs \

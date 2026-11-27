@@ -1,4 +1,3 @@
-use browser_pages::Cause;
 use browser_store::SplitGroupId;
 use rikka_app::prelude::*;
 
@@ -8,24 +7,6 @@ use browser_model::Arrangement;
 use browser_model::{Home, PinnedItem, Placement, Row, Slot, TabId, Target};
 
 impl Shell {
-    pub(crate) fn open_in_split(&mut self, url: String) {
-        let anchor = self.focused_tab();
-        let opened = {
-            let mut model = self.browser().edit();
-            let placement = anchor.map_or(Placement::Top, Placement::After);
-            let opened = model.open_tab(self.id(), Some(url), placement, true);
-            if let Some(tab_entry) = opened.and_then(|tab| model.tab_mut(tab)) {
-                tab_entry.visit_tracker.set_cause(Cause::Link);
-            }
-            opened
-        };
-        if let (Some(anchor), Some(opened)) = (anchor, opened) {
-            self.refer(opened, anchor);
-            self.join_pane(anchor, opened, Arrangement::SideBySide, true);
-        }
-        self.changed();
-    }
-
     pub(crate) fn split_with_new_tab(&mut self) {
         let Some(anchor) = self.focused_tab() else {
             self.new_tab();
@@ -40,6 +21,17 @@ impl Shell {
         }
         self.changed();
         self.focus_address();
+    }
+
+    pub(crate) fn open_link_in_split(&mut self, anchor: TabId, url: String) {
+        let opened =
+            self.browser()
+                .edit()
+                .open_tab(self.id(), Some(url), Placement::After(anchor), true);
+        if let Some(opened) = opened {
+            self.join_pane(anchor, opened, Arrangement::SideBySide, true);
+        }
+        self.changed();
     }
 
     pub(crate) fn add_to_split(&mut self, tab: TabId) {
@@ -172,11 +164,7 @@ impl Shell {
             Row::Pin(PinnedItem::Folder(_)) => return None,
             Row::Favorite(favorite) => {
                 let url = model.favorites.find(favorite)?.1.saved.url.clone();
-                let opened = model.open_tab(window, Some(url), Placement::After(anchor), true)?;
-                if let Some(tab_entry) = model.tab_mut(opened) {
-                    tab_entry.visit_tracker.set_cause(Cause::Generated);
-                }
-                opened
+                model.open_tab(window, Some(url), Placement::After(anchor), true)?
             }
         };
         model.select(window, anchor);

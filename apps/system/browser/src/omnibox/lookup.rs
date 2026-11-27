@@ -1,10 +1,11 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
-use browser_store::{ArchivedTab, Place};
+use browser_store::ArchivedTab;
 use rikka_omnibox::{
     Candidates, Classified, Ranked, Request, SearchEngines, SearchSuggestion, Surface,
 };
+use rikka_web::HistoryItem;
 
 use crate::omnibox::gather;
 use crate::omnibox::target::Target;
@@ -13,7 +14,7 @@ const REMEMBERED: usize = 16;
 
 #[derive(Debug, Default)]
 pub(crate) struct HistoryMatches {
-    pub(crate) places: Vec<Place>,
+    pub(crate) places: Vec<HistoryItem>,
     pub(crate) archived: Vec<ArchivedTab>,
 }
 

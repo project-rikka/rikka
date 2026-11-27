@@ -41,3 +41,8 @@ rikka_test(
         "//apps/system/discord/crates/discord-core",
     ],
 )
+
+exports_files(
+    ["scripts/token.js"],
+    visibility = ["//system/rikka-web-host:__pkg__"],
+)

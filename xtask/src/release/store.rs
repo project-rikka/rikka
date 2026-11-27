@@ -75,10 +75,6 @@ impl Tagged {
         format!("{HOST}/{}/releases/download/{}", self.repository, self.tag)
     }
 
-    pub(crate) fn download(&self, file: &str) -> String {
-        format!("{}/{file}", self.download_prefix())
-    }
-
     pub(crate) fn state(&self) -> Result<State> {
         let viewed = gh()?
             .args(["release", "view", &self.tag, "--repo", &self.repository])
@@ -104,15 +100,6 @@ impl Tagged {
         )
     }
 
-    pub(crate) fn create_not_latest(&self, target: &str, title: &str, notes: &str) -> Result<()> {
-        host::run(
-            gh()?
-                .args(["release", "create", &self.tag, "--repo", &self.repository])
-                .args(["--target", target, "--title", title, "--notes", notes])
-                .arg("--latest=false"),
-        )
-    }
-
     pub(crate) fn publish_latest(&self) -> Result<()> {
         host::run(gh()?.args([
             "release",
@@ -123,25 +110,6 @@ impl Tagged {
             "--draft=false",
             "--latest",
         ]))
-    }
-
-    pub(crate) fn assets(&self) -> Result<Vec<String>> {
-        let listed = host::output(gh()?.args([
-            "release",
-            "view",
-            &self.tag,
-            "--repo",
-            &self.repository,
-            "--json",
-            "assets",
-            "--jq",
-            ".assets[].name",
-        ]))?;
-        Ok(listed
-            .lines()
-            .filter(|line| !line.is_empty())
-            .map(str::to_owned)
-            .collect())
     }
 
     pub(crate) fn upload(&self, files: &[PathBuf]) -> Result<()> {

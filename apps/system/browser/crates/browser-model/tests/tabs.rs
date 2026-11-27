@@ -1,38 +1,6 @@
-use browser_model::{LivePage, Loaded, Model, Names, Placement};
-use browser_store::Store;
+use browser_model::Placement;
 
-#[derive(Debug)]
-struct FakePage(u32);
-
-impl LivePage for FakePage {
-    type View = u32;
-
-    fn view(&self) -> &u32 {
-        &self.0
-    }
-}
-
-fn name() -> String {
-    "Default".to_owned()
-}
-
-fn numbered(number: usize) -> String {
-    format!("Default {number}")
-}
-
-const NAMES: Names = Names {
-    profile: name,
-    numbered_profile: numbered,
-    space: name,
-    numbered_space: numbered,
-    folder: name,
-};
-
-fn model() -> Model<FakePage> {
-    let store = Store::in_memory().expect("in-memory store");
-    let loaded = Loaded::read(&store).expect("empty store reads");
-    Model::load(store, &loaded, NAMES)
-}
+use crate::support::{FakePage, model};
 
 #[test]
 fn opened_tabs_land_after_their_opener() {
@@ -72,7 +40,7 @@ fn opened_tabs_land_after_their_opener() {
 }
 
 #[test]
-fn closing_hands_back_only_live_views() {
+fn closing_archives_tabs_and_hands_back_only_live_views() {
     let mut model = model();
     let window = model.add_window(false);
     let unloaded = model
@@ -93,10 +61,16 @@ fn closing_hands_back_only_live_views() {
         )
         .expect("live tab");
 
-    let closing = model
-        .close_tab(window, live)
-        .expect("a live tab leaves a view");
-    assert_eq!(closing.view, 7);
-    assert!(model.close_tab(window, unloaded).is_none());
+    assert_eq!(model.close_tab(window, live), Some(7));
+    assert_eq!(model.close_tab(window, unloaded), None);
     assert!(model.tab(live).is_none() && model.tab(unloaded).is_none());
+    model.store().flush().expect("store writes");
+    let closed: Vec<String> = model
+        .store()
+        .closed_tabs()
+        .expect("closed tabs")
+        .into_iter()
+        .map(|closed| closed.url)
+        .collect();
+    assert_eq!(closed, ["https://a.example/", "https://b.example/"]);
 }

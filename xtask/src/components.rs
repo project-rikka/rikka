@@ -1,6 +1,14 @@
 use crate::shipped::{
-    APPLICATIONS_DIRECTORY, About, Completion, Component, Contents, DataFile, Library, Offer,
-    PORTALS, Program, SymbolicIcon, data_file, icon, named, package,
+    APPLICATIONS_DIRECTORY, About, ChromeExtension, Completion, Component, Contents, DataFile,
+    Library, Offer, PORTALS, Program, SymbolicIcon, data_file, icon, named, package,
+};
+
+pub(crate) const WEB_HOST: Program =
+    named("//system/rikka-web-host:rikka-web-host", "rikka-web-host");
+
+pub(crate) const WEB_EXTENSION: ChromeExtension = ChromeExtension {
+    target: "//system/rikka-web-host:extension",
+    into: "share/rikka/web",
 };
 
 const MIME_PACKAGES: &str = "share/mime/packages";
@@ -235,6 +243,7 @@ const BASE: Component = Component {
     pam: &["rikka-lock"],
     session: Contents {
         programs: &[
+            WEB_HOST,
             named("//system/rikka-cast:rikka-portal-cast", "rikka-portal-cast"),
             named("//system/rikka-cli:rikka-cli", "rikka"),
             named(
@@ -331,6 +340,7 @@ const BASE: Component = Component {
             ),
             data_file("system/rikka-nixctl/rikka-nixctl.service.in", SYSTEM_UNITS),
         ],
+        extensions: &[WEB_EXTENSION],
         ..Contents::EMPTY
     },
 };

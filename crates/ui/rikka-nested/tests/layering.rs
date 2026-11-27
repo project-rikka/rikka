@@ -1,4 +1,4 @@
-use rikka_nested::Input;
+use rikka_nested::{Claim, Input};
 use rikka_types::{Point, PointerButton, Rect};
 
 use crate::support::{self, Client, roundtrip_until};
@@ -6,7 +6,7 @@ use crate::support::{self, Client, roundtrip_until};
 #[test]
 fn children_stack_above_toplevel() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-stack");
+    let view = nested.view(Claim::app_id("rikka-view-stack"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let pointer = client.pointer();
@@ -70,7 +70,7 @@ fn children_stack_above_toplevel() {
 #[test]
 fn outside_press_dismisses_grabbing_popup() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-grab");
+    let view = nested.view(Claim::app_id("rikka-view-grab"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let _pointer = client.pointer();

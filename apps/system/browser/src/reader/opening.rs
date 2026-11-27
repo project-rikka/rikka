@@ -1,24 +1,19 @@
 use std::sync::Arc;
 
-use browser_pages::Cause;
 use browser_preferences::ReaderStyle;
-use browser_reader::{Article, EXTRACT_SCRIPT, parse, render};
+use browser_reader::{Article, render};
 use rikka_app::prelude::*;
 use rikka_appearance::Appearance;
-use rikka_web::{Event, Load, SessionSettings, World};
-use serde_json::Value;
+use rikka_web::{Event, SessionSettings};
 
-use crate::link::{self, Opening as LinkOpening};
-use crate::omnibox::Opening;
 use crate::reader::look::{labels, look};
-use crate::reader::probe::WORLD;
 use crate::reader::state::Reading;
 use crate::shell::Shell;
 use browser_model::TabId;
 
 const EXTRACT: &str = "rikka-browser-reader-extract";
 const EVENTS: &str = "rikka-browser-reader-events";
-const LINKS: [&str; 3] = ["https://", "http://", "mailto:"];
+const LINKS: [&str; 2] = ["https://", "http://"];
 
 impl Shell {
     pub(crate) fn toggle_reader(&mut self) {
@@ -37,9 +32,9 @@ impl Shell {
         };
         spawn_keyed(
             (EXTRACT, tab),
-            async move { view.evaluate(EXTRACT_SCRIPT, &World::isolated(WORLD)).await },
-            move |shell: &mut Shell, answer: rikka_web::Result<Value>| {
-                shell.extracted(tab, answer);
+            browser_reader::extract(&view),
+            move |shell: &mut Shell, article: browser_reader::Result<Article>| {
+                shell.extracted(tab, article);
             },
         );
     }
@@ -47,6 +42,7 @@ impl Shell {
     pub(crate) fn close_reader(&mut self) {
         if let Some(reading) = self.reader.close() {
             self.reader_closed(reading.tab);
+            reading.view.close();
         }
     }
 
@@ -57,16 +53,17 @@ impl Shell {
 
     pub(crate) fn restyle_reader(&mut self, style: ReaderStyle) {
         self.browser().preferences().set_reader_style(style);
-        if let Some(reading) = self.reader.reading() {
-            show(reading, style);
-        }
+        let Some(reading) = self.reader.reading() else {
+            return;
+        };
+        let document = document(&reading.article, style, reading.dark);
+        let view = reading.view.clone();
+        self.reader.restyle(document);
+        view.reload();
     }
 
-    fn extracted(&mut self, tab: TabId, answer: rikka_web::Result<Value>) {
-        let article = match answer
-            .map_err(|error| error.to_string())
-            .and_then(|answer| parse(&answer).map_err(|error| error.to_string()))
-        {
+    fn extracted(&mut self, tab: TabId, article: browser_reader::Result<Article>) {
+        let article = match article {
             Ok(article) => article,
             Err(error) => {
                 tracing::debug!(%error, "failed to load reader view");
@@ -74,22 +71,19 @@ impl Shell {
                 return;
             }
         };
-        let active = self.active_tab();
-        if active != Some(tab) {
+        if self.active_tab() != Some(tab) {
             return;
         }
         let Some(key) = self.model().tab(tab).map(|tab_entry| tab_entry.profile) else {
             return;
         };
-        let settings = SessionSettings::new()
-            .javascript(false)
-            .private(true)
-            .handle_load_requests(true);
-        let view = match self
-            .browser()
-            .engine(key)
-            .and_then(|runtime| runtime.session(settings))
-        {
+        let dark = self.private() || Appearance::current().theme().is_dark();
+        let style = self.browser().preferences().reader_style();
+        let document = document(&article, style, dark);
+        let opened = self.browser().engine(key).and_then(|runtime| {
+            runtime.session(SessionSettings::new().url(runtime.bundled_page(browser_reader::PAGE)))
+        });
+        let view = match opened {
             Ok(session) => session,
             Err(error) => {
                 tracing::warn!(%error, "failed to open reader");
@@ -100,49 +94,38 @@ impl Shell {
             stream_keyed(
                 (EVENTS, tab),
                 events,
-                move |shell: &mut Shell, event: Event| {
-                    shell.handle_reader_event(tab, event);
-                },
+                move |shell: &mut Shell, event: Event| shell.handle_reader_event(tab, event),
             );
         }
-        let dark = self.private() || Appearance::current().theme().is_dark();
-        let reading = Reading {
+        self.reader.show(Reading {
             tab,
             view,
             article: Arc::new(article),
+            document,
             dark,
-        };
-        show(&reading, self.browser().preferences().reader_style());
-        self.reader.show(reading);
+        });
     }
 
     fn handle_reader_event(&mut self, tab: TabId, event: Event) {
-        let Event::LoadRequest(request) = event else {
-            return;
-        };
-        let uri = request.uri.clone();
-        if !LINKS.iter().any(|scheme| uri.starts_with(scheme)) {
-            request.allow();
-            return;
-        }
-        let opening = link::opening(request.target);
-        request.deny();
-        match opening {
-            LinkOpening::Here => {
+        match event {
+            Event::Started { url } if LINKS.iter().any(|scheme| url.starts_with(scheme)) => {
                 if self.reader.reads(tab) {
                     self.close_reader();
                 }
-                self.go(uri, Cause::Link);
+                self.go_in(tab, url);
             }
-            LinkOpening::BackgroundTab => self.open_aside(uri),
-            LinkOpening::ForegroundTab => self.open_address(uri, Opening::NewTab),
-            LinkOpening::Window => self.open_address(uri, Opening::NewWindow),
+            Event::Ask(ask) if ask.name == browser_reader::DOCUMENT => {
+                if let Some(reading) = self.reader.reading().filter(|reading| reading.tab == tab) {
+                    browser_reader::serve(ask, &reading.document);
+                }
+            }
+            Event::NewSession(request) => self.new_session(tab, request),
+            Event::Closed(_) if self.reader.reads(tab) => self.close_reader(),
+            _ => {}
         }
     }
 }
 
-fn show(reading: &Reading, style: ReaderStyle) {
-    let article: &Article = &reading.article;
-    let html = render(article, &look(style, reading.dark), &labels(article));
-    reading.view.load(Load::html(html));
+fn document(article: &Article, style: ReaderStyle, dark: bool) -> Arc<str> {
+    Arc::from(render(article, &look(style, dark), &labels(article)))
 }

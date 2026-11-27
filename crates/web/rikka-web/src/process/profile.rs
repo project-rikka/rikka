@@ -30,7 +30,7 @@ impl Profile {
                 Ok(ProfileFolder::Kept(path.clone()))
             }
             Profile::Ephemeral => tempfile::Builder::new()
-                .prefix("rikka-gecko-")
+                .prefix("rikka-web-")
                 .tempdir()
                 .map(ProfileFolder::Scratch)
                 .map_err(|source| Error::Profile {

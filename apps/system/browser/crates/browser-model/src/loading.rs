@@ -1,10 +1,9 @@
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 
 use crate::Favicon;
 use browser_store::{Session, SessionWindow, Store, Timestamp};
 
-use crate::ids::{FavoriteId, PinnedTabId, ProfileId, SpaceId, TabId};
+use crate::ids::{FavoriteId, PinnedTabId, SpaceId, TabId};
 use crate::saved::Saved;
 
 #[derive(Debug, Default)]
@@ -15,7 +14,6 @@ pub struct Loaded {
     pub pinned: HashMap<SpaceId, Vec<browser_store::PinnedNode>>,
     pub session: Session,
     pub favicons: HashMap<String, Favicon>,
-    pub zooms: HashMap<ProfileId, HashMap<String, f64>>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -39,7 +37,6 @@ pub struct ReopeningTab {
     pub pinned: Option<PinnedTabId>,
     pub favorite: Option<FavoriteId>,
     pub saved: Saved,
-    pub state: Option<Arc<[u8]>>,
     pub last_active: Timestamp,
     pub split: Option<browser_store::SplitMember>,
 }
@@ -49,15 +46,8 @@ impl Loaded {
         let profiles = store.profiles()?;
         let spaces = store.spaces()?;
         let mut favorites = Vec::new();
-        let mut zooms = HashMap::new();
         for profile in &profiles {
             favorites.extend(store.favorites(profile.id)?);
-            let hosts: HashMap<String, f64> = store
-                .sites_with_settings(profile.id)?
-                .into_iter()
-                .filter_map(|site| Some((site.host, site.zoom?)))
-                .collect();
-            zooms.insert(profile.id, hosts);
         }
         let mut pinned = HashMap::new();
         for space in &spaces {
@@ -71,7 +61,6 @@ impl Loaded {
             pinned,
             session,
             favicons: HashMap::new(),
-            zooms,
         };
         for url in loaded.urls() {
             match store.favicon_for_url(&url) {
@@ -152,7 +141,6 @@ impl Loaded {
                                 title: tab.title.clone(),
                                 favicon: self.favicon(&tab.url),
                             },
-                            state: tab.state.clone(),
                             last_active: tab.last_active,
                             split: tab.split,
                         })

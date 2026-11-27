@@ -1,4 +1,4 @@
-(() => {
+(globalThis[Symbol.for("rikka")] ??= {})["browser-reader.extract"] = () => {
   "use strict";
 
   const BUDGET_MS = 2500;
@@ -1149,4 +1149,4 @@
   } catch (error) {
     return notReadable("error");
   }
-})()
+};

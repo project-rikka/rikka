@@ -1,4 +1,3 @@
-use browser_pages::Cause;
 use browser_preferences::Rule;
 use browser_translators::{CodeMode, Display, Engine};
 use rikka_app::prelude::*;
@@ -42,10 +41,7 @@ pub(crate) fn popover(shell: &Shell, target: &'static str) -> Option<Element> {
                 .small()
                 .on_press(|shell: &mut Shell| {
                     shell.close_translate_popover();
-                    shell.go(
-                        Internal::Settings(Some(Section::Translation)).address(),
-                        Cause::Typed,
-                    );
+                    shell.go(Internal::Settings(Some(Section::Translation)).address());
                 });
         }
         .fill_width();

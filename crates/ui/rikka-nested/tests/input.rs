@@ -1,4 +1,4 @@
-use rikka_nested::{ContentPurpose, Cursor, Input};
+use rikka_nested::{Claim, ContentPurpose, Cursor, Input};
 use rikka_types::{CursorShape, KeyCode, Point, PointerButton, Rect, ScrollDelta, Size};
 use rikka_ui::{ScrollPhase, ScrollSource};
 use rikka_wayland_client::wp_cursor_shape_device_v1::Shape;
@@ -13,7 +13,7 @@ fn logged(lines: &[String], expected: &str) -> bool {
 #[test]
 fn pointer_input_reaches_surface_under_pointer() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-pointer");
+    let view = nested.view(Claim::app_id("rikka-view-pointer"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let _pointer = client.pointer();
@@ -83,7 +83,7 @@ fn pointer_input_reaches_surface_under_pointer() {
 #[test]
 fn focus_sends_keymap_repeat_and_keys() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-keys");
+    let view = nested.view(Claim::app_id("rikka-view-keys"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let _keyboard = client.keyboard();
@@ -126,7 +126,7 @@ fn focus_sends_keymap_repeat_and_keys() {
 #[test]
 fn text_input_reports_state_and_composes() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-text");
+    let view = nested.view(Claim::app_id("rikka-view-text"));
     view.resize(Size::new(200.0, 100.0), 1.0);
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
@@ -172,7 +172,7 @@ fn text_input_reports_state_and_composes() {
 #[test]
 fn hovered_client_cursor_reaches_view() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-cursor");
+    let view = nested.view(Claim::app_id("rikka-view-cursor"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let pointer = client.pointer();

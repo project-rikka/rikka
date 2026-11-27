@@ -145,14 +145,9 @@ fn entries(shell: &Shell, model: &Model) -> Vec<Entry> {
                 "zoom actual",
             ),
             run(
-                Command::SavePage,
-                tr!("browser.command.save-page"),
-                "download save pdf print",
-            ),
-            run(
-                Command::Find,
-                tr!("browser.command.find"),
-                "find search page",
+                Command::Print,
+                tr!("browser.command.print"),
+                "print save pdf",
             ),
             run(
                 Command::ViewSource,

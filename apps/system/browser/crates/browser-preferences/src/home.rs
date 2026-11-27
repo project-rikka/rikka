@@ -2,6 +2,8 @@ use rikka_settings::{Key, Schema};
 
 use crate::Preferences;
 
+const HIDDEN_SITES: &str = "home-hidden-sites";
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum HomePart {
     Clock,
@@ -50,10 +52,30 @@ impl Preferences {
     pub fn set_home_shows(&self, part: HomePart, shown: bool) {
         self.put::<bool>(part.key(), shown);
     }
+
+    pub fn hidden_sites(&self) -> Vec<String> {
+        self.observers.read();
+        self.settings.borrow().get::<Vec<String>>(HIDDEN_SITES)
+    }
+
+    pub fn hide_site(&self, url: &str) {
+        let mut hidden = self.hidden_sites();
+        if !hidden.iter().any(|known| known == url) {
+            hidden.push(url.to_owned());
+            self.put::<Vec<String>>(HIDDEN_SITES, hidden);
+        }
+    }
+
+    pub fn show_hidden_sites(&self) {
+        self.put::<Vec<String>>(HIDDEN_SITES, Vec::new());
+    }
 }
 
 pub(super) fn keys(schema: Schema) -> Schema {
-    HomePart::ALL.into_iter().fold(schema, |schema, part| {
-        schema.key(Key::bool(part.key(), true).summary(part.summary()))
-    })
+    HomePart::ALL
+        .into_iter()
+        .fold(schema, |schema, part| {
+            schema.key(Key::bool(part.key(), true).summary(part.summary()))
+        })
+        .key(Key::list(HIDDEN_SITES, []).summary("Addresses hidden from top sites on Home"))
 }

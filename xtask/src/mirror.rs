@@ -30,7 +30,7 @@ pub(crate) fn mirror(source: &Path, destination: &Path, kept: &[&str]) -> Result
     Ok(())
 }
 
-pub(crate) fn copy_changed(source: &Path, target: &Path) -> Result<()> {
+fn copy_changed(source: &Path, target: &Path) -> Result<()> {
     if same_contents(source, target)? {
         return Ok(());
     }

@@ -1,10 +1,11 @@
 use discord_client::WebSignIn;
 use rikka_web::{
-    InjectAt, MessageHandler, NewSessionRequest, ScriptMessage, Session, SignInPortal, UserContent,
-    UserScript, World,
+    InjectAt, NewSessionRequest, Script, ScriptMessage, Session, SignInPortal, UserScript, World,
 };
 
 const HOOK: &str = "rikka-discord-token";
+
+const DISCORD: &str = "https://discord.com/*";
 
 #[derive(Debug)]
 pub(crate) struct Portal {
@@ -14,15 +15,12 @@ pub(crate) struct Portal {
 
 impl Portal {
     pub(crate) fn open(request: WebSignIn) -> Result<Portal, String> {
-        let content = UserContent::new()
-            .script(
-                UserScript::new(HOOK, request.script())
-                    .inject_at(InjectAt::Start)
-                    .world(World::Page),
-            )
-            .handler(MessageHandler::new(request.message()).world(World::Page));
+        let hook = UserScript::new(HOOK, Script::bundled(request.script()))
+            .inject_at(InjectAt::Start)
+            .world(World::Page)
+            .matches([DISCORD]);
         let portal =
-            SignInPortal::open(request.url(), content).map_err(|error| error.to_string())?;
+            SignInPortal::open(request.url(), &[hook]).map_err(|error| error.to_string())?;
         Ok(Portal { request, portal })
     }
 

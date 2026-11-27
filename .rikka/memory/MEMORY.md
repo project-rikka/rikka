@@ -127,15 +127,15 @@
 
 ## apps/system/browser
 
-- [Browser application](browser-app.md) — rikka-browser is the vertical-tab browser on rikka-web (Gecko): shared model, runtimes per profile, store persistence.
+- [Browser application](browser-app.md) — rikka-browser is the Arc-style browser over rikka-web (official Chrome): runtimes per profile, own chrome only.
 
 ## apps/system/browser/crates
 
-- [Browser private crates](browser-crates.md) — browser-store (SQLite), model (shared state), pages (page rules), reader, engine settings, translate kit + translators.
+- [Browser private crates](browser-crates.md) — browser-store (SQLite), model, bookmarks (Chrome sync), pages, preferences, reader, translate kit.
 
 ## apps/system/browser/crates/browser-translate/scripts
 
-- [Browser page-translation script](browser-translate-script.md) — browser-translate's probe.js (every frame) and translator.js (on demand): units, modes, code comments.
+- [Browser page-translation script](browser-translate-script.md) — browser-translate's probe.js (every frame) and translator.js (loaded on demand): messaging, units, modes, code comments.
 
 ## apps/system/calculator
 
@@ -808,10 +808,6 @@
 
 - [Remote desktop wire format and transport (rikka-remote-wire, rikka-remote-link)](remote-protocol-transport.md) — rikka-remote-wire's messages/datagrams and PROTOCOL.md; rikka-remote-link's QUIC, FEC, congestion control, pacer.
 
-## crates/session/rikka-backup
-
-- [Backups, configuration repositories and restore](backup-restore.md) — rikka-age passphrase files, rikka-backup bundles, Settings Backup & Configuration pages, installer restore.
-
 ## crates/session/rikka-present
 
 - [Wayland surface presenter (rikka-present)](surface-presenter.md) — rikka-present draws a wl_surface into its own exported dmabufs with explicit sync, buckets and a viewport; no WSI.
@@ -970,15 +966,11 @@
 
 ## crates/web/rikka-web
 
-- [Web engine (rikka-web over Gecko)](web-engine.md) — rikka-web drives a rikka-gecko process per Runtime over rikka-gecko-protocol; sessions draw through a nested display.
+- [Web engine (rikka-web over official Google Chrome)](web-engine.md) — rikka-web runs official Chrome in kiosk mode on a nested display and drives it through its own MV3 extension.
 
 ## crates/win32/rikka-swapchain
 
 - [Windows Vulkan swapchain presenter (rikka-swapchain)](swapchain-presenter.md) — rikka-swapchain presents rikka-renderer frames into an HWND through a VK_KHR_win32_surface FIFO swapchain.
-
-## engine/gecko
-
-- [Gecko engine sources, builds and releases (engine/gecko, xtask gecko)](gecko-engine.md) — engine/gecko holds Firefox pin, patches and the rikka Gecko project; xtask gecko builds, CI attests, release gecko pins…
 
 ## installer
 

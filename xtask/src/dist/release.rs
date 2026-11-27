@@ -25,6 +25,13 @@ pub(crate) struct Packed {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub(crate) struct Extension {
+    pub(crate) id: String,
+    pub(crate) version: String,
+    pub(crate) crx: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub(crate) struct Entry {
     pub(crate) name: String,
     pub(crate) summary: String,
@@ -35,6 +42,8 @@ pub(crate) struct Entry {
     pub(crate) portal: bool,
     pub(crate) templates: Vec<String>,
     pub(crate) links: BTreeMap<String, String>,
+    #[serde(default)]
+    pub(crate) extensions: Vec<Extension>,
     #[serde(flatten)]
     pub(crate) source: Source,
 }

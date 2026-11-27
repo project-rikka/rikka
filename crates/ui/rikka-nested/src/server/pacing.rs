@@ -22,11 +22,7 @@ impl State {
         let Some(toplevel) = self.toplevel_of(surface) else {
             return;
         };
-        let view = self
-            .views
-            .toplevels
-            .get(toplevel)
-            .and_then(|tracked| tracked.view);
+        let view = self.owner_of(toplevel);
         match view.and_then(|view| self.views.records.get_mut(&view)) {
             Some(record) => {
                 record.frame_pending = true;
@@ -105,13 +101,23 @@ impl State {
         });
     }
 
-    fn members(&self, toplevel: ToplevelId) -> Vec<PlacedSurface> {
-        let Some(top) = self.shell.toplevel(toplevel) else {
-            return Vec::new();
-        };
-        let mut members: Vec<PlacedSurface> = self.surfaces.tree(top.surface()).collect();
+    fn members(&self, root: ToplevelId) -> Vec<PlacedSurface> {
+        let family: Vec<ToplevelId> = self
+            .shell
+            .toplevels()
+            .map(|(toplevel, _)| toplevel)
+            .filter(|toplevel| self.root_of(*toplevel) == Some(root))
+            .collect();
+        let mut members = Vec::new();
+        for toplevel in &family {
+            if let Some(top) = self.shell.toplevel(*toplevel) {
+                members.extend(self.surfaces.tree(top.surface()));
+            }
+        }
         for (popup, state) in self.shell.popups() {
-            if self.shell.popup_root(popup) == Some(PopupParent::Toplevel(toplevel)) {
+            if let Some(PopupParent::Toplevel(toplevel)) = self.shell.popup_root(popup)
+                && family.contains(&toplevel)
+            {
                 members.extend(self.surfaces.tree(state.surface()));
             }
         }

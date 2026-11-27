@@ -1,7 +1,6 @@
 use rikka_app::prelude::*;
 use rikka_widgets::row;
 
-use crate::menus::{Menus, Subject};
 use crate::shell::Shell;
 use crate::widgets::grip;
 
@@ -38,12 +37,10 @@ pub(crate) fn view(shell: &Shell) -> Element {
             .keyed(SIDEBAR);
         tool(MaterialSymbol::ARROW_BACK, back)
             .on_press(|shell: &mut Shell| shell.back())
-            .aim(|menus: &mut Menus| menus.open_below(Subject::Back, BACK))
             .build()
             .keyed(BACK);
         tool(MaterialSymbol::ARROW_FORWARD, forward)
             .on_press(|shell: &mut Shell| shell.forward())
-            .aim(|menus: &mut Menus| menus.open_below(Subject::Forward, FORWARD))
             .build()
             .keyed(FORWARD);
         match loading {

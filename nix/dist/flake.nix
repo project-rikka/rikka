@@ -14,6 +14,12 @@
         pkgs = nixpkgs.legacyPackages.${system};
         inherit release;
       };
+
+      chrome =
+        (import nixpkgs {
+          inherit system;
+          config.allowUnfreePredicate = pkg: nixpkgs.lib.getName pkg == "google-chrome";
+        }).google-chrome;
     in
     {
       packages.${system} = packages;
@@ -27,7 +33,7 @@
           ;
       }) release.components;
 
-      nixosModules.default = import ./module.nix { inherit release packages; };
+      nixosModules.default = import ./module.nix { inherit release packages chrome; };
 
       templates = {
         default = {

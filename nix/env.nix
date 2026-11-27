@@ -11,7 +11,7 @@
   pkg-config,
   rustPlatform,
   wayland-scanner,
-  rikka-gecko,
+  google-chrome,
   mesa,
   shader-slang,
   dbus,
@@ -97,10 +97,11 @@ rec {
     RIKKA_ICON_FONTS = "${iconFonts}/share/rikka/fonts";
     RIKKA_ICON_LISTINGS = "${iconFonts}/share/rikka/listings";
     RIKKA_GRAMMARS = "${grammars}/lib/rikka/grammars";
-    RIKKA_GECKO = "${rikka-gecko}/lib/rikka-gecko";
     RIKKA_MESA = "${mesa}";
     RIKKA_MINECRAFT = "${minecraftRuntime}/lib/rikka-minecraft";
   };
+
+  chrome = lib.getExe' google-chrome "google-chrome-stable";
 
   runtimeTools = [
     dbus
@@ -119,8 +120,6 @@ rec {
   };
 
   bindingTools = builtins.attrValues bindings;
-
-  geckoBuild = callPackage ./gecko-build.nix { };
 
   website = {
     node = nodejs;

@@ -16,7 +16,6 @@ impl Presented for Internal {
             Internal::Archive => tr!("browser.archive.title"),
             Internal::Downloads => tr!("browser.downloads.title"),
             Internal::Extensions => tr!("browser.extensions.title"),
-            Internal::Source(_) => tr!("browser.source.title"),
             Internal::Missing(_) => tr!("browser.missing.title"),
         }
     }
@@ -29,7 +28,6 @@ impl Presented for Internal {
             Internal::Archive => MaterialSymbol::INVENTORY_2,
             Internal::Downloads => MaterialSymbol::DOWNLOAD,
             Internal::Extensions => MaterialSymbol::EXTENSION,
-            Internal::Source(_) => MaterialSymbol::CODE,
             Internal::Missing(_) => MaterialSymbol::WARNING,
         }
     }

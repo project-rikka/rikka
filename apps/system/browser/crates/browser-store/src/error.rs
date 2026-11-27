@@ -49,8 +49,6 @@ pub enum Error {
     },
     #[error("{width}x{height} picture is larger than a stored favicon")]
     OversizedPicture { width: u32, height: u32 },
-    #[error("zoom {0} is not a positive factor")]
-    InvalidZoom(f64),
     #[error("settings of profile {profile} are malformed: {reason}")]
     MalformedSettings { profile: ProfileId, reason: String },
 }

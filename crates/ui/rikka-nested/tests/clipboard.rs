@@ -3,7 +3,7 @@ use std::os::fd::AsFd;
 use std::sync::mpsc::{self, Receiver};
 
 use rikka_clipboard::{Clipboard, Offer, Selection};
-use rikka_nested::{Input, Nested, View};
+use rikka_nested::{Claim, Input, Nested, View};
 use rikka_wayland_client::wl_data_device::WlDataDevice;
 use rustix::pipe::{PipeFlags, pipe_with};
 
@@ -23,7 +23,7 @@ fn bridged(session: &Session) -> (Nested, Clipboard) {
 }
 
 fn focused(nested: &Nested, app_id: &str) -> (View, Client, WlDataDevice) {
-    let view = nested.view(app_id);
+    let view = nested.view(Claim::app_id(app_id));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let _keyboard = client.keyboard();

@@ -8,6 +8,8 @@ pub enum Error {
     Malformed(&'static str),
     #[error("article exceeds the {0} limit")]
     TooLarge(Limit),
+    #[error("failed to run the reader script: {0}")]
+    Script(#[from] rikka_web::Error),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

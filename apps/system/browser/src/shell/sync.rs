@@ -1,26 +1,10 @@
 use rikka_app::prelude::*;
-use rikka_web::{Event, Load, SavedState, Session};
+use rikka_web::{Event, Session};
 
-use crate::page::Activation;
-use crate::requests::DropdownOwner;
 use crate::shell::Shell;
 use browser_model::TabId;
 
 const WIRE: &str = "rikka-browser-tab";
-
-pub(crate) fn activate(view: &Session, activation: Activation, referred: Option<Load>) {
-    match activation {
-        Activation::Load(address) => view.load(referred.unwrap_or_else(|| Load::uri(address))),
-        Activation::Restore { session, address } => match SavedState::from_bytes(&session) {
-            Ok(state) if !state.is_empty() => view.restore(&state),
-            Ok(_) => view.load(address),
-            Err(error) => {
-                tracing::debug!(%error, "failed to decode saved tab state");
-                view.load(address);
-            }
-        },
-    }
-}
 
 impl Shell {
     pub(crate) fn sync_tabs(&mut self) {
@@ -35,39 +19,20 @@ impl Shell {
         if let Some(tab) = active {
             self.activate_tab(tab);
         }
-        self.forget_referrers();
         self.light(active);
         self.show(active, &partners);
         self.wire();
         self.prepare_page(active, &partners);
         self.follow_fullscreen(active);
         self.listen();
-        self.prune_translations();
-        let model = self.browser.model();
-        self.browser
-            .extensions()
-            .retain_tabs(|tab| model.tab(tab).is_some());
+        self.prune_pages();
     }
 
     pub(crate) fn activate_tab(&mut self, tab: TabId) {
         match self.browser.activate(tab) {
-            Ok(activated) => {
-                self.engine_error.set(None);
-                if let Some((view, activation)) = activated {
-                    activate(&view, activation, self.referred_load(tab));
-                }
-            }
+            Ok(_) => self.engine_error.set(None),
             Err(error) => self.engine_error.set(Some(error.to_string())),
         }
-    }
-
-    fn forget_referrers(&mut self) {
-        let model = self.browser.model();
-        self.referred.retain(|tab, _| {
-            model.tab(*tab).is_some_and(|tab_entry| {
-                tab_entry.internal.is_none() && tab_entry.page().live().is_none()
-            })
-        });
     }
 
     fn light(&mut self, active: Option<TabId>) {
@@ -101,18 +66,17 @@ impl Shell {
             .chain(std::mem::take(&mut self.beside))
             .collect();
         let after: Vec<&Session> = view.iter().chain(&beside).map(|(_, view)| view).collect();
-        for (hidden, old) in &before {
+        for (_, old) in &before {
             if !after.contains(&old) {
                 old.set_visible(false);
-                old.set_high_priority(false);
-                self.dismiss_dropdown(DropdownOwner::Tab(*hidden));
-                self.capture_state(*hidden);
             }
         }
         for shown in after {
             if !before.iter().any(|(_, old)| old == shown) {
                 shown.set_visible(true);
-                shown.set_high_priority(true);
+                if shown.page().discarded {
+                    shown.reload();
+                }
             }
         }
         self.shown = view;
@@ -158,7 +122,16 @@ impl Shell {
                     shell.handle_event(tab, event);
                 },
             );
+            self.follow(tab, &view.page());
             self.wired.insert(tab, view);
         }
+    }
+
+    fn prune_pages(&mut self) {
+        let browser = std::rc::Rc::clone(&self.browser);
+        let model = browser.model();
+        self.reader.retain(|tab| model.tab(tab).is_some());
+        drop(model);
+        self.prune_translations();
     }
 }

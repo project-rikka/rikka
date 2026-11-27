@@ -31,7 +31,7 @@ pub use job::Job;
 pub use limits::Limits;
 pub use markup::Dialect;
 pub use message::{Message, PageReport, Request, Watch};
-pub use script::{HANDLER, PROBE_SCRIPT, WORLD};
+pub use script::{MESSAGE, probe_script};
 pub use service::Service;
 pub use translation::Translation;
 pub use translator::Translator;

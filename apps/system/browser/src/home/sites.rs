@@ -1,7 +1,7 @@
-use browser_store::{Place, PlaceId, Store};
+use browser_store::Store;
 use rikka_app::prelude::*;
+use rikka_web::HistoryItem;
 
-use crate::home::HomePage;
 use crate::home::tile::{GLYPH, shelf, tile};
 use crate::menus::{Entries, Menus, Subject};
 use crate::omnibox::Opening;
@@ -19,13 +19,14 @@ pub(crate) fn view(shell: &Shell, tab: TabId) -> Option<Element> {
         .iter()
         .map(|favorite| favorite.saved.url.clone())
         .collect();
+    let hidden = shell.browser().preferences().hidden_sites();
     let store = shell.browser().store();
     let tiles: Vec<Element> = shell
         .pages()
         .home
         .sites()
         .iter()
-        .filter(|site| !favorites.contains(&site.url))
+        .filter(|site| !favorites.contains(&site.url) && !hidden.contains(&site.url))
         .take(SHOWN)
         .map(|site| site_tile(site, tab, &store))
         .collect();
@@ -35,8 +36,8 @@ pub(crate) fn view(shell: &Shell, tab: TabId) -> Option<Element> {
     Some(shelf(tr!("browser.home.top-sites"), tiles))
 }
 
-fn site_tile(site: &Place, tab: TabId, store: &Store) -> Element {
-    let place = site.id;
+fn site_tile(site: &HistoryItem, tab: TabId, store: &Store) -> Element {
+    let id = site.id.clone();
     let (opened, aside) = (site.url.clone(), site.url.clone());
     tile(
         stored_favicon(Some(store), &site.url, MaterialSymbol::PUBLIC, GLYPH),
@@ -44,14 +45,14 @@ fn site_tile(site: &Place, tab: TabId, store: &Store) -> Element {
     )
     .on_press(move |shell: &mut Shell| shell.open_from_home(tab, opened.clone()))
     .middle(move |shell: &mut Shell| shell.open_aside(aside.clone()))
-    .aim(move |menus: &mut Menus| menus.aim(Subject::TopSite(place)))
+    .aim(move |menus: &mut Menus| menus.aim(Subject::TopSite(id.clone())))
     .build()
-    .keyed(place)
+    .keyed(site.id.clone())
 }
 
-pub(crate) fn menu(shell: &Shell, place: PlaceId) -> Entries {
+pub(crate) fn menu(shell: &Shell, site: &str) -> Entries {
     let mut entries = Entries::new();
-    let Some(site) = shell.pages().home.site(place) else {
+    let Some(site) = shell.pages().home.site(site) else {
         return entries;
     };
     let (aside, windowed, copied, hidden) = (
@@ -81,7 +82,7 @@ pub(crate) fn menu(shell: &Shell, place: PlaceId) -> Entries {
     entries.leaf(
         menu_item(tr!("browser.home.hide"))
             .icon(MaterialSymbol::VISIBILITY_OFF)
-            .on_press(move |page: &mut HomePage| page.hide(&hidden)),
+            .on_press(move |shell: &mut Shell| shell.hide_top_site(&hidden)),
     );
     entries
 }

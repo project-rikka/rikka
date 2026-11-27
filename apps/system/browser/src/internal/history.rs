@@ -1,46 +1,51 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::ops::Range;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
-use browser_pages::Cause;
-use browser_store::{HistoryCursor, HistoryEntry, HistoryQuery, ProfileId, Store, VisitId};
+use browser_store::Timestamp;
+use futures_util::future::Either;
 use jiff::civil::Date;
 use rikka_app::prelude::*;
+use rikka_web::{History, HistoryItem, HistoryQuery};
 use rikka_widgets::{column, row};
 
+use crate::internal::Span;
 use crate::internal::days;
 use crate::internal::status::Status;
 use crate::menus::{Menus, Subject};
 use crate::shell::Shell;
 use crate::widgets::glyph_button;
 
-const PAGE: usize = 100;
+const PAGE: u32 = 100;
 const AHEAD: usize = 30;
 const ROW: f32 = 44.0;
 const HEADER: f32 = 36.0;
 const WIDEST: f32 = 860.0;
 const FETCH: &str = "rikka-browser-history";
+const FORGET: &str = "rikka-browser-history-forget";
 const SEARCH: &str = "rikka-browser-history-search";
 const SEARCH_PAUSE: Duration = Duration::from_millis(150);
+const REFRESH: &str = "rikka-browser-history-refresh";
+const REFRESH_PAUSE: Duration = Duration::from_secs(2);
 pub(crate) const CLEAR_BUTTON: &str = "rikka-browser-history-clear";
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum Item {
     Day(Arc<str>),
-    Visit(Arc<HistoryEntry>),
+    Visit(Arc<HistoryItem>),
 }
 
 #[derive(State)]
 pub(crate) struct HistoryPage {
     #[untracked]
-    store: Option<Store>,
-    #[untracked]
-    profile: Option<ProfileId>,
+    history: Option<History>,
     #[untracked]
     search: TextDocument,
     #[untracked]
-    cursor: Option<HistoryCursor>,
+    until: Option<SystemTime>,
+    #[untracked]
+    seen: HashSet<String>,
     #[untracked]
     last_day: Option<Date>,
     #[untracked]
@@ -48,17 +53,17 @@ pub(crate) struct HistoryPage {
     #[untracked]
     exhausted: bool,
     items: Tracked<Arc<Vec<Item>>>,
-    chosen: Tracked<BTreeMap<VisitId, String>>,
+    chosen: Tracked<BTreeMap<String, String>>,
     status: Tracked<Status>,
 }
 
 impl HistoryPage {
     pub(crate) fn new() -> HistoryPage {
         HistoryPage {
-            store: None,
-            profile: None,
+            history: None,
             search: TextDocument::new(""),
-            cursor: None,
+            until: None,
+            seen: HashSet::new(),
             last_day: None,
             waiting: false,
             exhausted: false,
@@ -68,30 +73,26 @@ impl HistoryPage {
         }
     }
 
-    pub(crate) fn open(&mut self, store: Store, profile: Option<ProfileId>) {
-        self.store = Some(store);
-        self.profile = profile;
+    pub(crate) fn open(&mut self, history: rikka_web::Result<History>) {
+        self.history = match history {
+            Ok(history) => Some(history),
+            Err(error) => {
+                tracing::warn!(%error, "failed to start Chrome for history");
+                None
+            }
+        };
         self.refresh();
     }
 
-    pub(crate) fn profile(&self) -> Option<ProfileId> {
-        self.profile
+    pub(crate) fn changed(&mut self) {
+        after_keyed(REFRESH, REFRESH_PAUSE, |page: &mut HistoryPage| {
+            page.refresh()
+        });
     }
 
-    pub(crate) fn items(&self) -> &Arc<Vec<Item>> {
-        &self.items
-    }
-
-    pub(crate) fn status(&self) -> Status {
-        *self.status
-    }
-
-    pub(crate) fn chosen(&self) -> &BTreeMap<VisitId, String> {
-        &self.chosen
-    }
-
-    pub(crate) fn refresh(&mut self) {
-        self.cursor = None;
+    fn refresh(&mut self) {
+        self.until = None;
+        self.seen.clear();
         self.last_day = None;
         self.waiting = false;
         self.exhausted = false;
@@ -104,34 +105,29 @@ impl HistoryPage {
     }
 
     fn fetch(&mut self) {
-        let (Some(store), Some(profile)) = (self.store.clone(), self.profile) else {
+        let Some(history) = self.history.clone() else {
             cancel(FETCH);
-            self.status.set(Status::Ready);
+            self.status.set(Status::Failed);
             return;
         };
         if self.waiting || self.exhausted {
             return;
         }
         self.waiting = true;
-        let mut query = HistoryQuery::new(PAGE).text(self.search.text());
-        if let Some(cursor) = self.cursor {
-            query = query.after(cursor);
+        let mut query = HistoryQuery::new(self.search.text()).limit(PAGE);
+        if let Some(until) = self.until {
+            query = query.until(until);
         }
-        spawn_blocking_keyed(
+        spawn_keyed(
             FETCH,
-            move || {
-                if let Err(error) = store.flush() {
-                    tracing::warn!(%error, "failed to save browsing data");
-                }
-                store.history(profile, &query)
-            },
-            move |page: &mut HistoryPage, found: browser_store::Result<Vec<HistoryEntry>>| {
+            history.search(&query),
+            move |page: &mut HistoryPage, found: rikka_web::Result<Vec<HistoryItem>>| {
                 page.loaded(found);
             },
         );
     }
 
-    fn loaded(&mut self, found: browser_store::Result<Vec<HistoryEntry>>) {
+    fn loaded(&mut self, found: rikka_web::Result<Vec<HistoryItem>>) {
         self.waiting = false;
         let entries = match found {
             Ok(entries) => entries,
@@ -141,12 +137,23 @@ impl HistoryPage {
                 return;
             }
         };
-        self.exhausted = entries.len() < PAGE;
-        self.cursor = entries.last().map(HistoryEntry::cursor).or(self.cursor);
+        self.exhausted = entries.len() < PAGE as usize;
+        self.until = entries
+            .iter()
+            .filter_map(|entry| entry.last_visit_time)
+            .min()
+            .or(self.until);
         let today = days::today();
         let mut items = Vec::clone(&self.items);
+        let before = items.len();
         for entry in entries {
-            let date = days::local_time(entry.visited_at).map(|local_time| local_time.date);
+            if !self.seen.insert(entry.id.clone()) {
+                continue;
+            }
+            let date = entry
+                .last_visit_time
+                .and_then(|at| days::local_time(Timestamp::from(at)))
+                .map(|local_time| local_time.date);
             if date.is_some() && date != self.last_day {
                 self.last_day = date;
                 if let Some(date) = date {
@@ -155,11 +162,14 @@ impl HistoryPage {
             }
             items.push(Item::Visit(Arc::new(entry)));
         }
+        if items.len() == before {
+            self.exhausted = true;
+        }
         self.items.set(Arc::new(items));
         self.status.set(Status::Ready);
     }
 
-    pub(crate) fn showing(&mut self, shown: Range<usize>) {
+    fn showing(&mut self, shown: Range<usize>) {
         if shown.end + AHEAD >= self.items.len() && !self.exhausted && !self.waiting {
             self.fetch();
         } else {
@@ -173,20 +183,17 @@ impl HistoryPage {
         });
     }
 
-    fn choose(&mut self, visit: VisitId, url: &str, chosen: bool) {
+    fn choose(&mut self, id: &str, url: &str, chosen: bool) {
         match chosen {
-            true => self.chosen.insert(visit, url.to_owned()),
-            false => self.chosen.remove(&visit),
+            true => self.chosen.insert(id.to_owned(), url.to_owned()),
+            false => self.chosen.remove(id),
         };
     }
 
-    pub(crate) fn forget(&mut self, urls: &[String]) {
-        let Some((store, profile)) = self.store.clone().zip(self.profile) else {
+    fn forget(&mut self, urls: Vec<String>) {
+        let Some(history) = self.history.clone() else {
             return;
         };
-        for url in urls {
-            store.delete_url(profile, url.clone());
-        }
         let visible: Vec<Item> = self
             .items
             .iter()
@@ -207,19 +214,44 @@ impl HistoryPage {
             .collect();
         self.items.set(Arc::new(items));
         self.chosen.retain(|_, url| !urls.contains(url));
+        spawn_keyed(
+            (FORGET, urls.clone()),
+            async move {
+                for url in &urls {
+                    history.delete_url(url).await?;
+                }
+                Ok(())
+            },
+            |_: &mut HistoryPage, forgotten: rikka_web::Result<()>| {
+                if let Err(error) = forgotten {
+                    tracing::warn!(%error, "failed to remove history entries");
+                }
+            },
+        );
     }
 
     fn forget_chosen(&mut self) {
         let urls: Vec<String> = self.chosen.values().cloned().collect();
-        self.forget(&urls);
+        self.forget(urls);
     }
 
-    pub(crate) fn clear(&mut self, range: browser_store::TimeRange) {
-        let Some((store, profile)) = self.store.clone().zip(self.profile) else {
+    pub(crate) fn clear(&mut self, span: Span) {
+        let Some(history) = self.history.clone() else {
             return;
         };
-        store.delete_range(profile, range);
-        self.refresh();
+        let cleared = match span.length() {
+            None => Either::Left(history.delete_all()),
+            Some(_) => Either::Right(history.delete_range(span.since(), SystemTime::now())),
+        };
+        spawn(
+            cleared,
+            |page: &mut HistoryPage, cleared: rikka_web::Result<()>| {
+                if let Err(error) = cleared {
+                    tracing::warn!(%error, "failed to clear history");
+                }
+                page.refresh();
+            },
+        );
     }
 }
 
@@ -227,17 +259,13 @@ impl std::fmt::Debug for HistoryPage {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
             .debug_struct("HistoryPage")
-            .field("profile", &self.profile)
             .field("items", &self.items.len())
             .finish_non_exhaustive()
     }
 }
 
 pub(crate) fn view(page: &HistoryPage) -> Element {
-    if page.profile().is_none() {
-        return status_page(MaterialSymbol::HISTORY, tr!("browser.history.private")).any();
-    }
-    let chosen = page.chosen().len();
+    let chosen = page.chosen.len();
     let bar = row! {
         text_field(&page.search)
             .placeholder(tr!("browser.history.search"))
@@ -260,7 +288,7 @@ pub(crate) fn view(page: &HistoryPage) -> Element {
     .gap(Space::SNUG)
     .align_items(Align::Center)
     .fill_width();
-    let body = match (page.status(), page.items().is_empty()) {
+    let body = match (*page.status, page.items.is_empty()) {
         (Status::Failed, _) => {
             status_page(MaterialSymbol::WARNING, tr!("browser.history.unreadable")).any()
         }
@@ -290,8 +318,8 @@ pub(crate) fn view(page: &HistoryPage) -> Element {
 }
 
 fn list(page: &HistoryPage) -> Element {
-    let items = Arc::clone(page.items());
-    let chosen = page.chosen().clone();
+    let items = Arc::clone(&page.items);
+    let chosen = (*page.chosen).clone();
     let count = items.len();
     lazy_column(count, move |slot| match &items[slot.index] {
         Item::Day(day) => container(text(day.to_string()).label().semibold())
@@ -305,7 +333,7 @@ fn list(page: &HistoryPage) -> Element {
             .height(HEADER)
             .fill_width()
             .any(),
-        Item::Visit(entry) => visit(entry, chosen.contains_key(&entry.visit)),
+        Item::Visit(entry) => visit(entry, chosen.contains_key(&entry.id)),
     })
     .on_visible(|page: &mut HistoryPage, shown: Range<usize>| page.showing(shown))
     .grow(1.0)
@@ -313,18 +341,20 @@ fn list(page: &HistoryPage) -> Element {
     .any()
 }
 
-fn visit(entry: &Arc<HistoryEntry>, chosen: bool) -> Element {
-    let time = days::local_time(entry.visited_at)
+fn visit(entry: &Arc<HistoryItem>, chosen: bool) -> Element {
+    let time = entry
+        .last_visit_time
+        .and_then(|at| days::local_time(Timestamp::from(at)))
         .map(|local_time| local_time.time)
         .unwrap_or_default();
     let title = crate::sidebar::titled(&entry.title, &entry.url);
     let host = crate::address::display_address(&entry.url).host;
-    let (visit, url) = (entry.visit, entry.url.clone());
+    let (id, url) = (entry.id.clone(), entry.url.clone());
     let (opened, opened_aside, forgotten) = (url.clone(), url.clone(), url.clone());
     container(
         row! {
             checkbox(chosen).on_toggle(move |page: &mut HistoryPage, on: bool| {
-                page.choose(visit, &url, on);
+                page.choose(&id, &url, on);
             });
             text(time).caption().muted().no_wrap().width(44.0);
             column! {
@@ -336,7 +366,7 @@ fn visit(entry: &Arc<HistoryEntry>, chosen: bool) -> Element {
             glyph_button(MaterialSymbol::OPEN_IN_NEW, 16.0)
                 .on_press(move |shell: &mut Shell| shell.open_aside(opened_aside.clone()));
             glyph_button(MaterialSymbol::CLOSE, 16.0)
-                .on_press(move |page: &mut HistoryPage| page.forget(std::slice::from_ref(&forgotten)));
+                .on_press(move |page: &mut HistoryPage| page.forget(vec![forgotten.clone()]));
         }
         .gap(Space::SNUG)
         .align_items(Align::Center)
@@ -344,7 +374,7 @@ fn visit(entry: &Arc<HistoryEntry>, chosen: bool) -> Element {
         .fill(),
     )
     .radius(Corner::Item)
-    .on_press(move |shell: &mut Shell| shell.go(opened.clone(), Cause::Link))
+    .on_press(move |shell: &mut Shell| shell.go(opened.clone()))
     .height(ROW)
     .fill_width()
     .any()

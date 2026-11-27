@@ -1,47 +1,54 @@
-use rikka_sync::Mutex;
-use std::os::fd::AsRawFd;
-use std::os::unix::net::UnixStream;
+use std::ffi::OsString;
+use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
 
 use rikka_gpu_drivers::Drivers;
-use rustix::io::{FdFlags, fcntl_setfd};
 
 use crate::error::{Error, Result};
+use crate::process::isolation::Isolation;
 
-const CHANNEL: &str = "RIKKA_GECKO_CHANNEL";
+const CHANNEL: &str = "RIKKA_WEB_CHANNEL";
 
-const WITHHELD: [&str; 8] = [
+const WITHHELD: [&str; 7] = [
     "DISPLAY",
     "WAYLAND_SOCKET",
     "DESKTOP_STARTUP_ID",
     "XDG_ACTIVATION_TOKEN",
     "GDK_SCALE",
     "GDK_DPI_SCALE",
-    "MOZ_HEADLESS",
-    "MOZ_DISABLE_WAYLAND",
+    "CHROME_DEVEL_SANDBOX",
 ];
 
-static SPAWNING: Mutex<()> = Mutex::new(());
+const SWITCHES: [&str; 9] = [
+    "--kiosk",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--hide-crash-restore-bubble",
+    "--ozone-platform=wayland",
+    "--enable-wayland-ime",
+    "--wayland-text-input-version=3",
+    "--password-store=gnome-libsecret",
+    "--disable-features=ChromeWhatsNewUI",
+];
 
-#[derive(Debug)]
-pub(crate) struct Launched {
-    pub(crate) child: Child,
-    pub(crate) channel: UnixStream,
+pub(crate) struct Launch<'a> {
+    pub(crate) program: &'a Path,
+    pub(crate) profile: &'a Path,
+    pub(crate) display: &'a Path,
+    pub(crate) channel: &'a Path,
 }
 
-pub(crate) fn launch(program: &Path, profile: &Path, display: &Path) -> Result<Launched> {
-    let (channel, inherited) = UnixStream::pair().map_err(Error::Spawn)?;
-    let mut command = Command::new(program);
+pub(crate) fn launch(launch: &Launch<'_>) -> Result<Child> {
+    let isolation = Isolation::plan(launch.profile)?;
+    let mut data_dir = OsString::from("--user-data-dir=");
+    data_dir.push(launch.profile);
+    let mut command = Command::new(launch.program);
     command
-        .arg("--no-remote")
-        .arg("--new-instance")
-        .arg("--profile")
-        .arg(profile)
-        .env(CHANNEL, inherited.as_raw_fd().to_string())
-        .env("WAYLAND_DISPLAY", display)
-        .env("MOZ_ENABLE_WAYLAND", "1")
-        .env("GDK_BACKEND", "wayland")
+        .arg(data_dir)
+        .args(SWITCHES)
+        .env("WAYLAND_DISPLAY", launch.display)
+        .env(CHANNEL, launch.channel)
         .stdin(Stdio::null());
     for variable in WITHHELD {
         command.env_remove(variable);
@@ -54,11 +61,8 @@ pub(crate) fn launch(program: &Path, profile: &Path, display: &Path) -> Result<L
             };
         }
     }
-    let child = {
-        let _spawning = SPAWNING.lock();
-        fcntl_setfd(&inherited, FdFlags::empty()).map_err(|error| Error::Spawn(error.into()))?;
-        command.spawn().map_err(Error::Spawn)?
-    };
-    drop(inherited);
-    Ok(Launched { child, channel })
+    unsafe {
+        command.pre_exec(move || isolation.enter());
+    }
+    command.spawn().map_err(Error::Spawn)
 }

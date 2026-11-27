@@ -63,6 +63,39 @@ impl Favorites {
         Some(profile)
     }
 
+    pub fn arrange(&mut self, profile: ProfileId, order: &[FavoriteId]) {
+        let Some(list) = self.by_profile.get_mut(&profile) else {
+            return;
+        };
+        let before: Vec<FavoriteId> = list.iter().map(|favorite| favorite.id).collect();
+        list.sort_by_key(|favorite| {
+            order
+                .iter()
+                .position(|id| *id == favorite.id)
+                .unwrap_or(usize::MAX)
+        });
+        if list.iter().map(|favorite| favorite.id).ne(before) {
+            self.observers.changed();
+        }
+    }
+
+    pub fn retitle(&mut self, id: FavoriteId, url: &str, title: &str) {
+        let entry = self
+            .by_profile
+            .values_mut()
+            .flat_map(|list| list.iter_mut())
+            .find(|favorite| favorite.id == id);
+        let Some(favorite) = entry else {
+            return;
+        };
+        if favorite.saved.url != url {
+            favorite.saved.url = url.to_owned();
+            favorite.saved.favicon = None;
+        }
+        favorite.saved.title = title.to_owned();
+        self.observers.changed();
+    }
+
     pub fn remember(&mut self, id: FavoriteId, saved: &Saved) {
         let entry = self
             .by_profile

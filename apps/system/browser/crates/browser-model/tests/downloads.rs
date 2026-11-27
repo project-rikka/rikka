@@ -1,84 +1,107 @@
-use std::path::{Path, PathBuf};
+use browser_model::{DownloadPhase, Downloads, ProfileKey, download_name};
+use rikka_web::DownloadItem;
+use serde_json::json;
 
-use browser_model::{DownloadKey, DownloadPhase, Downloads, ProfileKey, StartedDownload};
-use rikka_web::{Download, DownloadId, DownloadState};
-
-fn begun(downloads: &mut Downloads, profile: ProfileKey, path: &Path) -> DownloadKey {
-    let key = downloads.begin(StartedDownload {
-        profile,
-        url: "https://example.com/report.pdf".to_owned(),
-        name: "report.pdf".to_owned(),
-        mime: "application/pdf".to_owned(),
-        total: Some(100),
-        stored: None,
-    });
-    downloads.chosen(key, path);
-    key
+fn item(id: i64, state: &str, received: f64, error: Option<&str>) -> DownloadItem {
+    serde_json::from_value(json!({
+        "id": id,
+        "url": format!("https://files.example/{id}.bin"),
+        "filename": format!("/downloads/{id}.bin"),
+        "state": state,
+        "error": error,
+        "bytesReceived": received,
+        "totalBytes": 100.0,
+    }))
+    .expect("download item")
 }
 
-fn progress(id: &str, path: &Path, received: u64, state: DownloadState) -> Download {
-    Download {
-        id: DownloadId(id.to_owned()),
-        uri: "https://example.com/report.pdf".to_owned(),
-        referrer: None,
-        private: true,
-        path: path.to_owned(),
-        mime_type: None,
-        state,
-        received,
-        total: Some(100),
-        started: None,
-        error: None,
+type Reported = Vec<(i64, DownloadPhase)>;
+
+fn ended(downloads: &mut Downloads, snapshot: Vec<DownloadItem>) -> Reported {
+    downloads
+        .update(ProfileKey::Private, snapshot)
+        .into_iter()
+        .map(|ended| {
+            let id: i64 = download_name(&ended.item)
+                .trim_end_matches(".bin")
+                .parse()
+                .expect("numbered name");
+            (id, ended.phase)
+        })
+        .collect()
+}
+
+#[test]
+fn consecutive_snapshots_report_newly_finished_and_failed_downloads() {
+    let baseline = || {
+        vec![
+            item(5, "complete", 100.0, None),
+            item(4, "in_progress", 10.0, None),
+            item(3, "in_progress", 10.0, None),
+            item(2, "in_progress", 10.0, None),
+        ]
+    };
+    let cases: [(&str, Vec<DownloadItem>, Reported); 5] = [
+        (
+            "finished and failed downloads are reported, cancelled ones are not",
+            vec![
+                item(5, "complete", 100.0, None),
+                item(4, "complete", 100.0, None),
+                item(3, "interrupted", 50.0, Some("NETWORK_FAILED")),
+                item(2, "interrupted", 50.0, Some("USER_CANCELED")),
+            ],
+            vec![(4, DownloadPhase::Finished), (3, DownloadPhase::Failed)],
+        ),
+        (
+            "a download that started and ended between snapshots is reported",
+            vec![item(6, "complete", 100.0, None)]
+                .into_iter()
+                .chain(baseline())
+                .collect(),
+            vec![(6, DownloadPhase::Finished)],
+        ),
+        (
+            "an older download coming back into the list is not reported",
+            vec![
+                item(4, "in_progress", 20.0, None),
+                item(1, "complete", 100.0, None),
+            ],
+            Vec::new(),
+        ),
+        ("an unchanged list reports nothing", baseline(), Vec::new()),
+        ("an empty list reports nothing", Vec::new(), Vec::new()),
+    ];
+    for (name, snapshot, expected) in cases {
+        let mut downloads = Downloads::default();
+        assert!(
+            ended(&mut downloads, baseline()).is_empty(),
+            "{name}: baseline"
+        );
+        assert_eq!(ended(&mut downloads, snapshot), expected, "{name}");
     }
 }
 
 #[test]
-fn progress_finds_its_item_by_path_then_by_engine_id() {
+fn activity_sums_running_downloads_of_one_profile() {
     let mut downloads = Downloads::default();
-    let chosen = PathBuf::from("/downloads/report.pdf");
-    let renamed = PathBuf::from("/downloads/report (2).pdf");
-    let key = begun(&mut downloads, ProfileKey::Private, &chosen);
+    downloads.update(
+        ProfileKey::Private,
+        vec![
+            item(3, "in_progress", 30.0, None),
+            item(2, "in_progress", 70.0, None),
+            item(1, "complete", 100.0, None),
+        ],
+    );
 
-    let first = downloads
-        .update_progress(&progress("g1", &chosen, 40, DownloadState::Downloading))
-        .expect("matched by the chosen path");
-    assert_eq!(first.item, key);
-    assert!(!first.finished);
-
-    let last = downloads
-        .update_progress(&progress("g1", &renamed, 100, DownloadState::Finished))
-        .expect("matched by the engine id after the path moved");
-    assert_eq!(last.item, key);
-    assert!(last.finished);
-    let item = downloads.item(key).expect("item");
-    assert_eq!(item.state, DownloadPhase::Finished);
-    assert_eq!(item.name, "report (2).pdf");
+    let activity = downloads.activity(ProfileKey::Private);
+    assert_eq!(activity.running, 2);
+    assert_eq!(activity.fraction, Some(0.5));
+    assert_eq!(downloads.items(ProfileKey::Private).len(), 3);
     assert!(
         downloads
-            .update_progress(&progress("other", &chosen, 1, DownloadState::Downloading))
-            .is_none()
+            .items(ProfileKey::Persistent(browser_model::ProfileId::from_raw(
+                1
+            )))
+            .is_empty()
     );
-}
-
-#[test]
-fn clearing_keeps_running_downloads_and_other_profiles() {
-    let mut downloads = Downloads::default();
-    let done = PathBuf::from("/downloads/done.bin");
-    let running = PathBuf::from("/downloads/running.bin");
-    let finished = begun(&mut downloads, ProfileKey::Private, &done);
-    let active = begun(&mut downloads, ProfileKey::Private, &running);
-    downloads.update_progress(&progress("a", &done, 100, DownloadState::Finished));
-    downloads.update_progress(&progress("b", &running, 50, DownloadState::Downloading));
-
-    let cleared: Vec<DownloadKey> = downloads
-        .clear_ended(ProfileKey::Private)
-        .into_iter()
-        .map(|item| item.key)
-        .collect();
-    assert_eq!(cleared, [finished]);
-    assert!(downloads.item(active).is_some());
-    assert!(downloads.claims(&running));
-    let activity = downloads.activity(ProfileKey::Private);
-    assert_eq!(activity.running, 1);
-    assert_eq!(activity.fraction, Some(0.5));
 }

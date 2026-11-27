@@ -1,6 +1,5 @@
 use crate::command::Command;
 use crate::launch::{Kind, Launch};
-use crate::link::Opening;
 use browser_pages::{Internal, Section};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -18,10 +17,6 @@ pub(crate) fn wants_little(launch: &Launch) -> bool {
             .addresses
             .iter()
             .all(|address| Internal::parse(address).is_none())
-}
-
-pub(crate) fn opens_popup(opening: Opening) -> bool {
-    opening == Opening::Window
 }
 
 pub(crate) fn routing(command: Command) -> Routing {

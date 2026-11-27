@@ -35,7 +35,7 @@ impl State {
     pub(crate) fn popup_window_origin(&self, popup: PopupId) -> Option<Point<i32, Logical>> {
         let record = self.shell.popup(popup)?;
         let parent = match record.parent()? {
-            PopupParent::Toplevel(_) => Point::zero(),
+            PopupParent::Toplevel(toplevel) => self.toplevel_origin(toplevel),
             PopupParent::Popup(parent) => self.popup_window_origin(parent)?,
             PopupParent::Layer(_) => return None,
         };
@@ -54,6 +54,18 @@ impl State {
         };
         let geometry = self.window_geometry(toplevel).unwrap_or_default();
         let mut roots = vec![(top.surface(), Point::zero() - geometry.loc)];
+        for dependent in self.dependents_of(toplevel) {
+            let (Some(record), Some(geometry)) = (
+                self.shell.toplevel(dependent),
+                self.window_geometry(dependent),
+            ) else {
+                continue;
+            };
+            roots.push((
+                record.surface(),
+                self.toplevel_origin(dependent) - geometry.loc,
+            ));
+        }
         for popup in &record.popups {
             let Some(state) = self.shell.popup(*popup).filter(|state| state.mapped()) else {
                 continue;

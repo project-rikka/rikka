@@ -1,0 +1,17 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-test-chrome",
+    testonly = True,
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+        "//crates:__subpackages__",
+    ],
+    deps = [
+        "//crates/web/rikka-web-crx",
+        "@crates//:libc",
+        "@crates//:rustix",
+        "@crates//:serde_json",
+    ],
+)

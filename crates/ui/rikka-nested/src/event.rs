@@ -1,6 +1,7 @@
 use rikka_sync::Mutex;
 use std::sync::mpsc::{self, Receiver, Sender};
 
+use crate::claim::ToplevelKey;
 use crate::look::{Constraint, TextInput};
 use crate::view::ViewId;
 
@@ -15,6 +16,13 @@ pub enum Event {
     ClientGone {
         pid: i32,
         reason: String,
+    },
+    Unclaimed {
+        toplevel: ToplevelKey,
+        title: Option<String>,
+    },
+    UnclaimedClosed {
+        toplevel: ToplevelKey,
     },
     Attached {
         view: ViewId,

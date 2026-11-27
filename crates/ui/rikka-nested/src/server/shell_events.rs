@@ -30,28 +30,18 @@ impl State {
                     self.unattached_follow(toplevel);
                 }
                 self.toplevel_initial_commit(toplevel);
+                self.toplevel_announced(toplevel);
             }
             ToplevelEvent::AppId => self.toplevel_named(toplevel),
-            ToplevelEvent::Title => {
-                let title = self
-                    .shell
-                    .toplevel(toplevel)
-                    .and_then(|record| record.title())
-                    .map(str::to_owned);
-                if let Some(view) = view {
-                    let shown = title.clone();
-                    self.change_look(view, |look| look.title = shown);
-                    if let Some(title) = title {
-                        self.event_sender.send(Event::Title { view, title });
-                    }
-                }
-            }
-            ToplevelEvent::Mapped | ToplevelEvent::Unmapped => {
-                if let Some(view) = view {
+            ToplevelEvent::Title => self.toplevel_titled(toplevel),
+            ToplevelEvent::Parent => self.toplevel_parented(toplevel),
+            ToplevelEvent::Mapped | ToplevelEvent::Unmapped => match view {
+                Some(view) => {
                     self.mark_dirty(view);
                     self.surfaces_follow(view);
                 }
-            }
+                None => self.dependent_changed(toplevel),
+            },
             ToplevelEvent::Configured { serial } => self.toplevel_configured(toplevel, serial),
             ToplevelEvent::Destroyed => self.toplevel_destroyed(toplevel),
             ToplevelEvent::Fullscreen { .. } => {

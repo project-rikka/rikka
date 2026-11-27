@@ -1,9 +1,8 @@
-use browser_pages::Cause;
 use browser_store::{ClosedTab, Restored};
 use rikka_app::prelude::*;
 
 use crate::shell::Shell;
-use browser_model::{FavoriteId, Slot, TabId, take_closed_tab};
+use browser_model::{FavoriteId, ProfileKey, Slot, TabId, take_closed_tab};
 
 impl Shell {
     pub(super) fn prepare_home(&mut self, active: Option<TabId>, partners: &[TabId]) {
@@ -37,8 +36,15 @@ impl Shell {
                 .collect();
             (profile, spaces)
         };
-        let store = self.browser.store();
-        self.pages.home.open(tab, store, profile, spaces);
+        let store = profile.map(|_| self.browser.store());
+        let history = profile.and_then(|profile| {
+            self.browser
+                .engine(ProfileKey::Persistent(profile))
+                .inspect_err(|error| tracing::warn!(%error, "failed to start Chrome for Home"))
+                .ok()
+                .map(|runtime| runtime.history())
+        });
+        self.pages.home.open(tab, store, history, spaces);
     }
 
     pub(crate) fn search_from_home(&mut self, tab: TabId) {
@@ -51,7 +57,7 @@ impl Shell {
 
     pub(crate) fn open_from_home(&mut self, tab: TabId, url: String) {
         self.address.end();
-        self.go_in(tab, url, Cause::Link);
+        self.go_in(tab, url);
     }
 
     pub(crate) fn open_favorite_from_home(&mut self, tab: TabId, favorite: FavoriteId) {
@@ -77,9 +83,11 @@ impl Shell {
     }
 
     pub(crate) fn show_hidden_top_sites(&mut self) {
-        if let Some(profile) = self.persistent_profile() {
-            self.browser.store().show_hidden_top_sites(profile);
-        }
+        self.browser.preferences().show_hidden_sites();
+    }
+
+    pub(crate) fn hide_top_site(&mut self, url: &str) {
+        self.browser.preferences().hide_site(url);
     }
 
     fn discard_blank(&mut self, tab: TabId) {
@@ -91,7 +99,7 @@ impl Shell {
             return;
         }
         let closing = self.browser.edit().close_without_archive(self.id, tab);
-        self.save_sessions(closing);
+        self.close_views(closing);
         self.changed();
     }
 }

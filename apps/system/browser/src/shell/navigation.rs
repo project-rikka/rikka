@@ -1,19 +1,20 @@
-use browser_pages::Cause;
-use rikka_app::prelude::*;
-use rikka_dialog::{Chooser, ChooserResponse, Filter};
 use rikka_web::{NavigationButton, Session};
 
 use crate::page::Page;
 use crate::shell::Shell;
-use browser_model::{Placement, TabId, same_zoom, zoom_step};
+use browser_model::{Placement, TabId, zoom_step};
 use browser_pages::Internal;
+
+const DEFAULT_ZOOM: f64 = 1.0;
+const CHROME_DEFAULT_ZOOM: f64 = 0.0;
+const VIEW_SOURCE: &str = "view-source:";
 
 impl Shell {
     pub(crate) fn leave_address(&mut self) {
         self.address.end();
     }
 
-    pub(crate) fn go(&mut self, destination: String, cause: Cause) {
+    pub(crate) fn go(&mut self, destination: String) {
         let active = self.active_tab();
         let tab = match active {
             Some(tab) => tab,
@@ -28,15 +29,15 @@ impl Shell {
                 opened
             }
         };
-        self.go_in(tab, destination, cause);
+        self.go_in(tab, destination);
     }
 
-    pub(crate) fn go_in(&mut self, tab: TabId, destination: String, cause: Cause) {
-        self.navigate(tab, destination, cause);
+    pub(crate) fn go_in(&mut self, tab: TabId, destination: String) {
+        self.navigate(tab, destination);
         self.changed();
     }
 
-    fn navigate(&mut self, tab: TabId, destination: String, cause: Cause) {
+    fn navigate(&mut self, tab: TabId, destination: String) {
         let mut model = self.browser.edit();
         let Some(tab_entry) = model.tab_mut(tab) else {
             return;
@@ -46,7 +47,6 @@ impl Shell {
             return;
         }
         tab_entry.internal.set(None);
-        tab_entry.visit_tracker.set_cause(cause);
         match tab_entry.page().view() {
             Some(view) => view.load(destination),
             None => {
@@ -81,21 +81,14 @@ impl Shell {
             self.changed();
             return;
         }
-        tab_entry.visit_tracker.set_cause(Cause::BackForward);
         if let Some(view) = tab_entry.page().view() {
-            view.go_back();
+            view.back();
         }
     }
 
     pub(crate) fn forward(&mut self) {
-        if let Some(view) = self.active_session_with_cause(Cause::BackForward) {
-            view.go_forward();
-        }
-    }
-
-    pub(crate) fn go_to_history_index(&mut self, index: usize) {
-        if let Some(view) = self.active_session_with_cause(Cause::BackForward) {
-            view.go_to(index);
+        if let Some(view) = self.active_view() {
+            view.forward();
         }
     }
 
@@ -107,10 +100,7 @@ impl Shell {
     }
 
     pub(crate) fn reload(&mut self, bypassing_cache: bool) {
-        match (
-            self.active_session_with_cause(Cause::Reload),
-            bypassing_cache,
-        ) {
+        match (self.active_view(), bypassing_cache) {
             (Some(view), true) => view.reload_bypassing_cache(),
             (Some(view), false) => view.reload(),
             (None, _) => {}
@@ -127,83 +117,44 @@ impl Shell {
         let Some(view) = self.active_view() else {
             return;
         };
-        let default = self.browser.preferences().default_zoom();
-        let next = zoom_step(view.page().zoom, by, default);
-        view.set_zoom(next);
-        let mut model = self.browser.edit();
-        if let Some(tab) = model.window(self.id).and_then(|layout| layout.active()) {
-            model.remember_zoom(tab, next, default);
+        match by {
+            0 => view.set_zoom(CHROME_DEFAULT_ZOOM),
+            by => view.set_zoom(zoom_step(view.page().zoom, by, DEFAULT_ZOOM)),
         }
     }
 
-    pub(crate) fn fit_zoom(&mut self, tab: TabId) {
-        let model = self.model();
-        let Some(view) = model
+    pub(crate) fn view_active_source(&mut self) {
+        if let Some(tab) = self.active_tab() {
+            self.view_source(tab);
+        }
+    }
+
+    pub(crate) fn view_source(&mut self, tab: TabId) {
+        let Some(address) = self
+            .model()
             .tab(tab)
-            .and_then(|tab_entry| tab_entry.page().view().cloned())
+            .filter(|tab_entry| tab_entry.internal.is_none())
+            .map(|tab_entry| (*tab_entry.meta.url).clone())
+            .filter(|address| !address.is_empty() && !address.starts_with(VIEW_SOURCE))
         else {
             return;
         };
-        let default = self.browser.preferences().default_zoom();
-        let zoom = model.zoom_for(tab, default);
-        drop(model);
-        if !same_zoom(view.page().zoom, zoom) {
-            view.set_zoom(zoom);
+        let source = format!("{VIEW_SOURCE}{address}");
+        match self.little() {
+            true => self.open_in_browser_window(source),
+            false => self.open_page(source),
         }
     }
 
-    pub(crate) fn save_page(&mut self) {
-        let Some((view, title)) = self.model().active(self.id).and_then(|tab_entry| {
-            Some((
-                tab_entry.page().view()?.clone(),
-                (*tab_entry.meta.title).clone(),
-            ))
-        }) else {
-            return;
-        };
-        let name = rikka_format::safe_file_name(&title.replace('/', "-"))
-            .map_or_else(|| "page.pdf".to_owned(), |title| format!("{title}.pdf"));
-        let dialog_title = tr!("browser.save.title").to_string();
-        let parent = window_identifier();
-        spawn_blocking(
-            move || {
-                Chooser::save(dialog_title)
-                    .parent(parent)
-                    .current_name(name)
-                    .filter(Filter::named("PDF").pattern("*.pdf"))
-                    .run()
-            },
-            move |_: &mut Shell, chosen: rikka_dialog::Result<ChooserResponse>| {
-                let Ok(ChooserResponse::Files(files)) = chosen else {
-                    return;
-                };
-                let Some(path) = files.into_iter().next() else {
-                    return;
-                };
-                let view = view.clone();
-                spawn(
-                    async move { view.print_to_pdf(path).await },
-                    |_: &mut Shell, saved: rikka_web::Result<()>| {
-                        if let Err(error) = saved {
-                            tracing::warn!(%error, "failed to save page");
-                        }
-                    },
-                );
-            },
-        );
+    pub(crate) fn print_page(&mut self) {
+        if let Some(view) = self.active_view() {
+            view.print();
+        }
     }
 
     pub(crate) fn active_view(&self) -> Option<Session> {
         self.model()
             .active(self.id)
             .and_then(|tab_entry| tab_entry.page().view().cloned())
-    }
-
-    fn active_session_with_cause(&mut self, cause: Cause) -> Option<Session> {
-        let mut model = self.browser.edit();
-        let tab_entry = model.active_mut(self.id)?;
-        let view = tab_entry.page().view()?.clone();
-        tab_entry.visit_tracker.set_cause(cause);
-        Some(view)
     }
 }

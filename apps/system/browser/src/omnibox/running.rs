@@ -1,4 +1,3 @@
-use browser_pages::Cause;
 use rikka_app::prelude::*;
 use rikka_omnibox::{Action, Match};
 
@@ -36,15 +35,11 @@ impl Shell {
 
     pub(crate) fn open_address(&mut self, address: String, opening: Opening) {
         match opening {
-            Opening::Here => self.go(address, Cause::Typed),
+            Opening::Here => self.go(address),
             Opening::NewTab => {
-                {
-                    let mut model = self.browser().edit();
-                    let opened = model.open_tab(self.id(), Some(address), Placement::Top, true);
-                    if let Some(tab_entry) = opened.and_then(|tab| model.tab_mut(tab)) {
-                        tab_entry.visit_tracker.set_cause(Cause::Typed);
-                    }
-                }
+                self.browser()
+                    .edit()
+                    .open_tab(self.id(), Some(address), Placement::Top, true);
                 self.changed();
             }
             Opening::NewWindow => {
@@ -79,7 +74,7 @@ impl Shell {
             Act::NewSpace => self.new_space(),
             Act::Space(space) => self.switch_space(space),
             Act::Archive => match opening {
-                Opening::Here => self.go(browser_pages::Internal::Archive.address(), Cause::Typed),
+                Opening::Here => self.go(browser_pages::Internal::Archive.address()),
                 _ => self.open_internal(browser_pages::Internal::Archive),
             },
             Act::CopyAddress => {

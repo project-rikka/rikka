@@ -3,7 +3,6 @@ use std::time::Duration;
 use rikka_app::WindowShape;
 use rikka_app::prelude::*;
 
-use crate::requests;
 use crate::shell::Shell;
 use crate::site_info::{self, SiteInfo};
 use crate::widgets::presence;
@@ -98,7 +97,6 @@ impl std::fmt::Debug for Overlays {
 impl Shell {
     pub(crate) fn show_downloads(&mut self) {
         self.overlays.popup.set(Some(Popup::Downloads));
-        self.load_downloads();
     }
 
     pub(crate) fn toggle_downloads(&mut self) {
@@ -250,18 +248,7 @@ pub(crate) fn view(shell: &Shell) -> Element {
                 .anchored(anchor),
         )
     });
-    let prompt = match popup.is_some() {
-        true => None,
-        false => {
-            let page_services = shell.browser().page_services();
-            let requests = page_services.requests();
-            [peeking, active].into_iter().flatten().find_map(|tab| {
-                let prompt = requests::prompt(requests.get(tab)?, tab)?;
-                Some(prompt.anchored(Anchor::below(badge_of(tab)?).offset(-4.0, 8.0)))
-            })
-        }
-    };
-    presence([popup, prompt].into_iter().flatten())
+    presence(popup)
 }
 
 pub(crate) fn hint(shell: &Shell) -> Option<Element> {

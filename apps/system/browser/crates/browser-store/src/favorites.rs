@@ -59,6 +59,21 @@ impl Store {
         id
     }
 
+    pub fn update_favorite(
+        &self,
+        id: FavoriteId,
+        url: impl Into<String>,
+        title: impl Into<String>,
+    ) {
+        let (url, title) = (url.into(), title.into());
+        self.write(move |connection, _| {
+            connection
+                .prepare_cached("UPDATE favorites SET url = ?2, title = ?3 WHERE id = ?1")?
+                .execute(params![id, url, title])?;
+            Ok(())
+        });
+    }
+
     pub fn remove_favorite(&self, id: FavoriteId) {
         self.write(move |connection, state| {
             connection.execute("DELETE FROM favorites WHERE id = ?1", [id])?;

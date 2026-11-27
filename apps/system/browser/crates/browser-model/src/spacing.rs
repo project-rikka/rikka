@@ -4,8 +4,8 @@ use rikka_types::Choice;
 use crate::model::kept_place;
 use crate::page::LivePage;
 use crate::{
-    Closing, Folder, FolderId, Model, Node, PinPlace, PinnedItem, Profile, ProfileId, ProfileKey,
-    Slot, Space, SpaceIcon, SpaceId, Symbol, WindowId,
+    Folder, FolderId, Model, Node, PinPlace, PinnedItem, Profile, ProfileId, ProfileKey, Slot,
+    Space, SpaceIcon, SpaceId, Symbol, WindowId,
 };
 
 impl<L: LivePage> Model<L> {
@@ -39,18 +39,23 @@ impl<L: LivePage> Model<L> {
     }
 
     pub fn add_space(&mut self, window: WindowId) -> Option<SpaceId> {
-        let current = self.space_of(window)?;
-        let profile = current.profile;
+        let profile = self.space_of(window)?.profile;
+        let name = (self.names.numbered_space)(self.spaces.list().len() + 1);
+        let id = self.create_space(profile, name);
+        self.switch_space(window, id);
+        Some(id)
+    }
+
+    pub(crate) fn create_space(&mut self, profile: ProfileId, name: String) -> SpaceId {
         let number = self.spaces.list().len() + 1;
         let fields = SpaceFields {
-            name: (self.names.numbered_space)(number),
+            name,
             icon: SpaceIcon::Symbol(Symbol::ALL[number % Symbol::ALL.len()]).to_store(),
             profile,
         };
         let id = self.store.create_space(fields.clone());
         self.spaces.add(Space::from_store(id, &fields));
-        self.switch_space(window, id);
-        Some(id)
+        id
     }
 
     pub fn rename_space(&mut self, space: SpaceId, name: &str) {
@@ -95,7 +100,7 @@ impl<L: LivePage> Model<L> {
         }
     }
 
-    pub fn delete_space(&mut self, space: SpaceId) -> Vec<Closing<L::View>> {
+    pub fn delete_space(&mut self, space: SpaceId) -> Vec<L::View> {
         let Some(at) = self.spaces.position(space) else {
             return Vec::new();
         };
@@ -137,6 +142,19 @@ impl<L: LivePage> Model<L> {
     pub fn add_folder(&mut self, window: WindowId, place: PinPlace) -> Option<FolderId> {
         let space = self.windows.get(window)?.space()?;
         let name = (self.names.folder)();
+        let id = self.insert_folder(space, place, name)?;
+        if let Some(parent) = place.parent {
+            self.open_folder(parent);
+        }
+        Some(id)
+    }
+
+    pub(crate) fn insert_folder(
+        &mut self,
+        space: SpaceId,
+        place: PinPlace,
+        name: String,
+    ) -> Option<FolderId> {
         let id = self
             .store
             .create_pinned_folder(kept_place(space, place), name.clone());
@@ -150,9 +168,6 @@ impl<L: LivePage> Model<L> {
             self.store
                 .remove_pinned_folder(id, FolderRemoval::WithContents);
             return None;
-        }
-        if let Some(parent) = place.parent {
-            self.open_folder(parent);
         }
         Some(id)
     }
@@ -228,7 +243,6 @@ impl<L: LivePage> Model<L> {
 
     pub fn forget_profile(&mut self, profile: ProfileId) {
         self.profiles.remove(profile);
-        self.zooms.forget(profile);
         while let Some(favorite) = self
             .favorites
             .for_profile(profile)

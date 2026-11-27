@@ -99,7 +99,7 @@ pub(crate) fn view(shell: &Shell) -> Element {
     let internal = tab_entry.and_then(|tab_entry| (*tab_entry.internal).clone());
     let (symbol, tint) = match (
         &internal,
-        tab_entry.map(|tab_entry| &*tab_entry.meta.security),
+        tab_entry.map(|tab_entry| *tab_entry.meta.security),
     ) {
         (Some(internal), _) => (internal.symbol(), palette().text_muted),
         (None, Some(browser_model::Security::Unknown) | None) => {
@@ -108,9 +108,6 @@ pub(crate) fn view(shell: &Shell) -> Element {
         (None, Some(security)) => crate::site_info::security_glyph(security),
     };
     let zoom = tab_entry.map_or(1.0, |tab_entry| *tab_entry.meta.zoom);
-    let capture = tab_entry
-        .map(|tab_entry| *tab_entry.meta.capture)
-        .unwrap_or_default();
     let address = tab_entry
         .map(|tab_entry| tab_entry.address())
         .unwrap_or_default();
@@ -185,7 +182,6 @@ pub(crate) fn view(shell: &Shell) -> Element {
             crate::site_info::badge(symbol, tint, web);
             chip_view;
             body;
-            crate::site_info::capturing(capture);
             reader;
             translate;
             badge;
@@ -209,16 +205,12 @@ pub(crate) fn view(shell: &Shell) -> Element {
     .keyed(FIELD);
     let open = Handler::new(|shell: &mut Shell, _: Point| shell.summon_address_menu());
     let translation = crate::translate::popover(shell, TRANSLATE);
-    let actions = tab
-        .filter(|_| !editing)
-        .and_then(|tab| crate::extensions::actions(shell, tab));
     row_of([
         context_area(bar, open)
             .height(HEIGHT)
             .grow(1.0)
             .min_width(0.0)
             .any(),
-        actions.unwrap_or_else(Element::empty),
         component(|omnibox: &Omnibox| omnibox, omnibox::dropdown).any(),
         translation.unwrap_or_else(Element::empty),
     ])

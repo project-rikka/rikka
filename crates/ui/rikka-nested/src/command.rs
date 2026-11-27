@@ -8,6 +8,7 @@ use rikka_compositor_selection::SelectionKind;
 use rikka_picture::{SharedGpu, Tick};
 use rikka_types::Size;
 
+use crate::claim::Claim;
 use crate::input::Input;
 use crate::server::HoldId;
 use crate::shared::Shared;
@@ -16,10 +17,14 @@ use crate::view::ViewId;
 pub(crate) enum Command {
     Adopt {
         view: ViewId,
-        app_id: String,
+        claim: Claim,
         shared: Arc<Shared>,
     },
     Forget(ViewId),
+    Reclaim {
+        view: ViewId,
+        claim: Claim,
+    },
     Resize {
         view: ViewId,
         size: Size,

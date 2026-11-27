@@ -1,12 +1,10 @@
 use browser_model::Names;
 use rikka_app::prelude::*;
-use rikka_web::Session;
 
 use crate::page::Live;
 
 pub(crate) type Model = browser_model::Model<Live>;
 pub(crate) type Tab = browser_model::Tab<Live>;
-pub(crate) type Closing = browser_model::Closing<Session>;
 
 pub(crate) const NAMES: Names = Names {
     profile: default_profile,

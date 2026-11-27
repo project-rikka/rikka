@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 pub trait LivePage {
     type View: Clone;
 
@@ -10,7 +8,6 @@ pub trait LivePage {
 pub enum Page<L> {
     #[default]
     Unloaded,
-    Discarded(Arc<[u8]>),
     Live(L),
 }
 
@@ -18,14 +15,14 @@ impl<L> Page<L> {
     pub fn live(&self) -> Option<&L> {
         match self {
             Page::Live(live) => Some(live),
-            Page::Unloaded | Page::Discarded(_) => None,
+            Page::Unloaded => None,
         }
     }
 
     pub fn live_mut(&mut self) -> Option<&mut L> {
         match self {
             Page::Live(live) => Some(live),
-            Page::Unloaded | Page::Discarded(_) => None,
+            Page::Unloaded => None,
         }
     }
 }

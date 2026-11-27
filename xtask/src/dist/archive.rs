@@ -84,7 +84,7 @@ fn pack(tree: &Path, top: &str, file: &Path) -> Result<Archived> {
     })
 }
 
-pub(crate) fn sri(file: &Path) -> Result<String> {
+fn sri(file: &Path) -> Result<String> {
     Ok(format!("sha256-{}", STANDARD.encode(sha256(file)?)))
 }
 

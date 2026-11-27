@@ -1,5 +1,4 @@
-use browser_pages::Cause;
-use browser_preferences::{ArchiveAfter, HistoryKept, ZOOMS};
+use browser_preferences::ArchiveAfter;
 use rikka_app::prelude::*;
 use rikka_types::Choice;
 use rikka_widgets::{column, row};
@@ -8,8 +7,7 @@ use crate::menus::profile_name;
 use crate::shell::Shell;
 use crate::sidebar::Renaming;
 use browser_model::ProfileId;
-use browser_pages::Internal;
-use browser_pages::Section;
+use browser_pages::{ChromePage, Internal, Section};
 
 const NAV: f32 = 220.0;
 const WIDEST: f32 = 720.0;
@@ -23,10 +21,6 @@ pub(crate) fn view(section: Option<Section>) -> Element {
         Section::Home => component(|shell: &Shell| shell, crate::home::settings_view),
         Section::Profiles => component(|shell: &Shell| shell, profiles),
         Section::Privacy => component(|shell: &Shell| shell, privacy),
-        Section::Permissions => component(|shell: &Shell| shell, crate::sections::permissions_view),
-        Section::Content => component(|shell: &Shell| shell, crate::sections::content_view),
-        Section::Network => component(|shell: &Shell| shell, crate::sections::network_view),
-        Section::Zoom => component(|shell: &Shell| shell, zoom),
         Section::Performance => {
             component(|shell: &Shell| shell, crate::memory_saver::settings_view)
         }
@@ -36,11 +30,7 @@ pub(crate) fn view(section: Option<Section>) -> Element {
         }
         Section::Translation => component(|shell: &Shell| shell, crate::sections::translation_view),
         Section::Extensions => component(|shell: &Shell| shell, crate::extensions::section),
-        Section::HttpsOnly => component(|shell: &Shell| shell, crate::sections::https_view),
-        Section::Sites => component(|shell: &Shell| shell, crate::internal::sites::view),
-        Section::Downloads => {
-            component(|shell: &Shell| shell, crate::internal::downloads::settings)
-        }
+        Section::Chrome => component(|shell: &Shell| shell, crate::sections::chrome_view),
         Section::ClearData => Element::empty(),
     };
     framed(shown, content)
@@ -71,13 +61,6 @@ fn destination(section: Section, chosen: bool) -> Element {
         Section::Home => (MaterialSymbol::HOME, tr!("browser.home.title")),
         Section::Profiles => (MaterialSymbol::PERSON, tr!("browser.settings.profiles")),
         Section::Privacy => (MaterialSymbol::PRIVACY_TIP, tr!("browser.settings.privacy")),
-        Section::Permissions => (
-            MaterialSymbol::PERSON_SHIELD,
-            tr!("browser.protection.permissions"),
-        ),
-        Section::Content => (MaterialSymbol::TEXT_FORMAT, tr!("browser.content.title")),
-        Section::Network => (MaterialSymbol::LAN, tr!("browser.network.title")),
-        Section::Zoom => (MaterialSymbol::ZOOM_IN, tr!("browser.settings.zoom")),
         Section::Performance => (MaterialSymbol::SPEED, tr!("browser.memory.section")),
         Section::Search => (MaterialSymbol::SEARCH, tr!("browser.search.title")),
         Section::DefaultBrowser => (
@@ -86,9 +69,7 @@ fn destination(section: Section, chosen: bool) -> Element {
         ),
         Section::Translation => (MaterialSymbol::TRANSLATE, tr!("browser.translate.title")),
         Section::Extensions => (MaterialSymbol::EXTENSION, tr!("browser.extensions.title")),
-        Section::HttpsOnly => (MaterialSymbol::LOCK, tr!("browser.https.title")),
-        Section::Sites => (MaterialSymbol::TUNE, tr!("browser.sites.title")),
-        Section::Downloads => (MaterialSymbol::DOWNLOAD, tr!("browser.downloads.settings")),
+        Section::Chrome => (MaterialSymbol::PUBLIC, tr!("browser.chrome.title")),
         Section::ClearData => (MaterialSymbol::DELETE_SWEEP, tr!("browser.clear.title")),
     };
     let tint = match chosen {
@@ -109,9 +90,7 @@ fn destination(section: Section, chosen: bool) -> Element {
         true => palette().accent.with_alpha(0.14),
         false => Color::TRANSPARENT,
     })
-    .on_press(move |shell: &mut Shell| {
-        shell.go(Internal::Settings(Some(section)).address(), Cause::Typed)
-    })
+    .on_press(move |shell: &mut Shell| shell.go(Internal::Settings(Some(section)).address()))
     .fill_width()
     .any()
 }
@@ -170,64 +149,29 @@ fn archive_after_name(after: ArchiveAfter) -> Label {
     }
 }
 
-fn privacy(shell: &Shell) -> Element {
-    let retention = shell.browser().preferences().history_kept();
-    page([crate::sections::protection_view(shell), section(
+fn privacy(_: &Shell) -> Element {
+    page([section(
         tr!("browser.settings.privacy"),
         column! {
-            field(
-                tr!("browser.settings.history-kept"),
-                combo(HistoryKept::ALL.iter().position(|candidate| *candidate == retention))
-                    .options(HistoryKept::ALL.iter().copied().map(history_kept_name))
-                    .on_select(|shell: &mut Shell, at: usize| {
-                        if let Some(retention) = HistoryKept::ALL.get(at) {
-                            shell.browser().preferences().set_history_kept(*retention);
-                            shell.prune_history();
-                        }
-                    })
-                    .width(CHOICE),
-            );
+            text(tr!("browser.settings.privacy-chrome")).caption().muted().fill_width();
             row! {
                 button(text(tr!("browser.clear.title")))
                     .secondary()
                     .small()
                     .on_press(|shell: &mut Shell| {
-                        shell.go(Internal::Settings(Some(Section::ClearData)).address(), Cause::Typed)
+                        shell.go(Internal::Settings(Some(Section::ClearData)).address())
                     });
-            };
+                button(text(tr!("browser.settings.chrome-privacy")))
+                    .ghost()
+                    .small()
+                    .on_press(|shell: &mut Shell| {
+                        shell.open_page(ChromePage::Privacy.address().to_owned())
+                    });
+            }
+            .gap(Space::SNUG);
         }
         .gap(Space::NORMAL)
         .fill_width(),
-    )
-    .any()])
-    .any()
-}
-
-fn history_kept_name(retention: HistoryKept) -> Label {
-    match retention {
-        HistoryKept::Forever => tr!("browser.settings.history-forever"),
-        HistoryKept::Year => tr!("browser.settings.history-year"),
-        HistoryKept::Quarter => tr!("browser.settings.history-90d"),
-        HistoryKept::Month => tr!("browser.settings.history-30d"),
-    }
-}
-
-fn zoom(shell: &Shell) -> Element {
-    let chosen = (shell.browser().preferences().default_zoom() * 100.0).round() as i64;
-    page([section(
-        tr!("browser.settings.zoom"),
-        field(
-            tr!("browser.settings.default-zoom"),
-            combo(ZOOMS.iter().position(|percent| *percent == chosen))
-                .options(ZOOMS.map(|percent| format!("{percent}%")))
-                .on_select(|shell: &mut Shell, at: usize| {
-                    if let Some(percent) = ZOOMS.get(at) {
-                        shell.browser().preferences().set_default_zoom(*percent);
-                        shell.refit_zoom();
-                    }
-                })
-                .width(CHOICE),
-        ),
     )])
     .any()
 }
@@ -253,20 +197,26 @@ fn profiles(shell: &Shell) -> Element {
         };
         field(name, control).build().keyed(id)
     });
-    page([section(
-        tr!("browser.settings.profiles"),
-        column! {
-            column_of(rows).gap(Space::TIGHT).fill_width();
-            row! {
-                button(text(tr!("browser.settings.add-profile")))
-                    .secondary()
-                    .small()
-                    .on_press(|shell: &mut Shell| shell.new_profile());
-            };
-        }
-        .gap(Space::NORMAL)
-        .fill_width(),
-    )])
+    page([
+        section(
+            tr!("browser.settings.profiles"),
+            column! {
+                column_of(rows).gap(Space::TIGHT).fill_width();
+                row! {
+                    button(text(tr!("browser.settings.add-profile")))
+                        .secondary()
+                        .small()
+                        .on_press(|shell: &mut Shell| shell.new_profile());
+                };
+            }
+            .gap(Space::NORMAL)
+            .fill_width(),
+        ),
+        section(
+            tr!("browser.chrome.account"),
+            crate::sections::account_row(shell),
+        ),
+    ])
     .any()
 }
 

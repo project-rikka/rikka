@@ -8,7 +8,7 @@ use crate::host;
 use crate::mirror::mirror;
 use crate::tree;
 
-pub(crate) const FLAKE_SOURCES: &str = "nix/dist";
+const FLAKE_SOURCES: &str = "nix/dist";
 
 const TEMPLATES: &str = "templates";
 

@@ -1,5 +1,4 @@
 mod checkout;
-mod gecko;
 mod github;
 mod source;
 mod store;
@@ -9,7 +8,7 @@ mod version;
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
 
 pub(crate) use self::version::{Bump, Version};
 
@@ -17,9 +16,7 @@ use self::checkout::Checkout;
 use self::store::{State, Tagged};
 use crate::bazel::{self, Profile};
 use crate::components::COMPONENTS;
-use crate::dist::{
-    self, FLAKE_SOURCES, Fragment, GECKO_PACKAGE, GeckoPin, Order, Placement, Release, SYSTEM,
-};
+use crate::dist::{self, Fragment, Order, Placement, Release, SYSTEM};
 use crate::host;
 use crate::shipped::{Program, named};
 
@@ -33,15 +30,10 @@ const KEPT_GENERATIONS: usize = 10;
 
 const INSTALLER: Program = named("//installer:rikka-installer", "rikka-installer");
 
-const GECKO_TAG_PREFIX: &str = "gecko-";
-
-const GECKO_NOTES: &str = "The Gecko web engine that the Rikka distribution links.";
-
 struct Work {
     checkout: PathBuf,
     archives: PathBuf,
     verify: PathBuf,
-    gecko: PathBuf,
 }
 
 impl Work {
@@ -51,7 +43,6 @@ impl Work {
             checkout: root.join("packages"),
             archives: root.join("archives"),
             verify: root.join("verify"),
-            gecko: root.join("gecko"),
         }
     }
 }
@@ -109,68 +100,7 @@ pub(crate) fn release(workspace: &Path, bump: &Bump) -> Result<()> {
     if checkout.publish(&message)? {
         println!("published {PRODUCT} {version} as {tagged}");
     }
-    prune(workspace, &checkout)
-}
-
-pub(crate) fn gecko(workspace: &Path) -> Result<()> {
-    source::require_published(workspace)?;
-    let work = Work::new(workspace);
-    host::reset_dir(&work.gecko)?;
-    let archive = gecko::download(workspace, &work.gecko)?;
-    let file = archive
-        .file_name()
-        .and_then(|name| name.to_str())
-        .context("the downloaded engine has a UTF-8 name")?
-        .to_owned();
-    let version = gecko::version_of(&file)?.to_owned();
-
-    let checkout = Checkout::fresh(&work.checkout)?;
-    let published = checkout.release()?;
-    checkout.ensure_started()?;
-    let tagged = Tagged::new(SOURCE, format!("{GECKO_TAG_PREFIX}{version}"));
-    match tagged.state()? {
-        State::Absent => tagged.create_not_latest(
-            &dist::revision(workspace)?,
-            &format!("Gecko {version}"),
-            GECKO_NOTES,
-        )?,
-        State::Draft => bail!("{tagged} is a draft; publish or delete it first"),
-        State::Published => {}
-    }
-    if !tagged.assets()?.contains(&file) {
-        tagged.upload(std::slice::from_ref(&archive))?;
-    }
-    let pin = GeckoPin {
-        version: version.clone(),
-        url: tagged.download(&file),
-        hash: dist::sri(&archive)?,
-    };
-    let flake_sources = workspace.join(FLAKE_SOURCES);
-    pin.write(&flake_sources)?;
-    println!("pinned Gecko {version} in {FLAKE_SOURCES}; commit it");
-
-    let stale = gecko::stale_components(workspace, &published)?;
-    if !stale.is_empty() {
-        println!(
-            "the Gecko protocol changed since {} were published; once the pin is committed and \
-             pushed, ship the engine with the next release: bazel run //xtask -- release --patch",
-            stale.join(", ")
-        );
-        return Ok(());
-    }
-    host::copy(
-        &flake_sources.join(GECKO_PACKAGE),
-        &checkout.root().join(GECKO_PACKAGE),
-    )?;
-    pin.write(checkout.root())?;
-    let message = format!(
-        "gecko {version}\n\nFrom {SOURCE}@{}",
-        dist::revision(workspace)?
-    );
-    if checkout.publish(&message)? {
-        println!("published Gecko {version}");
-    }
-    Ok(())
+    prune(&checkout)
 }
 
 fn installer(workspace: &Path, out: &Path) -> Result<[PathBuf; 2]> {
@@ -198,18 +128,10 @@ fn archives_of(fragments: &[Fragment], archives: &Path) -> Vec<PathBuf> {
     files.into_iter().map(|file| archives.join(file)).collect()
 }
 
-fn prune(workspace: &Path, checkout: &Checkout) -> Result<()> {
+fn prune(checkout: &Checkout) -> Result<()> {
     let mut downloads: Vec<String> = Vec::new();
     for release in checkout.history(KEPT_GENERATIONS)? {
         downloads.extend(release.downloads().map(str::to_owned));
-    }
-    let pinned = GeckoPin::read(&workspace.join(FLAKE_SOURCES))?;
-    for pin in checkout
-        .gecko_history(KEPT_GENERATIONS)?
-        .into_iter()
-        .chain([pinned])
-    {
-        downloads.push(pin.url);
     }
     let kept: BTreeSet<Tagged> = downloads
         .iter()

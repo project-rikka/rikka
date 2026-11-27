@@ -95,37 +95,36 @@ impl State {
     }
 
     pub(crate) fn toplevel_initial_commit(&mut self, toplevel: ToplevelId) {
-        let view = self
-            .views
-            .toplevels
-            .get(toplevel)
-            .and_then(|tracked| tracked.view);
-        match view {
+        match self.attached_view(toplevel) {
             Some(view) => self.configure(view, true),
-            None => {
-                self.shell
-                    .configure_toplevel(toplevel, configure_of(&DesiredState::default()));
-            }
+            None if self.is_dependent(toplevel) => self.configure_dependent(toplevel),
+            None => self.configure_unclaimed(toplevel),
         }
     }
 
+    fn configure_unclaimed(&mut self, toplevel: ToplevelId) {
+        self.shell.configure_toplevel(
+            toplevel,
+            ToplevelConfigure {
+                size: None,
+                states: ToplevelStates::empty(),
+                bounds: None,
+                capabilities: Some(WmCapabilities::FULLSCREEN),
+                decoration: Some(DecorationMode::ServerSide),
+            },
+        );
+    }
+
     pub(crate) fn toplevel_requested(&mut self, toplevel: ToplevelId) {
-        let view = self
-            .views
-            .toplevels
-            .get(toplevel)
-            .and_then(|tracked| tracked.view);
         let initialized = self
             .shell
             .toplevel(toplevel)
             .is_some_and(|record| record.initial_configure_sent());
-        match view {
+        match self.attached_view(toplevel) {
             Some(view) => self.configure(view, true),
-            None if initialized => {
-                self.shell
-                    .configure_toplevel(toplevel, configure_of(&DesiredState::default()));
-            }
-            None => {}
+            None if !initialized => {}
+            None if self.is_dependent(toplevel) => self.configure_dependent(toplevel),
+            None => self.configure_unclaimed(toplevel),
         }
     }
 

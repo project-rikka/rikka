@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use browser_store::{DataKinds, TimeRange, Timestamp};
 use rikka_app::prelude::*;
@@ -26,7 +26,8 @@ pub(crate) struct Kinds {
     pub(crate) downloads: bool,
     pub(crate) site_data: bool,
     pub(crate) cache: bool,
-    pub(crate) site_settings: bool,
+    pub(crate) form_data: bool,
+    pub(crate) passwords: bool,
     pub(crate) tabs: bool,
 }
 
@@ -44,7 +45,8 @@ enum Kind {
     Downloads,
     SiteData,
     Cache,
-    SiteSettings,
+    FormData,
+    Passwords,
     Tabs,
 }
 
@@ -82,6 +84,12 @@ impl Span {
         }
     }
 
+    pub(crate) fn since(self) -> SystemTime {
+        self.length()
+            .and_then(|length| SystemTime::now().checked_sub(length))
+            .unwrap_or(UNIX_EPOCH)
+    }
+
     pub(crate) fn name(self) -> Label {
         match self {
             Span::Hour => tr!("browser.clear.hour"),
@@ -100,46 +108,35 @@ impl Default for Kinds {
             downloads: false,
             site_data: true,
             cache: true,
-            site_settings: false,
+            form_data: false,
+            passwords: false,
             tabs: false,
         }
     }
 }
 
 impl Kinds {
-    pub(crate) fn to_data_kinds(self) -> DataKinds {
+    pub(crate) fn store(self) -> DataKinds {
         DataKinds {
-            history: self.history,
-            downloads: self.downloads,
             closed_tabs: self.tabs,
             archive: self.tabs,
-            site_settings: self.site_settings,
         }
     }
 
-    pub(crate) fn web(self) -> rikka_web::ClearFlags {
-        let mut kinds = rikka_web::ClearFlags::NONE;
-        if self.site_data {
-            kinds |= rikka_web::ClearFlags::COOKIES
-                | rikka_web::ClearFlags::DOM_STORAGES
-                | rikka_web::ClearFlags::AUTH_SESSIONS;
+    pub(crate) fn web(self) -> rikka_web::DataKinds {
+        rikka_web::DataKinds {
+            history: self.history,
+            cookies: self.site_data,
+            cache: self.cache,
+            downloads: self.downloads,
+            form_data: self.form_data,
+            passwords: self.passwords,
+            site_storage: self.site_data,
         }
-        if self.cache {
-            kinds |= rikka_web::ClearFlags::ALL_CACHES;
-        }
-        if self.site_settings {
-            kinds |= rikka_web::ClearFlags::PERMISSIONS;
-        }
-        kinds
     }
 
     fn any(self) -> bool {
-        self.history
-            || self.downloads
-            || self.site_data
-            || self.cache
-            || self.site_settings
-            || self.tabs
+        Kind::ALL.into_iter().any(|kind| self.get(kind))
     }
 
     fn get(self, kind: Kind) -> bool {
@@ -148,7 +145,8 @@ impl Kinds {
             Kind::Downloads => self.downloads,
             Kind::SiteData => self.site_data,
             Kind::Cache => self.cache,
-            Kind::SiteSettings => self.site_settings,
+            Kind::FormData => self.form_data,
+            Kind::Passwords => self.passwords,
             Kind::Tabs => self.tabs,
         }
     }
@@ -159,7 +157,8 @@ impl Kinds {
             Kind::Downloads => self.downloads = on,
             Kind::SiteData => self.site_data = on,
             Kind::Cache => self.cache = on,
-            Kind::SiteSettings => self.site_settings = on,
+            Kind::FormData => self.form_data = on,
+            Kind::Passwords => self.passwords = on,
             Kind::Tabs => self.tabs = on,
         }
         self
@@ -167,12 +166,13 @@ impl Kinds {
 }
 
 impl Kind {
-    const ALL: [Kind; 6] = [
+    const ALL: [Kind; 7] = [
         Kind::History,
         Kind::Downloads,
         Kind::SiteData,
         Kind::Cache,
-        Kind::SiteSettings,
+        Kind::FormData,
+        Kind::Passwords,
         Kind::Tabs,
     ];
 
@@ -182,7 +182,8 @@ impl Kind {
             Kind::Downloads => tr!("browser.clear.downloads"),
             Kind::SiteData => tr!("browser.clear.site-data"),
             Kind::Cache => tr!("browser.clear.cache"),
-            Kind::SiteSettings => tr!("browser.clear.site-settings"),
+            Kind::FormData => tr!("browser.clear.form-data"),
+            Kind::Passwords => tr!("browser.clear.passwords"),
             Kind::Tabs => tr!("browser.clear.tabs"),
         }
     }

@@ -1,9 +1,12 @@
+use std::time::{Duration, SystemTime};
+
 use browser_store::{ArchiveScope, Store};
 use rikka_app::prelude::*;
 use rikka_omnibox::{
     Action, Candidates, Classified, MatchKind, SUGGEST_DEBOUNCE, SearchEngine, SearchEngines,
     SearchSuggestion, Surface, classify,
 };
+use rikka_web::{History, HistoryQuery};
 
 use crate::omnibox::gather;
 use crate::omnibox::listing::Listing;
@@ -12,13 +15,15 @@ use crate::omnibox::picker::Picker;
 use crate::omnibox::running::Opening;
 use crate::omnibox::target::Target;
 use crate::shell::Shell;
-use browser_model::ProfileId;
+use browser_model::{ProfileId, ProfileKey};
 
 const HISTORY: &str = "rikka-browser-omnibox-history";
 const SUGGEST: &str = "rikka-browser-omnibox-suggest";
-const HISTORY_LIMIT: usize = 12;
+const HISTORY_LIMIT: u32 = 24;
 const ARCHIVE_LIMIT: usize = 3;
 const TOP_SITES: usize = 8;
+const TOP_SITES_READ: u32 = 500;
+const TOP_SITES_SPAN: Duration = Duration::from_secs(90 * 24 * 60 * 60);
 
 type Suggested = rikka_omnibox::Result<(String, Vec<SearchSuggestion>)>;
 
@@ -68,7 +73,6 @@ impl Shell {
             Listing::new(surface, lookup.ranked(), &model, &engines)
         };
         self.picker_mut(surface).show(Some(listing));
-        self.anticipate(surface, 0);
         self.fetch_remote_suggestions(surface, &classified, &engines);
         inline
     }
@@ -119,9 +123,6 @@ impl Shell {
                 listing.hovered = hovered;
             }
         }
-        if inside {
-            self.anticipate(surface, index);
-        }
         skip_view();
     }
 
@@ -139,7 +140,19 @@ impl Shell {
         let Some(url) = url else {
             return;
         };
-        self.browser().store().delete_url(profile, url.clone());
+        if let Some(runtime) = self
+            .browser()
+            .running_engine(ProfileKey::Persistent(profile))
+        {
+            spawn(
+                runtime.history().delete_url(&url),
+                |_: &mut Shell, deleted: rikka_web::Result<()>| {
+                    if let Err(error) = deleted {
+                        tracing::warn!(%error, "failed to remove a history entry");
+                    }
+                },
+            );
+        }
         if let Some(lookup) = self.picker_mut(surface).lookup.as_mut() {
             lookup.forget_url(&url);
         }
@@ -183,10 +196,13 @@ impl Shell {
             && !known
         {
             let store = self.browser().store();
-            let query = text.clone();
-            spawn_blocking_keyed(
+            let history = self
+                .browser()
+                .running_engine(ProfileKey::Persistent(profile))
+                .map(|runtime| runtime.history());
+            spawn_keyed(
                 (HISTORY, tag(surface)),
-                move || find(&store, profile, &query),
+                find(history, store, profile, text.clone()),
                 move |shell: &mut Shell, matches: HistoryMatches| {
                     shell.show_history(surface, &text, matches)
                 },
@@ -285,29 +301,41 @@ fn plan(
     Some((engine.clone(), terms.to_owned()))
 }
 
-fn find(store: &Store, profile: ProfileId, typed: &str) -> HistoryMatches {
-    let places = match typed.is_empty() {
-        true => store.top_sites(profile, TOP_SITES),
+async fn find(
+    history: Option<History>,
+    store: Store,
+    profile: ProfileId,
+    typed: String,
+) -> HistoryMatches {
+    let query = match typed.is_empty() {
+        true => HistoryQuery::new("")
+            .since(
+                SystemTime::now()
+                    .checked_sub(TOP_SITES_SPAN)
+                    .unwrap_or(SystemTime::UNIX_EPOCH),
+            )
+            .limit(TOP_SITES_READ),
+        false => HistoryQuery::new(typed.clone()).limit(HISTORY_LIMIT),
+    };
+    let mut places = match history {
+        Some(history) => history.search(&query).await.unwrap_or_else(|error| {
+            tracing::warn!(%error, "failed to read history suggestions");
+            Vec::new()
+        }),
+        None => Vec::new(),
+    };
+    if typed.is_empty() {
+        places.sort_by_key(|place| std::cmp::Reverse(place.visit_count));
+        places.truncate(TOP_SITES);
+    }
+    let archived = match typed.is_empty() {
+        true => Vec::new(),
         false => store
-            .suggest(profile, typed, HISTORY_LIMIT)
-            .map(|suggestions| {
-                suggestions
-                    .into_iter()
-                    .map(|suggestion| suggestion.place)
-                    .collect()
+            .search_archive(ArchiveScope::Profile(profile), &typed, ARCHIVE_LIMIT)
+            .unwrap_or_else(|error| {
+                tracing::warn!(%error, "failed to search archive");
+                Vec::new()
             }),
     };
-    let archived = match typed.is_empty() {
-        true => Ok(Vec::new()),
-        false => store.search_archive(ArchiveScope::Profile(profile), typed, ARCHIVE_LIMIT),
-    };
-    let places = places.unwrap_or_else(|error| {
-        tracing::warn!(%error, "failed to read history suggestions");
-        Vec::new()
-    });
-    let archived = archived.unwrap_or_else(|error| {
-        tracing::warn!(%error, "failed to search archive");
-        Vec::new()
-    });
     HistoryMatches { places, archived }
 }

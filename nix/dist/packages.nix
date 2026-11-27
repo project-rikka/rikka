@@ -21,7 +21,6 @@ let
   ) release.assets;
 
   flake = {
-    gecko = "${pkgs.callPackage ./gecko.nix { }}/lib/rikka-gecko";
     icon-fonts = "${pkgs.callPackage ./icon-fonts.nix { }}/share/rikka/fonts";
     mesa = "${pkgs.mesa}";
     minecraft = "${pkgs.callPackage ./minecraft-runtime.nix { }}/lib/rikka-minecraft";

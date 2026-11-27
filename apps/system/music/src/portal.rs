@@ -1,7 +1,7 @@
 use std::future::Future;
 
 use music_core::{Cookie, WebSignIn};
-use rikka_web::{NewSessionRequest, Session, SignInPortal, UserContent};
+use rikka_web::{NewSessionRequest, Session, SignInPortal};
 
 #[derive(Debug)]
 pub(crate) struct Portal {
@@ -11,8 +11,7 @@ pub(crate) struct Portal {
 
 impl Portal {
     pub(crate) fn open(request: WebSignIn) -> Result<Portal, String> {
-        let portal = SignInPortal::open(request.url(), UserContent::new())
-            .map_err(|error| error.to_string())?;
+        let portal = SignInPortal::open(request.url(), &[]).map_err(|error| error.to_string())?;
         Ok(Portal { request, portal })
     }
 
@@ -25,8 +24,8 @@ impl Portal {
     }
 
     pub(crate) fn is_on_landing_host(&self) -> bool {
-        let uri = self.portal.session().page().uri;
-        self.request.arrived(&uri) && uri.starts_with(self.request.cookies_of())
+        let url = self.portal.session().page().url;
+        self.request.arrived(&url) && url.starts_with(self.request.cookies_of())
     }
 
     pub(crate) fn cookies(&self) -> impl Future<Output = Result<Vec<Cookie>, String>> + use<> {

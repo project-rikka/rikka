@@ -1,34 +1,12 @@
-use std::sync::Arc;
-
 use browser_store::{Restored, TabRecord, Timestamp};
 
 use crate::page::{LivePage, Page};
-use crate::{Closed, Home, Model, ProfileKey, Reopening, Saved, Slot, SpaceId, TabId, WindowId};
+use crate::{Closed, Home, Model, ProfileKey, Reopening, Saved, Slot, TabId, WindowId};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Placement {
     Top,
     After(TabId),
-}
-
-#[derive(Debug)]
-pub struct Closing<V> {
-    pub view: V,
-    pub leaving: Leaving,
-}
-
-#[derive(Debug)]
-pub enum Leaving {
-    Archived {
-        space: SpaceId,
-        record: TabRecord,
-        remembered: bool,
-    },
-    Private {
-        window: WindowId,
-        tab: TabId,
-    },
-    Gone,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -91,16 +69,11 @@ impl<L: LivePage> Model<L> {
         Some(id)
     }
 
-    pub fn close_tab(&mut self, window: WindowId, tab: TabId) -> Option<Closing<L::View>> {
+    pub fn close_tab(&mut self, window: WindowId, tab: TabId) -> Option<L::View> {
         self.close_with(window, tab, Disposal::Archive { remembered: true })
     }
 
-    fn close_with(
-        &mut self,
-        window: WindowId,
-        tab: TabId,
-        disposal: Disposal,
-    ) -> Option<Closing<L::View>> {
+    fn close_with(&mut self, window: WindowId, tab: TabId, disposal: Disposal) -> Option<L::View> {
         let layout = self.windows.get(window)?;
         let was_active = layout.active() == Some(tab);
         let neighbour = self.neighbour(window, tab);
@@ -113,72 +86,33 @@ impl<L: LivePage> Model<L> {
         if was_active {
             self.fall_back(window, neighbour);
         }
-        let state = closed.state();
         let saved = closed.saved();
         let disposal = match closed.is_blank() {
             true => Disposal::Discard,
             false => disposal,
         };
-        let leaving = match (closed.home, disposal, private) {
+        match (closed.home, disposal, private) {
             (Home::Today(space), Disposal::Archive { .. }, true) => {
-                let closed = Closed {
-                    tab,
-                    space,
-                    saved,
-                    session: state,
-                };
-                self.windows.get_mut(window)?.remember_closed(closed);
-                Leaving::Private { window, tab }
+                self.windows
+                    .get_mut(window)?
+                    .remember_closed(Closed { tab, space, saved });
             }
             (Home::Today(Some(space)), Disposal::Archive { remembered }, false) => {
-                Leaving::Archived {
-                    space,
-                    record: TabRecord {
-                        url: saved.url,
-                        title: saved.title,
-                        state,
-                    },
-                    remembered,
-                }
-            }
-            _ => Leaving::Gone,
-        };
-        match (closed.page().view().cloned(), leaving) {
-            (_, Leaving::Gone) => None,
-            (Some(view), leaving) => Some(Closing { view, leaving }),
-            (None, leaving) => {
-                self.complete_leaving(leaving, None);
-                None
-            }
-        }
-    }
-
-    pub fn complete_leaving(&mut self, leaving: Leaving, session: Option<Vec<u8>>) {
-        let session: Option<Arc<[u8]>> = session.filter(|bytes| !bytes.is_empty()).map(Into::into);
-        match leaving {
-            Leaving::Archived {
-                space,
-                mut record,
-                remembered,
-            } => {
-                if session.is_some() {
-                    record.state = session;
-                }
+                let record = TabRecord {
+                    url: saved.url,
+                    title: saved.title,
+                };
                 if remembered {
                     self.store.push_closed_tab(space, record.clone());
                 }
                 self.store.archive_tabs(space, vec![record]);
             }
-            Leaving::Private { window, tab } => {
-                if let (Some(layout), Some(session)) = (self.windows.get_mut(window), session) {
-                    layout.attach_session(tab, session);
-                }
-            }
-            Leaving::Gone => {}
+            _ => {}
         }
+        closed.page().view().cloned()
     }
 
-    pub fn close_below(&mut self, window: WindowId, tab: TabId) -> Vec<Closing<L::View>> {
+    pub fn close_below(&mut self, window: WindowId, tab: TabId) -> Vec<L::View> {
         let below: Vec<TabId> = self
             .windows
             .get(window)
@@ -198,7 +132,7 @@ impl<L: LivePage> Model<L> {
             .collect()
     }
 
-    pub fn clear_today(&mut self, window: WindowId) -> Vec<Closing<L::View>> {
+    pub fn clear_today(&mut self, window: WindowId) -> Vec<L::View> {
         let today = self
             .windows
             .get(window)
@@ -210,7 +144,7 @@ impl<L: LivePage> Model<L> {
             .collect()
     }
 
-    pub fn archive_idle(&mut self, window: WindowId, before: Timestamp) -> Vec<Closing<L::View>> {
+    pub fn archive_idle(&mut self, window: WindowId, before: Timestamp) -> Vec<L::View> {
         let Some(layout) = self.windows.get(window).filter(|layout| !layout.private) else {
             return Vec::new();
         };
@@ -221,9 +155,7 @@ impl<L: LivePage> Model<L> {
             .filter(|tab| Some(*tab) != active)
             .filter(|tab| {
                 self.tabs.get(*tab).is_some_and(|tab_entry| {
-                    tab_entry.last_active < before
-                        && *tab_entry.meta.sound == crate::Sound::Silent
-                        && *tab_entry.meta.capture == crate::Capturing::default()
+                    tab_entry.last_active < before && *tab_entry.meta.sound == crate::Sound::Silent
                 })
             })
             .collect();
@@ -233,11 +165,7 @@ impl<L: LivePage> Model<L> {
             .collect()
     }
 
-    pub fn close_without_archive(
-        &mut self,
-        window: WindowId,
-        tab: TabId,
-    ) -> Option<Closing<L::View>> {
+    pub fn close_without_archive(&mut self, window: WindowId, tab: TabId) -> Option<L::View> {
         self.close_with(window, tab, Disposal::Discard)
     }
 
@@ -248,9 +176,6 @@ impl<L: LivePage> Model<L> {
         }
         let closed = layout.take_closed()?;
         let id = self.insert_tab(ProfileKey::Private, Home::Today(None), closed.saved);
-        if let (Some(session), Some(tab)) = (closed.session, self.tabs.get_mut(id)) {
-            tab.set_page(Page::Discarded(session));
-        }
         let layout = self.windows.get_mut(window)?;
         layout.insert_today(None, 0, id);
         layout.set_active(Some(id));
@@ -269,9 +194,6 @@ impl<L: LivePage> Model<L> {
             Home::Today(Some(space)),
             saved,
         );
-        if let (Some(state), Some(tab)) = (restored.tab.state, self.tabs.get_mut(id)) {
-            tab.set_page(Page::Discarded(state));
-        }
         let layout = self.windows.get_mut(window)?;
         layout.set_space(Some(space));
         layout.insert_today(Some(space), 0, id);
@@ -323,9 +245,6 @@ impl<L: LivePage> Model<L> {
                     tab.saved.clone(),
                 );
                 tab_entry.last_active = tab.last_active;
-                if let Some(state) = &tab.state {
-                    tab_entry.set_page(Page::Discarded(Arc::clone(state)));
-                }
                 self.tabs.insert(tab_entry);
                 let Some(layout) = self.windows.get_mut(window) else {
                     return;
@@ -403,9 +322,6 @@ impl<L: LivePage> Model<L> {
             }
         };
         let id = self.insert_tab(ProfileKey::Persistent(profile), home, saved);
-        if let Some(tab) = self.tabs.get_mut(id) {
-            tab.visit_tracker.set_cause(browser_pages::Cause::Generated);
-        }
         let layout = self.windows.get_mut(window)?;
         layout.open_slot(slot, id);
         layout.set_active(Some(id));
@@ -444,13 +360,7 @@ impl<L: LivePage> Model<L> {
             Some(_) => Placement::After(tab),
             None => Placement::Top,
         };
-        let id = self.open_tab(window, Some(address), placement, true)?;
-        if let Some(tab_entry) = self.tabs.get_mut(id) {
-            tab_entry
-                .visit_tracker
-                .set_cause(browser_pages::Cause::Generated);
-        }
-        Some(id)
+        self.open_tab(window, Some(address), placement, true)
     }
 
     fn neighbour(&self, window: WindowId, tab: TabId) -> Option<TabId> {

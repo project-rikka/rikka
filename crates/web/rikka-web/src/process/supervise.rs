@@ -11,7 +11,7 @@ use std::time::Duration;
 use rustix::event::{PollFd, PollFlags, Timespec, poll};
 use rustix::io::Errno;
 use rustix::pipe::{PipeFlags, pipe_with};
-use rustix::process::{Pid, PidfdFlags, pidfd_open};
+use rustix::process::{Pid, PidfdFlags, Signal, kill_process, pidfd_open};
 
 use crate::process::profile::ProfileFolder;
 use crate::threads;
@@ -122,10 +122,13 @@ pub(crate) fn watch(
     let parting = Arc::new(Mutex::new(Parting::Watching));
     let left = Arc::clone(&parting);
     let thread = std::thread::Builder::new()
-        .name("rikka-gecko-watch".into())
+        .name("rikka-web-watch".into())
         .spawn(move || {
-            if !ended(&process, &stopped) && !wait_for_exit(&process, GRACE) {
-                kill(&mut child);
+            if !ended(&process, &stopped) {
+                terminate(&child);
+                if !wait_for_exit(&process, GRACE) {
+                    kill(&mut child);
+                }
             }
             let status = child.wait();
             drop(folder);
@@ -142,9 +145,18 @@ pub(crate) fn watch(
     })
 }
 
+fn terminate(child: &Child) {
+    let Some(pid) = Pid::from_raw(child.id() as i32) else {
+        return;
+    };
+    if let Err(error) = kill_process(pid, Signal::TERM) {
+        tracing::warn!(%error, "failed to ask Chrome to quit");
+    }
+}
+
 fn kill(child: &mut Child) {
     if let Err(error) = child.kill() {
-        tracing::warn!(%error, "failed to kill the engine process");
+        tracing::warn!(%error, "failed to kill Chrome");
     }
 }
 

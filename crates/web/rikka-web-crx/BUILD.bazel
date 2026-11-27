@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "rikka-web-crx",
+    visibility = [
+        "//benchmarks:__subpackages__",
+        "//crates:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+    deps = [
+        "@crates//:base64",
+        "@crates//:p256",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+        "@crates//:zip",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":rikka-web-crx",
+        "@crates//:p256",
+        "@crates//:sha2",
+        "@crates//:tempfile",
+    ],
+)

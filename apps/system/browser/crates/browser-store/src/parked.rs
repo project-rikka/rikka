@@ -24,7 +24,7 @@ pub(crate) const ARCHIVED: Parked = Parked {
 impl Parked {
     pub(crate) fn take(self, connection: &Connection, id: i64) -> Result<Option<Restored>> {
         let sql = format!(
-            "DELETE FROM {} WHERE id = ?1 RETURNING space_id, url, title, state",
+            "DELETE FROM {} WHERE id = ?1 RETURNING space_id, url, title",
             self.table
         );
         Ok(connection

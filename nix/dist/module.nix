@@ -1,4 +1,8 @@
-{ release, packages }:
+{
+  release,
+  packages,
+  chrome,
+}:
 
 {
   config,
@@ -21,6 +25,23 @@ let
   installed = map (id: packages.${id}) chosen;
 
   base = packages.base;
+
+  extensions = lib.concatMap (
+    id: map (extension: extension // { package = packages.${id}; }) components.${id}.extensions
+  ) chosen;
+
+  updateManifest = extension: "rikka/web/updates/${extension.id}.xml";
+
+  updateResponse =
+    extension:
+    pkgs.writeText "rikka-chrome-${extension.id}.xml" ''
+      <?xml version="1.0" encoding="UTF-8"?>
+      <gupdate xmlns="http://www.google.com/update2/response" protocol="2.0">
+        <app appid="${extension.id}">
+          <updatecheck codebase="file://${extension.package}/${extension.crx}" version="${extension.version}"/>
+        </app>
+      </gupdate>
+    '';
 
   pamHelper = pkgs.stdenv.mkDerivation {
     pname = "rikka-pam-helper";
@@ -220,6 +241,34 @@ in
           sansSerif = lib.mkDefault [ "Inter" ];
           monospace = lib.mkDefault [ "JetBrains Mono" ];
         };
+      }
+
+      {
+        environment.etc = {
+          "rikka/web/chrome".source = lib.getExe' chrome "google-chrome-stable";
+          "rikka/web/host".source = lib.getExe' base "rikka-web-host";
+          "rikka/web/policies/managed/rikka.json".text = builtins.toJSON {
+            ExtensionSettings = lib.listToAttrs (
+              map (
+                extension:
+                lib.nameValuePair extension.id {
+                  installation_mode = "force_installed";
+                  update_url = "file:///etc/${updateManifest extension}";
+                  override_update_url = true;
+                }
+              ) extensions
+            );
+            DefaultBrowserSettingEnabled = false;
+            TranslateEnabled = false;
+          };
+        }
+        // lib.listToAttrs (
+          map (
+            extension: lib.nameValuePair (updateManifest extension) { source = updateResponse extension; }
+          ) extensions
+        );
+
+        systemd.tmpfiles.rules = [ "d /etc/opt/chrome/policies 0755 root root - -" ];
       }
 
       (lib.mkIf (cfg.autologin.user != null) {

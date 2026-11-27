@@ -1,4 +1,5 @@
 mod items;
+mod page;
 mod state;
 
 pub(crate) use items::{Entries, profile_name, space_name};
@@ -20,18 +21,17 @@ fn panel(shell: &Shell) -> Option<Element> {
     let shown = shell.menus().shown()?;
     let model = shell.model();
     let window = shell.id();
-    let entries = match shown.subject {
-        Subject::Tab(tab) => items::tab(&model, window, tab),
-        Subject::Pin(pin) => items::pin(&model, window, pin),
-        Subject::Folder(folder) => items::folder(&model, folder),
-        Subject::Favorite(favorite) => items::favorite(&model, window, favorite),
-        Subject::TopSite(place) => crate::home::top_site_menu(shell, place),
-        Subject::Space(space) => items::space(&model, space),
+    let entries = match &shown.subject {
+        Subject::Tab(tab) => items::tab(&model, window, *tab),
+        Subject::Pin(pin) => items::pin(&model, window, *pin),
+        Subject::Folder(folder) => items::folder(&model, *folder),
+        Subject::Favorite(favorite) => items::favorite(&model, window, *favorite),
+        Subject::TopSite(site) => crate::home::top_site_menu(shell, site),
+        Subject::Space(space) => items::space(&model, *space),
         Subject::Main => items::main(shell.private()),
-        Subject::Back => items::history(&model, window, false),
-        Subject::Forward => items::history(&model, window, true),
         Subject::ClearHistory => items::clear_history(),
         Subject::Split => crate::split::split_menu(&model, window),
+        Subject::Page(tab) => page::entries(shell, *tab, shell.menus().page()?),
     };
     let (items, branches) = entries.finish();
     if items.is_empty() {

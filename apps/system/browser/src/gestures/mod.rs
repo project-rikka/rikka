@@ -29,8 +29,6 @@ pub(crate) struct Swipe {
     pub(crate) phase: SwipePhase,
 }
 
-use browser_pages::Cause;
-
 use crate::shell::Shell;
 use browser_model::TabId;
 
@@ -96,17 +94,9 @@ impl Shell {
             .window(self.id())
             .is_some_and(|layout| layout.holds(tab));
         if !placed {
-            let view = {
-                let mut model = self.browser().edit();
-                let Some(tab_entry) = model.tab_mut(tab) else {
-                    return;
-                };
-                tab_entry.visit_tracker.set_cause(Cause::BackForward);
-                tab_entry.page().view().cloned()
-            };
-            match (view, direction) {
-                (Some(view), Direction::Back) => view.go_back(),
-                (Some(view), Direction::Forward) => view.go_forward(),
+            match (self.view_of(tab), direction) {
+                (Some(view), Direction::Back) => view.back(),
+                (Some(view), Direction::Forward) => view.forward(),
                 (None, _) => {}
             }
             return;
@@ -148,10 +138,7 @@ impl Shell {
                 else {
                     return;
                 };
-                let zoom = pinching.settled();
-                view.set_zoom(zoom);
-                let default = self.browser().preferences().default_zoom();
-                self.browser().edit().remember_zoom(tab, zoom, default);
+                view.set_zoom(pinching.settled());
             }
             GesturePhase::Cancelled => {
                 if let Some(pinching) = self

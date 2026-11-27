@@ -3,48 +3,51 @@ use rikka_notify::{DEFAULT_ACTION, Icon, Notification};
 
 use crate::alerts::{ActiveNotification, ENTRY, activate};
 use crate::shell::Shell;
-use browser_model::DownloadKey;
-use browser_model::WindowId;
+use browser_model::{DownloadPhase, EndedDownload, download_name};
 
 const SHOW: &str = "show-downloads";
 
 impl Shell {
-    pub(crate) fn download_finished(&mut self, item: DownloadKey) {
+    pub(crate) fn download_ended(&mut self, ended: &EndedDownload) {
         if self.browser().focused().is_some() {
             return;
         }
-        let Some(name) = self
-            .browser()
-            .page_services()
-            .downloads()
-            .item(item)
-            .map(|download| download.name.clone())
-        else {
-            return;
+        let summary = match ended.phase {
+            DownloadPhase::Failed => tr!("browser.downloads.failed"),
+            _ => tr!("browser.downloads.finished"),
         };
-        let desktop = Notification::new(tr!("browser.downloads.finished").to_string())
-            .body(name)
+        let mut desktop = Notification::new(summary.to_string())
+            .body(download_name(&ended.item))
             .icon(Icon::named(ENTRY))
             .app_name(tr!("browser.title").to_string())
             .desktop_entry(ENTRY)
-            .default_action(tr!("browser.downloads.open").to_string())
             .action(SHOW, tr!("browser.downloads.show").to_string());
-        let window = self.id();
-        self.post(desktop, ActiveNotification::Download { item, window });
+        if ended.phase == DownloadPhase::Finished {
+            desktop = desktop.default_action(tr!("browser.downloads.open").to_string());
+        }
+        let shown = ActiveNotification {
+            profile: ended.profile,
+            download: ended.item.id,
+            window: self.id(),
+        };
+        self.post(desktop, shown);
     }
 
     pub(crate) fn download_notice_answered(
         &mut self,
-        item: DownloadKey,
-        window: WindowId,
+        shown: ActiveNotification,
         key: &str,
         token: Option<String>,
     ) {
         match key {
-            DEFAULT_ACTION => self.open_download(item),
+            DEFAULT_ACTION => {
+                if let Some(runtime) = self.browser().running_engine(shown.profile) {
+                    runtime.downloads().open(shown.download);
+                }
+            }
             SHOW => {
                 let browser = self.browser();
-                let shown_in = browser.sender(window).or_else(|| {
+                let shown_in = browser.sender(shown.window).or_else(|| {
                     browser
                         .model()
                         .windows

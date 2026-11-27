@@ -1,14 +1,18 @@
 use rikka_app::prelude::*;
 use rikka_web::{NavigationButton, web_view};
 
+use crate::chrome::Phase;
 use crate::model::Tab;
 use crate::page::Page;
-use crate::requests::TabRequests;
 use crate::shell::Shell;
 use crate::{gestures, internal, keys, peek};
 use browser_model::TabId;
 
 const PROGRESS: f32 = 2.0;
+const PAGE_TOP: &str = "rikka-browser-page-top";
+const PAGE_EDGE: &str = "rikka-browser-page-edge";
+const HINT_DROP: f32 = 56.0;
+const KEYBOARD_MENU: Point = Point::new(Space::LOOSE.px(), Space::LOOSE.px());
 
 pub(crate) fn view(shell: &Shell) -> Element {
     let model = shell.model();
@@ -45,6 +49,7 @@ fn tab_overlays(shell: &Shell, tab: TabId) -> Vec<Element> {
     [
         gestures::indicator(shell, tab),
         crate::split::landing_mark(shell, tab),
+        crate::status::hovered(shell, tab),
     ]
     .into_iter()
     .flatten()
@@ -52,14 +57,7 @@ fn tab_overlays(shell: &Shell, tab: TabId) -> Vec<Element> {
 }
 
 fn window_overlays(shell: &Shell) -> Vec<Element> {
-    [
-        peek::view(shell),
-        crate::extensions::popup(shell),
-        crate::extensions::sheet(shell, shell.id()),
-    ]
-    .into_iter()
-    .flatten()
-    .collect()
+    peek::view(shell).into_iter().collect()
 }
 
 fn layered(base: Element, overlays: Vec<Element>) -> Element {
@@ -79,12 +77,17 @@ fn body(shell: &Shell, tab_entry: &Tab) -> Element {
         .model()
         .window(shell.id())
         .and_then(|layout| layout.active());
+    match shell.browser().services().chrome.phase(tab_entry.profile) {
+        Some(Phase::Failed(failure)) => return crate::chrome::failure_page(&failure),
+        Some(Phase::Exited(_)) if tab_entry.page().live().is_none() => {
+            return crate::chrome::exited_page();
+        }
+        _ => {}
+    }
     if active == Some(tab_entry.id)
         && let Some(failure) = shell.engine_error()
     {
-        return status_page(MaterialSymbol::WARNING, failure.to_owned())
-            .tint(palette().danger)
-            .any();
+        return crate::chrome::unavailable_page(failure);
     }
     if let Some(reading) = crate::reader::view(shell, tab_entry.id) {
         return reading;
@@ -93,33 +96,54 @@ fn body(shell: &Shell, tab_entry: &Tab) -> Element {
     let tab = tab_entry.id;
     match tab_entry.page() {
         Page::Live(live) => {
-            let holds_focus = shell
-                .browser()
-                .page_services()
-                .requests()
-                .get(tab)
-                .is_some_and(TabRequests::holds_page_focus);
             let surface = web_view(&live.view)
                 .reserve_shortcuts(keys::reserved(loading).chain(peek::reserved(shell, tab)))
-                .retain_focus(holds_focus)
                 .on_navigation_button(|shell: &mut Shell, button: NavigationButton| {
                     shell.navigation_button(button)
                 })
                 .fill();
-            let caught = gestures::catch_gestures(
+            let page = gestures::catch_gestures(
                 crate::split::focusing(surface, tab),
                 move |shell: &mut Shell, swipe: gestures::Swipe| shell.swiped(tab, swipe),
                 move |shell: &mut Shell, phase: GesturePhase, scale: f32| {
                     shell.pinched(tab, phase, scale)
                 },
-            );
-            crate::requests::framed(shell, tab, caught.keyed(("page", tab)))
+            )
+            .keyed(("page", tab));
+            hinted(shell, tab, page)
         }
-        Page::Unloaded | Page::Discarded(_) => container(spacer())
+        Page::Unloaded => container(spacer())
             .background(palette().background)
             .fill()
             .any(),
     }
+}
+
+fn hinted(shell: &Shell, tab: TabId, page: Element) -> Element {
+    let mark = (PAGE_TOP, tab);
+    let hint = crate::overlays::hint(shell)
+        .map(|hint| hint.anchored(Anchor::new(mark, AnchorEdge::Center).offset(0.0, HINT_DROP)));
+    let layers = [
+        page,
+        spacer()
+            .width(Length::FILL)
+            .height(0.0)
+            .position(0.0, 0.0)
+            .build()
+            .keyed(mark),
+        spacer()
+            .width(0.0)
+            .height(Length::FILL)
+            .position(0.0, 0.0)
+            .build()
+            .keyed((PAGE_EDGE, tab)),
+    ];
+    column_of(layers.into_iter().chain(hint)).fill().any()
+}
+
+pub(crate) fn menu_anchor(tab: TabId, at: Option<Point>) -> Anchor {
+    let at = at.unwrap_or(KEYBOARD_MENU);
+    Anchor::new((PAGE_EDGE, tab), AnchorEdge::BesideTop).offset(at.x, at.y)
 }
 
 pub(crate) fn progress(shell: &Shell) -> Element {
@@ -130,13 +154,10 @@ pub(crate) fn progress(shell: &Shell) -> Element {
     if !*tab_entry.meta.loading || tab_entry.internal.is_some() {
         return Element::empty();
     }
-    let done = tab_entry.meta.progress.clamp(0.08, 1.0);
-    container(spacer())
-        .background(palette().accent)
+    progress_indeterminate()
+        .fill_width()
         .height(PROGRESS)
-        .width(Length::portion(done))
         .build()
-        .animate(Motion::Standard)
         .position(0.0, 0.0)
 }
 

@@ -1,7 +1,7 @@
 use std::io::Read;
 use std::os::fd::AsFd;
 
-use rikka_nested::{Event, Input};
+use rikka_nested::{Claim, Event, Input};
 use rikka_types::{DragAction, Point, PointerButton};
 use rikka_ui::{Delivery, DragOffer};
 use rikka_wayland_client::wl_data_device_manager::DndAction;
@@ -22,7 +22,7 @@ impl Delivery for Carried {
 #[test]
 fn host_drop_reaches_client_under_pointer() {
     let (nested, _events) = support::start();
-    let view = nested.view("rikka-view-drop");
+    let view = nested.view(Claim::app_id("rikka-view-drop"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let _device = client.data_device();
@@ -81,7 +81,7 @@ fn host_drop_reaches_client_under_pointer() {
 #[test]
 fn client_drag_offers_data_to_host() {
     let (nested, events) = support::start();
-    let view = nested.view("rikka-view-drag");
+    let view = nested.view(Claim::app_id("rikka-view-drag"));
     let mut client = Client::connect(nested.socket());
     client.follow(&view);
     let _pointer = client.pointer();

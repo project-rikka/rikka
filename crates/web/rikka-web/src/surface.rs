@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use rikka_input::Chord;
-use rikka_nested::{NestedView, NestedViewState, nested_view};
+use rikka_nested::{NestedView, NestedViewState, View, nested_view};
 use rikka_types::{CursorShape, Point, PointerButton, Rect};
 use rikka_ui::{Action, Behavior, Event, EventCtx, IntoHandler, Layout, PaintCtx, Style, Widget};
 
-use crate::session::Session;
+use crate::foreign::ForeignWindow;
+use crate::session::{Session, SessionCore};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum NavigationButton {
@@ -25,6 +28,7 @@ impl NavigationButton {
 #[derive(Widget)]
 pub struct WebSurface {
     view: NestedView,
+    session: Option<Arc<SessionCore>>,
     on_navigation_button: Action<(NavigationButton,)>,
     #[style]
     style: Style,
@@ -34,8 +38,17 @@ pub struct WebSurface {
 pub struct WebSurfaceState(NestedViewState);
 
 pub fn web_view(session: &Session) -> WebSurface {
+    surface(&session.core().view, Some(Arc::clone(session.core())))
+}
+
+pub fn foreign_view(window: &ForeignWindow) -> WebSurface {
+    surface(window.view(), None)
+}
+
+fn surface(view: &View, session: Option<Arc<SessionCore>>) -> WebSurface {
     WebSurface {
-        view: nested_view(session.view()),
+        view: nested_view(view),
+        session,
         on_navigation_button: Action::default(),
         style: Style::default(),
     }
@@ -82,6 +95,27 @@ impl WebSurface {
             _ => None,
         }
     }
+
+    fn remember_press(&self, event: &Event, ctx: &EventCtx<'_>) {
+        let Some(session) = &self.session else {
+            return;
+        };
+        match *event {
+            Event::PointerPressed {
+                position,
+                button: PointerButton::Secondary,
+                ..
+            } => {
+                let origin = ctx.bounds().origin;
+                session.press(Some(Point::new(
+                    position.x - origin.x,
+                    position.y - origin.y,
+                )));
+            }
+            Event::PointerPressed { .. } | Event::KeyPressed { .. } => session.press(None),
+            _ => {}
+        }
+    }
 }
 
 impl Widget for WebSurface {
@@ -100,6 +134,7 @@ impl Widget for WebSurface {
     }
 
     fn event(&self, state: &mut WebSurfaceState, event: &Event, ctx: &mut EventCtx<'_>) {
+        self.remember_press(event, ctx);
         if let Some((button, pressed)) = self.navigation(event) {
             ctx.set_handled();
             if pressed {

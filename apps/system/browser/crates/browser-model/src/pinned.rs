@@ -222,6 +222,22 @@ impl Pinned {
         changed
     }
 
+    pub fn retitle(&mut self, id: PinnedTabId, url: &str, title: &str) {
+        let entry = self
+            .by_space
+            .values_mut()
+            .find_map(|nodes| find_mut(nodes, PinnedItem::Tab(id)));
+        let Some(Node::Pin(pin)) = entry else {
+            return;
+        };
+        if pin.saved.url != url {
+            pin.saved.url = url.to_owned();
+            pin.saved.favicon = None;
+        }
+        pin.saved.title = title.to_owned();
+        self.observers.changed();
+    }
+
     pub fn remember(&mut self, id: PinnedTabId, saved: &Saved) {
         let entry = self
             .by_space

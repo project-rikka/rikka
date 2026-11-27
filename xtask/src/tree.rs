@@ -54,10 +54,18 @@ pub(crate) fn build(workspace: &Path, profile: Profile, parts: &[Contents]) -> R
         .iter()
         .flat_map(|part| part.packages)
         .map(|package| package.target);
+    let extensions = parts
+        .iter()
+        .flat_map(|part| part.extensions)
+        .map(|extension| extension.target);
     bazel::build(
         workspace,
         profile,
-        programs.chain(completions).chain(libraries).chain(packages),
+        programs
+            .chain(completions)
+            .chain(libraries)
+            .chain(packages)
+            .chain(extensions),
     )
 }
 

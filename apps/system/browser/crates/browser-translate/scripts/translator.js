@@ -1,7 +1,7 @@
-((host) => {
+(globalThis[Symbol.for("rikka")] ??= {})["browser-translate.translator"] = (host) => {
   "use strict";
 
-  const { post, top: TOP, LETTER, SPACES, INVISIBLE, OPAQUE, KEPT, EDITORS, CODE_SURE, CODE_HINT } = host;
+  const { ask, top: TOP, LETTER, SPACES, INVISIBLE, OPAQUE, KEPT, EDITORS, CODE_SURE, CODE_HINT } = host;
   const UNIT_CHARS = 1500;
   const UNIT_LIMIT = 18000;
   const KEEP_CHARS = 300;
@@ -1482,7 +1482,7 @@
       });
       pump();
     };
-    post({ kind: "translate", session: current.session, units: batch.map((unit) => unit.request) }).then(
+    ask({ kind: "translate", session: current.session, units: batch.map((unit) => unit.request) }).then(
       (reply) => settled(reply && Array.isArray(reply.units) && reply.units.length === batch.length ? reply.units : null),
       () => settled(null),
     );
@@ -1615,4 +1615,4 @@
   const shown = () => (run ? { session: run.session, display: run.display } : null);
 
   return { handle, stop, shown };
-})
+};

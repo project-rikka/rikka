@@ -1,4 +1,4 @@
-use browser_store::{Error, HistoryQuery, PinnedItem, PinnedPlace, Store, Transition, Visit};
+use browser_store::{Error, PinnedItem, PinnedPlace, Store, TabRecord};
 
 use crate::support;
 
@@ -26,22 +26,13 @@ fn drop_commits_queued_writes() {
     let profile = store.create_profile("Default");
     let clone = store.clone();
     for page in 0..50 {
-        clone.record_visit(
-            profile,
-            Visit::new(format!("https://example.com/{page}"), Transition::Link),
-        );
+        clone.add_favorite(profile, format!("https://example.com/{page}"), "Page");
     }
     drop(clone);
     drop(store);
 
     let store = Store::open(&path).unwrap();
-    assert_eq!(
-        store
-            .history(profile, &HistoryQuery::new(100))
-            .unwrap()
-            .len(),
-        50
-    );
+    assert_eq!(store.favorites(profile).unwrap().len(), 50);
 }
 
 #[test]
@@ -54,7 +45,7 @@ fn open_creates_missing_tables_and_indexes() {
     drop(store);
     rusqlite::Connection::open(&path)
         .unwrap()
-        .execute_batch("DROP TABLE profile_settings; DROP INDEX downloads_started;")
+        .execute_batch("DROP TABLE profile_settings; DROP INDEX favorites_profile;")
         .unwrap();
 
     let store = Store::open(&path).unwrap();
@@ -70,40 +61,53 @@ fn open_creates_missing_tables_and_indexes() {
 }
 
 #[test]
-fn open_recreates_mismatched_tables_and_their_dependents() {
+fn open_recreates_mismatched_tables_and_drops_undeclared_ones() {
     let folder = tempfile::tempdir().unwrap();
     let path = folder.path().join("browser.sqlite");
     let store = Store::open(&path).unwrap();
-    let profile = store.create_profile("Work");
-    store.record_visit(
-        profile,
-        Visit::new("https://example.com/old", Transition::Link),
-    );
+    let (_, space) = support::space(&store, "Home");
     store.flush().unwrap();
     drop(store);
     rusqlite::Connection::open(&path)
         .unwrap()
         .execute_batch(
             "PRAGMA foreign_keys = OFF;
-             DROP TABLE places;
-             CREATE TABLE places (id INTEGER PRIMARY KEY, url TEXT NOT NULL);",
+             DROP TABLE closed_tabs;
+             CREATE TABLE closed_tabs (id INTEGER PRIMARY KEY, space_id INTEGER NOT NULL,
+                 url TEXT NOT NULL, title TEXT NOT NULL, state BLOB, closed_at INTEGER NOT NULL);
+             INSERT INTO closed_tabs VALUES (1, 1, 'https://old.example/', 'Old', x'00', 0);
+             CREATE TABLE places (id INTEGER PRIMARY KEY, url TEXT NOT NULL);
+             CREATE VIRTUAL TABLE places_text USING fts5(url, content = 'places');",
         )
         .unwrap();
 
     let store = Store::open(&path).unwrap();
-    store.record_visit(
-        profile,
-        Visit::new("https://example.com/new", Transition::Link),
+    store.push_closed_tab(
+        space,
+        TabRecord {
+            url: "https://new.example/".to_owned(),
+            title: "New".to_owned(),
+        },
     );
     store.flush().unwrap();
     let urls: Vec<String> = store
-        .history(profile, &HistoryQuery::new(10).text("example"))
+        .closed_tabs()
         .unwrap()
         .into_iter()
-        .map(|entry| entry.url)
+        .map(|closed| closed.url)
         .collect();
-    assert_eq!(urls, ["https://example.com/new"]);
-    assert_eq!(store.profiles().unwrap()[0].name, "Work");
+    assert_eq!(urls, ["https://new.example/"]);
+    assert_eq!(store.profiles().unwrap()[0].name, "Default");
+    drop(store);
+    let leftovers: i64 = rusqlite::Connection::open(&path)
+        .unwrap()
+        .query_row(
+            "SELECT count(*) FROM sqlite_schema WHERE name LIKE 'places%'",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(leftovers, 0);
 }
 
 #[test]
@@ -136,26 +140,4 @@ fn failed_write_keeps_rest_of_batch() {
     let tree = store.pinned(space).unwrap();
     assert_eq!(tree.len(), 2);
     assert!(matches!(&tree[1], browser_store::PinnedNode::Tab(pinned) if pinned.id == tab));
-}
-
-#[test]
-fn coalesced_writes_keep_order() {
-    let store = Store::in_memory().unwrap();
-    let profile = store.create_profile("Default");
-    store.record_visit(
-        profile,
-        Visit::new("https://example.com/", Transition::Link),
-    );
-    store.set_title(profile, "https://example.com/", "Old");
-    store.delete_url(profile, "https://example.com/");
-    store.record_visit(
-        profile,
-        Visit::new("https://example.com/", Transition::Link),
-    );
-    store.set_title(profile, "https://example.com/", "New");
-    store.flush().unwrap();
-
-    let history = store.history(profile, &HistoryQuery::new(10)).unwrap();
-    assert_eq!(history.len(), 1);
-    assert_eq!(history[0].title, "New");
 }

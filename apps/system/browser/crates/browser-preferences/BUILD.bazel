@@ -8,17 +8,14 @@ rikka_library(
         "//apps/system/browser:__subpackages__",
     ],
     deps = [
-        "//apps/system/browser/crates/browser-model",
         "//apps/system/browser/crates/browser-pages",
         "//apps/system/browser/crates/browser-reader",
         "//apps/system/browser/crates/browser-translators",
-        "//crates/foundation/rikka-dirs",
         "//crates/foundation/rikka-i18n",
         "//crates/foundation/rikka-languages",
         "//crates/foundation/rikka-types",
         "//crates/session/rikka-settings",
         "//crates/ui/rikka-ui",
-        "//crates/web/rikka-web",
         "@crates//:serde",
     ],
 )

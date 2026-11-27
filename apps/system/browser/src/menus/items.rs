@@ -1,4 +1,3 @@
-use browser_pages::Cause;
 use rikka_app::prelude::*;
 use rikka_types::Choice;
 
@@ -148,7 +147,7 @@ pub(crate) fn pin(model: &Model, window: WindowId, pin: PinnedTabId) -> Entries 
                 .icon(MaterialSymbol::RESTART_ALT)
                 .on_press(move |shell: &mut Shell| {
                     shell.select(tab);
-                    shell.go(pinned.clone(), Cause::Generated);
+                    shell.go(pinned.clone());
                 }),
         );
     }
@@ -384,20 +383,13 @@ pub(crate) fn main(private: bool) -> Entries {
     );
     entries.separator();
     entries.leaf(
-        menu_item(tr!("browser.find.menu"))
-            .icon(MaterialSymbol::SEARCH)
-            .shortcut(keys::shortcut(Command::Find))
-            .on_press(|shell: &mut Shell| shell.command(Command::Find)),
-    );
-    entries.separator();
-    entries.leaf(
-        menu_item(tr!("browser.menu.save-pdf"))
-            .icon(MaterialSymbol::PICTURE_AS_PDF)
-            .shortcut(keys::shortcut(Command::SavePage))
-            .on_press(|shell: &mut Shell| shell.save_page()),
+        menu_item(tr!("browser.menu.print"))
+            .icon(MaterialSymbol::PRINT)
+            .shortcut(keys::shortcut(Command::Print))
+            .on_press(|shell: &mut Shell| shell.print_page()),
     );
     entries.leaf(
-        menu_item(tr!("browser.context.view-source"))
+        menu_item(tr!("browser.menu.view-source"))
             .icon(MaterialSymbol::DATA_OBJECT)
             .shortcut(keys::shortcut(Command::ViewSource))
             .on_press(|shell: &mut Shell| shell.command(Command::ViewSource)),
@@ -421,38 +413,6 @@ pub(crate) fn main(private: bool) -> Entries {
             .icon(MaterialSymbol::LOGOUT)
             .on_press(|shell: &mut Shell| shell.quit()),
     );
-    entries
-}
-
-pub(crate) fn history(model: &Model, window: WindowId, forward: bool) -> Entries {
-    let mut entries = Entries::new();
-    let Some(tab_entry) = model.active(window) else {
-        return entries;
-    };
-    let can = match forward {
-        true => *tab_entry.meta.forward,
-        false => *tab_entry.meta.back,
-    };
-    let Some(view) = tab_entry.page().view().filter(|_| can) else {
-        return entries;
-    };
-    let page = view.page();
-    let Some(at) = page.history_index else {
-        return entries;
-    };
-    let listed: Vec<(usize, &rikka_web::HistoryEntry)> = match forward {
-        true => page.history.iter().enumerate().skip(at + 1).collect(),
-        false => page.history.iter().enumerate().take(at).rev().collect(),
-    };
-    for (index, entry) in listed {
-        let label = match entry.title.trim() {
-            "" => entry.uri.clone(),
-            title => title.to_owned(),
-        };
-        entries.leaf(
-            menu_item(label).on_press(move |shell: &mut Shell| shell.go_to_history_index(index)),
-        );
-    }
     entries
 }
 

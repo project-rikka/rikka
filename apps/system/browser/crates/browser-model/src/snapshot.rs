@@ -69,7 +69,6 @@ impl<L: LivePage> Model<L> {
             favorite,
             url: tab.address(),
             title: (*tab.meta.title).clone(),
-            state: tab.state().filter(|_| tab.internal.is_none()),
             last_active: tab.last_active,
             split: self.split_member(id),
         })

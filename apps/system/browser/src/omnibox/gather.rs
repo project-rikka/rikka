@@ -1,7 +1,8 @@
 use std::time::SystemTime;
 
-use browser_store::{ArchivedTab, Place};
+use browser_store::ArchivedTab;
 use rikka_omnibox::{Candidate, Candidates};
+use rikka_web::HistoryItem;
 
 use crate::model::Model;
 use crate::omnibox::target::Target;
@@ -68,13 +69,14 @@ pub(crate) fn open(model: &Model, window: WindowId) -> Candidates<Target> {
     candidates
 }
 
-pub(crate) fn history(candidates: &mut Candidates<Target>, places: &[Place]) {
+pub(crate) fn history(candidates: &mut Candidates<Target>, places: &[HistoryItem]) {
     for place in places {
-        let candidate = Candidate::history(&place.url, &place.title)
+        let mut candidate = Candidate::history(&place.url, &place.title)
             .visits(place.visit_count)
-            .typed(place.typed_count)
-            .last_visit(SystemTime::from(place.last_visit))
-            .frecency(place.frecency as f64);
+            .typed(place.typed_count);
+        if let Some(at) = place.last_visit_time {
+            candidate = candidate.last_visit(at);
+        }
         push(candidates, candidate);
     }
 }

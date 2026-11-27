@@ -104,7 +104,7 @@ impl Shell {
 
     pub(crate) fn delete_space(&mut self, space: SpaceId) {
         let closing = self.browser.edit().delete_space(space);
-        self.save_sessions(closing);
+        self.close_views(closing);
         self.changed();
     }
 }

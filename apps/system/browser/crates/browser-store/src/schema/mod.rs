@@ -17,6 +17,14 @@ struct Stored {
     sql: Option<String>,
 }
 
+impl Stored {
+    fn is_virtual(&self) -> bool {
+        self.sql
+            .as_deref()
+            .is_some_and(|sql| sql.starts_with(VIRTUAL))
+    }
+}
+
 pub(crate) fn prepare(connection: &mut Connection) -> Result<()> {
     let declared: Vec<Declared> = OBJECTS.iter().copied().map(Declared::parse).collect();
     connection.pragma_update(None, "foreign_keys", false)?;
@@ -36,24 +44,26 @@ fn converge(connection: &mut Connection, declared: &[Declared]) -> Result<()> {
         );
         drop_object(&transaction, Kind::Table, object.name)?;
     }
-    for (name, object) in &stored {
-        if stale.contains(name.as_str()) || is_shadow(name, declared) {
-            continue;
-        }
-        let keep = declared
-            .iter()
-            .find(|declared| declared.name == name)
-            .is_some_and(|declared| {
-                declared.kind == object.kind
-                    && object
-                        .sql
-                        .as_deref()
-                        .is_some_and(|sql| declared.matches(sql))
-            });
-        if !keep {
-            tracing::info!(name = %name, "dropping undeclared browser store object");
-            drop_object(&transaction, object.kind, name)?;
-        }
+    let mut undeclared: Vec<(&String, &Stored)> = stored
+        .iter()
+        .filter(|(name, _)| !stale.contains(name.as_str()))
+        .filter(|(name, object)| {
+            !declared
+                .iter()
+                .find(|declared| declared.name == name.as_str())
+                .is_some_and(|declared| {
+                    declared.kind == object.kind
+                        && object
+                            .sql
+                            .as_deref()
+                            .is_some_and(|sql| declared.matches(sql))
+                })
+        })
+        .collect();
+    undeclared.sort_by_key(|(_, object)| !object.is_virtual());
+    for (name, object) in undeclared {
+        tracing::info!(name = %name, "dropping undeclared browser store object");
+        drop_object(&transaction, object.kind, name)?;
     }
     let present = stored_names(&transaction)?;
     for object in declared
@@ -61,16 +71,6 @@ fn converge(connection: &mut Connection, declared: &[Declared]) -> Result<()> {
         .filter(|object| !present.contains(object.name))
     {
         transaction.execute_batch(object.sql)?;
-        if let Some(content) = object.content {
-            tracing::debug!(table = object.name, content, "rebuilding full-text index");
-            transaction.execute(
-                &format!(
-                    "INSERT INTO {name}({name}) VALUES ('rebuild')",
-                    name = object.name
-                ),
-                [],
-            )?;
-        }
     }
     transaction.commit()?;
     Ok(())
@@ -134,16 +134,6 @@ fn stale_tables<'a>(
         }
         stale.extend(dependents);
     }
-}
-
-fn is_shadow(name: &str, declared: &[Declared]) -> bool {
-    declared
-        .iter()
-        .filter(|object| object.sql.starts_with(VIRTUAL))
-        .any(|object| {
-            name.strip_prefix(object.name)
-                .is_some_and(|rest| rest.starts_with('_'))
-        })
 }
 
 fn drop_object(transaction: &Transaction<'_>, kind: Kind, name: &str) -> Result<()> {

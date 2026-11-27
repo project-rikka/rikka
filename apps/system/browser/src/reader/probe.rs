@@ -1,12 +1,8 @@
-use browser_reader::{PROBE_SCRIPT, readable};
 use rikka_app::prelude::*;
-use rikka_web::World;
-use serde_json::Value;
 
 use crate::shell::Shell;
 use browser_model::TabId;
 
-pub(crate) const WORLD: &str = "rikka-reader";
 const PROBE: &str = "rikka-browser-reader-probe";
 
 impl Shell {
@@ -21,25 +17,19 @@ impl Shell {
         let Some(view) = self.view_of(tab) else {
             return;
         };
-        let uri = view.page().uri;
-        if !(uri.starts_with("https://") || uri.starts_with("http://")) {
+        let url = view.page().url;
+        if !(url.starts_with("https://") || url.starts_with("http://")) {
             return;
         }
         spawn_keyed(
             (PROBE, tab),
-            async move { view.evaluate(PROBE_SCRIPT, &World::isolated(WORLD)).await },
-            move |shell: &mut Shell, answer: rikka_web::Result<Value>| {
+            browser_reader::probe(&view),
+            move |shell: &mut Shell, answer: browser_reader::Result<bool>| {
                 skip_view();
-                let offered = match answer {
-                    Ok(answer) => readable(&answer).unwrap_or_else(|error| {
-                        tracing::debug!(%error, "invalid reader probe result");
-                        false
-                    }),
-                    Err(error) => {
-                        tracing::debug!(%error, "reader probe failed");
-                        false
-                    }
-                };
+                let offered = answer.unwrap_or_else(|error| {
+                    tracing::debug!(%error, "reader probe failed");
+                    false
+                });
                 shell.reader.offer(tab, offered);
             },
         );

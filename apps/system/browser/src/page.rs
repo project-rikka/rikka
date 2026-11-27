@@ -1,65 +1,43 @@
-use std::collections::VecDeque;
-use std::sync::Arc;
-
-use browser_model::{Favicon, LivePage};
+use browser_model::LivePage;
 use futures_util::{StreamExt, stream};
 use rikka_web::{Event, Runtime, Session, SessionSettings};
 
-use crate::link::Opening;
 use crate::relay::Relay;
 
 pub(crate) type Page = browser_model::Page<Live>;
 
-#[derive(Debug)]
-pub(crate) struct AdoptedSession {
-    pub(crate) live: Live,
-    pub(crate) address: String,
-}
-
-#[derive(Debug)]
-pub(crate) struct LiveIcon {
-    pub(crate) url: String,
-    pub(crate) favicon: Option<Favicon>,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Opener {
+    App,
+    Page,
 }
 
 #[derive(Debug)]
 pub(crate) struct Live {
     pub(crate) view: Session,
-    pub(crate) muted: bool,
-    pub(crate) icon: Option<LiveIcon>,
-    pub(crate) openings: VecDeque<(String, Opening)>,
+    pub(crate) origin: Opener,
+    pub(crate) icon: Option<String>,
     events: Relay<Event>,
 }
 
-pub(crate) fn settings() -> SessionSettings {
-    SessionSettings::new().handle_load_requests(true)
-}
-
 impl Live {
-    pub(crate) fn open(runtime: &Runtime) -> rikka_web::Result<Live> {
-        Ok(Live::adopt(runtime.session(settings())?))
+    pub(crate) fn open(runtime: &Runtime, url: &str) -> rikka_web::Result<Live> {
+        let session = runtime.session(SessionSettings::new().url(url))?;
+        Ok(Live::adopt(session, Opener::App))
     }
 
-    pub(crate) fn adopt(session: Session) -> Live {
-        crate::translate::wire(&session);
+    pub(crate) fn adopt(session: Session, origin: Opener) -> Live {
         Live {
             events: Relay::new(stream::iter(session.events()).flatten()),
             view: session,
-            muted: false,
+            origin,
             icon: None,
-            openings: VecDeque::new(),
         }
     }
 
     pub(crate) fn events(&self) -> &Relay<Event> {
         &self.events
     }
-}
-
-#[derive(Clone, Debug)]
-pub(crate) enum Activation {
-    Load(String),
-    Restore { session: Arc<[u8]>, address: String },
 }
 
 impl LivePage for Live {

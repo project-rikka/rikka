@@ -1,19 +1,16 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::future::Future;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
 use std::rc::Rc;
 use std::time::Duration;
 
-use browser_translate::{CodeMode, Command, Display, HANDLER, Message, PROBE_SCRIPT, WORLD, Watch};
+use browser_translate::{CodeMode, Command, Display, MESSAGE, Message, Watch, probe_script};
 use futures_util::{Stream, StreamExt};
 use rikka_languages::Language;
-use rikka_picture::SharedGpu;
-use rikka_test_renderer::TestRenderer;
 use rikka_types::Choice;
 use rikka_web::{
-    Event, Frames, InjectAt, MessageHandler, Runtime, RuntimeEvent, ScriptMessage, ScriptReply,
-    Session, SessionSettings, UserContent, UserScript, World,
+    Event, Frames, Run, Runtime, RuntimeEvent, Script, ScriptAsk, Session, SessionSettings,
 };
 use serde_json::{Value, json};
 use tokio::sync::Notify;
@@ -28,14 +25,8 @@ const LATE: &str = "/late";
 const FRAMED: &str = "/framed";
 const STRICT: &str = "/strict";
 const STRICT_POLICY: &str = "Content-Security-Policy: default-src 'none'; frame-src 'self'\r\n";
-const REACHED: &str = "rikkaTestReached";
-
-fn gpu() -> TestRenderer {
-    let renderer =
-        rikka_test_renderer::renderer("browser-translate-test").expect("Vulkan 1.3 device");
-    SharedGpu::from_gpu(renderer.gpu()).publish();
-    renderer
-}
+const FIXTURE: Script = Script::bundled("browser-translate-test/page.js");
+const REACHED: &str = "browser-translate-test.reached";
 
 fn page_at(path: &str) -> Option<String> {
     Some(match path {
@@ -87,6 +78,47 @@ fn site() -> String {
         }
     });
     base
+}
+
+fn html(select: &str) -> Value {
+    json!({ "select": select, "read": "html" })
+}
+
+fn outer(select: &str) -> Value {
+    json!({ "select": select, "read": "outer" })
+}
+
+fn text(select: &str) -> Value {
+    json!({ "select": select, "read": "text" })
+}
+
+fn value(select: &str) -> Value {
+    json!({ "select": select, "read": "value" })
+}
+
+fn attribute(select: &str, name: &str) -> Value {
+    json!({ "select": select, "read": "attribute", "attribute": name })
+}
+
+fn body() -> Value {
+    json!({ "read": "html" })
+}
+
+fn title() -> Value {
+    json!({ "read": "title" })
+}
+
+fn framed(frame: &str, mut query: Value) -> Value {
+    query["frame"] = Value::from(frame);
+    query
+}
+
+fn first_file() -> Value {
+    json!({ "select": ".react-code-file-contents:not(#virtual) .react-file-line", "all": true, "read": "text" })
+}
+
+fn second_file() -> Value {
+    json!({ "select": "#virtual .react-file-line", "all": true, "read": "code" })
 }
 
 fn translated_level(nodes: &[Value]) -> Vec<Value> {
@@ -148,16 +180,22 @@ fn checked(units: &[Value]) {
     );
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Step {
+    Committed,
+    Finished,
+}
+
 #[derive(Default)]
 struct Host {
     command: Option<Command>,
-    pending: Vec<(Watch, ScriptReply)>,
+    pending: Vec<(Watch, ScriptAsk)>,
     watches: Vec<Watch>,
-    translators: usize,
     pages: Vec<Value>,
     page_reported: Rc<Notify>,
     reached: Vec<u64>,
     reached_notify: Rc<Notify>,
+    navigations: Vec<(Step, String)>,
     navigated: Rc<Notify>,
     units: Vec<Value>,
     batches: usize,
@@ -180,29 +218,24 @@ impl Host {
             }
             Some(Command::Restore) => unreachable!("the host only wants translations"),
         };
-        Some(command.answer(watch))
+        Some(command.answer())
     }
 
-    fn watch(&mut self, watch: Watch, reply: ScriptReply) {
+    fn watch(&mut self, watch: Watch, ask: ScriptAsk) {
         match self.answer(&watch) {
-            Some(answer) => {
-                if answer.get("translator").is_some() {
-                    self.translators += 1;
-                }
-                reply.send(answer);
-            }
-            None => self.pending.push((watch, reply)),
+            Some(answer) => ask.respond(answer),
+            None => self.pending.push((watch, ask)),
         }
     }
 
     fn want(&mut self, command: Option<Command>) {
         self.command = command;
-        for (watch, reply) in std::mem::take(&mut self.pending) {
-            self.watch(watch, reply);
+        for (watch, ask) in std::mem::take(&mut self.pending) {
+            self.watch(watch, ask);
         }
     }
 
-    fn translate(&mut self, body: &Value, reply: ScriptReply) {
+    fn translate(&mut self, body: &Value, ask: ScriptAsk) {
         let units = body["units"].as_array().cloned().unwrap_or_default();
         checked(&units);
         self.batches += 1;
@@ -212,7 +245,7 @@ impl Host {
             _ => None,
         };
         if body["session"].as_u64() != current {
-            reply.fail("stale session");
+            drop(ask);
             return;
         }
         let outputs: Vec<Value> = units
@@ -220,27 +253,35 @@ impl Host {
             .map(|unit| json!({ "nodes": translated_level(unit["nodes"].as_array().expect("unit nodes")) }))
             .collect();
         self.units.extend(units);
-        reply.send(json!({ "units": outputs }));
+        ask.respond(json!({ "units": outputs }));
     }
 
-    fn receive(&mut self, message: ScriptMessage) {
-        let reply = message.reply.expect("replying handler");
-        let body = message.body;
-        match body["kind"].as_str() {
-            Some("watch") => match Message::parse(&body) {
-                Ok(Message::Watch(watch)) => {
-                    self.watches.push(watch);
-                    self.watch(watch, reply);
-                }
-                other => panic!("malformed watch {body}: {other:?}"),
-            },
-            Some("page") => {
+    fn asked(&mut self, ask: ScriptAsk) {
+        match Message::parse(&ask.body) {
+            Ok(Message::Watch(watch)) => {
+                self.watches.push(watch);
+                self.watch(watch, ask);
+            }
+            Ok(Message::Translate(_)) => {
+                let body = ask.body.clone();
+                self.translate(&body, ask);
+            }
+            other => panic!("unexpected ask {}: {other:?}", ask.body),
+        }
+    }
+
+    fn navigation(&mut self, step: Step, url: String) {
+        self.navigations.push((step, url));
+        self.navigated.notify_waiters();
+    }
+
+    fn posted(&mut self, body: Value) {
+        match Message::parse(&body) {
+            Ok(Message::Page(_)) => {
                 self.pages.push(body);
                 self.page_reported.notify_waiters();
-                reply.send(Value::Null);
             }
-            Some("translate") => self.translate(&body, reply),
-            _ => panic!("unknown message: {body}"),
+            other => panic!("unexpected post {body}: {other:?}"),
         }
     }
 }
@@ -248,21 +289,19 @@ impl Host {
 async fn serve(mut events: impl Stream<Item = Event> + Unpin, host: Rc<RefCell<Host>>) {
     while let Some(event) = events.next().await {
         match event {
-            Event::PageStarted(_) => host.borrow_mut().pending.clear(),
-            Event::Changed | Event::PageStopped { .. } => host.borrow().navigated.notify_waiters(),
+            Event::Committed { url, .. } => host.borrow_mut().navigation(Step::Committed, url),
+            Event::Finished { url } => host.borrow_mut().navigation(Step::Finished, url),
             Event::Closed(reason) => panic!("session closed: {reason:?}"),
-            Event::LoadError(failure) => {
-                panic!("{:?} did not load: {:?}", failure.uri, failure.error)
+            Event::Message(message) if message.name == MESSAGE => {
+                host.borrow_mut().posted(message.body);
             }
-            Event::ScriptMessage(message) if message.name == HANDLER => {
-                host.borrow_mut().receive(message)
-            }
-            Event::ScriptMessage(message) if message.name == REACHED => {
+            Event::Message(message) if message.name == REACHED => {
                 let token = message.body.as_u64().expect("condition token");
                 let mut host = host.borrow_mut();
                 host.reached.push(token);
                 host.reached_notify.notify_waiters();
             }
+            Event::Ask(ask) if ask.name == MESSAGE => host.borrow_mut().asked(ask),
             _ => {}
         }
     }
@@ -278,50 +317,52 @@ struct Page {
     view: Session,
     site: String,
     host: Rc<RefCell<Host>>,
-    conditions: std::cell::Cell<u64>,
+    conditions: Cell<u64>,
 }
 
 impl Page {
-    async fn eval(&self, script: &str) -> Value {
-        self.view
-            .evaluate(script, &World::Page)
+    async fn run(&self, run: Run) -> Vec<Value> {
+        let described = format!("{run:?}");
+        patiently(&described, self.view.run(run))
             .await
-            .unwrap_or_else(|error| panic!("{script} failed: {error}"))
+            .unwrap_or_else(|error| panic!("{described} failed: {error}"))
+            .into_iter()
+            .map(|result| result.value)
+            .collect()
     }
 
-    async fn text(&self, script: &str) -> String {
-        match self.eval(script).await {
+    async fn call(&self, function: &str, args: impl IntoIterator<Item = Value>) -> Value {
+        let run = args
+            .into_iter()
+            .fold(Run::load(FIXTURE).call(function), Run::arg);
+        self.run(run)
+            .await
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| panic!("{function} gave no frame result"))
+    }
+
+    async fn read(&self, query: Value) -> Value {
+        self.call("test.read", [query]).await
+    }
+
+    async fn string(&self, query: Value) -> String {
+        match self.read(query.clone()).await {
             Value::String(text) => text,
-            other => panic!("{script} gave {other}"),
+            other => panic!("{query} gave {other}"),
         }
     }
 
-    async fn until(&self, script: &str, expected: impl Into<Value>) {
-        self.until_in("document", script, expected).await;
-    }
-
-    async fn until_in(&self, root: &str, script: &str, expected: impl Into<Value>) {
+    async fn until(&self, query: Value, expected: impl Into<Value>) {
         let expected = expected.into();
         let token = self.conditions.get() + 1;
         self.conditions.set(token);
         let reached = Rc::clone(&self.host.borrow().reached_notify);
         let next = reached.notified();
-        self.eval(&format!(
-            "(() => {{
-                const expected = JSON.stringify({expected});
-                const observer = new MutationObserver(() => check());
-                const check = () => {{
-                    let value;
-                    try {{ value = ({script}); }} catch (error) {{ return false; }}
-                    if (JSON.stringify(value) !== expected) return false;
-                    observer.disconnect();
-                    window.rikka.messageHandlers.{REACHED}.postMessage({token});
-                    return true;
-                }};
-                if (!check()) observer.observe({root}, {{ subtree: true, childList: true, characterData: true, attributes: true }});
-                return true;
-            }})()"
-        ))
+        self.call(
+            "test.until",
+            [Value::from(token), query.clone(), expected.clone()],
+        )
         .await;
         let waited = tokio::time::timeout(PATIENCE, async {
             let mut next = std::pin::pin!(next);
@@ -335,8 +376,8 @@ impl Page {
         })
         .await;
         if waited.is_err() {
-            let last = self.eval(script).await;
-            panic!("{script} never gave {expected}, last {last}");
+            let last = self.read(query.clone()).await;
+            panic!("{query} never gave {expected}, last {last}");
         }
     }
 
@@ -354,25 +395,36 @@ impl Page {
         .await;
     }
 
-    async fn at(&self, path: &str) {
+    fn arrivals(&self) -> usize {
+        self.host.borrow().navigations.len()
+    }
+
+    async fn arrived(&self, path: &str, step: Step, since: usize) {
         let navigated = Rc::clone(&self.host.borrow().navigated);
-        let expected = format!("{}{path}", self.site);
-        patiently(&format!("arriving at {path}"), async {
+        let expected = (step, format!("{}{path}", self.site));
+        let arrived = tokio::time::timeout(PATIENCE, async {
             loop {
                 let next = navigated.notified();
-                let page = self.view.page();
-                if page.uri == expected && !page.loading {
+                if self.host.borrow().navigations[since..].contains(&expected) {
                     return;
                 }
                 next.await;
             }
         })
         .await;
+        if arrived.is_err() {
+            let seen = self.host.borrow().navigations[since..].to_vec();
+            panic!(
+                "never reached {expected:?}, saw {seen:?}, page {:?}",
+                self.view.page()
+            );
+        }
     }
 
     async fn loaded(&self, path: &str) {
+        let since = self.arrivals();
         self.view.load(format!("{}{path}", self.site));
-        self.at(path).await;
+        self.arrived(path, Step::Finished, since).await;
     }
 
     async fn quiet(&self) {
@@ -403,8 +455,16 @@ impl Page {
         self.host.borrow().batches
     }
 
-    fn translators(&self) -> usize {
-        self.host.borrow().translators
+    async fn translators(&self) -> usize {
+        self.run(
+            Run::load(FIXTURE)
+                .call("test.translator")
+                .frames(Frames::All),
+        )
+        .await
+        .iter()
+        .filter(|loaded| **loaded == Value::Bool(true))
+        .count()
     }
 
     fn requested(&self) -> String {
@@ -417,9 +477,8 @@ where
     F: FnOnce(Page) -> Fut,
     Fut: Future<Output = ()>,
 {
-    let _gpu = gpu();
     let site = site();
-    let engine = Runtime::builder().start().expect("start installed engine");
+    let engine = Runtime::builder().start().expect("Chrome starts");
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_time()
         .build()
@@ -429,33 +488,20 @@ where
         tokio::time::timeout(STARTUP, async {
             while let Some(event) = started.next().await {
                 match event {
-                    RuntimeEvent::Started { .. } => return,
-                    RuntimeEvent::Exited(exit) => panic!("engine exited: {exit:?}"),
+                    RuntimeEvent::Ready { .. } => return,
+                    RuntimeEvent::Failed(failure) => panic!("the extension failed: {failure:?}"),
+                    RuntimeEvent::Exited(exit) => panic!("Chrome exited: {exit:?}"),
                     _ => {}
                 }
             }
         })
         .await
-        .expect("engine started in time");
+        .expect("Chrome started in time");
     });
+    engine.register(&probe_script());
     let view = engine
         .session(SessionSettings::new())
         .expect("open session");
-    view.set_user_content(
-        UserContent::new()
-            .script(
-                UserScript::new("rikka-translate", PROBE_SCRIPT)
-                    .world(World::isolated(WORLD))
-                    .frames(Frames::All)
-                    .inject_at(InjectAt::End),
-            )
-            .handler(
-                MessageHandler::new(HANDLER)
-                    .world(World::isolated(WORLD))
-                    .with_replies(),
-            )
-            .handler(MessageHandler::new(REACHED)),
-    );
     let events = view.events().expect("events not yet taken");
     runtime.block_on(async {
         let host = Rc::new(RefCell::new(Host::default()));
@@ -463,7 +509,7 @@ where
             view: view.clone(),
             site,
             host: host.clone(),
-            conditions: std::cell::Cell::new(0),
+            conditions: Cell::new(0),
         };
         tokio::select! {
             () = serve(events, host) => panic!("page events ended"),
@@ -476,14 +522,14 @@ where
     rikka_web::wait_for_closed_runtimes();
 }
 
-const BODY: &str = "document.body.innerHTML";
-
 #[test]
 fn readme_translates_and_restores() {
     scenario(|page| async move {
         page.loaded(README).await;
-        let original = page.text(BODY).await;
-        let title = page.text("document.title").await;
+        let original = page.string(body()).await;
+        let title_text = page.string(title()).await;
+        page.until_reported("the top frame page report", |pages| !pages.is_empty())
+            .await;
         {
             let host = page.host.borrow();
             let report = host.pages.first().expect("top frame page report");
@@ -495,85 +541,66 @@ fn readme_translates_and_restores() {
             assert!(
                 host.watches
                     .iter()
-                    .any(|watch| watch.top && watch.session.is_none() && !watch.translator)
+                    .any(|watch| watch.top && watch.session.is_none())
             );
         }
-        assert_eq!(page.translators(), 0, "no translator before a translation");
+        assert_eq!(
+            page.translators().await,
+            0,
+            "no translator before a translation"
+        );
 
         page.translate(7, "replace", "comments");
         page.until(
-            "document.querySelector('#order').innerHTML",
+            html("#order"),
             "<em>FRIENDLY</em> AND <strong>FAST</strong>",
         )
         .await;
-        page.until("document.title", title.to_uppercase()).await;
+        page.until(title(), title_text.to_uppercase()).await;
         page.quiet().await;
         assert_eq!(
-            page.translators(),
+            page.translators().await,
             1,
             "the translator went to the one frame"
         );
 
         assert_eq!(
-            page.text("document.querySelector('#intro code').outerHTML")
-                .await,
+            page.string(outer("#intro code")).await,
             "<code>rg -uuu</code>"
         );
-        let intro = page
-            .text("document.querySelector('#intro').textContent")
-            .await;
+        let intro = page.string(text("#intro")).await;
         assert!(
             intro.contains("RIPGREP IS A LINE-ORIENTED SEARCH TOOL"),
             "{intro}"
         );
         assert!(intro.contains("rg -uuu"), "{intro}");
         assert_eq!(
-            page.text("document.querySelector('#icons').innerHTML")
-                .await,
+            page.string(html("#icons")).await,
             " TO FIND A FILE QUICKLY.<span class=\"material-icons\">search</span> AND <kbd>Ctrl</kbd>PRESS "
         );
+        assert_eq!(page.string(text("#heading")).await, "RIPGREP (RG)");
+        assert_eq!(page.string(text("#tool")).await, "RIPGREP (UNICODE)");
         assert_eq!(
-            page.text("document.querySelector('#heading').textContent")
-                .await,
-            "RIPGREP (RG)"
-        );
-        assert_eq!(
-            page.text("document.querySelector('#tool').textContent")
-                .await,
-            "RIPGREP (UNICODE)"
-        );
-        assert_eq!(
-            page.text("document.querySelector('#command').innerHTML")
-                .await,
+            page.string(html("#command")).await,
             "<code>rg -w '[A-Z]+_SUSPEND'</code>"
         );
+        assert_eq!(page.string(text("#card div")).await, "USER GUIDE");
+        assert_eq!(page.string(text("nav li a")).await, "CODE");
         assert_eq!(
-            page.text("document.querySelector('#card div').textContent")
-                .await,
-            "USER GUIDE"
-        );
-        assert_eq!(
-            page.text("document.querySelector('nav li a').textContent")
-                .await,
-            "CODE"
-        );
-        assert_eq!(
-            page.text("document.querySelector('#ja').innerHTML").await,
+            page.string(html("#ja")).await,
             "このツールはとても速いです。"
         );
         assert_eq!(
-            page.text("document.querySelector('#held').innerHTML").await,
+            page.string(html("#held")).await,
             "Do not translate this sentence."
         );
 
         assert_eq!(
-            page.text("document.querySelector('#plain pre').textContent")
-                .await,
+            page.string(text("#plain pre")).await,
             "# INSTALL WITH CARGO FROM CRATES.IO\n$ cargo install ripgrep\n"
         );
         assert_eq!(
-            page.text("document.querySelector('#shell pre').textContent")
-                .await,
+            page.string(text("#shell pre")).await,
             "bat README.md  # SHOW A FILE WITH SYNTAX HIGHLIGHTING\n\
              bat -n src/main.rs  # ONLY SHOW LINE NUMBERS\n\
              # INSTALL THE SHELL COMPLETIONS INTO YOUR\n\
@@ -581,8 +608,7 @@ fn readme_translates_and_restores() {
              rg --generate complete-bash > rg.bash"
         );
         assert_eq!(
-            page.text("document.querySelector('#rust pre').textContent")
-                .await,
+            page.string(text("#rust pre")).await,
             "/// SEARCHES THE HAYSTACK FOR THE GIVEN PATTERN AND\n\
              /// REPORTS EVERY MATCH IT FINDS TO THE PRINTER.\n\
              fn search(pattern: &str) -> u64 {\n    \
@@ -595,7 +621,7 @@ fn readme_translates_and_restores() {
              }"
         );
 
-        for (selector, attribute, expected) in [
+        for (selector, name, expected) in [
             ("#attrs abbr", "title", "REGULAR EXPRESSION"),
             ("#attrs img", "alt", "A SCREENSHOT OF SEARCH RESULTS"),
             ("#attrs button", "aria-label", "COPY TO CLIPBOARD"),
@@ -604,12 +630,9 @@ fn readme_translates_and_restores() {
             ("#badges img", "alt", "BUILD STATUS"),
         ] {
             assert_eq!(
-                page.text(&format!(
-                    "document.querySelector('{selector}').getAttribute('{attribute}')"
-                ))
-                .await,
+                page.string(attribute(selector, name)).await,
                 expected,
-                "{selector}[{attribute}]"
+                "{selector}[{name}]"
             );
         }
 
@@ -636,42 +659,34 @@ fn readme_translates_and_restores() {
         );
 
         page.restore();
-        page.until("document.title", title).await;
-        page.until(BODY, original).await;
+        page.until(title(), title_text).await;
+        page.until(body(), original).await;
     });
 }
-
-const FIRST_FILE: &str = "Array.from(document.querySelectorAll('.react-code-file-contents:not(#virtual) .react-file-line'), (line) => line.textContent)";
-const SECOND_FILE: &str = "Array.from(document.querySelectorAll('#virtual .react-file-line'), (line) => Array.from(line.querySelectorAll('[data-code-text]'), (span) => span.getAttribute('data-code-text')).join(''))";
 
 #[test]
 fn code_view_translates_comments_only() {
     scenario(|page| async move {
         page.loaded(BLOB).await;
-        let original = page.text(BODY).await;
-        let lines = page
-            .text("document.querySelector('.react-line-numbers').textContent")
-            .await;
-        let raw = page.text("document.querySelector('textarea').value").await;
-        let virtual_lines = page
-            .text("document.querySelector('#virtual .react-code-lines').innerHTML")
-            .await;
+        let original = page.string(body()).await;
+        let lines = page.string(text(".react-line-numbers")).await;
+        let raw = page.string(value("textarea")).await;
+        let virtual_lines = page.string(html("#virtual .react-code-lines")).await;
+        let translated_second = json!([
+            "// PRINT THE VERSION AND EXIT.",
+            "fn version() {",
+            "    println!(\"{}\", VERSION); // GOES TO STANDARD OUTPUT",
+            "}",
+        ]);
 
         page.translate(1, "replace", "comments");
-        page.until(
-            "document.querySelector('#LC2').textContent",
-            "THE MAIN ENTRY POINT INTO RIPGREP.",
-        )
-        .await;
-        page.until(
-            &format!("{SECOND_FILE}[0]"),
-            "// PRINT THE VERSION AND EXIT.",
-        )
-        .await;
+        page.until(text("#LC2"), "THE MAIN ENTRY POINT INTO RIPGREP.")
+            .await;
+        page.until(second_file(), translated_second.clone()).await;
         page.quiet().await;
 
         assert_eq!(
-            page.eval(FIRST_FILE).await,
+            page.read(first_file()).await,
             json!([
                 "/*!",
                 "THE MAIN ENTRY POINT INTO RIPGREP.",
@@ -703,31 +718,21 @@ fn code_view_translates_comments_only() {
                 "}",
             ])
         );
-        let translated_second = json!([
-            "// PRINT THE VERSION AND EXIT.",
-            "fn version() {",
-            "    println!(\"{}\", VERSION); // GOES TO STANDARD OUTPUT",
-            "}",
-        ]);
-        assert_eq!(page.eval(SECOND_FILE).await, translated_second);
-        assert_eq!(
-            page.text("document.querySelector('.react-line-numbers').textContent")
-                .await,
-            lines
-        );
-        assert_eq!(
-            page.text("document.querySelector('textarea').value").await,
-            raw
-        );
+        assert_eq!(page.read(second_file()).await, translated_second);
+        assert_eq!(page.string(text(".react-line-numbers")).await, lines);
+        assert_eq!(page.string(value("textarea")).await, raw);
         assert!(!page.requested().contains("jemallocator::Jemalloc"));
 
         let batches = page.batches();
-        page.eval(&format!(
-            "document.querySelector('#virtual .react-code-lines').innerHTML = {}; true",
-            Value::String(virtual_lines)
-        ))
+        page.call(
+            "test.replace",
+            [
+                Value::from("#virtual .react-code-lines"),
+                Value::from(virtual_lines),
+            ],
+        )
         .await;
-        page.until(SECOND_FILE, translated_second).await;
+        page.until(second_file(), translated_second).await;
         assert_eq!(
             page.batches(),
             batches,
@@ -735,7 +740,7 @@ fn code_view_translates_comments_only() {
         );
 
         page.restore();
-        page.until(BODY, original).await;
+        page.until(body(), original).await;
     });
 }
 
@@ -759,10 +764,11 @@ fn late_content_is_resampled() {
 fn history_push_reports_new_page() {
     scenario(|page| async move {
         page.loaded(README).await;
+        page.until_reported("the first page report", |pages| !pages.is_empty())
+            .await;
         let before = page.host.borrow().pages.len();
 
-        page.eval("history.pushState({}, '', '/spa-route'); true")
-            .await;
+        page.call("test.push", [Value::from("/spa-route")]).await;
 
         page.until_reported("history.pushState page", |pages| pages.len() > before)
             .await;
@@ -775,46 +781,37 @@ fn bfcache_restore_resumes_watch() {
         page.loaded(DOCS).await;
         page.translate(7, "replace", "comments");
         page.until(
-            "document.querySelector('#closing').textContent",
+            text("#closing"),
             "THAT IS ALL YOU NEED TO GET STARTED WITH THE LIBRARY.",
         )
         .await;
-        page.eval("window.rikkaRemembered = true; true").await;
+        page.call("test.remember", []).await;
 
         page.loaded("/elsewhere").await;
-        page.until(
-            "document.querySelector('p').textContent",
-            "ANOTHER PAGE ENTIRELY.",
-        )
-        .await;
+        page.until(text("p"), "ANOTHER PAGE ENTIRELY.").await;
         page.restore();
-        page.until(
-            "document.querySelector('p').textContent",
-            "Another page entirely.",
-        )
-        .await;
+        page.until(text("p"), "Another page entirely.").await;
         let reports = page.host.borrow().pages.len();
 
-        page.view.go_back();
-        page.at(DOCS).await;
+        let since = page.arrivals();
+        page.view.go(-1);
+        page.arrived(DOCS, Step::Committed, since).await;
         assert_eq!(
-            page.eval("window.rikkaRemembered === true").await,
+            page.call("test.remembered", []).await,
             json!(true),
             "the page came back from the cache"
         );
         page.until(
-            "document.querySelector('#closing').textContent",
+            text("#closing"),
             "That is all you need to get started with the library.",
         )
         .await;
-        assert!(
-            page.host.borrow().pages.len() > reports,
-            "the restored page reports itself again"
-        );
+        page.until_reported("the restored page report", |pages| pages.len() > reports)
+            .await;
 
         page.translate(8, "replace", "comments");
         page.until(
-            "document.querySelector('#closing').textContent",
+            text("#closing"),
             "THAT IS ALL YOU NEED TO GET STARTED WITH THE LIBRARY.",
         )
         .await;
@@ -822,33 +819,24 @@ fn bfcache_restore_resumes_watch() {
 }
 
 #[test]
-fn frames_receive_the_translator_when_translation_starts() {
+fn frames_load_the_translator_when_translation_starts() {
     scenario(|page| async move {
         page.loaded(FRAMED).await;
-        assert_eq!(page.translators(), 0);
+        assert_eq!(page.translators().await, 0);
 
         page.translate(4, "replace", "comments");
-        page.until(
-            "document.querySelector('#outer').textContent",
-            "TEXT OUTSIDE THE FRAME.",
-        )
-        .await;
-        let frame = "document.querySelector('#frame').contentDocument";
-        page.until_in(
-            frame,
-            &format!("{frame}.querySelector('#inner').textContent"),
-            "TEXT INSIDE THE FRAME.",
-        )
-        .await;
-        assert_eq!(page.translators(), 2, "the top frame and the inner frame");
+        page.until(text("#outer"), "TEXT OUTSIDE THE FRAME.").await;
+        page.until(framed("#frame", text("#inner")), "TEXT INSIDE THE FRAME.")
+            .await;
+        assert_eq!(
+            page.translators().await,
+            2,
+            "the top frame and the inner frame"
+        );
 
         page.restore();
-        page.until_in(
-            frame,
-            &format!("{frame}.querySelector('#inner').textContent"),
-            "Text inside the frame.",
-        )
-        .await;
+        page.until(framed("#frame", text("#inner")), "Text inside the frame.")
+            .await;
     });
 }
 
@@ -859,7 +847,7 @@ fn translation_runs_under_a_strict_content_security_policy() {
 
         page.translate(2, "replace", "comments");
         page.until(
-            "document.querySelector('#strict').textContent",
+            text("#strict"),
             "THIS PAGE FORBIDS EVERY SCRIPT OF ITS OWN.",
         )
         .await;

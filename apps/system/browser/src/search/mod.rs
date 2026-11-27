@@ -14,13 +14,6 @@ impl Browser {
         self.services().search.engines(self.preferences())
     }
 
-    pub(crate) fn search_url(&self, terms: &str) -> String {
-        self.search_engines()
-            .default_engine()
-            .search_url(terms)
-            .into()
-    }
-
     pub(crate) fn suggester(&self) -> Option<Suggester> {
         self.services().search.suggester()
     }

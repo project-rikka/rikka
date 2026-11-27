@@ -27,7 +27,6 @@ pub struct Watch {
     pub top: bool,
     pub session: Option<u64>,
     pub display: Option<Display>,
-    pub translator: bool,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -91,15 +90,10 @@ fn watch(object: &Map<String, Value>) -> Result<Watch> {
                 .ok_or(Error::Malformed("display"))?,
         ),
     };
-    let translator = object
-        .get("translator")
-        .and_then(Value::as_bool)
-        .ok_or(Error::Malformed("translator"))?;
     Ok(Watch {
         top,
         session,
         display,
-        translator,
     })
 }
 

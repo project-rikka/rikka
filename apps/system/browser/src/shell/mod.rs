@@ -1,8 +1,9 @@
 mod autosave;
 mod closing;
 mod commands;
+mod context;
 mod editing;
-mod events;
+pub(crate) mod events;
 mod home;
 mod navigation;
 mod pages;
@@ -14,11 +15,8 @@ use std::cell::Ref;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use browser_pages::Cause;
 use rikka_app::prelude::*;
-use rikka_appearance::Appearance;
-use rikka_image::ColorScheme;
-use rikka_web::{Load, Session};
+use rikka_web::Session;
 
 use crate::boot::Boot;
 use crate::browser::Browser;
@@ -27,6 +25,7 @@ use crate::internal::Pages;
 use crate::internal::route::Presented;
 use crate::menus::Menus;
 use crate::model::Model;
+use crate::page::Live;
 use crate::sidebar::{Sidebar, titled};
 use crate::topbar::Address;
 use browser_model::{Placement, ProfileKey, Reopening, Row, TabId, Target, WindowId};
@@ -43,8 +42,6 @@ pub(crate) struct Shell {
     id: WindowId,
     #[untracked]
     wired: HashMap<TabId, Session>,
-    #[untracked]
-    referred: HashMap<TabId, Load>,
     #[untracked]
     shown: Option<(TabId, Session)>,
     #[untracked]
@@ -75,8 +72,6 @@ pub(crate) struct Shell {
     #[state]
     pub(crate) peek: crate::peek::Peek,
     #[state]
-    pub(crate) popup: crate::extensions::Popup,
-    #[state]
     pub(crate) panes: crate::split::Panes,
     #[state]
     pub(crate) overlays: crate::overlays::Overlays,
@@ -85,10 +80,17 @@ pub(crate) struct Shell {
 }
 
 #[derive(Debug)]
+pub(crate) struct AdoptedSession {
+    pub(crate) live: Live,
+    pub(crate) address: String,
+}
+
+#[derive(Debug)]
 pub(crate) enum WindowContent {
     Blank,
     Addresses(Vec<String>),
     Tab(TabId),
+    Adopted(AdoptedSession),
     Reopen(Reopening, Vec<String>),
     Start(Vec<String>),
     Little(Option<ProfileKey>, crate::little::Little),
@@ -134,7 +136,6 @@ fn styled(window: Window<Shell>, private: bool, style: WindowStyle) -> Window<Sh
         .on_start(Shell::start)
         .on_focus(Shell::focused)
         .on_blur(Shell::blurred)
-        .on_language(Shell::relabeled)
         .on_close_request(Shell::close_window)
         .on_command(rikka_ui::Command::Back, Shell::back)
         .on_command(rikka_ui::Command::Forward, Shell::forward);
@@ -161,7 +162,6 @@ impl Shell {
             browser,
             id,
             wired: HashMap::new(),
-            referred: HashMap::new(),
             shown: None,
             lit: None,
             page_shown: None,
@@ -177,7 +177,6 @@ impl Shell {
             beside: Vec::new(),
             gestures: crate::gestures::Gestures::new(),
             peek: crate::peek::Peek::new(),
-            popup: crate::extensions::Popup::new(),
             panes: crate::split::Panes::new(),
             overlays: crate::overlays::Overlays::new(),
             claim: crate::default_browser::Claim::new(),
@@ -190,6 +189,12 @@ impl Shell {
                     .browser
                     .edit()
                     .drop_row(id, Row::Tab(tab), Target::Today(0));
+            }
+            WindowContent::Adopted(AdoptedSession { live, address }) => {
+                shell
+                    .browser
+                    .edit()
+                    .adopt_tab(id, live, address, Placement::Top, true);
             }
             WindowContent::Reopen(reopening, addresses) => {
                 shell.reopen_into(Some(reopening), addresses)
@@ -251,10 +256,6 @@ impl Shell {
         skip_view();
     }
 
-    fn relabeled(&mut self) {
-        self.browser.follow_interface_locale();
-    }
-
     fn title(&self) -> String {
         let model = self.model();
         let page = match model.active(self.id) {
@@ -285,25 +286,6 @@ impl Shell {
 
     pub(crate) fn view_of(&self, tab: TabId) -> Option<Session> {
         self.model().tab(tab)?.page().view().cloned()
-    }
-
-    pub(crate) fn refer(&mut self, opened: TabId, opener: TabId) {
-        let address = self
-            .model()
-            .tab(opened)
-            .map(|tab_entry| (*tab_entry.meta.url).clone());
-        if let (Some(source), Some(address)) = (self.view_of(opener), address) {
-            self.referred
-                .insert(opened, Load::uri(address).referrer_session(&source));
-        }
-    }
-
-    pub(crate) fn refer_with(&mut self, opened: TabId, load: Load) {
-        self.referred.insert(opened, load);
-    }
-
-    pub(crate) fn referred_load(&mut self, opened: TabId) -> Option<Load> {
-        self.referred.remove(&opened)
     }
 
     pub(crate) fn model(&self) -> Ref<'_, Model> {
@@ -340,13 +322,6 @@ impl Shell {
             .is_some_and(|layout| layout.private)
     }
 
-    pub(crate) fn color_scheme(&self) -> ColorScheme {
-        match self.private() || Appearance::current().theme().is_dark() {
-            true => ColorScheme::Dark,
-            false => ColorScheme::Light,
-        }
-    }
-
     pub(crate) fn open_addresses(&mut self, addresses: Vec<String>, token: Option<String>) {
         self.take_in(addresses);
         self.changed();
@@ -366,10 +341,7 @@ impl Shell {
     fn take_in(&mut self, addresses: Vec<String>) {
         let mut model = self.browser.edit();
         for address in addresses {
-            let tab = model.open_tab(self.id, Some(address), Placement::Top, true);
-            if let Some(tab_entry) = tab.and_then(|tab| model.tab_mut(tab)) {
-                tab_entry.visit_tracker.set_cause(Cause::Link);
-            }
+            model.open_tab(self.id, Some(address), Placement::Top, true);
         }
     }
 
@@ -378,6 +350,7 @@ impl Shell {
         self.sync_tabs();
         self.browser.save_others(self.id);
         self.schedule_save();
+        self.settle_bookmarks();
     }
 }
 

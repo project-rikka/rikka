@@ -1,22 +1,24 @@
 use std::future::Future;
 
-use rikka_gecko_protocol::rikka::storage::Cookie;
-
+use crate::api::Cookie;
 use crate::error::Result;
+use crate::opening::NewSessionRequest;
 use crate::process::profile::Profile;
 use crate::runtime::Runtime;
-use crate::session::{NewSessionRequest, Session, SessionSettings, UserContent};
+use crate::script::UserScript;
+use crate::session::{Session, SessionSettings};
 
 pub struct SignInPortal {
     session: Session,
 }
 
 impl SignInPortal {
-    pub fn open(url: &str, content: UserContent) -> Result<SignInPortal> {
+    pub fn open(url: &str, scripts: &[UserScript]) -> Result<SignInPortal> {
         let runtime = Runtime::builder().profile(Profile::Ephemeral).start()?;
-        let session = runtime.session(SessionSettings::new().private(true))?;
-        session.set_user_content(content);
-        session.load(url);
+        for script in scripts {
+            runtime.register(script);
+        }
+        let session = runtime.session(SessionSettings::new().url(url))?;
         Ok(SignInPortal { session })
     }
 
@@ -26,21 +28,13 @@ impl SignInPortal {
     }
 
     pub fn follow(&self, opening: NewSessionRequest) {
-        let uri = opening.uri.clone();
+        let url = opening.url.clone();
         opening.deny();
-        self.session.load(uri);
+        self.session.load(url);
     }
 
-    pub fn cookies(&self, site: &str) -> impl Future<Output = Result<Vec<Cookie>>> + use<> {
-        let session = self.session.clone();
-        let site = site.to_owned();
-        async move {
-            session
-                .runtime()
-                .storage()
-                .cookies(site, &session.partition())
-                .await
-        }
+    pub fn cookies(&self, url: &str) -> impl Future<Output = Result<Vec<Cookie>>> + Send + use<> {
+        self.session.runtime().storage().cookies(url)
     }
 }
 

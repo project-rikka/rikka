@@ -1,12 +1,9 @@
 load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+load("//crates/web/rikka-web/extension:defs.bzl", "rikka_web_extension", "rikka_web_machine_test")
 
 rikka_library(
     name = "browser-translate",
     target_compatible_with = ["@platforms//os:linux"],
-    compile_data = [
-        "scripts/probe.js",
-        "scripts/translator.js",
-    ],
     visibility = [
         "//apps/system/browser:__subpackages__",
     ],
@@ -16,12 +13,21 @@ rikka_library(
         "//crates/foundation/rikka-sync",
         "//crates/foundation/rikka-types",
         "//crates/web/rikka-html",
+        "//crates/web/rikka-web",
         "@crates//:futures-util",
         "@crates//:serde_json",
         "@crates//:thiserror",
         "@crates//:tokio",
         "@crates//:whatlang",
     ],
+)
+
+exports_files(
+    [
+        "scripts/probe.js",
+        "scripts/translator.js",
+    ],
+    visibility = ["//system/rikka-web-host:__pkg__"],
 )
 
 rikka_test(
@@ -39,20 +45,28 @@ rikka_test(
     ],
 )
 
-rikka_test(
+rikka_web_extension(
+    name = "test_extension",
+    testonly = True,
+    scripts = {
+        "browser-translate-test/page.js": "tests/page.js",
+        "browser-translate/probe.js": "scripts/probe.js",
+        "browser-translate/translator.js": "scripts/translator.js",
+    },
+)
+
+rikka_web_machine_test(
     name = "machine",
     compile_data = [
         "tests/fixtures/blob.html",
         "tests/fixtures/docs.html",
         "tests/fixtures/readme.html",
     ],
-    machine = True,
+    extension = ":test_extension",
     deps = [
         ":browser-translate",
         "//crates/foundation/rikka-languages",
         "//crates/foundation/rikka-types",
-        "//crates/graphics/rikka-picture",
-        "//crates/graphics/rikka-test-renderer",
         "//crates/web/rikka-web",
         "@crates//:futures-util",
         "@crates//:serde_json",

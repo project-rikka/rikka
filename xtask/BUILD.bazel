@@ -10,6 +10,7 @@ rikka_binary(
         "//crates/foundation/rikka-xml",
         "//crates/graphics/rikka-ltc",
         "//crates/graphics/rikka-symbols-scanner:lib",
+        "//crates/web/rikka-web-crx",
         "@crates//:anyhow",
         "@crates//:base64",
         "@crates//:clap",
@@ -19,7 +20,6 @@ rikka_binary(
         "@crates//:sha1",
         "@crates//:sha2",
         "@crates//:tar",
-        "@crates//:toml",
         "@crates//:zstd",
     ],
 )

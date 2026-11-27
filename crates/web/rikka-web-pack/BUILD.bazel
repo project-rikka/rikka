@@ -1,0 +1,13 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-web-pack",
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+        "//crates/web:__subpackages__",
+        "//system/rikka-web-host:__pkg__",
+    ],
+    deps = [
+        "//crates/web/rikka-web-crx",
+    ],
+)

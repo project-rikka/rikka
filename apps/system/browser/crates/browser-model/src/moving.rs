@@ -75,7 +75,12 @@ impl<L: LivePage> Model<L> {
         }
     }
 
-    fn add_favorite(&mut self, profile: crate::ProfileId, at: usize, saved: Saved) -> FavoriteId {
+    pub(crate) fn add_favorite(
+        &mut self,
+        profile: crate::ProfileId,
+        at: usize,
+        saved: Saved,
+    ) -> FavoriteId {
         let id = self
             .store
             .add_favorite(profile, saved.url.clone(), saved.title.clone());
@@ -84,7 +89,12 @@ impl<L: LivePage> Model<L> {
         id
     }
 
-    fn add_pin(&mut self, space: SpaceId, place: PinPlace, saved: Saved) -> Option<PinnedTabId> {
+    pub(crate) fn add_pin(
+        &mut self,
+        space: SpaceId,
+        place: PinPlace,
+        saved: Saved,
+    ) -> Option<PinnedTabId> {
         let title = Some(saved.title.clone()).filter(|title| !title.is_empty());
         let id = self
             .store
@@ -236,12 +246,34 @@ impl<L: LivePage> Model<L> {
     }
 
     fn unpin(&mut self, window: WindowId, pin: PinnedTabId, at: usize) -> bool {
+        self.release_pin(pin, Some((window, at)))
+    }
+
+    pub(crate) fn release_pin(
+        &mut self,
+        pin: PinnedTabId,
+        into: Option<(WindowId, usize)>,
+    ) -> bool {
         let Some((_, _, Node::Pin(removed))) = self.pinned.remove(PinnedItem::Tab(pin)) else {
             return false;
         };
         self.store.unpin_tab(pin);
-        self.release(Slot::Pinned(pin), Some((window, at)), removed.saved);
+        self.release(Slot::Pinned(pin), into, removed.saved);
         true
+    }
+
+    pub(crate) fn move_pinned_to(&mut self, item: PinnedItem, space: SpaceId, place: PinPlace) {
+        let Some((from_space, from)) = self.pinned.place_of(item) else {
+            return;
+        };
+        let index =
+            match from_space == space && from.parent == place.parent && place.index >= from.index {
+                true => place.index + 1,
+                false => place.index,
+            };
+        if self.pinned.place(item, space, PinPlace { index, ..place }) {
+            self.save_pinned_place(item);
+        }
     }
 
     fn favorite_tab(&mut self, window: WindowId, tab: TabId, at: usize) -> bool {

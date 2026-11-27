@@ -1,4 +1,3 @@
-mod anticipate;
 mod dropdown;
 mod field;
 pub(crate) mod gather;

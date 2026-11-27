@@ -56,7 +56,7 @@ impl Shell {
                     self.toggle_pin(tab);
                 }
             }
-            Command::SavePage => self.save_page(),
+            Command::Print => self.print_page(),
             Command::NewWindow => open_window(window(&self.browser, false, WindowContent::Blank)),
             Command::PrivateWindow => {
                 open_window(window(&self.browser, true, WindowContent::Blank))
@@ -74,9 +74,6 @@ impl Shell {
             Command::ToggleSplit => self.toggle_split(),
             Command::NextPane => self.step_pane(1),
             Command::PreviousPane => self.step_pane(-1),
-            Command::Find => self.find_command(None),
-            Command::FindNext => self.find_command(Some(true)),
-            Command::FindPrevious => self.find_command(Some(false)),
             Command::ViewSource => self.view_active_source(),
             Command::Translate => self.toggle_translation(),
             Command::Downloads => self.open_internal(Internal::Downloads),

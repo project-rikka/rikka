@@ -12,7 +12,6 @@ fn idle(tab: TabId, now: Timestamp, minutes: u32) -> TabActivity {
         seen: false,
         last_active: now.saturating_sub(MINUTE * minutes),
         playing: false,
-        capturing: false,
         asking: false,
         exempt: false,
     }
@@ -21,7 +20,7 @@ fn idle(tab: TabId, now: Timestamp, minutes: u32) -> TabActivity {
 #[test]
 fn only_idle_hidden_quiet_tabs_are_discarded_oldest_first() {
     let store = Store::in_memory().expect("an in-memory store opens");
-    let tabs: Vec<TabId> = (0..9).map(|_| store.new_tab_id()).collect();
+    let tabs: Vec<TabId> = (0..8).map(|_| store.new_tab_id()).collect();
     let now = Timestamp::now();
     let activities = [
         idle(tabs[0], now, 40),
@@ -40,16 +39,12 @@ fn only_idle_hidden_quiet_tabs_are_discarded_oldest_first() {
             ..idle(tabs[5], now, 90)
         },
         TabActivity {
-            capturing: true,
+            asking: true,
             ..idle(tabs[6], now, 90)
         },
         TabActivity {
-            asking: true,
-            ..idle(tabs[7], now, 90)
-        },
-        TabActivity {
             exempt: true,
-            ..idle(tabs[8], now, 90)
+            ..idle(tabs[7], now, 90)
         },
     ];
     assert_eq!(

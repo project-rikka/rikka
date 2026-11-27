@@ -7,7 +7,7 @@ rikka_library(
         "//apps/system/browser:__subpackages__",
     ],
     deps = [
-        "//apps/system/browser/crates/browser-engine-settings",
+        "//apps/system/browser/crates/browser-bookmarks",
         "//apps/system/browser/crates/browser-pages",
         "//apps/system/browser/crates/browser-store",
         "//crates/foundation/rikka-types",
@@ -22,7 +22,9 @@ rikka_test(
     name = "main",
     deps = [
         ":browser-model",
+        "//apps/system/browser/crates/browser-bookmarks",
         "//apps/system/browser/crates/browser-store",
         "//crates/web/rikka-web",
+        "@crates//:serde_json",
     ],
 )

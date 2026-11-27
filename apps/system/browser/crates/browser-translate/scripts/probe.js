@@ -1,9 +1,9 @@
 (() => {
   "use strict";
 
-  const channel = window.rikka && window.rikka.messageHandlers && window.rikka.messageHandlers.rikkaTranslate;
-  if (!channel) return;
-
+  const NAME = "browser-translate";
+  const TRANSLATOR = "browser-translate/translator.js";
+  const FACTORY = "browser-translate.translator";
   const TOP = window.top === window;
   const SAMPLE_CHARS = 4000;
   const SHORT_SAMPLE = 200;
@@ -19,8 +19,17 @@
   const CODE_SURE = ".react-code-file-contents, .react-code-lines, .blob-wrapper, .blob-code-inner, table.highlight, table.diff-table, .diff-text-cell, .react-file-line";
   const CODE_HINT = ".highlight, .hljs, .shiki, .prism-code, .sourceCode, .codehilite, [class*=language-], [class*=lang-], [class*=highlight-source-], [class*=highlight-text-]";
 
-  const post = (body) => channel.postMessage(body);
-  const host = { post, top: TOP, LETTER, SPACES, INVISIBLE, OPAQUE, KEPT, EDITORS, CODE_SURE, CODE_HINT };
+  const send = (message) => {
+    try {
+      return chrome.runtime.sendMessage(message);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+  };
+  const post = (body) => send({ rikka: "post", name: NAME, body }).catch(() => {});
+  const ask = (body) => send({ rikka: "ask", name: NAME, body });
+  const alive = () => Boolean(globalThis.chrome?.runtime?.id);
+  const host = { ask, top: TOP, LETTER, SPACES, INVISIBLE, OPAQUE, KEPT, EDITORS, CODE_SURE, CODE_HINT };
   let translator = null;
 
   const language = () => {
@@ -58,7 +67,7 @@
 
   const report = () => {
     const text = sample();
-    post({ kind: "page", lang: language(), sample: text }).catch(() => {});
+    post({ kind: "page", lang: language(), sample: text });
     return text;
   };
 
@@ -79,7 +88,7 @@
     if (text === current.text && lang === current.lang) return;
     current.text = text;
     current.lang = lang;
-    post({ kind: "page", lang, sample: text }).catch(() => {});
+    post({ kind: "page", lang, sample: text });
     if (text.length >= SHORT_SAMPLE) stopResampling();
   };
 
@@ -111,18 +120,22 @@
     });
   };
 
+  const factory = () => globalThis[Symbol.for("rikka")]?.[FACTORY];
 
-  const handleCommand = (command) => {
+  const instantiate = async () => {
+    if (typeof factory() !== "function" && !(await send({ rikka: "load", script: TRANSLATOR }))) return null;
+    return typeof factory() === "function" ? factory()(host) : null;
+  };
+
+  const handleCommand = async (command) => {
     if (!command || typeof command !== "object") return false;
     if (command.do === "restore") {
       if (translator) translator.stop();
       return true;
     }
     if (command.do !== "translate") return false;
-    if (!translator) {
-      if (typeof command.translator !== "string") return false;
-      translator = (0, eval)(command.translator)(host);
-    }
+    if (!translator) translator = await instantiate();
+    if (!translator) return false;
     stopResampling();
     return translator.handle(command);
   };
@@ -131,19 +144,18 @@
 
   const watch = () => {
     const generation = ++watching;
+    const current = () => generation === watching;
+    const later = () => setTimeout(() => current() && watch(), REWATCH_DELAY_MS);
     const shown = translator && translator.shown();
-    post({ kind: "watch", top: TOP, session: shown ? shown.session : null, display: shown ? shown.display : null, translator: translator !== null }).then(
+    ask({ kind: "watch", top: TOP, session: shown ? shown.session : null, display: shown ? shown.display : null }).then(
       (command) => {
-        if (generation !== watching) return;
-        let handled = false;
-        try {
-          handled = handleCommand(command);
-        } finally {
-          if (handled) watch();
-          else setTimeout(() => generation === watching && watch(), REWATCH_DELAY_MS);
-        }
+        if (!current()) return;
+        handleCommand(command).then(
+          (handled) => current() && (handled ? watch() : later()),
+          () => current() && later(),
+        );
       },
-      () => {},
+      () => current() && alive() && later(),
     );
   };
 

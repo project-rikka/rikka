@@ -376,11 +376,6 @@
           "summary": "Custom search engines: id, name, keyword, url and suggestions"
         },
         {
-          "name": "https-only",
-          "default": true,
-          "summary": "Upgrade every connection to HTTPS"
-        },
-        {
           "name": "reader-typeface",
           "default": "sans",
           "summary": "Reader typeface",
@@ -447,16 +442,6 @@
           }
         },
         {
-          "name": "download-folder",
-          "default": "",
-          "summary": "Folder downloads are saved to"
-        },
-        {
-          "name": "download-ask",
-          "default": false,
-          "summary": "Ask where to save each download"
-        },
-        {
           "name": "memory-saver",
           "default": "1h",
           "summary": "Discard tabs left unused for",
@@ -498,6 +483,11 @@
           "name": "home-recently-closed",
           "default": true,
           "summary": "Show recently closed tabs on Home"
+        },
+        {
+          "name": "home-hidden-sites",
+          "default": [],
+          "summary": "Addresses hidden from top sites on Home"
         },
         {
           "name": "check-default",
@@ -573,26 +563,6 @@
           "summary": "Sites never translated"
         },
         {
-          "name": "find-match-case",
-          "default": false,
-          "summary": "Find in page matches letter case"
-        },
-        {
-          "name": "find-whole-word",
-          "default": false,
-          "summary": "Find in page matches whole words only"
-        },
-        {
-          "name": "find-match-diacritics",
-          "default": false,
-          "summary": "Find in page tells accented letters apart"
-        },
-        {
-          "name": "find-links-only",
-          "default": false,
-          "summary": "Find in page searches link text only"
-        },
-        {
           "name": "sidebar-expanded",
           "default": true,
           "summary": "Show the sidebar expanded with titles"
@@ -613,44 +583,6 @@
               "24h",
               "7d",
               "30d"
-            ]
-          }
-        },
-        {
-          "name": "history-kept",
-          "default": "90d",
-          "summary": "Keep browsing history for",
-          "constraint": {
-            "choices": [
-              "forever",
-              "365d",
-              "90d",
-              "30d"
-            ]
-          }
-        },
-        {
-          "name": "default-zoom",
-          "default": 100,
-          "summary": "Default page zoom in percent",
-          "constraint": {
-            "choices": [
-              25,
-              33,
-              50,
-              67,
-              75,
-              80,
-              90,
-              100,
-              110,
-              125,
-              150,
-              175,
-              200,
-              250,
-              300,
-              400
             ]
           }
         }

@@ -7,7 +7,7 @@ use crate::shell::Shell;
 use crate::sidebar::face::Face;
 use crate::sidebar::look::{FAVICON, INDENT, ROW};
 use crate::widgets::{DragItem, favicon, glyph_button, grip};
-use browser_model::{Capturing, Row, Slot, Sound, TabId};
+use browser_model::{Row, Slot, Sound, TabId};
 
 const SMALL: f32 = 14.0;
 
@@ -64,7 +64,6 @@ fn drawn(line: Line, hovered: bool, set: Setter<bool>) -> Element {
         spacer().width(depth as f32 * INDENT);
         leading;
         title;
-        capture(face.capture);
         sound(face.sound, face.tab);
         closable.map(close);
     }
@@ -83,7 +82,7 @@ fn drawn(line: Line, hovered: bool, set: Setter<bool>) -> Element {
             RowTarget::Tab(tab) => shell.select(tab),
             RowTarget::Slot(slot) => shell.select_slot(slot),
         })
-        .aim(move |menus: &mut Menus| menus.aim(subject))
+        .aim(move |menus: &mut Menus| menus.aim(subject.clone()))
         .hover(move |inside: bool| {
             set(inside);
             skip_view();
@@ -100,23 +99,6 @@ fn drawn(line: Line, hovered: bool, set: Setter<bool>) -> Element {
         }
     }
     gripped.height(ROW).fill_width().any()
-}
-
-fn capture(capture: Capturing) -> Option<Element> {
-    let symbol = match capture {
-        Capturing { screen: true, .. } => MaterialSymbol::SCREEN_SHARE,
-        Capturing { camera: true, .. } => MaterialSymbol::VIDEOCAM,
-        Capturing {
-            microphone: true, ..
-        } => MaterialSymbol::MIC,
-        Capturing { .. } => return None,
-    };
-    Some(
-        icon(symbol)
-            .extent(Length::px(SMALL))
-            .color(palette().danger)
-            .any(),
-    )
 }
 
 fn sound(sound: Sound, tab: Option<TabId>) -> Option<Element> {

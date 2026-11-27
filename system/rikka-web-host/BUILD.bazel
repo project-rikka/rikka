@@ -1,0 +1,28 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+load("//crates/web/rikka-web/extension:defs.bzl", "rikka_web_extension")
+
+rikka_binary(
+    name = "rikka-web-host",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/browser:__subpackages__",
+        "//crates/web:__subpackages__",
+        "//xtask:__subpackages__",
+    ],
+)
+
+rikka_web_extension(
+    name = "extension",
+    scripts = {
+        "browser-reader/extract.js": "//apps/system/browser/crates/browser-reader:scripts/extract.js",
+        "browser-reader/probe.js": "//apps/system/browser/crates/browser-reader:scripts/probe.js",
+        "browser-reader/reader.html": "//apps/system/browser/crates/browser-reader:scripts/reader.html",
+        "browser-reader/reader.js": "//apps/system/browser/crates/browser-reader:scripts/reader.js",
+        "browser-translate/probe.js": "//apps/system/browser/crates/browser-translate:scripts/probe.js",
+        "browser-translate/translator.js": "//apps/system/browser/crates/browser-translate:scripts/translator.js",
+        "discord-client/token.js": "//apps/system/discord/crates/discord-client:scripts/token.js",
+    },
+    visibility = [
+        "//xtask:__subpackages__",
+    ],
+)

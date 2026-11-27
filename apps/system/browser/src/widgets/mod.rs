@@ -1,4 +1,3 @@
-mod confirm_keys;
 mod context_area;
 mod drop_list;
 mod favicon;
@@ -9,7 +8,6 @@ mod key_catcher;
 mod presence;
 pub(crate) mod row_drag;
 
-pub(crate) use confirm_keys::confirm_keys;
 pub(crate) use context_area::context_area;
 pub(crate) use drop_list::{DropLayout, DropListView, DropTarget, drop_list};
 pub(crate) use favicon::{favicon, stored_favicon};

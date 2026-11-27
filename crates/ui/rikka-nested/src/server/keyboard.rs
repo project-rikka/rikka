@@ -14,6 +14,7 @@ const DEVICE: InputDevice = InputDevice(0);
 #[derive(Debug, Default)]
 pub(crate) struct Keyboard {
     pub(crate) focused: Option<ViewId>,
+    pub(crate) last_focused: Option<ViewId>,
     generation: u64,
     pressed: Vec<u32>,
 }
@@ -87,6 +88,7 @@ impl State {
                 }
                 follow_session(self);
                 self.keyboard.focused = Some(view);
+                self.keyboard.last_focused = Some(view);
                 self.set_focused(view, true);
                 self.refocus(view);
             }
