@@ -53,19 +53,8 @@ fn rewrite_keeps_bom_eol_and_missing_newline() {
             .render(),
         "\u{feff}one\r\ntwo".as_bytes()
     );
-    assert_eq!(text("\u{feff}one\n").with_lines::<&str>(&[]).render(), b"");
+    assert_eq!(text("\u{feff}one\n").with_exact_content("").render(), b"");
     assert_eq!(Text::from_content("a\nb").render(), b"a\nb\n");
-}
-
-#[test]
-fn with_lines_round_trips_lines() {
-    let ended = text("one\ntwo\n");
-    assert_eq!(ended.with_lines(&["a", ""]).render(), b"a\n\n");
-    assert_eq!(ended.with_lines(&["a", "b"]).render(), b"a\nb\n");
-    assert_eq!(ended.with_lines(&[""]).render(), b"\n");
-    assert_eq!(text("one\ntwo").with_lines(&["a", "b"]).render(), b"a\nb");
-    let emptied = ended.with_lines::<&str>(&[]);
-    assert_eq!(emptied.with_lines(&["new"]).render(), b"new\n");
 }
 
 #[test]

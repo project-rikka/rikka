@@ -1,174 +1,148 @@
 use std::sync::Arc;
 
 use rikka_agent::{Function, Reply};
-use rikka_file_edit::{EditOutcome, EditRequest, Files, Op};
+use rikka_file_edit::{Anchor, Edit, EditOutcome, EditRequest};
 use rikka_llm::{Schema, Tool, Value};
 use rikka_prompt::{Facts, Prompt};
 use serde::Deserialize;
 
 use crate::error::{Error, Result};
-use crate::file_history::FileHistory;
+use crate::file_access::FileAccess;
 use crate::path_instructions::PathInstructions;
 
-const REPLACE: &str = "replace";
-const INSERT_BEFORE: &str = "insert_before";
-const DELETE: &str = "delete";
+const PATH: &str = "path";
+const EDITS: &str = "edits";
+const LINES: &str = "lines";
+const AFTER: &str = "after";
+const BEFORE: &str = "before";
+const TEXT: &str = "text";
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Args {
     path: String,
-    ops: Vec<Value>,
+    edits: Vec<RawEdit>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
-enum RawOp {
-    Replace {
-        start_line: usize,
-        end_line: usize,
-        text: String,
-    },
-    InsertBefore {
-        line: usize,
-        text: String,
-    },
-    Delete {
-        start_line: usize,
-        end_line: usize,
-    },
+#[serde(deny_unknown_fields)]
+struct RawEdit {
+    lines: Option<Vec<String>>,
+    after: Option<String>,
+    before: Option<String>,
+    text: String,
 }
 
-impl From<RawOp> for Op {
-    fn from(value: RawOp) -> Op {
-        match value {
-            RawOp::Replace {
-                start_line,
-                end_line,
-                text,
-            } => Op::Replace {
-                start: start_line,
-                end: end_line,
-                text,
+impl RawEdit {
+    fn into_edit(self) -> std::result::Result<Edit, String> {
+        let text = self.text;
+        match (self.lines, self.after, self.before) {
+            (Some(lines), None, None) => match lines.as_slice() {
+                [only] => {
+                    let line = anchor(only)?;
+                    Ok(Edit::Replace {
+                        first: line,
+                        last: line,
+                        text,
+                    })
+                }
+                [first, last] => Ok(Edit::Replace {
+                    first: anchor(first)?,
+                    last: anchor(last)?,
+                    text,
+                }),
+                _ => Err(format!(
+                    "{LINES} takes one anchor, or the first and last of a range"
+                )),
             },
-            RawOp::InsertBefore { line, text } => Op::InsertBefore { line, text },
-            RawOp::Delete {
-                start_line,
-                end_line,
-            } => Op::Delete {
-                start: start_line,
-                end: end_line,
-            },
+            (None, Some(after), None) => Ok(Edit::InsertAfter {
+                anchor: anchor(&after)?,
+                text,
+            }),
+            (None, None, Some(before)) => Ok(Edit::InsertBefore {
+                anchor: anchor(&before)?,
+                text,
+            }),
+            _ => Err(format!("set exactly one of {LINES}, {AFTER} or {BEFORE}")),
         }
     }
 }
 
 pub(crate) fn declare(
-    files: &Arc<Files>,
-    history: &FileHistory,
-    aside: &Arc<dyn PathInstructions>,
+    access: &Arc<FileAccess>,
     prompt: &Prompt,
     facts: &Facts,
 ) -> Result<Function> {
     let tool = Tool::new(prompt.name())
         .description(prompt.body(facts)?)
-        .string("path", prompt.param("path", facts)?)
-        .param("ops", ops(prompt, facts)?)
+        .string(PATH, prompt.param(PATH, facts)?)
+        .param(EDITS, edits(prompt, facts)?)
         .build()
         .map_err(|error| Error::Undeclarable {
             name: prompt.name().to_owned(),
             reason: error.to_string(),
         })?;
 
-    let files = Arc::clone(files);
-    let history = history.clone();
-    let aside = Arc::clone(aside);
+    let access = Arc::clone(access);
     Ok(Function::new(tool, move |input: Value| {
-        let files = Arc::clone(&files);
-        let history = history.clone();
-        let aside = Arc::clone(&aside);
+        let access = Arc::clone(&access);
         async move {
-            tokio::task::spawn_blocking(move || run(&files, &history, aside.as_ref(), input))
+            tokio::task::spawn_blocking(move || run(&access, input))
                 .await
                 .map_err(|error| format!("nothing was edited: {error}"))?
         }
     }))
 }
 
-fn ops(prompt: &Prompt, facts: &Facts) -> Result<Schema> {
-    Ok(Schema::array(Schema::any_of([
-        covering(prompt, facts, REPLACE)?
-            .param(
-                "text",
-                described(prompt, facts, "replace_text", Schema::string())?,
-            )
-            .closed(),
-        Schema::object()
-            .param("op", named(prompt, facts, INSERT_BEFORE)?)
-            .param("line", described(prompt, facts, "line", Schema::integer())?)
-            .param(
-                "text",
-                described(prompt, facts, "insert_text", Schema::string())?,
-            )
-            .closed(),
-        covering(prompt, facts, DELETE)?.closed(),
-    ]))
-    .describe(prompt.param("ops", facts)?))
-}
-
-fn covering(prompt: &Prompt, facts: &Facts, op: &str) -> Result<Schema> {
-    Ok(Schema::object()
-        .param("op", named(prompt, facts, op)?)
-        .param(
-            "start_line",
-            described(prompt, facts, "start_line", Schema::integer())?,
+fn edits(prompt: &Prompt, facts: &Facts) -> Result<Schema> {
+    let item = Schema::object()
+        .optional(
+            LINES,
+            Schema::array(Schema::string()).describe(prompt.param(LINES, facts)?),
         )
-        .param(
-            "end_line",
-            described(prompt, facts, "end_line", Schema::integer())?,
-        ))
+        .optional(
+            AFTER,
+            Schema::string().describe(prompt.param(AFTER, facts)?),
+        )
+        .optional(
+            BEFORE,
+            Schema::string().describe(prompt.param(BEFORE, facts)?),
+        )
+        .param(TEXT, Schema::string().describe(prompt.param(TEXT, facts)?))
+        .closed();
+    Ok(Schema::array(item).describe(prompt.param(EDITS, facts)?))
 }
 
-fn named(prompt: &Prompt, facts: &Facts, op: &str) -> Result<Schema> {
-    described(prompt, facts, op, Schema::string().enumerate([op]))
-}
-
-fn described(prompt: &Prompt, facts: &Facts, name: &str, schema: Schema) -> Result<Schema> {
-    Ok(schema.describe(prompt.param(name, facts)?))
-}
-
-fn run(
-    files: &Files,
-    history: &FileHistory,
-    aside: &dyn PathInstructions,
-    input: Value,
-) -> std::result::Result<Reply, String> {
+fn run(access: &FileAccess, input: Value) -> std::result::Result<Reply, String> {
     let args: Args =
         serde_json::from_value(input).map_err(|error| format!("invalid arguments: {error}"))?;
-
-    let ops = args
-        .ops
+    let edits = args
+        .edits
         .into_iter()
         .enumerate()
-        .map(|(at, value)| parse_op(at + 1, value))
-        .collect::<std::result::Result<Vec<Op>, String>>()?;
+        .map(|(index, edit)| {
+            edit.into_edit()
+                .map_err(|error| format!("invalid edit {}: {error}", index + 1))
+        })
+        .collect::<std::result::Result<Vec<Edit>, String>>()?;
 
-    let outcome = history
+    let outcome = access
+        .history
         .edit(
-            files,
+            &access.files,
             &EditRequest {
                 path: &args.path,
-                ops,
+                edits,
             },
         )
         .map_err(|error| error.to_string())?;
 
-    Ok(edit_reply(aside, outcome))
+    Ok(edit_reply(access.aside.as_ref(), outcome))
 }
 
-fn parse_op(at: usize, value: Value) -> std::result::Result<Op, String> {
-    serde_json::from_value::<RawOp>(value)
-        .map(Op::from)
-        .map_err(|error| format!("invalid op{at}: {error}"))
+fn anchor(text: &str) -> std::result::Result<Anchor, String> {
+    text.parse()
+        .map_err(|error: rikka_file_edit::InvalidAnchor| error.to_string())
 }
 
 fn edit_reply(aside: &dyn PathInstructions, outcome: EditOutcome) -> Reply {

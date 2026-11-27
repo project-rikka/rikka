@@ -3,6 +3,7 @@ load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
 rikka_library(
     name = "rikka-thread",
     compile_data = [
+        "prompts/diffed.md",
         "prompts/revised.md",
     ],
     visibility = [
@@ -21,6 +22,7 @@ rikka_library(
         "//crates/foundation/rikka-types",
         "@crates//:futures-channel",
         "@crates//:futures-util",
+        "@crates//:imara-diff",
         "@crates//:rustc-hash",
         "@crates//:serde",
         "@crates//:serde_json",

@@ -9,6 +9,7 @@ use serde::Deserialize;
 use crate::error::Result;
 use crate::jobs::Jobs;
 use crate::known;
+use crate::listing::listing;
 use crate::logs::{Log, Logs};
 use crate::look::look;
 use crate::machine::Machine;
@@ -125,17 +126,27 @@ impl Bash {
 
         kill_guard.disarm();
 
-        Ok(command_reply(ended, &running, log, builds, room))
+        let output = running.output(room);
+        let output = match (self.reach, builds) {
+            (Reach::Working, false) => self.anchored(&args.command, output).await?,
+            _ => output,
+        };
+        Ok(command_reply(ended, &output, log, builds, room))
+    }
+
+    async fn anchored(&self, command: &str, output: String) -> std::result::Result<String, String> {
+        let Some(listing) = listing(command) else {
+            return Ok(output);
+        };
+        let listing = listing.except(self.logs.folder().display().to_string());
+        let files = Arc::clone(&self.files);
+        tokio::task::spawn_blocking(move || files.anchor(&listing, &output))
+            .await
+            .map_err(|error| format!("failed to anchor the output: {error}"))
     }
 }
 
-fn command_reply(
-    ended: Ended,
-    running: &Running,
-    log: Option<Log>,
-    builds: bool,
-    room: usize,
-) -> Reply {
+fn command_reply(ended: Ended, output: &str, log: Option<Log>, builds: bool, room: usize) -> Reply {
     let (status, failed) = ending(ended);
     let log = match log {
         Some(log) if builds || log.bytes() > room => Some(log),
@@ -148,12 +159,8 @@ fn command_reply(
 
     let text = match (&log, builds) {
         (Some(log), true) => format!("{status}. {}", whole(log)),
-        (Some(log), false) => format!(
-            "{}\n\n{}",
-            plainly(&status, failed, &running.output(room)),
-            whole(log)
-        ),
-        (None, _) => plainly(&status, failed, &running.output(room)),
+        (Some(log), false) => format!("{}\n\n{}", plainly(&status, failed, output), whole(log)),
+        (None, _) => plainly(&status, failed, output),
     };
 
     replied(text, failed, log.as_ref())

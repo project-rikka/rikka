@@ -289,7 +289,7 @@
 
 ## crates/ai/rikka-tools
 
-- [Shared agent tool runtime](agent-tools.md) — rikka-tools declares Bash, jobs, Edit/Write, questions, deferred search and Computer from prompts; web() asks for hoste…
+- [Shared agent tool runtime](agent-tools.md) — rikka-tools declares Bash, jobs, View/Edit/Write, questions, deferred search and Computer; web() adds hosted tools.
 
 ## crates/compositor/rikka-compositor-desktop
 
@@ -377,7 +377,7 @@
 
 ## crates/foundation/rikka-file-edit
 
-- [Line-number edits and their mistake gates (rikka-file-edit)](file-edit-gates.md) — Files::edit pipeline over Op line ranges, the echoed-line and broken-syntax refusals, and what each gate compares.
+- [Anchored line edits and their refusals (rikka-file-edit)](file-edit-gates.md) — Files::edit over hash-anchored line Edits, Files::anchor for listings, stale/overlap/echo/syntax refusals.
 
 ## crates/foundation/rikka-file-format
 

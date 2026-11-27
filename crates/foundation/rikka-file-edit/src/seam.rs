@@ -1,7 +1,10 @@
+use crate::anchor::Anchor;
 use crate::edited::{Edited, Splice};
 use crate::error::{Error, Result};
 use crate::excerpt::Excerpt;
+use crate::placement::{Site, owner};
 
+#[derive(Clone, Copy)]
 enum Edge {
     Above,
     Below,
@@ -9,7 +12,7 @@ enum Edge {
 
 struct Echo<'s> {
     splice: &'s Splice,
-    side: Edge,
+    edge: Edge,
     line: usize,
 }
 
@@ -32,17 +35,14 @@ impl Edited<'_> {
             .into_iter()
             .flatten()
             .collect();
-        if echoes.is_empty() {
-            return None;
-        }
-        let old = std::slice::from_ref(&self.splices[index].old);
+        let old = &echoes.first()?.splice.old;
         let lines: Vec<String> = echoes
             .iter()
-            .map(Echo::describe)
+            .map(|echo| self.describe(echo))
             .chain(std::iter::once(
-                Excerpt::around(&self.before, old).to_string(),
+                Excerpt::current(&self.before, std::slice::from_ref(old)).to_string(),
             ))
-            .chain(echoes.iter().map(Echo::suggestion))
+            .chain(echoes.iter().map(|echo| self.suggestion(echo)))
             .collect();
         Some(lines.join("\n"))
     }
@@ -59,7 +59,7 @@ impl Edited<'_> {
             !splice.is_insertion() && same_trimmed(self.before[splice.old.start], first);
         (!touched && !unchanged && is_echo(self.before[neighbour], first)).then_some(Echo {
             splice,
-            side: Edge::Above,
+            edge: Edge::Above,
             line: neighbour + 1,
         })
     }
@@ -80,39 +80,42 @@ impl Edited<'_> {
             !splice.is_insertion() && same_trimmed(self.before[splice.old.end - 1], last);
         (!touched && !unchanged && is_echo(beside, last)).then_some(Echo {
             splice,
-            side: Edge::Below,
+            edge: Edge::Below,
             line: neighbour + 1,
         })
     }
-}
 
-impl Echo<'_> {
-    fn describe(&self) -> String {
-        let (end, place) = match self.side {
+    fn describe(&self, echo: &Echo<'_>) -> String {
+        let splice = echo.splice;
+        let place = match (splice.site, splice.old.len()) {
+            (Site::After, _) => format!("put after line {}", splice.old.start),
+            (Site::Before, _) => format!("put before line {}", splice.old.start + 1),
+            (Site::Lines, 1) => format!("for line {}", splice.old.start + 1),
+            (Site::Lines, _) => format!("for lines {}-{}", splice.old.start + 1, splice.old.end),
+        };
+        let (verb, side) = match echo.edge {
             Edge::Above => ("begins", "above"),
             Edge::Below => ("ends", "below"),
         };
-        let text = match self.splice.is_insertion() {
-            true => format!("The text put before line {}", self.splice.old.start + 1),
-            false => format!("The text for {}", self.splice.describe()),
-        };
         format!(
-            "{text} {end} with line {}, which stays {place} it:",
-            self.line
+            "{}text {place} {verb} with line {}, which stays {side} it:",
+            owner(splice.edit, self.edits),
+            echo.line
         )
     }
 
-    fn suggestion(&self) -> String {
-        let line = self.line;
-        match (self.splice.is_insertion(), &self.side) {
+    fn suggestion(&self, echo: &Echo<'_>) -> String {
+        let line = echo.line;
+        let anchor = Anchor::of(line, self.before[line - 1]);
+        match (echo.splice.is_insertion(), echo.edge) {
             (false, Edge::Above) => format!(
-                "Leave line {line} out of the text, or start the range at {line} to rewrite it too."
+                "Leave line {line} out of the text, or start the range at `{anchor}` to rewrite it too."
             ),
             (false, Edge::Below) => format!(
-                "Leave line {line} out of the text, or end the range at {line} to rewrite it too."
+                "Leave line {line} out of the text, or end the range at `{anchor}` to rewrite it too."
             ),
             (true, _) => format!(
-                "Leave line {line} out of the text, or replace line {line} with the text if it should appear twice."
+                "Leave line {line} out of the text: an insertion keeps it. To repeat it on purpose, replace `{anchor}` with both copies."
             ),
         }
     }

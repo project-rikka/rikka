@@ -1,6 +1,19 @@
+use std::borrow::Cow;
+
 use crate::eol::Eol;
 
 const BOM: &str = "\u{feff}";
+
+pub(crate) fn cut_line(line: &str, most: usize) -> Cow<'_, str> {
+    match line.char_indices().nth(most) {
+        Some((at, _)) => Cow::Owned(format!(
+            "{}… [{} more characters]",
+            &line[..at],
+            line[at..].chars().count()
+        )),
+        None => Cow::Borrowed(line),
+    }
+}
 
 #[must_use]
 pub(crate) fn lines_of(text: &str) -> Vec<&str> {
@@ -8,14 +21,6 @@ pub(crate) fn lines_of(text: &str) -> Vec<&str> {
         return Vec::new();
     }
     split(text.strip_suffix('\n').unwrap_or(text))
-}
-
-#[must_use]
-pub(crate) fn separated_lines(text: &str) -> Vec<&str> {
-    if text.is_empty() {
-        return Vec::new();
-    }
-    split(text)
 }
 
 fn split(text: &str) -> Vec<&str> {
@@ -62,19 +67,6 @@ impl Text {
     #[must_use]
     pub fn with_exact_content(&self, content: &str) -> Text {
         Text::new(content.to_owned(), self.eol, self.bom)
-    }
-
-    #[must_use]
-    pub fn with_lines<S: AsRef<str>>(&self, lines: &[S]) -> Text {
-        let mut content = lines
-            .iter()
-            .map(AsRef::as_ref)
-            .collect::<Vec<&str>>()
-            .join("\n");
-        if self.ends_with_newline() && !lines.is_empty() {
-            content.push('\n');
-        }
-        Text::new(content, self.eol, self.bom)
     }
 
     #[must_use]
@@ -133,7 +125,7 @@ impl Text {
         }
     }
 
-    fn ends_with_newline(&self) -> bool {
+    pub(crate) fn ends_with_newline(&self) -> bool {
         self.content.is_empty() || self.content.ends_with('\n')
     }
 

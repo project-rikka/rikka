@@ -1,18 +1,20 @@
 use std::path::PathBuf;
 
 use crate::change::Change;
+use crate::edit::Edit;
 use crate::edited::Edited;
+use crate::eol::Returns;
 use crate::error::{Error, Result};
 use crate::excerpt::Excerpt;
 use crate::files::Files;
 use crate::history::History;
-use crate::op::{self, Op, ResolvedOp};
+use crate::placement;
 use crate::writer::{self, Precondition};
 
 #[derive(Debug)]
 pub struct EditRequest<'a> {
     pub path: &'a str,
-    pub ops: Vec<Op>,
+    pub edits: Vec<Edit>,
 }
 
 #[derive(Debug)]
@@ -33,8 +35,8 @@ impl Files {
         request: &EditRequest<'_>,
         history: Option<&History>,
     ) -> Result<EditOutcome> {
-        if request.ops.is_empty() {
-            return Err(Error::NoOps);
+        if request.edits.is_empty() {
+            return Err(Error::NoEdits);
         }
 
         let path = self.resolve_inside(request.path)?;
@@ -44,16 +46,23 @@ impl Files {
         let _guard = lock.lock();
 
         let (bytes, text) = self.read_text(&path, &relative_path)?;
-        let resolved = request
-            .ops
-            .iter()
-            .map(|op| op.resolved(&text, &relative_path))
-            .collect::<Result<Vec<ResolvedOp<'_>>>>()?;
-        let order = op::sort_disjoint(&resolved)?;
-
-        let edited = Edited::apply(&relative_path, text.lines().collect(), &resolved, &order);
+        let (before, returns) = Returns::strip(text.lines());
+        let placements = placement::place(&relative_path, &request.edits, &before)?;
+        let edited = Edited::apply(
+            &relative_path,
+            before,
+            &returns,
+            placements,
+            request.edits.len(),
+        );
+        if edited.is_unchanged() {
+            return Err(Error::Unchanged {
+                path: relative_path.clone(),
+                report: "The edits leave the file as it is.".to_owned(),
+            });
+        }
         edited.check_echoes()?;
-        let result = text.with_lines(&edited.after);
+        let result = text.with_exact_content(&edited.content(text.ends_with_newline()));
         edited.check_syntax(&path, text.content(), result.content())?;
 
         if let Some(history) = history {
@@ -61,15 +70,14 @@ impl Files {
         }
         writer::write(&path, &result.render(), &Precondition::Exactly(&bytes))?;
 
-        let written: Vec<&str> = result.lines().collect();
-        let (before, after) = (edited.before.len(), written.len());
+        let (before, after) = (edited.before.len(), edited.after.len());
         Ok(EditOutcome {
             summary: format!(
                 "ok {relative_path} ({after} lines, {:+})",
                 after as isize - before as isize
             ),
-            excerpt: edited.excerpt_after(&written),
-            change: Change::diff(relative_path.clone(), &edited.before, &written),
+            excerpt: edited.excerpt_written(),
+            change: edited.change(),
             path,
         })
     }

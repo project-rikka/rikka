@@ -10,15 +10,14 @@ kept_logs = 200
 
 [params]
 command = "The command to run."
-timeout = "Foreground wait in milliseconds: {{timeout_ms}} by default, capped at {{max_timeout_ms}}."
-background = "Return immediately with a background job ID instead of waiting."
+timeout = "Foreground wait in milliseconds: {{timeout_ms}} by default, at most {{max_timeout_ms}}."
+background = "Return a job ID at once instead of waiting."
 +++
 
-Runs `bash -lc` in the working folder. Standard output and error return interleaved.
+Runs `bash -lc` in the working folder: a fresh shell per call, stdin closed, pagers off, stdout and stderr interleaved.
 
-- Each call uses a fresh shell; directories and variables do not persist. Standard input is closed and pagers are disabled.
-- A build or test command — cargo, rustc, a C or C++ compiler, make, ninja, cmake, meson, xmake, bazel, gradle, maven, dotnet, go, swift, zig, npm, pnpm, yarn, bun, deno, tsc, pytest, tox, mix, cabal, stack, composer, bundler, flutter, nix, docker and the like — answers with whether it succeeded and the path of the log its output went to, and nothing else. Read what you need out of that file: `rg -n "^error" <log>`, `tail -n 40 <log>`.
-- Anything else answers with what it printed. Only the first {{output_bytes}} bytes come back; when there is more, the whole of it is in a log whose path is given.
-- Logs are written to `.rikka/tmp`; the newest {{kept_logs}} are kept and the rest are dropped. They are yours to read, grep and delete.
-- At `timeout`, a running command becomes a job and returns its output so far; a standalone `sleep` is killed. Read later output with `{{job_tool}}` after its completion notice.
-- Set `background` for servers, watchers, or long commands whose result is not needed immediately; never append `&`.
+- Build and test commands (cargo, bazel, make, npm, pytest, go, nix, docker and the like) answer only with success and a log path under `.rikka/tmp`; read what you need from it, such as `rg -n "^error" <log>` or `tail -n 40 <log>`. Run them plainly, without filters, pipes, redirections or timeout wrappers.
+- Other commands return their output up to {{output_bytes}} bytes, and the whole in a log past that. The newest {{kept_logs}} logs are kept.
+- A command still running at `timeout`, or started with `background`, becomes a `{{job_tool}}` job whose completion is announced; never wait with `sleep` or polling. Use `background` for servers and watchers, never `&`.
+- Search with `rg`, not `grep`. Read all the next step needs in one command, numbering the lines of files you may change: `cat -n` files under a few hundred lines; for larger ones, `cat -n <file> | sed -n '<first>,<last>p'` whole functions or sections around `rg -n` hits. Numbered lines of working-folder files come back anchored (`12#ab`) for `{{edit_tool}}`; read files you only study without numbers.
+- Change files only with `{{edit_tool}}` and `{{write_tool}}`, never `sed -i`, `awk`, `perl`, heredocs or redirection. The one exception is a broad, mechanical change by a focused script, whose diff you then review.

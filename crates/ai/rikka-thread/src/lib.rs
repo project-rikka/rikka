@@ -14,6 +14,7 @@ mod replay;
 mod replaying;
 mod reply;
 mod resident;
+mod revision;
 mod round;
 mod run;
 mod run_context;

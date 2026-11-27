@@ -47,7 +47,7 @@ impl Edited<'_> {
         };
         let report = format!(
             "The edit leaves {what}:\n{listed}{more}The changed places would read:\n{}\nThey read now:\n{}",
-            self.excerpt_after(&self.after),
+            self.excerpt_proposed(),
             self.excerpt_before()
         );
         Err(Error::BrokenSyntax {

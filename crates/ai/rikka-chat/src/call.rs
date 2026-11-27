@@ -90,14 +90,13 @@ fn output_log(call: &Call) -> Option<&OutputLog> {
 
 fn proposed(input: &Value) -> String {
     input
-        .get("ops")
+        .get("edits")
         .and_then(Value::as_array)
-        .map(|ops| {
-            ops.iter()
-                .filter_map(|op| op.get("text").and_then(Value::as_str))
-                .collect::<String>()
-        })
-        .unwrap_or_default()
+        .into_iter()
+        .flatten()
+        .filter_map(|edit| edit.get("text")?.as_str())
+        .collect::<Vec<&str>>()
+        .join("\n")
 }
 
 fn header(summary: &CallSummary<'_>) -> impl View {

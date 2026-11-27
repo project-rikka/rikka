@@ -28,15 +28,12 @@ height = "Screen height for `start`; {{height}} by default."
 desktop = "Whether `start` opens the desktop. True by default; false starts a bare screen."
 +++
 
-Controls an isolated Rikka machine with its own screen, sharing this filesystem but not the person's session. `start` it to see or work a graphical program; from then on every program `{{bash_tool}}` starts opens its windows on this screen, never on the person's desktop. `close` shuts the machine and its programs down.
+Controls an isolated Rikka machine with its own screen, sharing this filesystem but not the person's session. After `start`, every program `{{bash_tool}}` starts opens there, never on the person's desktop; `close` ends the machine and its programs.
 
-Each call runs its `actions` in order and lets the screen settle after every action that changes it. A call ending on such an action returns one screenshot of the settled screen, or says the screen is unchanged since your last screenshot. `screenshot` and `zoom` always return an image. If an action fails, the rest are not run and the reply says which failed and which were skipped.
+Each call runs `actions` in order, letting the screen settle (at most {{idle_timeout_ms}} ms) after each change, and ends with a screenshot unless the screen is unchanged since your last one. `screenshot` and `zoom` always return an image; `windows` and `cursor_position` answer in text. The first failing action stops the rest, and the reply names both.
 
-- Coordinates are pixels of the full screenshot from top-left `[0, 0]`, also after a `zoom`.
-- Batch steps such as clicking a field, typing and pressing `Return`; look again before acting on what changed.
-- `zoom` shows `region` at full resolution, for small text and dense controls. `cursor_position` and `windows` answer in text.
-- `mouse_move` hovers. Clicks use `coordinate` when given, otherwise the pointer, and hold modifiers from `text`. `left_mouse_down` and `left_mouse_up` press and release separately; `left_click_drag` drags from `start_coordinate` or the pointer to `coordinate`.
-- `scroll` turns the wheel by `scroll_amount` in `scroll_direction`, optionally at `coordinate` and with `text` modifiers.
-- `type` enters `text`. `key` presses a shortcut such as `ctrl+s`, `alt+Tab`, `Return`, `Escape`, `F5`, or `super`, `repeat` times; `hold_key` holds it for `duration`. Shortcuts reach menus, lists and dropdowns more reliably than the pointer.
-- `launch` starts the command in `text` and waits up to {{window_timeout_ms}} ms for its window. `wait` pauses for `duration`.
-- The screen counts as settled once it stops changing, at most {{idle_timeout_ms}} ms after an action.
+- Coordinates are full-screenshot pixels from the top-left, also after `zoom`, which shows `region` at full resolution for small text and dense controls.
+- Batch predictable steps, such as clicking a field, typing and pressing `Return`; look again before acting on what changed.
+- Clicks hit `coordinate`, or the pointer, holding the modifiers in `text`; `mouse_move` only hovers.
+- Keyboard shortcuts reach menus, lists and dropdowns more reliably than the pointer.
+- `launch` runs the command in `text` and waits up to {{window_timeout_ms}} ms for its window.
