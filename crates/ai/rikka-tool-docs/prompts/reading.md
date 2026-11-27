@@ -19,4 +19,4 @@ Runs `bash -lc` in the working folder to look at files, never to change them: a 
 - Only `cat`, `head`, `tail`, `nl`, `bat`, `sed -n '<range>p'`, `grep`, `rg`, `ag`, `ack`, `find`, `fd`, `ls` and `tree` run, joined with `|`, `&&` or `;` after an optional `cd`. Anything else, file redirection, substitution and background `&` are refused.
 - Output comes back up to {{output_bytes}} bytes, and whole in a log past that.
 - A command still running at `timeout` becomes a `{{job_tool}}` job whose completion is announced.
-- Read only what you need: find it with `rg -n`, then print that range with `sed -n '<first>,<last>p'`; `cat` a file only when it is small or needed whole.
+- Read all the next step needs in one command: `cat` files under a few hundred lines; for larger ones, `sed -n '<first>,<last>p'` whole functions or sections around `rg -n` hits.

@@ -3,15 +3,17 @@ name = "Edit"
 
 [params]
 path = "Relative to the working folder."
-old_string = "Exact text to replace, indentation included; it must occur once unless `replace_all` is set."
-new_string = "Its replacement; empty deletes it."
-replace_all = "Replace every occurrence."
-edits = "Replacements applied in order, each to the result of the one before; use instead of `old_string` and `new_string`."
+edits = "Changes to the file, each setting exactly one of `lines`, `after` or `before`; all apply or none do."
+lines = "Anchor of the one line to replace, or anchors of the first and last line of a range."
+after = "Anchor of the line the text goes after."
+before = "Anchor of the line the text goes before."
+text = "The new lines, without anchors; empty deletes the lines. A final newline is ignored."
 +++
 
-Replaces exact text in an existing file; `{{write_tool}}` creates or replaces whole files.
+Changes lines of an existing file by their anchors; `{{write_tool}}` creates or replaces whole files.
 
-- Copy `old_string` from what `{{bash_tool}}` printed or your last edit's result, without line numbers, with just enough neighbouring lines to be unique. `new_string` replaces all of it, so repeat the neighbours that stay.
-- Make every change to a file in one call, through `edits`; all apply or none do.
-- A refusal writes nothing and explains itself: missing text comes with the closest lines, repeated text with its lines, and a `new_string` that repeats a line kept beside it or adds syntax errors with the lines involved. Fix the call from that reply rather than rereading the file.
-- The result shows each changed place renumbered, with two lines of context; check every seam. Line endings and byte-order mark are kept.
+- An anchor is a line number with its tag, like `12#ab`. Numbered listings of working-folder files from `{{bash_tool}}` (`cat -n`, `rg -n`, `grep -n`) and every edit result print it before each line; copy it from there, never make one up.
+- `text` is exactly what the lines become or what goes in: leave out the kept lines beside it, including an `after` or `before` line, and write every blank line the result needs.
+- Make every change to a file in one call. All its anchors refer to the file before the call, so edits never shift each other, but they may not overlap. Lines below a change move: take later anchors from its result or a fresh listing.
+- A refusal writes nothing and shows the lines involved with current anchors: a stale or mistyped anchor, overlapping edits, a kept line repeated, or new syntax errors. Fix the call from it; do not reread the file.
+- The result shows each changed place with two lines either side and fresh anchors; check every seam there. Line endings and byte-order mark are kept.

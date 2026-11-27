@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use rikka_agent::{Function, Reply};
-use rikka_file_edit::{EditOutcome, EditRequest, Replacement};
+use rikka_file_edit::{Anchor, Edit, EditOutcome, EditRequest};
 use rikka_llm::{Schema, Tool, Value};
 use rikka_prompt::{Facts, Prompt};
 use serde::Deserialize;
@@ -10,32 +10,61 @@ use crate::error::{Error, Result};
 use crate::file_access::FileAccess;
 use crate::path_instructions::PathInstructions;
 
-const OLD: &str = "old_string";
-const NEW: &str = "new_string";
-const ALL: &str = "replace_all";
+const PATH: &str = "path";
 const EDITS: &str = "edits";
+const LINES: &str = "lines";
+const AFTER: &str = "after";
+const BEFORE: &str = "before";
+const TEXT: &str = "text";
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Args {
     path: String,
-    old_string: Option<String>,
-    new_string: Option<String>,
-    replace_all: Option<bool>,
-    edits: Option<Vec<RawEdit>>,
+    edits: Vec<RawEdit>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RawEdit {
-    old_string: String,
-    new_string: String,
-    replace_all: Option<bool>,
+    lines: Option<Vec<String>>,
+    after: Option<String>,
+    before: Option<String>,
+    text: String,
 }
 
-impl From<RawEdit> for Replacement {
-    fn from(edit: RawEdit) -> Replacement {
-        replacement(edit.old_string, edit.new_string, edit.replace_all)
+impl RawEdit {
+    fn into_edit(self) -> std::result::Result<Edit, String> {
+        let text = self.text;
+        match (self.lines, self.after, self.before) {
+            (Some(lines), None, None) => match lines.as_slice() {
+                [only] => {
+                    let line = anchor(only)?;
+                    Ok(Edit::Replace {
+                        first: line,
+                        last: line,
+                        text,
+                    })
+                }
+                [first, last] => Ok(Edit::Replace {
+                    first: anchor(first)?,
+                    last: anchor(last)?,
+                    text,
+                }),
+                _ => Err(format!(
+                    "{LINES} takes one anchor, or the first and last of a range"
+                )),
+            },
+            (None, Some(after), None) => Ok(Edit::InsertAfter {
+                anchor: anchor(&after)?,
+                text,
+            }),
+            (None, None, Some(before)) => Ok(Edit::InsertBefore {
+                anchor: anchor(&before)?,
+                text,
+            }),
+            _ => Err(format!("set exactly one of {LINES}, {AFTER} or {BEFORE}")),
+        }
     }
 }
 
@@ -46,15 +75,8 @@ pub(crate) fn declare(
 ) -> Result<Function> {
     let tool = Tool::new(prompt.name())
         .description(prompt.body(facts)?)
-        .string("path", prompt.param("path", facts)?)
-        .string(OLD, prompt.param(OLD, facts)?)
-        .string(NEW, prompt.param(NEW, facts)?)
-        .boolean(ALL, prompt.param(ALL, facts)?)
+        .string(PATH, prompt.param(PATH, facts)?)
         .param(EDITS, edits(prompt, facts)?)
-        .optional(OLD)
-        .optional(NEW)
-        .optional(ALL)
-        .optional(EDITS)
         .build()
         .map_err(|error| Error::Undeclarable {
             name: prompt.name().to_owned(),
@@ -74,9 +96,19 @@ pub(crate) fn declare(
 
 fn edits(prompt: &Prompt, facts: &Facts) -> Result<Schema> {
     let item = Schema::object()
-        .param(OLD, Schema::string().describe(prompt.param(OLD, facts)?))
-        .param(NEW, Schema::string().describe(prompt.param(NEW, facts)?))
-        .optional(ALL, Schema::boolean().describe(prompt.param(ALL, facts)?))
+        .optional(
+            LINES,
+            Schema::array(Schema::string()).describe(prompt.param(LINES, facts)?),
+        )
+        .optional(
+            AFTER,
+            Schema::string().describe(prompt.param(AFTER, facts)?),
+        )
+        .optional(
+            BEFORE,
+            Schema::string().describe(prompt.param(BEFORE, facts)?),
+        )
+        .param(TEXT, Schema::string().describe(prompt.param(TEXT, facts)?))
         .closed();
     Ok(Schema::array(item).describe(prompt.param(EDITS, facts)?))
 }
@@ -84,16 +116,23 @@ fn edits(prompt: &Prompt, facts: &Facts) -> Result<Schema> {
 fn run(access: &FileAccess, input: Value) -> std::result::Result<Reply, String> {
     let args: Args =
         serde_json::from_value(input).map_err(|error| format!("invalid arguments: {error}"))?;
-    let path = args.path.clone();
-    let replacements = replacements(args)?;
+    let edits = args
+        .edits
+        .into_iter()
+        .enumerate()
+        .map(|(index, edit)| {
+            edit.into_edit()
+                .map_err(|error| format!("invalid edit {}: {error}", index + 1))
+        })
+        .collect::<std::result::Result<Vec<Edit>, String>>()?;
 
     let outcome = access
         .history
         .edit(
             &access.files,
             &EditRequest {
-                path: &path,
-                replacements,
+                path: &args.path,
+                edits,
             },
         )
         .map_err(|error| error.to_string())?;
@@ -101,25 +140,9 @@ fn run(access: &FileAccess, input: Value) -> std::result::Result<Reply, String> 
     Ok(edit_reply(access.aside.as_ref(), outcome))
 }
 
-fn replacements(args: Args) -> std::result::Result<Vec<Replacement>, String> {
-    match (args.old_string, args.new_string, args.edits) {
-        (Some(old), Some(new), None) => Ok(vec![replacement(old, new, args.replace_all)]),
-        (None, None, Some(edits)) if args.replace_all.is_none() => {
-            Ok(edits.into_iter().map(Replacement::from).collect())
-        }
-        (None, None, Some(_)) => Err(format!("set {ALL} inside each of {EDITS}")),
-        (_, _, Some(_)) => Err(format!("set either {OLD} and {NEW}, or {EDITS}, not both")),
-        (Some(_), None, None) => Err(format!("{NEW} is missing")),
-        (None, Some(_), None) => Err(format!("{OLD} is missing")),
-        (None, None, None) => Err(format!("set {OLD} and {NEW}, or {EDITS}")),
-    }
-}
-
-fn replacement(old: String, new: String, all: Option<bool>) -> Replacement {
-    match all.unwrap_or(false) {
-        true => Replacement::all(old, new),
-        false => Replacement::new(old, new),
-    }
+fn anchor(text: &str) -> std::result::Result<Anchor, String> {
+    text.parse()
+        .map_err(|error: rikka_file_edit::InvalidAnchor| error.to_string())
 }
 
 fn edit_reply(aside: &dyn PathInstructions, outcome: EditOutcome) -> Reply {

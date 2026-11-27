@@ -125,7 +125,7 @@ impl Text {
         }
     }
 
-    fn ends_with_newline(&self) -> bool {
+    pub(crate) fn ends_with_newline(&self) -> bool {
         self.content.is_empty() || self.content.ends_with('\n')
     }
 

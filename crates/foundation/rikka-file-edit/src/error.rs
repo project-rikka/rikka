@@ -15,17 +15,20 @@ pub enum Error {
     #[error("error: concurrent_modification {0} changed during the write")]
     ConcurrentModification(String),
 
-    #[error("error: empty_old_string {path}: nothing was written.\n{report}")]
-    EmptyOld { path: String, report: String },
+    #[error("error: stale_anchor {path}: nothing was written.\n{report}")]
+    StaleAnchor { path: String, report: String },
+
+    #[error("error: reversed_range {path}: nothing was written.\n{report}")]
+    ReversedRange { path: String, report: String },
+
+    #[error("error: overlap {path}: nothing was written.\n{report}")]
+    Overlap { path: String, report: String },
+
+    #[error("error: listing_prefix {path}: nothing was written.\n{report}")]
+    ListingPrefix { path: String, report: String },
 
     #[error("error: unchanged {path}: nothing was written.\n{report}")]
     Unchanged { path: String, report: String },
-
-    #[error("error: no_match {path}: nothing was written.\n{report}")]
-    NoMatch { path: String, report: String },
-
-    #[error("error: ambiguous {path}: nothing was written.\n{report}")]
-    Ambiguous { path: String, report: String },
 
     #[error("error: echoed_line {path}: nothing was written.\n{report}")]
     EchoedLine { path: String, report: String },
@@ -39,7 +42,7 @@ pub enum Error {
     #[error("error: history_unavailable cannot record {path} for undo: {reason}")]
     HistoryWrite { path: String, reason: String },
 
-    #[error("error: empty no replacements given")]
+    #[error("error: empty no edits given")]
     NoEdits,
 }
 

@@ -10,6 +10,7 @@ mod job;
 mod jobs;
 mod known;
 mod limits;
+mod listing;
 mod logs;
 mod look;
 mod machine;

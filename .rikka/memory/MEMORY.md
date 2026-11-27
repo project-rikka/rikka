@@ -381,7 +381,7 @@
 
 ## crates/foundation/rikka-file-edit
 
-- [Text-replacement edits and their refusals (rikka-file-edit)](file-edit-gates.md) — Files::edit over exact-text Replacements: matching, no_match/ambiguous reports, echoed-line and broken-syntax gates.
+- [Anchored line edits and their refusals (rikka-file-edit)](file-edit-gates.md) — Files::edit over hash-anchored line Edits, Files::anchor for listings, stale/overlap/echo/syntax refusals.
 
 ## crates/foundation/rikka-file-format
 

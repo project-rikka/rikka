@@ -5,7 +5,7 @@ use crate::text::Text;
 use crate::error::{Error, Result};
 use crate::writer::{self, Precondition};
 
-const MAX_BYTES: u64 = 8 * 1024 * 1024;
+pub(crate) const MAX_BYTES: u64 = 8 * 1024 * 1024;
 
 #[derive(Clone)]
 pub struct TextFile {

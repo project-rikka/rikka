@@ -1,16 +1,16 @@
-use rikka_file_edit::{Line, Replacement};
+use rikka_file_edit::{Edit, Line};
 
-use crate::support::Project;
+use crate::support::{Project, anchor};
 
 #[test]
-fn edit_writes_file_and_reports_summary() {
+fn edit_writes_file_and_reports_anchored_excerpt() {
     let project = Project::open();
     project.write_file("a.txt", "one\ntwo\nthree\nfour\nfive\n");
 
     let outcome = project
         .apply(
             "a.txt",
-            vec![Replacement::new("two\nthree", "TWO\nTHREE\nEXTRA")],
+            vec![project.lines("a.txt", 2, 3, "TWO\nTHREE\nEXTRA")],
         )
         .expect("it is applied");
 
@@ -21,190 +21,182 @@ fn edit_writes_file_and_reports_summary() {
     assert_eq!(outcome.summary, "ok a.txt (6 lines, +1)");
     assert_eq!(
         outcome.excerpt.to_string(),
-        "     1\tone\n     2\tTWO\n     3\tTHREE\n     4\tEXTRA\n     5\tfour\n     6\tfive"
+        project.listing("a.txt").trim_end()
     );
 }
 
 #[test]
-fn replacements_apply_in_order() {
-    let three = "one\ntwo\nthree\n";
-    let cases = [
+fn edits_anchor_in_file_before_call() {
+    let five = "1\n2\n3\n4\n5\n";
+    type Edits = fn(&Project) -> Vec<Edit>;
+    let cases: [(&str, Edits, &str); 9] = [
         (
-            three,
-            vec![Replacement::new("two", "TWO")],
-            "one\nTWO\nthree\n",
+            "one line",
+            |p| vec![p.lines("a", 2, 2, "two")],
+            "1\ntwo\n3\n4\n5\n",
         ),
-        (three, vec![Replacement::new("two\n", "")], "one\nthree\n"),
+        ("deletion", |p| vec![p.lines("a", 2, 4, "")], "1\n5\n"),
         (
-            three,
-            vec![Replacement::new("three\n", "three\nfour\n")],
-            "one\ntwo\nthree\nfour\n",
-        ),
-        (
-            "fn a() {}\nfn b() {}\n",
-            vec![
-                Replacement::new("fn a", "fn first"),
-                Replacement::new("fn first() {}", "fn first() { b(); }"),
-            ],
-            "fn first() { b(); }\nfn b() {}\n",
+            "after",
+            |p| vec![p.after("a", 2, "x\ny\n")],
+            "1\n2\nx\ny\n3\n4\n5\n",
         ),
         (
-            "x = 1;\ny = x;\n",
-            vec![Replacement::all("x", "w")],
-            "w = 1;\ny = w;\n",
+            "before",
+            |p| vec![p.before("a", 1, "0")],
+            "0\n1\n2\n3\n4\n5\n",
+        ),
+        ("end", |p| vec![p.after("a", 5, "6")], "1\n2\n3\n4\n5\n6\n"),
+        (
+            "blank line",
+            |p| vec![p.after("a", 1, "\n")],
+            "1\n\n2\n3\n4\n5\n",
         ),
         (
-            "one\ntwo",
-            vec![Replacement::new("two", "TWO\n")],
-            "one\nTWO\n",
+            "original numbering",
+            |p| {
+                vec![
+                    p.lines("a", 5, 5, "five"),
+                    p.after("a", 1, "a\nb\nc"),
+                    p.lines("a", 3, 4, ""),
+                ]
+            },
+            "1\na\nb\nc\n2\nfive\n",
+        ),
+        (
+            "around one range",
+            |p| {
+                vec![
+                    p.after("a", 3, "after"),
+                    p.lines("a", 2, 3, "two\nthree"),
+                    p.before("a", 2, "before"),
+                ]
+            },
+            "1\nbefore\ntwo\nthree\nafter\n4\n5\n",
+        ),
+        (
+            "same gap in call order",
+            |p| vec![p.after("a", 1, "x"), p.before("a", 2, "y")],
+            "1\nx\ny\n2\n3\n4\n5\n",
         ),
     ];
-    for (written, replacements, became) in cases {
+    for (case, edits, became) in cases {
         let project = Project::open();
-        project.write_file("a.txt", written);
+        project.write_file("a", five);
 
-        let outcome = project
-            .apply("a.txt", replacements.clone())
-            .expect("it is applied");
+        project.apply("a", edits(&project)).expect(case);
 
-        let read = project.read_file("a.txt");
-        assert_eq!(read, became, "{replacements:?}");
-        let lines: Vec<&str> = read.lines().collect();
-        for row in outcome.excerpt.to_string().lines() {
-            let (number, text) = row.trim_start().split_once('\t').expect("a numbered line");
-            let number: usize = number.parse().expect("a line number");
-            assert_eq!(
-                lines.get(number - 1),
-                Some(&text),
-                "{replacements:?} shows {row}"
-            );
-        }
+        assert_eq!(project.read_file("a"), became, "{case}");
     }
 }
 
 #[test]
 fn rejected_edit_writes_nothing() {
-    let project = Project::open();
-    project.write_file("a.txt", "one\ntwo\none\n");
-
-    let cases = [
-        (vec![Replacement::new("three", "x")], "no_match"),
-        (vec![Replacement::new("one", "x")], "ambiguous"),
-        (vec![Replacement::new("", "x")], "empty_old_string"),
-        (vec![Replacement::new("two", "two")], "unchanged"),
+    type Edits = fn(&Project) -> Vec<Edit>;
+    let cases: [(Edits, &str); 7] = [
+        (|_| vec![lines("2", "x")], "`2` has no tag."),
         (
-            vec![
-                Replacement::new("two", "TWO"),
-                Replacement::new("three", "x"),
-            ],
-            "no_match",
+            |_| vec![lines("9#ab", "x")],
+            "`9#ab` is past the end; the file has 3 lines.",
         ),
-        (Vec::new(), "error: empty"),
+        (
+            |p| {
+                vec![Edit::Replace {
+                    first: p.at("a.txt", 3),
+                    last: p.at("a.txt", 1),
+                    text: "x".to_owned(),
+                }]
+            },
+            "error: reversed_range",
+        ),
+        (
+            |p| vec![p.lines("a.txt", 1, 2, "x"), p.lines("a.txt", 2, 3, "y")],
+            "Edits 1 and 2 both reach line 2.",
+        ),
+        (
+            |p| vec![p.lines("a.txt", 1, 3, "x"), p.after("a.txt", 2, "y")],
+            "Edits 1 and 2 both reach line 2.",
+        ),
+        (
+            |p| vec![p.lines("a.txt", 2, 2, "     2#ab\ttwo")],
+            "error: listing_prefix",
+        ),
+        (|p| vec![p.lines("a.txt", 2, 2, "two")], "error: unchanged"),
     ];
-    for (replacements, reason) in cases {
-        let refused = project.edit("a.txt", replacements).expect_err(reason);
-        assert!(refused.contains(reason), "{refused}");
+    for (edits, reason) in cases {
+        let project = Project::open();
+        project.write_file("a.txt", "one\ntwo\none\n");
+
+        let refused = project.edit("a.txt", edits(&project)).expect_err(reason);
+
+        assert!(refused.contains(reason), "{reason} in {refused}");
+        assert!(refused.contains("nothing was written"), "{refused}");
         assert_eq!(project.read_file("a.txt"), "one\ntwo\none\n");
     }
 
+    let project = Project::open();
+    project.write_file("a.txt", "one\n");
+    let empty = project.edit("a.txt", Vec::new()).expect_err("no edits");
+    assert!(empty.contains("error: empty"), "{empty}");
     let missing = project
-        .edit("nowhere.rs", vec![Replacement::new("a", "b")])
+        .edit("nowhere.rs", vec![lines("1#ab", "x")])
         .expect_err("it is not there");
     assert!(missing.contains("not_found"), "{missing}");
 }
 
 #[test]
-fn missing_text_points_at_closest_lines() {
-    let source = "fn main() {\n    let total = add(1, 2);\n    println!(\"{total}\");\n}\n";
-    let cases = [
-        (
-            "let total =  add(1, 2);",
-            [
-                "The closest text, at line 2, differs only in whitespace:",
-                "     2\t    let total = add(1, 2);",
-            ],
-        ),
-        (
-            "let totl = add(1, 2);",
-            [
-                "The closest text is at line 2:",
-                "     2\t    let total = add(1, 2);",
-            ],
-        ),
-        (
-            "fn main() {\n  let total = add(1, 2);\n  println!(\"{total}\");\n}",
-            [
-                "The closest text, at lines 1-4, differs only in whitespace:",
-                "     3\t    println!(\"{total}\");",
-            ],
-        ),
-        (
-            "     2\t    let total = add(1, 2);",
-            ["line numbers shown before each line", "leave them out"],
-        ),
-        (
-            "2:    let total = add(1, 2);\n3-    println!(\"{total}\");",
-            ["line numbers shown before each line", "leave them out"],
-        ),
-        (
-            "struct Unrelated;",
-            ["Nothing in the file resembles it.", "does not appear"],
-        ),
-    ];
-    for (old, expected) in cases {
-        let project = Project::open();
-        project.write_file("main.rs", source);
-
-        let refused = project
-            .edit("main.rs", vec![Replacement::new(old, "x")])
-            .expect_err(old);
-
-        assert!(
-            refused.starts_with("error: no_match main.rs: nothing was written."),
-            "{refused}"
-        );
-        for part in expected {
-            assert!(refused.contains(part), "{part} in {refused}");
-        }
-    }
-}
-
-#[test]
-fn repeated_text_lists_its_lines() {
+fn stale_anchor_shows_current_anchors() {
     let project = Project::open();
-    project.write_file("a.rs", "a();\nb();\na();\nc();\na();\n");
+    let numbers: String = (1..=20).map(|n| format!("{n}\n")).collect();
+    project.write_file("a.txt", &numbers);
+    let ten = project.at("a.txt", 10);
 
-    let alone = project
-        .edit("a.rs", vec![Replacement::new("a();", "x")])
-        .expect_err("it is ambiguous");
-    assert!(
-        alone.contains("old_string appears 3 times, at lines 1, 3 and 5."),
-        "{alone}"
-    );
-
-    let second = project
+    project
+        .edit("a.txt", vec![project.after("a.txt", 3, "x\ny")])
+        .expect("it shifts the lines below");
+    let refused = project
         .edit(
-            "a.rs",
-            vec![
-                Replacement::new("b();", "B();"),
-                Replacement::new("a();", "x"),
-            ],
+            "a.txt",
+            vec![Edit::Replace {
+                first: ten,
+                last: ten,
+                text: "TEN".to_owned(),
+            }],
         )
-        .expect_err("it is ambiguous");
+        .expect_err("line 10 moved");
+
     assert!(
-        second.contains("Edit 2's old_string appears 3 times after edit 1, at lines 1, 3 and 5."),
-        "{second}"
+        refused.starts_with("error: stale_anchor a.txt: nothing was written."),
+        "{refused}"
+    );
+    assert!(
+        refused.contains(&format!("`{ten}` is not line 10 as it reads now.")),
+        "{refused}"
+    );
+    for line in 9..=12 {
+        let current = project.at("a.txt", line).to_string();
+        assert!(
+            refused.contains(&format!("{line:>6}#{}\t{}", tag(&current), line - 2)),
+            "line {line} in {refused}"
+        );
+    }
+    let moved = project.at("a.txt", 12);
+    assert!(
+        refused.contains("Take anchors from these lines"),
+        "{refused}"
     );
 
-    project.write_file("braces.rs", "}\n}\n}\n");
-    let overlapping = project
-        .edit("braces.rs", vec![Replacement::new("}\n}\n", "}\n")])
-        .expect_err("overlapping occurrences are ambiguous");
-    assert!(
-        overlapping.contains("old_string appears 2 times, at lines 1 and 2."),
-        "{overlapping}"
-    );
-    assert_eq!(project.read_file("braces.rs"), "}\n}\n}\n");
+    project
+        .edit(
+            "a.txt",
+            vec![Edit::Replace {
+                first: moved,
+                last: moved,
+                text: "TEN".to_owned(),
+            }],
+        )
+        .expect("the shown anchor applies");
+    assert_eq!(project.read_file("a.txt").lines().nth(11), Some("TEN"));
 }
 
 #[test]
@@ -217,31 +209,30 @@ fn edit_excerpt_shows_context_lines() {
         .apply(
             "a.txt",
             vec![
-                Replacement::new("\n12\n", "\nc\nd\ne\nf\ng\nh\ni\n"),
-                Replacement::new("\n26\n", "\n"),
+                project.lines("a.txt", 12, 12, "c\nd\ne\nf\ng\nh\ni"),
+                project.lines("a.txt", 26, 26, ""),
             ],
         )
         .expect("it is applied");
 
+    let shown: Vec<String> = outcome
+        .excerpt
+        .to_string()
+        .lines()
+        .map(|row| match row.split_once('\t') {
+            Some((anchor, text)) => format!(
+                "{}\t{text}",
+                anchor.trim_start().split('#').next().unwrap_or_default()
+            ),
+            None => row.trim().to_owned(),
+        })
+        .collect();
     assert_eq!(
-        outcome.excerpt.to_string(),
+        shown,
         [
-            "    10\t10",
-            "    11\t11",
-            "    12\tc",
-            "    13\td",
-            "     …",
-            "    17\th",
-            "    18\ti",
-            "    19\t13",
-            "    20\t14",
-            "     …",
-            "    30\t24",
-            "    31\t25",
-            "    32\t27",
-            "    33\t28",
+            "10\t10", "11\t11", "12\tc", "13\td", "…", "17\th", "18\ti", "19\t13", "20\t14", "…",
+            "30\t24", "31\t25", "32\t27", "33\t28",
         ]
-        .join("\n")
     );
 }
 
@@ -251,23 +242,40 @@ fn edit_keeps_line_endings() {
     project.write_file("windows.txt", "one\r\ntwo\r\n");
     project.write_file("unix.txt", "one\ntwo\n");
     project.write_file("mixed.txt", "one\r\ntwo\nthree\r\nfour\n");
+    project.write_file("open.txt", "one\ntwo");
+    project.write_file("inserted.txt", "one\r\ntwo\nthree\r\n");
 
     project
         .edit(
             "windows.txt",
             vec![
-                Replacement::new("two\r\n", "TWO\r\nAND\r\n"),
-                Replacement::new("one\n", "ONE\n"),
+                project.lines("windows.txt", 2, 2, "TWO\r\nAND\r\n"),
+                project.lines("windows.txt", 1, 1, "ONE"),
             ],
         )
         .expect("it is applied");
     project
-        .edit("unix.txt", vec![Replacement::new("two\n", "TWO\r\nAND\n")])
+        .edit(
+            "unix.txt",
+            vec![project.lines("unix.txt", 2, 2, "TWO\r\nAND\n")],
+        )
         .expect("it is applied");
     project
         .edit(
             "mixed.txt",
-            vec![Replacement::new("one\ntwo\nthree", "ONE\nTWO\nTHREE")],
+            vec![project.lines("mixed.txt", 1, 3, "ONE\nTWO\nTHREE")],
+        )
+        .expect("it is applied");
+    project
+        .edit("open.txt", vec![project.after("open.txt", 2, "three")])
+        .expect("it is applied");
+    project
+        .edit(
+            "inserted.txt",
+            vec![
+                project.after("inserted.txt", 1, "after"),
+                project.before("inserted.txt", 2, "before"),
+            ],
         )
         .expect("it is applied");
 
@@ -276,6 +284,11 @@ fn edit_keeps_line_endings() {
     assert_eq!(
         project.read_file("mixed.txt"),
         "ONE\r\nTWO\nTHREE\r\nfour\n"
+    );
+    assert_eq!(project.read_file("open.txt"), "one\ntwo\nthree");
+    assert_eq!(
+        project.read_file("inserted.txt"),
+        "one\r\nafter\r\nbefore\ntwo\nthree\r\n"
     );
 }
 
@@ -289,8 +302,8 @@ fn change_reports_hunks() {
         .apply(
             "a.txt",
             vec![
-                Replacement::new("\n2\n", "\nTWO\n"),
-                Replacement::new("\n16\n", "\nSIXTEEN\n"),
+                project.lines("a.txt", 2, 2, "TWO"),
+                project.lines("a.txt", 16, 16, "SIXTEEN"),
             ],
         )
         .expect("it is applied");
@@ -312,4 +325,16 @@ fn change_reports_hunks() {
             .lines
             .contains(&Line::Added("TWO".to_owned()))
     );
+}
+
+fn lines(at: &str, text: &str) -> Edit {
+    Edit::Replace {
+        first: anchor(at),
+        last: anchor(at),
+        text: text.to_owned(),
+    }
+}
+
+fn tag(anchor: &str) -> &str {
+    anchor.split_once('#').map_or("", |(_, tag)| tag)
 }

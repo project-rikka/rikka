@@ -38,6 +38,10 @@ impl Logs {
         }
     }
 
+    pub(crate) fn folder(&self) -> &Path {
+        &self.folder
+    }
+
     pub(crate) fn open(&self, named: &str) -> Option<Log> {
         self.made().ok()?;
 

@@ -89,18 +89,14 @@ fn output_log(call: &Call) -> Option<&OutputLog> {
 }
 
 fn proposed(input: &Value) -> String {
-    let replacing: Vec<&str> = match input.get("edits").and_then(Value::as_array) {
-        Some(edits) => edits
-            .iter()
-            .filter_map(|edit| edit.get("new_string")?.as_str())
-            .collect(),
-        None => input
-            .get("new_string")
-            .and_then(Value::as_str)
-            .into_iter()
-            .collect(),
-    };
-    replacing.join("\n")
+    input
+        .get("edits")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|edit| edit.get("text")?.as_str())
+        .collect::<Vec<&str>>()
+        .join("\n")
 }
 
 fn header(summary: &CallSummary<'_>) -> impl View {

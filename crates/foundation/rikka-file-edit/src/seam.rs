@@ -1,74 +1,123 @@
-use std::ops::Range;
+use crate::anchor::Anchor;
+use crate::edited::{Edited, Splice};
+use crate::error::{Error, Result};
+use crate::excerpt::Excerpt;
+use crate::placement::{Site, owner};
 
-use crate::matching::line_of;
-
-#[derive(Debug)]
-pub(crate) enum Edge {
+#[derive(Clone, Copy)]
+enum Edge {
     Above,
     Below,
 }
 
-#[derive(Debug)]
-pub(crate) struct Echo {
-    pub(crate) edge: Edge,
-    pub(crate) line: usize,
-    pub(crate) replaced: Range<usize>,
-    pub(crate) neighbour: Range<usize>,
+struct Echo<'s> {
+    splice: &'s Splice,
+    edge: Edge,
+    line: usize,
 }
 
-pub(crate) fn echo(content: &str, at: Range<usize>, new: &str) -> Option<Echo> {
-    let old = &content[at.clone()];
-    let bytes = content.as_bytes();
-    let starts_line = at.start == 0 || bytes[at.start - 1] == b'\n';
-    let ends_line = old.ends_with('\n') || bytes.get(at.end).is_none_or(|&byte| byte == b'\n');
-    if !starts_line || !ends_line {
-        return None;
+impl Edited<'_> {
+    pub(crate) fn check_echoes(&self) -> Result<()> {
+        let blocks: Vec<String> = (0..self.splices.len())
+            .filter_map(|index| self.echo_block(index))
+            .collect();
+        if blocks.is_empty() {
+            return Ok(());
+        }
+        Err(Error::EchoedLine {
+            path: self.path.to_owned(),
+            report: blocks.join("\n\n"),
+        })
     }
 
-    let (old_lines, new_lines) = (lines(old), lines(new));
-    let (first, last) = (new_lines.first()?, new_lines.last()?);
-    let above = line_before(content, at.start)
-        .filter(|line| is_echo(&content[line.clone()], first) && !same_trimmed(old_lines[0], first))
-        .map(|line| (Edge::Above, line));
-    let (edge, neighbour) = above.or_else(|| {
-        let from = at.end + usize::from(!old.ends_with('\n'));
-        line_from(content, from)
-            .filter(|line| {
-                is_echo(&content[line.clone()], last)
-                    && !same_trimmed(old_lines[old_lines.len() - 1], last)
-            })
-            .map(|line| (Edge::Below, line))
-    })?;
+    fn echo_block(&self, index: usize) -> Option<String> {
+        let echoes: Vec<Echo<'_>> = [self.above(index), self.below(index)]
+            .into_iter()
+            .flatten()
+            .collect();
+        let old = &echoes.first()?.splice.old;
+        let lines: Vec<String> = echoes
+            .iter()
+            .map(|echo| self.describe(echo))
+            .chain(std::iter::once(
+                Excerpt::current(&self.before, std::slice::from_ref(old)).to_string(),
+            ))
+            .chain(echoes.iter().map(|echo| self.suggestion(echo)))
+            .collect();
+        Some(lines.join("\n"))
+    }
 
-    let start = line_of(content, at.start);
-    let replaced = start..start + old_lines.len();
-    let line = match edge {
-        Edge::Above => start,
-        Edge::Below => replaced.end + 1,
-    };
-    Some(Echo {
-        edge,
-        line,
-        replaced,
-        neighbour,
-    })
-}
+    fn above(&self, index: usize) -> Option<Echo<'_>> {
+        let splice = &self.splices[index];
+        let first = *self
+            .after
+            .get(splice.new.start)
+            .filter(|_| !splice.new.is_empty())?;
+        let neighbour = splice.old.start.checked_sub(1)?;
+        let touched = index > 0 && self.splices[index - 1].old.end > neighbour;
+        let unchanged =
+            !splice.is_insertion() && same_trimmed(self.before[splice.old.start], first);
+        (!touched && !unchanged && is_echo(self.before[neighbour], first)).then_some(Echo {
+            splice,
+            edge: Edge::Above,
+            line: neighbour + 1,
+        })
+    }
 
-fn line_before(content: &str, start: usize) -> Option<Range<usize>> {
-    let end = start.checked_sub(1)?;
-    let begin = content[..end].rfind('\n').map_or(0, |at| at + 1);
-    Some(begin..end)
-}
+    fn below(&self, index: usize) -> Option<Echo<'_>> {
+        let splice = &self.splices[index];
+        let last = *self
+            .after
+            .get(splice.new.end.checked_sub(1)?)
+            .filter(|_| !splice.new.is_empty())?;
+        let neighbour = splice.old.end;
+        let beside = *self.before.get(neighbour)?;
+        let touched = self
+            .splices
+            .get(index + 1)
+            .is_some_and(|next| next.old.start <= neighbour);
+        let unchanged =
+            !splice.is_insertion() && same_trimmed(self.before[splice.old.end - 1], last);
+        (!touched && !unchanged && is_echo(beside, last)).then_some(Echo {
+            splice,
+            edge: Edge::Below,
+            line: neighbour + 1,
+        })
+    }
 
-fn line_from(content: &str, from: usize) -> Option<Range<usize>> {
-    let rest = content.get(from..).filter(|rest| !rest.is_empty())?;
-    Some(from..from + rest.find('\n').unwrap_or(rest.len()))
-}
+    fn describe(&self, echo: &Echo<'_>) -> String {
+        let splice = echo.splice;
+        let place = match (splice.site, splice.old.len()) {
+            (Site::After, _) => format!("put after line {}", splice.old.start),
+            (Site::Before, _) => format!("put before line {}", splice.old.start + 1),
+            (Site::Lines, 1) => format!("for line {}", splice.old.start + 1),
+            (Site::Lines, _) => format!("for lines {}-{}", splice.old.start + 1, splice.old.end),
+        };
+        let (verb, side) = match echo.edge {
+            Edge::Above => ("begins", "above"),
+            Edge::Below => ("ends", "below"),
+        };
+        format!(
+            "{}text {place} {verb} with line {}, which stays {side} it:",
+            owner(splice.edit, self.edits),
+            echo.line
+        )
+    }
 
-fn lines(text: &str) -> Vec<&str> {
-    match text.strip_suffix('\n').unwrap_or(text) {
-        "" if text.is_empty() => Vec::new(),
-        body => body.split('\n').collect(),
+    fn suggestion(&self, echo: &Echo<'_>) -> String {
+        let line = echo.line;
+        let anchor = Anchor::of(line, self.before[line - 1]);
+        match (echo.splice.is_insertion(), echo.edge) {
+            (false, Edge::Above) => format!(
+                "Leave line {line} out of the text, or start the range at `{anchor}` to rewrite it too."
+            ),
+            (false, Edge::Below) => format!(
+                "Leave line {line} out of the text, or end the range at `{anchor}` to rewrite it too."
+            ),
+            (true, _) => format!(
+                "Leave line {line} out of the text: an insertion keeps it. To repeat it on purpose, replace `{anchor}` with both copies."
+            ),
+        }
     }
 }
 

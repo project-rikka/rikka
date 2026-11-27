@@ -1,44 +1,82 @@
 use rikka_llm::json;
-use rikka_tools::{EDIT, VIEW, WRITE};
+use rikka_tools::{BASH, EDIT, VIEW, WRITE};
 
 use crate::support::Project;
 
 #[tokio::test]
-async fn edit_applies_one_replacement_or_several() {
+async fn numbered_reads_anchor_edits() {
     let project = Project::open();
-    project.holds("a.rs", "fn a() {\n    one();\n}\n");
+    project.holds("src/a.rs", "fn a() {\n    one();\n}\n");
 
+    let listed = project
+        .call(
+            BASH,
+            json!({ "command": "cat -n src/a.rs | sed -n '1,3p'" }),
+        )
+        .await
+        .expect("the file is listed");
     let reply = project
         .call(
             EDIT,
-            json!({ "path": "a.rs", "old_string": "one()", "new_string": "two()" }),
-        )
-        .await
-        .expect("edit should apply");
-    assert_eq!(project.read("a.rs"), "fn a() {\n    two();\n}\n");
-    assert_eq!(
-        reply.text(),
-        "ok a.rs (3 lines, +0)\n     1\tfn a() {\n     2\t    two();\n     3\t}"
-    );
-
-    project
-        .call(
-            EDIT,
             json!({
-                "path": "a.rs",
+                "path": "src/a.rs",
                 "edits": [
-                    { "old_string": "fn a()", "new_string": "fn b()" },
-                    { "old_string": "two", "new_string": "three", "replace_all": true },
-                    { "old_string": "}\n", "new_string": "}\n\nfn c() {}\n", "replace_all": null },
+                    { "lines": [anchor(listed.text(), 2)], "text": "    two();" },
+                    { "after": anchor(listed.text(), 3), "text": "\nfn b() {}" },
                 ],
             }),
         )
         .await
-        .expect("edits should apply");
+        .expect("the listed anchors apply");
     assert_eq!(
-        project.read("a.rs"),
-        "fn b() {\n    three();\n}\n\nfn c() {}\n"
+        project.read("src/a.rs"),
+        "fn a() {\n    two();\n}\n\nfn b() {}\n"
     );
+    assert!(
+        reply.text().starts_with("ok src/a.rs (5 lines, +2)\n"),
+        "{}",
+        reply.text()
+    );
+
+    let excerpt = reply
+        .text()
+        .split_once('\n')
+        .map_or("", |(_, excerpt)| excerpt);
+    let renamed = project
+        .call(
+            EDIT,
+            json!({
+                "path": "src/a.rs",
+                "edits": [{ "lines": [anchor(excerpt, 5)], "text": "fn c() {}" }],
+            }),
+        )
+        .await
+        .expect("the result's anchors apply");
+    assert_eq!(
+        project.read("src/a.rs"),
+        "fn a() {\n    two();\n}\n\nfn c() {}\n"
+    );
+
+    let found = project
+        .call(
+            BASH,
+            json!({ "command": "cd src && grep -n -E 'two|c\\(' a.rs" }),
+        )
+        .await
+        .expect("the file is searched");
+    assert_eq!(
+        found.text(),
+        format!(
+            "{}:    two();\n{}:fn c() {{}}",
+            anchor(excerpt, 2),
+            anchor(renamed.text(), 5)
+        )
+    );
+    let plain = project
+        .call(BASH, json!({ "command": "cat src/a.rs" }))
+        .await
+        .expect("the file is read");
+    assert!(!plain.text().contains('#'), "{}", plain.text());
 }
 
 #[tokio::test]
@@ -47,45 +85,51 @@ async fn invalid_edit_writes_nothing() {
     project.holds("a.txt", "one\n");
 
     for (input, expected) in [
+        (json!({ "path": "a.txt" }), "missing field `edits`"),
         (
-            json!({ "path": "a.txt", "old_string": "one", "new_string": "x", "edits": [] }),
-            "not both",
+            json!({ "path": "a.txt", "old_string": "one", "new_string": "x" }),
+            "unknown field `old_string`",
         ),
         (
-            json!({ "path": "a.txt", "old_string": "one" }),
-            "new_string is missing",
+            json!({ "path": "a.txt", "edits": [{ "lines": ["1"] }] }),
+            "missing field `text`",
         ),
         (
-            json!({ "path": "a.txt" }),
-            "set old_string and new_string, or edits",
+            json!({ "path": "a.txt", "edits": [{ "lines": ["1"], "after": "1", "text": "x" }] }),
+            "invalid edit 1: set exactly one of lines, after or before",
         ),
         (
-            json!({
-                "path": "a.txt",
-                "replace_all": true,
-                "edits": [{ "old_string": "one", "new_string": "x" }],
-            }),
-            "inside each",
+            json!({ "path": "a.txt", "edits": [{ "lines": ["1", "1", "1"], "text": "x" }] }),
+            "lines takes one anchor, or the first and last of a range",
         ),
         (
-            json!({
-                "path": "a.txt",
-                "edits": [{ "old_string": "one", "new_string": "x", "line": 1 }],
-            }),
-            "unknown field",
+            json!({ "path": "a.txt", "edits": [{ "before": "one", "text": "x" }] }),
+            "invalid anchor `one`",
         ),
         (
-            json!({ "path": "a.txt", "old_string": "two", "new_string": "x" }),
-            "no_match",
+            json!({ "path": "a.txt", "edits": [{ "lines": ["1"], "text": "x" }] }),
+            "`1` has no tag.",
         ),
     ] {
         let refused = project
             .call(EDIT, input)
             .await
             .expect_err("the edit is refused");
-        assert!(refused.contains(expected), "{refused}");
+        assert!(refused.contains(expected), "{expected} in {refused}");
         assert_eq!(project.read("a.txt"), "one\n");
     }
+}
+
+fn anchor(listing: &str, line: usize) -> String {
+    listing
+        .lines()
+        .find_map(|row| {
+            let (anchor, _) = row.trim_start().split_once(['\t', ':'])?;
+            anchor
+                .starts_with(&format!("{line}#"))
+                .then(|| anchor.to_owned())
+        })
+        .unwrap_or_else(|| panic!("line {line} is anchored in {listing}"))
 }
 
 #[tokio::test]
@@ -126,7 +170,7 @@ async fn writes_outside_project_are_rejected() {
         (WRITE, json!({ "path": "/tmp/escaped.txt", "content": "x" })),
         (
             EDIT,
-            json!({ "path": "../escaped.txt", "old_string": "a", "new_string": "b" }),
+            json!({ "path": "../escaped.txt", "edits": [{ "lines": ["1#ab"], "text": "b" }] }),
         ),
     ] {
         let refused = project.call(stem, input).await.expect_err("it is outside");
