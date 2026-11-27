@@ -1,0 +1,265 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[google]
+title = "Google"
+cancel = "キャンセル"
+dismiss = "閉じる"
+
+[google.section]
+mail = "メール"
+drive = "ドライブ"
+passwords = "パスワード"
+
+[google.account]
+add = "別のアカウントを追加"
+sign-out = "このアカウントからサインアウト"
+
+[google.signing]
+summary = "Gmail、ドライブ、保存したパスワードをひとつにまとめます。Google アカウントで一度サインインするだけです。"
+start = "Google でサインイン"
+another = "別のアカウントでサインイン"
+again = "もう一度サインイン"
+page = "Google にサインイン"
+connecting = "Google に接続しています…"
+expired = "Google へのサインインが無効になりました。続けるにはもう一度サインインしてください。"
+
+[google.mail]
+labels = "ラベル"
+me = "自分"
+to = "宛先: {recipients}"
+draft = "下書き"
+edit-draft = "下書きを編集"
+no-subject = "(件名なし)"
+pick = "スレッドを選ぶとここに表示されます"
+empty = "ここにスレッドはありません"
+refresh = "新着メールを確認"
+retry = "再試行"
+
+[google.mail.mailbox]
+inbox = "受信トレイ"
+starred = "スター付き"
+important = "重要"
+sent = "送信済み"
+drafts = "下書き"
+all = "すべてのメール"
+spam = "迷惑メール"
+trash = "ゴミ箱"
+
+[google.mail.search]
+field = "メールを検索"
+results = "「{query}」の検索結果"
+
+[google.mail.action]
+archive = "アーカイブ"
+spam = "迷惑メールを報告"
+trash = "ゴミ箱に移動"
+restore = "ゴミ箱から戻す"
+unread = "未読にする"
+star = "スターを付ける"
+unstar = "スターを外す"
+close = "スレッドを閉じる"
+reply = "返信"
+reply-all = "全員に返信"
+forward = "転送"
+
+[google.mail.pictures]
+blocked = "外部の画像 {count} 枚を表示していません"
+show = "画像を表示"
+
+[google.mail.attachment]
+open = "添付ファイルを開く"
+save = "添付ファイルを保存"
+fetching = "{name} を取得しています…"
+saved = "{path} に保存しました"
+
+[google.mail.compose]
+new = "新規メッセージ"
+reply = "返信"
+to = "To"
+cc = "Cc"
+bcc = "Bcc"
+copies = "Cc/Bcc"
+subject = "件名"
+attach = "ファイルを添付"
+keep = "下書きを保存"
+discard = "破棄"
+send = "送信"
+sent = "メッセージを送信しました"
+saved = "下書きを保存しました"
+no-recipient = "宛先を 1 件以上入力してください。"
+wrote = "{time} {sender}:"
+forwarded = "---------- 転送メッセージ ----------"
+forwarded-head = "From: {sender}\nDate: {time}\nSubject: {subject}"
+
+[google.mail.failure]
+missing = "このスレッドは Gmail に存在しなくなりました。"
+busy = "Gmail が混み合っています。しばらくしてからもう一度お試しください。"
+address = "{address} はメールアドレスではありません。"
+
+[google.drive]
+items = "{count} 個の項目"
+selected = "{count} 個中 {selected} 個を選択"
+retry = "再試行"
+undo = "元に戻す"
+show-folder = "フォルダーを表示"
+trashed = "{count} 個の項目をゴミ箱に移動しました"
+downloaded = "{count} 個のファイルをダウンロードしました"
+opening = "{name} を開いています"
+downloading = "{name} をダウンロードしています"
+uploading = "{name} をアップロードしています"
+
+[google.drive.place]
+my-drive = "マイドライブ"
+shared-drives = "共有ドライブ"
+shared = "共有アイテム"
+recent = "最近使用したアイテム"
+starred = "スター付き"
+trash = "ゴミ箱"
+
+[google.drive.search]
+field = "ドライブで検索"
+results = "「{query}」の検索結果"
+
+[google.drive.view]
+icons = "アイコンで表示"
+details = "リストで表示"
+
+[google.drive.sort]
+title = "並べ替え"
+listed = "ドライブの順序"
+
+[google.drive.column]
+name = "名前"
+modified = "更新日時"
+kind = "種類"
+size = "サイズ"
+
+[google.drive.kind]
+folder = "フォルダー"
+document = "Google ドキュメント"
+spreadsheet = "Google スプレッドシート"
+presentation = "Google スライド"
+drawing = "Google 図形描画"
+form = "Google フォーム"
+site = "Google サイト"
+image = "画像"
+video = "動画"
+audio = "音声"
+pdf = "PDF"
+archive = "アーカイブ"
+text = "テキスト"
+file = "ファイル"
+
+[google.drive.menu]
+new = "新規"
+new-folder = "新しいフォルダー"
+upload = "ファイルをアップロード…"
+refresh = "再読み込み"
+open = "開く"
+open-browser = "ブラウザーで開く"
+download = "ダウンロード…"
+download-pdf = "PDF としてダウンロード…"
+rename = "名前を変更"
+star = "スターを付ける"
+unstar = "スターを外す"
+copy-link = "リンクをコピー"
+trash = "ゴミ箱に移動"
+restore = "元に戻す"
+delete-forever = "完全に削除"
+empty-trash = "ゴミ箱を空にする"
+
+[google.drive.new-folder]
+name = "無題のフォルダー"
+
+[google.drive.download]
+title = "ダウンロード先"
+accept = "ここにダウンロード"
+
+[google.drive.upload]
+title = "ファイルをアップロード"
+accept = "アップロード"
+
+[google.drive.delete]
+title = "完全に削除しますか？"
+message = "{count} 個の項目を完全に削除します。元に戻すことはできません。"
+
+[google.drive.empty-trash]
+title = "ゴミ箱を空にしますか？"
+message = "ゴミ箱の中身をすべて完全に削除します。元に戻すことはできません。"
+
+[google.drive.empty]
+folder = "このフォルダーは空です"
+search = "一致する項目はドライブにありません"
+trash = "ゴミ箱は空です"
+starred = "スターを付けた項目がここに表示されます"
+shared = "共有されている項目はまだありません"
+
+[google.drive.storage]
+of = "{limit} 中 {used} を使用"
+used = "{used} を使用"
+
+[google.drive.failure]
+missing = "この項目はドライブに存在しなくなりました。"
+full = "Google の保存容量がいっぱいです。"
+busy = "ドライブが混み合っています。しばらくしてからもう一度お試しください。"
+no-content = "この項目にはダウンロードできるファイルがありません。"
+
+[google.passwords]
+search = "パスワードを検索"
+add = "パスワードを追加"
+edit = "編集"
+empty = "保存したパスワードはありません"
+no-match = "一致するパスワードはありません"
+none-saved = "Google アカウントに保存したパスワードがここに表示されます"
+first-sync = "Google からパスワードを取得しています…"
+pick = "パスワードを選ぶとここに表示されます"
+username = "ユーザー名"
+password = "パスワード"
+note = "メモ"
+no-username = "ユーザー名なし"
+no-password = "このログインにはパスワードが保存されていません"
+federated = "{provider} でログイン"
+show = "パスワードを表示"
+hide = "パスワードを隠す"
+copy-username = "ユーザー名をコピー"
+copy-password = "パスワードをコピー"
+open-site = "サイトを開く"
+created = "作成 {time}"
+changed = "パスワード変更 {time}"
+used = "最終使用 {time}"
+syncing = "同期しています…"
+synced = "{count} 件のパスワード、最新です"
+unsent = "{count} 件の変更が送信待ちです"
+unreadable = "{count} 件のパスワードはまだ読み取れません"
+sync-now = "今すぐ同期"
+keys-refused = "Google の鍵ではパスワードを開けませんでした。もう一度本人確認してください。"
+
+[google.passwords.delete]
+title = "このパスワードを削除しますか？"
+message = "{site} のパスワードを、すべてのデバイスの Google アカウントから削除します。"
+accept = "削除"
+
+[google.passwords.refusal]
+address = "example.com のようにサイトのアドレスを入力してください。"
+password = "パスワードを入力してください。"
+
+[google.passwords.editor]
+add = "パスワードを追加"
+edit = "{site} のパスワードを編集"
+site = "サイト"
+site-hint = "example.com"
+generate = "安全なパスワードを提案"
+save = "保存"
+
+[google.passwords.passphrase]
+needed = "パスワードは同期パスフレーズで暗号化されています"
+field = "同期パスフレーズ"
+refused = "そのパスフレーズではパスワードを開けません。"
+unlock = "ロック解除"
+
+[google.passwords.verify]
+needed = "パスワードはデバイス上の暗号化で保護されています。ここで読むには本人確認が必要です。"
+start = "Google で本人確認"
+page = "本人確認"

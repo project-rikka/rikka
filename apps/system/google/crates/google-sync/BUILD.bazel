@@ -1,0 +1,34 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "google-sync",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/google/crates/google-account",
+        "//apps/system/google/crates/google-nigori",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-types",
+        "@crates//:base64",
+        "@crates//:flate2",
+        "@crates//:prost",
+        "@crates//:rand",
+        "@crates//:sha1",
+        "@crates//:thiserror",
+        "@crates//:tracing",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":google-sync",
+        "//apps/system/google/crates/google-nigori",
+        "//apps/system/google/crates/google-test-sync",
+        "@crates//:base64",
+        "@crates//:prost",
+    ],
+)

@@ -6,5 +6,6 @@ pub const DISCORD: &str = "os.rikka.Discord";
 pub const MUSIC: &str = "os.rikka.Music";
 pub const REMOTE: &str = "os.rikka.Remote";
 pub const MINECRAFT: &str = "os.rikka.Minecraft";
+pub const GOOGLE: &str = "os.rikka.Google";
 
-pub const ALL: [&str; 6] = [LLM, MCP, DISCORD, MUSIC, REMOTE, MINECRAFT];
+pub const ALL: [&str; 7] = [LLM, MCP, DISCORD, MUSIC, REMOTE, MINECRAFT, GOOGLE];

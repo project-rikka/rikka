@@ -297,6 +297,7 @@ discord = "Discord"
 music = "ミュージック"
 remote = "リモートデスクトップ"
 minecraft = "Minecraft"
+google = "Google"
 other = "その他のアプリ"
 
 [settings.lock-screen]

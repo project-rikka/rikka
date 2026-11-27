@@ -116,6 +116,16 @@ pub(crate) const COMPONENTS: &[Component] = &[
         &[icon("rikka-music", "music_note")],
     ),
     application(
+        "google",
+        Offer::Selected,
+        &[named("//apps/system/google:rikka-google", "rikka-google")],
+        &[data_file(
+            "apps/system/google/rikka-google.desktop",
+            APPLICATIONS_DIRECTORY,
+        )],
+        &[icon("rikka-google", "account_circle")],
+    ),
+    application(
         "paint",
         Offer::Selected,
         &[named("//apps/general/paint:rikka-paint", "rikka-paint")],

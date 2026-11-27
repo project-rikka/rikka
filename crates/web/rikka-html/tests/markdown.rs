@@ -180,3 +180,33 @@ fn deep_nesting_is_flattened() {
 
     assert!(read_back(&html).contains("deep"));
 }
+
+#[test]
+fn located_pictures_become_image_blocks() {
+    let html = "<p>Before <img src=\"cid:logo\" alt=\"Logo [new]\"> after</p>\
+        <img src=\"https://example.com/pixel.gif\" width=\"1\" height=\"1\">\
+        <blockquote><img src=\"https://example.com/far.png\" alt=\"Remote chart\"></blockquote>\
+        <a href=\"https://example.com/sale\"><img src=\"cid:banner\" alt=\"Sale\"></a>\
+        <a href=\"https://example.com/far\"><img src=\"https://example.com/far.png\" alt=\"Far\"></a>\
+        <table><tr><th>Name</th><th>Count</th></tr>\
+        <tr><td><a href=\"https://example.com/cell\"><img src=\"cid:cell\" alt=\"Cell\"></a></td><td>1</td></tr></table>\
+        <img src=\"https://example.com/unnamed.png\">";
+    let located = |source: &str| {
+        source
+            .strip_prefix("cid:")
+            .map(|name| format!("/cache/{name} (1).png"))
+    };
+
+    assert_eq!(
+        Document::parse(html).to_markdown_with_pictures(located),
+        "Before\n\n![Logo \\[new\\]](</cache/logo%20(1).png>)\n\nafter\n\n> Remote chart\n\n\
+        [![Sale](</cache/banner%20(1).png>)](<https://example.com/sale>)\n\n\
+        [Far](<https://example.com/far>)\n\n\
+        | Name | Count |\n| --- | --- |\n| [Cell](<https://example.com/cell>) | 1 |"
+    );
+    assert_eq!(
+        converted(html),
+        "Before after\n\n[Sale](<https://example.com/sale>)[Far](<https://example.com/far>)\n\n\
+        | Name | Count |\n| --- | --- |\n| [Cell](<https://example.com/cell>) | 1 |"
+    );
+}

@@ -178,6 +178,14 @@
 
 - [Files application](files-app.md) — Manager, portal dialog and opener binaries over private VFS, MIME, thumbnail, archive, drive and portal crates.
 
+## apps/system/google
+
+- [Google application (rikka-google)](google-app.md) — apps/system/google: Gmail, Drive and Chrome Sync passwords in one native app; crates, sign-in, sections, state.
+
+## apps/system/google/crates/google-sync
+
+- [Chrome Sync client (google-sync, google-nigori)](google-sync.md) — Sans-IO Chrome Sync engine for passwords: messages, Nigori encryption states, commit and conflict rules, fake server.
+
 ## apps/system/music
 
 - [Music application](music-app.md) — rikka-music's core model, accounts and keyring, shared Hifi Deck, gapless, UI state, pages, settings, signal path.

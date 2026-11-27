@@ -1,0 +1,14 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "google-test-server",
+    testonly = True,
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/google/crates/google-account",
+        "//crates/foundation/rikka-sync",
+    ],
+)

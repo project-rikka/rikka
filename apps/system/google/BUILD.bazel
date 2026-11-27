@@ -1,0 +1,30 @@
+load("//bazel/rust:defs.bzl", "rikka_binary")
+
+rikka_binary(
+    name = "rikka-google",
+    target_compatible_with = ["@platforms//os:linux"],
+    deps = [
+        "//apps/system/google/crates/google-account",
+        "//apps/system/google/crates/google-drive",
+        "//apps/system/google/crates/google-mail",
+        "//apps/system/google/crates/google-passwords",
+        "//crates/desktop/rikka-account-book",
+        "//crates/desktop/rikka-dialog",
+        "//crates/desktop/rikka-mime",
+        "//crates/desktop/rikka-open",
+        "//crates/foundation/rikka-dirs",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-i18n",
+        "//crates/foundation/rikka-net",
+        "//crates/ui/rikka-app",
+        "//crates/ui/rikka-markdown",
+        "//crates/ui/rikka-ui",
+        "//crates/ui/rikka-widgets",
+        "//crates/web/rikka-web",
+        "@crates//:futures-channel",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:tracing",
+    ],
+)

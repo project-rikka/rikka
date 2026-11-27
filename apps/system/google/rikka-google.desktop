@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Google
+Name[ja]=Google
+Name[zh_CN]=Google
+GenericName=Google Account Client
+GenericName[ja]=Google アカウントクライアント
+GenericName[zh_CN]=Google 账号客户端
+Comment=Read Gmail, browse Google Drive and manage saved passwords in one place
+Comment[ja]=Gmail、Google ドライブ、保存したパスワードをひとつのアプリで扱います
+Comment[zh_CN]=在一个应用中使用 Gmail、Google 云端硬盘和已保存的密码
+Exec=rikka-google
+Icon=rikka-google
+Terminal=false
+Categories=Network;Email;FileTransfer;
+Keywords=google;gmail;mail;drive;cloud;password;manager;sync;
+Keywords[ja]=google;gmail;メール;ドライブ;クラウド;パスワード;マネージャー;同期;
+Keywords[zh_CN]=google;gmail;邮件;云端硬盘;云;密码;管理器;同步;
+StartupNotify=true

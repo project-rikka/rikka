@@ -16,6 +16,7 @@ pub(super) fn render(blocks: &[Block]) -> String {
             Block::List(list) => list.write(&mut out, false, render),
             Block::Code(code) => out.push_str(code),
             Block::Rule => out.push_str("---"),
+            Block::Picture { alt, .. } => out.push_str(alt),
             Block::Table(rows) => {
                 let lines: Vec<String> = rows
                     .iter()

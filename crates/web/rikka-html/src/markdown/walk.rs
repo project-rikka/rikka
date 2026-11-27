@@ -9,6 +9,7 @@ use super::{css, table};
 const DEEPEST_ELEMENT: usize = 256;
 const DEEPEST_NESTING: usize = 16;
 const LINK_SCHEMES: [&str; 3] = ["http://", "https://", "mailto:"];
+const SMALLEST_PICTURE: u32 = 3;
 
 const SKIPPED: &[&str] = &[
     "applet", "area", "audio", "base", "canvas", "datalist", "embed", "frame", "frameset", "head",
@@ -59,16 +60,31 @@ const BLOCKS: &[&str] = &[
     "ul",
 ];
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) enum Pictures {
+    #[default]
+    Dropped,
+    Kept,
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 pub(super) struct Depth {
     elements: usize,
     nesting: usize,
+    pictures: Pictures,
 }
 
 impl Depth {
     pub(super) fn deeper(self, elements: usize) -> Depth {
         Depth {
             elements: self.elements + elements,
+            ..self
+        }
+    }
+
+    pub(super) fn without_pictures(self) -> Depth {
+        Depth {
+            pictures: Pictures::Dropped,
             ..self
         }
     }
@@ -111,10 +127,14 @@ impl Flow {
     }
 }
 
-pub(super) fn blocks(document: &Document) -> Vec<Block> {
+pub(super) fn blocks(document: &Document, pictures: Pictures) -> Vec<Block> {
     let mut flow = Flow::default();
+    let depth = Depth {
+        pictures,
+        ..Depth::default()
+    };
     for child in document.children() {
-        node(child, &Style::default(), &mut flow, Depth::default());
+        node(child, &Style::default(), &mut flow, depth);
     }
     flow.finish()
 }
@@ -154,13 +174,19 @@ fn element(element: Element<'_>, style: &Style, flow: &mut Flow, depth: Depth) {
     let depth = depth.deeper(1);
     match name {
         "br" => flow.gathering.line_break(),
-        "img" => {
-            if style.link.is_some()
-                && let Some(alt) = element.attribute("alt")
-            {
-                flow.gathering.text(alt, style);
+        "img" => match (depth.pictures == Pictures::Kept)
+            .then(|| picture(element, style))
+            .flatten()
+        {
+            Some(picture) => flow.push(picture),
+            None => {
+                if style.link.is_some()
+                    && let Some(alt) = element.attribute("alt")
+                {
+                    flow.gathering.text(alt, style);
+                }
             }
-        }
+        },
         "hr" => flow.push(Block::Rule),
         "pre" | "xmp" | "listing" | "plaintext" => {
             if let Some(code) = preformatted(element) {
@@ -299,5 +325,27 @@ fn visible<'a>(element: Element<'a>) -> impl Iterator<Item = Child<'a>> {
             }
             return Some(child);
         }
+    })
+}
+
+fn picture(element: Element<'_>, style: &Style) -> Option<Block> {
+    let source = element.attribute("src").map(str::trim)?;
+    let pixels = |name: &str| {
+        element
+            .attribute(name)
+            .and_then(|size| size.trim().trim_end_matches("px").parse::<u32>().ok())
+    };
+    let tiny = ["width", "height"]
+        .into_iter()
+        .filter_map(pixels)
+        .any(|size| size < SMALLEST_PICTURE);
+    (!source.is_empty() && !tiny).then(|| Block::Picture {
+        source: source.to_owned(),
+        alt: element
+            .attribute("alt")
+            .unwrap_or_default()
+            .trim()
+            .to_owned(),
+        link: style.link.clone(),
     })
 }

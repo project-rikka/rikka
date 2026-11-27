@@ -1,0 +1,38 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "google-mail",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/google/crates/google-account",
+        "//crates/foundation/rikka-encoding",
+        "//crates/foundation/rikka-fs",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-types",
+        "//crates/web/rikka-html",
+        "@crates//:base64",
+        "@crates//:futures-util",
+        "@crates//:jiff",
+        "@crates//:rand",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:sha2",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":google-mail",
+        "//apps/system/google/crates/google-test-server",
+        "//crates/foundation/rikka-net",
+        "@crates//:base64",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

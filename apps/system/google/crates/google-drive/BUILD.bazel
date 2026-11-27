@@ -1,0 +1,31 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "google-drive",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/google/crates/google-account",
+        "//crates/desktop/rikka-account-book",
+        "//crates/foundation/rikka-format",
+        "//crates/foundation/rikka-net",
+        "@crates//:jiff",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":google-drive",
+        "//apps/system/google/crates/google-test-server",
+        "//crates/foundation/rikka-net",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

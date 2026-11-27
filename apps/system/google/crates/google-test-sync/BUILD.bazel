@@ -1,0 +1,18 @@
+load("//bazel/rust:defs.bzl", "rikka_library")
+
+rikka_library(
+    name = "google-test-sync",
+    testonly = True,
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/google/crates/google-nigori",
+        "//apps/system/google/crates/google-sync",
+        "//apps/system/google/crates/google-test-server",
+        "//crates/foundation/rikka-sync",
+        "@crates//:flate2",
+        "@crates//:prost",
+    ],
+)

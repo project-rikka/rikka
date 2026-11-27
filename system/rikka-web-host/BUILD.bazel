@@ -21,6 +21,7 @@ rikka_web_extension(
         "browser-translate/probe.js": "//apps/system/browser/crates/browser-translate:scripts/probe.js",
         "browser-translate/translator.js": "//apps/system/browser/crates/browser-translate:scripts/translator.js",
         "discord-client/token.js": "//apps/system/discord/crates/discord-client:scripts/token.js",
+        "google-passwords/vault_keys.js": "//apps/system/google/crates/google-passwords:scripts/vault_keys.js",
     },
     visibility = [
         "//xtask:__subpackages__",

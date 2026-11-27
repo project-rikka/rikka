@@ -1,0 +1,265 @@
+[i18n]
+locale = "en"
+name = "English"
+
+[google]
+title = "Google"
+cancel = "Cancel"
+dismiss = "Dismiss"
+
+[google.section]
+mail = "Mail"
+drive = "Drive"
+passwords = "Passwords"
+
+[google.account]
+add = "Add another account"
+sign-out = "Sign out of this account"
+
+[google.signing]
+summary = "Gmail, Drive and your saved passwords in one place. Sign in once with your Google account."
+start = "Sign in with Google"
+another = "Sign in with another account"
+again = "Sign in again"
+page = "Sign in to Google"
+connecting = "Connecting to Google…"
+expired = "The Google sign-in is no longer valid. Sign in again to continue."
+
+[google.mail]
+labels = "Labels"
+me = "me"
+to = "to {recipients}"
+draft = "Draft"
+edit-draft = "Edit draft"
+no-subject = "(no subject)"
+pick = "Pick a conversation to read it"
+empty = "No conversations here"
+refresh = "Check for new mail"
+retry = "Try again"
+
+[google.mail.mailbox]
+inbox = "Inbox"
+starred = "Starred"
+important = "Important"
+sent = "Sent"
+drafts = "Drafts"
+all = "All Mail"
+spam = "Spam"
+trash = "Trash"
+
+[google.mail.search]
+field = "Search mail"
+results = "Results for “{query}”"
+
+[google.mail.action]
+archive = "Archive"
+spam = "Report spam"
+trash = "Move to trash"
+restore = "Restore from trash"
+unread = "Mark as unread"
+star = "Star"
+unstar = "Remove star"
+close = "Close conversation"
+reply = "Reply"
+reply-all = "Reply all"
+forward = "Forward"
+
+[google.mail.pictures]
+blocked = "{count, plural, one {# remote picture is not shown} other {# remote pictures are not shown}}"
+show = "Show pictures"
+
+[google.mail.attachment]
+open = "Open attachment"
+save = "Save attachment"
+fetching = "Getting {name}…"
+saved = "Saved to {path}"
+
+[google.mail.compose]
+new = "New message"
+reply = "Reply"
+to = "To"
+cc = "Cc"
+bcc = "Bcc"
+copies = "Cc/Bcc"
+subject = "Subject"
+attach = "Attach files"
+keep = "Save draft"
+discard = "Discard"
+send = "Send"
+sent = "Message sent"
+saved = "Draft saved"
+no-recipient = "Add at least one recipient."
+wrote = "On {time}, {sender} wrote:"
+forwarded = "---------- Forwarded message ----------"
+forwarded-head = "From: {sender}\nDate: {time}\nSubject: {subject}"
+
+[google.mail.failure]
+missing = "This conversation is no longer in Gmail."
+busy = "Gmail is busy. Try again in a moment."
+address = "{address} is not a mail address."
+
+[google.drive]
+items = "{count, plural, one {# item} other {# items}}"
+selected = "{selected} of {count} selected"
+retry = "Try again"
+undo = "Undo"
+show-folder = "Show in folder"
+trashed = "{count, plural, one {# item moved to the trash} other {# items moved to the trash}}"
+downloaded = "{count, plural, one {# file downloaded} other {# files downloaded}}"
+opening = "Opening {name}"
+downloading = "Downloading {name}"
+uploading = "Uploading {name}"
+
+[google.drive.place]
+my-drive = "My Drive"
+shared-drives = "Shared drives"
+shared = "Shared with me"
+recent = "Recent"
+starred = "Starred"
+trash = "Trash"
+
+[google.drive.search]
+field = "Search in Drive"
+results = "Results for “{query}”"
+
+[google.drive.view]
+icons = "Show as icons"
+details = "Show as list"
+
+[google.drive.sort]
+title = "Sort"
+listed = "Drive's order"
+
+[google.drive.column]
+name = "Name"
+modified = "Modified"
+kind = "Kind"
+size = "Size"
+
+[google.drive.kind]
+folder = "Folder"
+document = "Google Docs"
+spreadsheet = "Google Sheets"
+presentation = "Google Slides"
+drawing = "Google Drawings"
+form = "Google Forms"
+site = "Google Sites"
+image = "Image"
+video = "Video"
+audio = "Audio"
+pdf = "PDF"
+archive = "Archive"
+text = "Text"
+file = "File"
+
+[google.drive.menu]
+new = "New"
+new-folder = "New folder"
+upload = "Upload files…"
+refresh = "Refresh"
+open = "Open"
+open-browser = "Open in browser"
+download = "Download…"
+download-pdf = "Download as PDF…"
+rename = "Rename"
+star = "Add star"
+unstar = "Remove star"
+copy-link = "Copy link"
+trash = "Move to trash"
+restore = "Restore"
+delete-forever = "Delete forever"
+empty-trash = "Empty trash"
+
+[google.drive.new-folder]
+name = "Untitled folder"
+
+[google.drive.download]
+title = "Download to"
+accept = "Download here"
+
+[google.drive.upload]
+title = "Upload files"
+accept = "Upload"
+
+[google.drive.delete]
+title = "Delete forever?"
+message = "{count, plural, one {# item is deleted for good.} other {# items are deleted for good.}} This cannot be undone."
+
+[google.drive.empty-trash]
+title = "Empty the trash?"
+message = "Everything in the trash is deleted for good. This cannot be undone."
+
+[google.drive.empty]
+folder = "This folder is empty"
+search = "Nothing in Drive matches"
+trash = "The trash is empty"
+starred = "Star items to find them here"
+shared = "Nothing is shared with you yet"
+
+[google.drive.storage]
+of = "{used} of {limit} used"
+used = "{used} used"
+
+[google.drive.failure]
+missing = "This item is no longer in Drive."
+full = "Your Google storage is full."
+busy = "Drive is busy. Try again in a moment."
+no-content = "This item has no file to download."
+
+[google.passwords]
+search = "Search passwords"
+add = "Add password"
+edit = "Edit"
+empty = "No saved passwords"
+no-match = "No password matches"
+none-saved = "Passwords you save to your Google Account appear here"
+first-sync = "Getting your passwords from Google…"
+pick = "Pick a password to see it"
+username = "Username"
+password = "Password"
+note = "Note"
+no-username = "No username"
+no-password = "No password is saved for this sign-in"
+federated = "Signed in with {provider}"
+show = "Show password"
+hide = "Hide password"
+copy-username = "Copy username"
+copy-password = "Copy password"
+open-site = "Open site"
+created = "Created {time}"
+changed = "Password changed {time}"
+used = "Last used {time}"
+syncing = "Syncing…"
+synced = "{count, plural, one {# password, up to date} other {# passwords, up to date}}"
+unsent = "{count, plural, one {# change waits to be sent} other {# changes wait to be sent}}"
+unreadable = "{count, plural, one {# password cannot be read yet} other {# passwords cannot be read yet}}"
+sync-now = "Sync now"
+keys-refused = "Google's keys did not open your passwords. Try verifying again."
+
+[google.passwords.delete]
+title = "Delete this password?"
+message = "The password for {site} is removed from your Google Account on every device."
+accept = "Delete"
+
+[google.passwords.refusal]
+address = "Enter the site's web address, such as example.com."
+password = "Enter a password."
+
+[google.passwords.editor]
+add = "Add password"
+edit = "Edit password for {site}"
+site = "Site"
+site-hint = "example.com"
+generate = "Suggest a strong password"
+save = "Save"
+
+[google.passwords.passphrase]
+needed = "Your passwords are encrypted with your sync passphrase"
+field = "Sync passphrase"
+refused = "That passphrase does not open your passwords."
+unlock = "Unlock"
+
+[google.passwords.verify]
+needed = "Your passwords use on-device encryption. Verify it's you to read them here."
+start = "Verify with Google"
+page = "Verify it's you"

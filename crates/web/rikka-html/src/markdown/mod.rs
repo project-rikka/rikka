@@ -7,16 +7,28 @@ mod text;
 mod walk;
 
 use crate::document::Document;
+use walk::Pictures;
 
 impl Document {
     #[must_use]
     pub fn to_markdown(&self) -> String {
-        block::render(&walk::blocks(self))
+        block::render(&walk::blocks(self, Pictures::Dropped))
+    }
+
+    #[must_use]
+    pub fn to_markdown_with_pictures(
+        &self,
+        mut located: impl FnMut(&str) -> Option<String>,
+    ) -> String {
+        block::render(&block::locate(
+            walk::blocks(self, Pictures::Kept),
+            &mut located,
+        ))
     }
 
     #[must_use]
     pub fn to_text(&self) -> String {
-        text::render(&walk::blocks(self))
+        text::render(&walk::blocks(self, Pictures::Dropped))
     }
 }
 

@@ -108,7 +108,7 @@ fn data(rows: &[Element<'_>], style: &Style, flow: &mut Flow, depth: Depth) {
                 break;
             };
             line.push(Phrasing::joined(
-                walk::contents(cell, style, depth)
+                walk::contents(cell, style, depth.without_pictures())
                     .into_iter()
                     .filter_map(Block::into_paragraph),
                 " ",

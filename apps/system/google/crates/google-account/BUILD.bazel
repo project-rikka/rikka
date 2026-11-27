@@ -1,0 +1,33 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "google-account",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "//crates/desktop/rikka-account-book",
+        "//crates/desktop/rikka-secrets",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-types",
+        "@crates//:rand",
+        "@crates//:rustls",
+        "@crates//:rustls-native-certs",
+        "@crates//:serde",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":google-account",
+        "//apps/system/google/crates/google-test-server",
+        "//crates/foundation/rikka-net",
+        "@crates//:tokio",
+    ],
+)

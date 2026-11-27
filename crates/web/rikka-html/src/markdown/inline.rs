@@ -252,6 +252,28 @@ fn line_start_mark(text: &str) -> Option<usize> {
     (digits > 0 && matches!(text.as_bytes().get(digits), Some(b'.' | b')'))).then_some(digits)
 }
 
+pub(super) fn picture(out: &mut String, source: &str, alt: &str, link: Option<&str>) {
+    if link.is_some() {
+        out.push('[');
+    }
+    out.push_str("![");
+    for character in alt.chars() {
+        match character {
+            '[' | ']' | '\\' => out.extend(['\\', character]),
+            '\n' | '\r' => out.push(' '),
+            _ => out.push(character),
+        }
+    }
+    out.push_str("](<");
+    destination(out, source);
+    out.push_str(">)");
+    if let Some(link) = link {
+        out.push_str("](<");
+        destination(out, link);
+        out.push_str(">)");
+    }
+}
+
 fn destination(out: &mut String, url: &str) {
     for character in url.chars() {
         match character {

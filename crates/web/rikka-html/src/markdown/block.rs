@@ -1,6 +1,8 @@
+use std::rc::Rc;
+
 use super::inline::{self, Setting};
 use super::longest_backtick_run;
-use super::phrasing::Phrasing;
+use super::phrasing::{Gathering, Phrasing, Style};
 
 pub(super) const LAST_NUMBER: u64 = 999_999_999;
 
@@ -13,6 +15,11 @@ pub(super) enum Block {
     Code(String),
     Rule,
     Table(Vec<Vec<Phrasing>>),
+    Picture {
+        source: String,
+        alt: String,
+        link: Option<Rc<str>>,
+    },
 }
 
 #[derive(Debug)]
@@ -72,8 +79,46 @@ impl Block {
             }
             Block::Rule => out.push_str("***"),
             Block::Table(rows) => table(out, rows),
+            Block::Picture { source, alt, link } => {
+                inline::picture(out, source, alt, link.as_deref());
+            }
         }
     }
+}
+
+pub(super) fn locate(
+    blocks: Vec<Block>,
+    located: &mut impl FnMut(&str) -> Option<String>,
+) -> Vec<Block> {
+    blocks
+        .into_iter()
+        .filter_map(|block| match block {
+            Block::Picture { source, alt, link } => match located(&source) {
+                Some(source) => Some(Block::Picture { source, alt, link }),
+                None => {
+                    let mut gathering = Gathering::default();
+                    gathering.text(
+                        &alt,
+                        &Style {
+                            link,
+                            ..Style::default()
+                        },
+                    );
+                    gathering.finish().map(Block::Paragraph)
+                }
+            },
+            Block::Quote(blocks) => Some(Block::Quote(locate(blocks, located))),
+            Block::List(list) => Some(Block::List(List {
+                start: list.start,
+                items: list
+                    .items
+                    .into_iter()
+                    .map(|item| locate(item, located))
+                    .collect(),
+            })),
+            other => Some(other),
+        })
+        .collect()
 }
 
 impl List {

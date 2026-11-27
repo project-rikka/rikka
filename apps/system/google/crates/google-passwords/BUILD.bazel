@@ -1,0 +1,46 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "google-passwords",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "//apps/system/google/crates/google-account",
+        "//apps/system/google/crates/google-sync",
+        "//crates/desktop/rikka-account-book",
+        "//crates/foundation/rikka-file-format",
+        "//crates/foundation/rikka-net",
+        "//crates/foundation/rikka-public-suffix",
+        "//crates/foundation/rikka-sync",
+        "@crates//:base64",
+        "@crates//:chacha20poly1305",
+        "@crates//:rand",
+        "@crates//:serde",
+        "@crates//:serde_json",
+        "@crates//:thiserror",
+        "@crates//:tokio",
+        "@crates//:tracing",
+        "@crates//:zeroize",
+    ],
+)
+
+exports_files(
+    ["scripts/vault_keys.js"],
+    visibility = ["//system/rikka-web-host:__pkg__"],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":google-passwords",
+        "//apps/system/google/crates/google-account",
+        "//apps/system/google/crates/google-sync",
+        "//apps/system/google/crates/google-test-sync",
+        "//crates/foundation/rikka-net",
+        "@crates//:serde_json",
+        "@crates//:tempfile",
+        "@crates//:tokio",
+    ],
+)

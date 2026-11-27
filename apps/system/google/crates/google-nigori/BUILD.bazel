@@ -1,0 +1,29 @@
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
+
+rikka_library(
+    name = "google-nigori",
+    target_compatible_with = ["@platforms//os:linux"],
+    cranelift = False,
+    visibility = [
+        "//apps/system/google:__subpackages__",
+    ],
+    deps = [
+        "@crates//:aes",
+        "@crates//:base64",
+        "@crates//:cbc",
+        "@crates//:hmac",
+        "@crates//:rand",
+        "@crates//:scrypt",
+        "@crates//:sha1",
+        "@crates//:sha2",
+        "@crates//:zeroize",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":google-nigori",
+        "//crates/foundation/rikka-types",
+    ],
+)
