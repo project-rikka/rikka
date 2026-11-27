@@ -16,6 +16,9 @@ impl Animate {
             Subject::Look => SubjectMotion::Look(Arc::clone(&self.cast.look().motion)),
             Subject::Emitter(id) => SubjectMotion::Emitter(Arc::clone(self.cast.emitter(id)?)),
             Subject::Wind => SubjectMotion::Wind(Arc::clone(&self.cast.wind().motion)),
+            Subject::Stage | Subject::Accessory(_) => {
+                SubjectMotion::Prop(Arc::clone(&self.cast.prop(subject)?.prop))
+            }
         })
     }
 
@@ -46,6 +49,26 @@ impl Animate {
             }
             (Subject::Emitter(id), None) => {
                 let next = self.cast.drop_emitter(id);
+                if self.subject == Some(subject) {
+                    self.subject = next;
+                }
+            }
+            (Subject::Stage, motion) => {
+                let prop = match motion {
+                    Some(SubjectMotion::Prop(prop)) => Some(prop),
+                    _ => None,
+                };
+                let leaving = prop.is_none();
+                self.cast.set_stage(prop);
+                if leaving && self.subject == Some(subject) {
+                    self.subject = Some(self.cast.fallback());
+                }
+            }
+            (Subject::Accessory(_), Some(SubjectMotion::Prop(prop))) => {
+                self.cast.place_accessory(prop);
+            }
+            (Subject::Accessory(id), None) => {
+                let next = self.cast.drop_accessory(id);
                 if self.subject == Some(subject) {
                     self.subject = next;
                 }
@@ -117,6 +140,7 @@ impl Animate {
             Subject::Look => KeyKind::Look,
             Subject::Emitter(_) => KeyKind::Fluid,
             Subject::Wind => KeyKind::Wind,
+            Subject::Stage | Subject::Accessory(_) => KeyKind::Prop,
         })
     }
 }

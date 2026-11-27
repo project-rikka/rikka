@@ -40,11 +40,16 @@ pub(super) fn path(
         return None;
     }
     let points: Vec<Vec3> = (from..=to)
-        .map(|at| body.fk(motion_bake.pose_at(at)).position(bone))
+        .map_while(|at| motion_bake.baked_pose_at(at))
+        .map(|pose| body.fk(pose).position(bone))
         .collect();
+    if points.len() < 2 {
+        return None;
+    }
+    let drawn = from..from + points.len() as u32;
     let keys = keyed
         .into_iter()
-        .filter(|at| (from..=to).contains(at))
+        .filter(|at| drawn.contains(at))
         .map(|at| points[(at - from) as usize])
         .collect();
     Some(Path { points, keys })

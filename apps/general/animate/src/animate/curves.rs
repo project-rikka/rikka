@@ -9,6 +9,7 @@ pub(crate) struct Curves {
     look: VmdCurve,
     fluid: VmdCurve,
     wind: VmdCurve,
+    prop: VmdCurve,
 }
 
 impl Curves {
@@ -32,7 +33,8 @@ impl Curves {
             KeyKind::Look => self.look,
             KeyKind::Fluid => self.fluid,
             KeyKind::Wind => self.wind,
-            KeyKind::Part => VmdCurve::default(),
+            KeyKind::Prop => self.prop,
+            KeyKind::Part | KeyKind::Anchor => VmdCurve::default(),
         }
     }
 
@@ -44,7 +46,8 @@ impl Curves {
             KeyKind::Look => self.look = curve,
             KeyKind::Fluid => self.fluid = curve,
             KeyKind::Wind => self.wind = curve,
-            KeyKind::Part => {}
+            KeyKind::Prop => self.prop = curve,
+            KeyKind::Part | KeyKind::Anchor => {}
         }
     }
 }

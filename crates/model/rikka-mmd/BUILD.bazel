@@ -15,6 +15,7 @@ rikka_library(
     ],
     deps = [
         "//crates/foundation/rikka-keyframe",
+        "//crates/foundation/rikka-parallel",
         "//crates/model/rikka-model-core",
         "@crates//:encoding_rs",
         "@crates//:rustc-hash",

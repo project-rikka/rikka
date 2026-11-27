@@ -4,7 +4,7 @@ use animate_body::{Body, Faces, HandPreset, HumanBone, HumanPose, MorphWeights, 
 use animate_cast::{FigureId, Skeleton, TakePlayback};
 use animate_hold::Holds;
 use animate_look::Name;
-use animate_motion::MotionBake;
+use animate_motion::{MotionBake, Written};
 use rikka_model::glam::{EulerRot, Mat4, Quat, Vec3};
 use rikka_model::mmd::{FRAMES_PER_SECOND, Puppet};
 use rikka_model::vrm::{Avatar, Expressive, Gaze, LookAtKind, Vrm};
@@ -65,6 +65,7 @@ pub(super) struct Actor {
     holding: Holding,
     morphs: MorphWeights,
     human: Option<HumanPose>,
+    estimated: bool,
 }
 
 impl Actor {
@@ -85,6 +86,7 @@ impl Actor {
             holding: Holding::Nothing,
             morphs: MorphWeights::default(),
             human: None,
+            estimated: false,
         }
     }
 
@@ -92,6 +94,15 @@ impl Actor {
         self.playback
             .as_ref()
             .map(|playback| playback.holds().as_ref())
+    }
+
+    pub(super) fn baking(&self) -> Option<(&MotionBake, bool)> {
+        let motion_bake = self.playback.as_ref()?.motion_bake()?;
+        (!motion_bake.is_complete()).then_some((motion_bake.as_ref(), self.estimated))
+    }
+
+    pub(super) fn is_estimated(&self) -> bool {
+        self.estimated
     }
 
     pub(super) fn animate(&mut self, time: f32) -> bool {
@@ -107,6 +118,7 @@ impl Actor {
         );
         self.human = performance.human;
         self.visible = performance.visible;
+        self.estimated = performance.estimated;
         if performance.motion == FigureMotion::Resting {
             self.rested = self.holding == Holding::Nothing && self.morphs.is_empty();
         }
@@ -209,6 +221,7 @@ pub(crate) struct Performance {
     pub motion: FigureMotion,
     visible: bool,
     human: Option<HumanPose>,
+    estimated: bool,
 }
 
 pub(crate) fn perform(
@@ -230,16 +243,22 @@ pub(crate) fn perform(
             motion: FigureMotion::Resting,
             visible: true,
             human,
+            estimated: false,
         };
     };
     playback.detail().write(time, instance.pose_mut());
     if let Some(puppet) = instance.rig_as_mut::<Puppet>() {
         playback.detail().switch(time, puppet);
     }
+    let mut estimated = false;
     if let (Some(motion_bake), Some(body)) = (playback.motion_bake(), body) {
-        motion_bake.write(time, instance.pose_mut());
+        let written = motion_bake.write(time, instance.pose_mut());
         release(instance, body);
-        human = Some(fingers_between(motion_bake, time));
+        estimated = written == Written::Estimated;
+        human = Some(match written {
+            Written::Baked => fingers_between(motion_bake, time),
+            Written::Estimated => motion_bake.pose_at(frame_at(time).round() as u32),
+        });
     }
     playback.morph_playback().write(time, morphs, instance);
     if let (Some(body), Some(pose)) = (body, human) {
@@ -249,12 +268,17 @@ pub(crate) fn perform(
         motion: FigureMotion::Moving,
         visible: playback.detail().visible(time),
         human,
+        estimated,
     }
 }
 
+fn frame_at(time: f32) -> f32 {
+    (time * FRAMES_PER_SECOND).max(0.0)
+}
+
 fn fingers_between(motion_bake: &MotionBake, time: f32) -> HumanPose {
-    let frame = (time * FRAMES_PER_SECOND).max(0.0);
-    let mut pose = *motion_bake.pose_at(frame.round() as u32);
+    let frame = frame_at(time);
+    let mut pose = motion_bake.pose_at(frame.round() as u32);
     let before = motion_bake.pose_at(frame.floor() as u32);
     let after = motion_bake.pose_at(frame.floor() as u32 + 1);
     let share = frame.fract();

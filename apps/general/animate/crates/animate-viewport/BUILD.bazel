@@ -12,6 +12,7 @@ rikka_library(
         "//apps/general/animate/crates/animate-fluid",
         "//apps/general/animate/crates/animate-hold",
         "//apps/general/animate/crates/animate-motion",
+        "//apps/general/animate/crates/animate-prop",
         "//apps/general/animate/crates/animate-sheet",
         "//apps/general/animate/crates/animate-solve",
         "//apps/general/animate/crates/animate-stage",

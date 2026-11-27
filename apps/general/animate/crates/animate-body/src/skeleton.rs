@@ -216,23 +216,44 @@ impl Skeleton {
     pub(crate) fn fk(&self, pose: &HumanPose) -> Worlds {
         let mut worlds = Worlds::default();
         for bone in HumanBone::ALL.iter().copied() {
-            let frame = self.frame(bone);
-            if !frame.present {
-                continue;
+            if self.frame(bone).present {
+                let joint = self.joint(bone, pose, &worlds);
+                worlds.set(bone, joint);
             }
-            let joint = match frame.parent.and_then(|parent| worlds.get(parent)) {
-                Some(above) if bone != HumanBone::Hips => Joint {
-                    position: above.point(frame.offset),
-                    rotation: (above.rotation * self.local_rotation(bone, pose)).normalize(),
-                },
-                _ => Joint {
-                    position: pose.root_pos * self.scale,
-                    rotation: pose.root_rot.normalize(),
-                },
-            };
-            worlds.set(bone, joint);
         }
         worlds
+    }
+
+    pub(crate) fn fk_below(&self, base: &Worlds, pose: &HumanPose, moved: &[HumanBone]) -> Worlds {
+        let mut worlds = base.clone();
+        let mut stale = [false; HUMAN_BONES];
+        for bone in moved {
+            stale[bone.index()] = true;
+        }
+        for bone in HumanBone::ALL.iter().copied() {
+            let frame = self.frame(bone);
+            let below = frame.parent.is_some_and(|parent| stale[parent.index()]);
+            stale[bone.index()] |= below;
+            if frame.present && stale[bone.index()] {
+                let joint = self.joint(bone, pose, &worlds);
+                worlds.set(bone, joint);
+            }
+        }
+        worlds
+    }
+
+    fn joint(&self, bone: HumanBone, pose: &HumanPose, worlds: &Worlds) -> Joint {
+        let frame = self.frame(bone);
+        match frame.parent.and_then(|parent| worlds.get(parent)) {
+            Some(above) if bone != HumanBone::Hips => Joint {
+                position: above.point(frame.offset),
+                rotation: (above.rotation * self.local_rotation(bone, pose)).normalize(),
+            },
+            _ => Joint {
+                position: pose.root_pos * self.scale,
+                rotation: pose.root_rot.normalize(),
+            },
+        }
     }
 }
 

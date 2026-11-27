@@ -1,1 +1,2 @@
 mod figure;
+mod prop;

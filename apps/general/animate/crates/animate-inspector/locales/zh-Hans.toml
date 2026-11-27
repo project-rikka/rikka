@@ -132,6 +132,10 @@ bounce = "上下起伏"
 title = "风"
 front = "正面"
 
+[animate.placement]
+world = "无 (世界)"
+bone = "骨骼"
+
 [animate.liquid]
 emitter = "发射器"
 name = "名称"

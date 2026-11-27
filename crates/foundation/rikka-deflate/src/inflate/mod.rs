@@ -19,16 +19,25 @@ pub struct Inflater {
     fixed_ready: bool,
 }
 
+const LONGEST_MATCH: usize = 258;
+const LITERAL_BURST: usize = 3;
+const SLACK: usize = 16;
+const FIRST_GROWTH: usize = 1 << 15;
+const REPORT_SPAN: usize = 1 << 15;
+
 struct Output<'o> {
     bytes: &'o mut Vec<u8>,
     start: usize,
+    at: usize,
     limit: usize,
+    reported: usize,
+    report: &'o mut dyn FnMut(&[u8]),
 }
 
 impl Output<'_> {
     #[inline]
     fn produced(&self) -> usize {
-        self.bytes.len() - self.start
+        self.at - self.start
     }
 
     #[inline]
@@ -39,6 +48,60 @@ impl Output<'_> {
     fn too_large(&self) -> Error {
         Error::TooLarge { limit: self.limit }
     }
+
+    #[inline]
+    fn ensure(&mut self, more: usize) {
+        let wanted = self.at + (more + SLACK).min(self.room());
+        if wanted > self.bytes.len() {
+            self.grow(wanted);
+        }
+    }
+
+    #[cold]
+    fn grow(&mut self, wanted: usize) {
+        let ceiling = self.start.saturating_add(self.limit);
+        let doubled = self.bytes.len().saturating_mul(2).max(FIRST_GROWTH);
+        let size = doubled.max(self.bytes.capacity()).max(wanted).min(ceiling);
+        self.bytes.resize(size, 0);
+    }
+
+    #[inline]
+    fn repeat(&mut self, distance: usize, length: usize) {
+        let end = self.at + length;
+        let mut from = self.at - distance;
+        if distance >= SLACK && end + SLACK <= self.bytes.len() {
+            while self.at < end {
+                self.bytes.copy_within(from..from + SLACK, self.at);
+                from += SLACK;
+                self.at += SLACK;
+            }
+        } else if distance == 1 {
+            let byte = self.bytes[from];
+            self.bytes[self.at..end].fill(byte);
+        } else {
+            for at in self.at..end {
+                self.bytes[at] = self.bytes[from];
+                from += 1;
+            }
+        }
+        self.at = end;
+    }
+
+    #[inline]
+    fn report_if_due(&mut self) {
+        if self.at - self.reported >= REPORT_SPAN {
+            self.report();
+        }
+    }
+
+    fn report(&mut self) {
+        self.reported = self.at;
+        (self.report)(&self.bytes[self.start..self.at]);
+    }
+
+    fn finish(self) {
+        self.bytes.truncate(self.at);
+    }
 }
 
 impl Inflater {
@@ -48,29 +111,47 @@ impl Inflater {
     }
 
     pub fn inflate(&mut self, data: &[u8], out: &mut Vec<u8>, limit: usize) -> Result<usize> {
-        let mut bits = BitReader::new(data);
+        self.inflate_reporting(data, out, limit, &mut |_| {})
+    }
+
+    pub(crate) fn inflate_reporting(
+        &mut self,
+        data: &[u8],
+        out: &mut Vec<u8>,
+        limit: usize,
+        report: &mut dyn FnMut(&[u8]),
+    ) -> Result<usize> {
         let mut out = Output {
             start: out.len(),
+            at: out.len(),
             bytes: out,
             limit,
+            reported: 0,
+            report,
         };
+        out.reported = out.start;
+        let inflated = self.blocks(data, &mut out);
+        if inflated.is_ok() {
+            out.report();
+        }
+        out.finish();
+        inflated
+    }
+
+    fn blocks(&mut self, data: &[u8], out: &mut Output<'_>) -> Result<usize> {
+        let mut bits = BitReader::new(data);
         loop {
             let header = bits.read(3);
             let last = header & 1 == 1;
             match header >> 1 {
-                0 => stored(&mut bits, &mut out)?,
+                0 => stored(&mut bits, out)?,
                 1 => {
                     self.prepare_fixed();
-                    codes(
-                        &self.fixed_literals,
-                        &self.fixed_distances,
-                        &mut bits,
-                        &mut out,
-                    )?;
+                    codes(&self.fixed_literals, &self.fixed_distances, &mut bits, out)?;
                 }
                 2 => {
                     self.read_dynamic(&mut bits)?;
-                    codes(&self.literals, &self.distances, &mut bits, &mut out)?;
+                    codes(&self.literals, &self.distances, &mut bits, out)?;
                 }
                 _ => return Err(malformed(&bits)),
             }
@@ -167,7 +248,9 @@ fn stored(bits: &mut BitReader<'_>, out: &mut Output<'_>) -> Result<()> {
     }
     let start = bits.byte_position().ok_or(Error::Truncated)?;
     let bytes = bits.skip_bytes_from(start, len).ok_or(Error::Truncated)?;
-    out.bytes.extend_from_slice(bytes);
+    out.ensure(len);
+    out.bytes[out.at..out.at + len].copy_from_slice(bytes);
+    out.at += len;
     Ok(())
 }
 
@@ -177,22 +260,57 @@ fn codes(
     bits: &mut BitReader<'_>,
     out: &mut Output<'_>,
 ) -> Result<()> {
+    let mut reader = bits.clone();
+    let mut writer = Output {
+        bytes: &mut *out.bytes,
+        start: out.start,
+        at: out.at,
+        limit: out.limit,
+        reported: out.reported,
+        report: &mut *out.report,
+    };
+    let decoded = decode_codes(literals, distances, &mut reader, &mut writer);
+    out.at = writer.at;
+    out.reported = writer.reported;
+    *bits = reader;
+    decoded
+}
+
+#[inline(always)]
+fn decode_codes(
+    literals: &DecodingTable,
+    distances: &DecodingTable,
+    bits: &mut BitReader<'_>,
+    out: &mut Output<'_>,
+) -> Result<()> {
     loop {
+        out.report_if_due();
         bits.refill();
-        let symbol = literals.decode(bits).ok_or_else(|| malformed(bits))?;
-        if symbol < END_OF_BLOCK {
+        out.ensure(LONGEST_MATCH);
+        let mut symbol = literals.decode(bits).ok_or_else(|| malformed(bits))?;
+        let mut burst = LITERAL_BURST;
+        while symbol < END_OF_BLOCK {
             if out.room() == 0 {
                 return Err(match bits.is_overrun() {
                     true => Error::Truncated,
                     false => out.too_large(),
                 });
             }
-            out.bytes.push(symbol as u8);
+            out.bytes[out.at] = symbol as u8;
+            out.at += 1;
+            burst -= 1;
+            if burst == 0 {
+                break;
+            }
+            symbol = literals.decode(bits).ok_or_else(|| malformed(bits))?;
+        }
+        if burst == 0 {
             continue;
         }
         if symbol == END_OF_BLOCK {
             return Ok(());
         }
+        bits.refill();
         let index = usize::from(symbol - 257);
         let length = usize::from(*LENGTH_BASE.get(index).ok_or(Error::Malformed)?)
             + bits.take(u32::from(LENGTH_EXTRA[index])) as usize;
@@ -208,28 +326,6 @@ fn codes(
         if length > out.room() {
             return Err(out.too_large());
         }
-        repeat(out.bytes, distance, length);
-    }
-}
-
-#[inline]
-fn repeat(out: &mut Vec<u8>, distance: usize, length: usize) {
-    let start = out.len() - distance;
-    if distance >= length {
-        out.extend_from_within(start..start + length);
-        return;
-    }
-    if distance == 1 {
-        let byte = out[start];
-        out.resize(out.len() + length, byte);
-        return;
-    }
-    let mut available = distance;
-    let mut remaining = length;
-    while remaining > 0 {
-        let run = available.min(remaining);
-        out.extend_from_within(start..start + run);
-        available += run;
-        remaining -= run;
+        out.repeat(distance, length);
     }
 }

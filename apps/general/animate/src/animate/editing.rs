@@ -3,7 +3,7 @@ use animate_inspector::MorphEditing;
 use animate_inspector::PoseEditing;
 use std::sync::Arc;
 
-use animate_cast::{CameraTrack, FigureId, Shot, Subject};
+use animate_cast::{CameraTrack, FigureId, PropRole, Shot, Subject};
 use animate_edit::{Change, Channel, Clip, Key, KeyId, KeyKind, Keyed};
 use animate_inspector::CurveEditing;
 use animate_motion::{CameraMotion, Take};
@@ -38,6 +38,8 @@ impl Animate {
             Some(Subject::Emitter(id)) => Aim::Emitter(id),
             Some(Subject::Camera) => Aim::Camera,
             Some(Subject::Wind) => Aim::Wind,
+            Some(Subject::Stage) => Aim::Prop(PropRole::Stage),
+            Some(Subject::Accessory(id)) => Aim::Prop(PropRole::Accessory(id)),
             Some(Subject::Look) | None => Aim::Idle,
         }
     }
@@ -213,7 +215,8 @@ impl Animate {
                 .is_some_and(|pending| pending.bones().is_some() || !pending.morphs.is_empty()),
             Some(Subject::Emitter(id)) => self.has_unkeyed(id),
             Some(Subject::Wind) => self.has_unkeyed(Blowing),
-            _ => false,
+            Some(subject) => PropRole::of(subject).is_some_and(|role| self.has_unkeyed(role)),
+            None => false,
         }
     }
 
@@ -230,6 +233,9 @@ impl Animate {
                 self.chosen_bone().is_some()
                     || self.chosen_morph().is_some()
                     || self.stage.lock().pending_at(id, frame).is_some()
+            }
+            Some(subject @ (Subject::Stage | Subject::Accessory(_))) => {
+                self.cast.prop(subject).is_some()
             }
             None => false,
         }
@@ -256,6 +262,8 @@ impl Animate {
             Some(Subject::Look) => self.register_look(),
             Some(Subject::Emitter(id)) => self.register_settings(id, frame),
             Some(Subject::Wind) => self.register_settings(Blowing, frame),
+            Some(Subject::Stage) => self.register_prop(PropRole::Stage, frame),
+            Some(Subject::Accessory(id)) => self.register_prop(PropRole::Accessory(id), frame),
             None => {}
         }
     }
@@ -318,6 +326,8 @@ impl Animate {
             Some(Subject::Look) => false,
             Some(Subject::Emitter(id)) => self.has_unkeyed(id),
             Some(Subject::Wind) => self.has_unkeyed(Blowing),
+            Some(Subject::Stage) => self.has_unkeyed(PropRole::Stage),
+            Some(Subject::Accessory(id)) => self.has_unkeyed(PropRole::Accessory(id)),
             Some(Subject::Figure(_)) => {
                 self.chosen_bone().is_some() || self.chosen_morph().is_some()
             }
@@ -347,6 +357,9 @@ impl Animate {
             }
             Some(Subject::Wind) => {
                 self.stage.lock().drafts_mut().wind.discard();
+            }
+            Some(Subject::Stage | Subject::Accessory(_)) => {
+                self.stage.lock().drafts_mut().props.discard();
             }
             Some(Subject::Look) | None => {}
         }

@@ -1,11 +1,10 @@
-use std::collections::HashMap;
-
 use glam::{IVec3, Vec3};
+use rustc_hash::FxHashMap;
 
 #[derive(Clone, Debug)]
 pub(crate) struct PointGrid {
     cell: f32,
-    cells: HashMap<IVec3, (u32, u32)>,
+    cells: FxHashMap<IVec3, (u32, u32)>,
     items: Vec<u32>,
 }
 
@@ -17,8 +16,8 @@ impl PointGrid {
             .filter(|(_, point)| point.is_finite())
             .map(|(item, point)| (cell_of(point, cell), item))
             .collect();
-        keyed.sort_by(|a, b| a.0.to_array().cmp(&b.0.to_array()).then(a.1.cmp(&b.1)));
-        let mut cells = HashMap::new();
+        keyed.sort_unstable_by(|a, b| a.0.to_array().cmp(&b.0.to_array()).then(a.1.cmp(&b.1)));
+        let mut cells = FxHashMap::default();
         let mut start = 0;
         while start < keyed.len() {
             let key = keyed[start].0;
@@ -33,20 +32,16 @@ impl PointGrid {
         }
     }
 
-    pub(crate) fn near(&self, point: Vec3, radius: f32) -> impl Iterator<Item = u32> + '_ {
+    pub(crate) fn near(&self, point: Vec3, radius: f32) -> Near<'_> {
         let low = cell_of(point - radius, self.cell);
         let high = cell_of(point + radius, self.cell);
-        (low.x..=high.x).flat_map(move |x| {
-            (low.y..=high.y).flat_map(move |y| {
-                (low.z..=high.z).flat_map(move |z| {
-                    let range = self
-                        .cells
-                        .get(&IVec3::new(x, y, z))
-                        .map_or(0..0, |(start, end)| *start as usize..*end as usize);
-                    self.items[range].iter().copied()
-                })
-            })
-        })
+        Near {
+            grid: self,
+            low,
+            high,
+            items: [].iter(),
+            next: low.cmple(high).all().then_some(low),
+        }
     }
 
     pub(crate) fn nearest(&self, point: Vec3, position: impl Fn(u32) -> Vec3) -> Option<u32> {
@@ -63,6 +58,55 @@ impl PointGrid {
             }
         }
         closest(&mut self.items.iter().copied(), f32::INFINITY)
+    }
+
+    fn items_in(&self, cell: IVec3) -> &[u32] {
+        self.cells.get(&cell).map_or(&[], |(start, end)| {
+            &self.items[*start as usize..*end as usize]
+        })
+    }
+}
+
+pub(crate) struct Near<'a> {
+    grid: &'a PointGrid,
+    low: IVec3,
+    high: IVec3,
+    items: std::slice::Iter<'a, u32>,
+    next: Option<IVec3>,
+}
+
+impl Near<'_> {
+    fn after(&self, mut cell: IVec3) -> Option<IVec3> {
+        if cell.z < self.high.z {
+            cell.z += 1;
+            return Some(cell);
+        }
+        cell.z = self.low.z;
+        if cell.y < self.high.y {
+            cell.y += 1;
+            return Some(cell);
+        }
+        cell.y = self.low.y;
+        if cell.x < self.high.x {
+            cell.x += 1;
+            return Some(cell);
+        }
+        None
+    }
+}
+
+impl Iterator for Near<'_> {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<u32> {
+        loop {
+            if let Some(item) = self.items.next() {
+                return Some(*item);
+            }
+            let cell = self.next?;
+            self.items = self.grid.items_in(cell).iter();
+            self.next = self.after(cell);
+        }
     }
 }
 

@@ -1,0 +1,54 @@
+[i18n]
+locale = "ja"
+name = "日本語"
+
+[animate.library]
+title = "ライブラリ"
+options = "ライブラリのオプション"
+open_folder = "フォルダを開く"
+add_folder = "{shelf}にフォルダを追加…"
+remove_folder = "フォルダを外す"
+reading = "ファイルを読み取り中"
+rescan = "再読み込み"
+search = "{shelf}を検索"
+all_folders = "すべて"
+no_matches = "一致するものはありません"
+empty = "{folder} に{shelf}のファイルを置くとここに表示されます"
+load = "読み込む"
+reveal = "フォルダで表示"
+performed_by = "{name} で表示"
+performed_by_mannequin = "マネキンで表示"
+belongs = "{shelf}に置くファイルです"
+empty_file = "使える内容がありません"
+unsupported = "ここでは使えません"
+unreadable = "読み込めません"
+author = "作者: {name}"
+vertices = "頂点数 {count}"
+has_body = "体"
+has_morphs = "表情"
+has_camera = "カメラ"
+frames = "{count} フレーム"
+made_for = "{name} 用"
+
+[animate.library.shelf]
+models = "モデル"
+motions = "モーション"
+cameras = "カメラ"
+stages = "ステージ"
+accessories = "アクセサリー"
+music = "音楽"
+
+[animate.library.size]
+small = "小さいサムネイル"
+medium = "中くらいのサムネイル"
+large = "大きいサムネイル"
+
+[animate.library.avatar]
+onlyAuthor = "アバター利用: 作者のみ"
+onlySeparatelyLicensedPerson = "アバター利用: 許諾を得た人のみ"
+everyone = "アバター利用: 誰でも"
+
+[animate.library.commercial]
+personalNonProfit = "商用利用: 不可"
+personalProfit = "商用利用: 個人のみ"
+corporation = "商用利用: 可"

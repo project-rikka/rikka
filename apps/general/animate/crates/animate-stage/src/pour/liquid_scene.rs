@@ -41,6 +41,16 @@ impl CastMember {
     fn plays_like(&self, other: &CastMember) -> bool {
         self.id == other.id && self.name == other.name && Arc::ptr_eq(&self.model, &other.model)
     }
+
+    pub(crate) fn wait_for_bake(&self) {
+        if let Some(motion_bake) = self
+            .playback
+            .as_ref()
+            .and_then(|playback| playback.motion_bake())
+        {
+            motion_bake.wait();
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -164,6 +174,7 @@ impl rikka_physics::SceneSource for LiquidScene {
         let Some(member) = self.figures.get(figure) else {
             return FigureMotion::Resting;
         };
+        member.wait_for_bake();
         let unregistered = MorphWeights::default();
         perform(
             member.playback.as_deref(),

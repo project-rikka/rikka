@@ -122,11 +122,17 @@ impl Prepared {
             return Scene::new(physique, self.worlds.clone());
         }
         let mut pose = self.base;
-        match self.mover {
-            Mover::Arm(side) => turn_arm(side, &mut pose, x),
-            Mover::Legs => self.turn_legs(body, &mut pose, x),
-        }
-        Scene::new(physique, body.fk(&pose))
+        let moved = match self.mover {
+            Mover::Arm(side) => {
+                turn_arm(side, &mut pose, x);
+                [side.arm().chain()[0]; 2]
+            }
+            Mover::Legs => {
+                self.turn_legs(body, &mut pose, x);
+                [Limb::LeftLeg.chain()[0], Limb::RightLeg.chain()[0]]
+            }
+        };
+        Scene::new(physique, body.fk_below(&self.worlds, &pose, &moved))
     }
 
     pub(crate) fn wrist(&self, scene: &Scene<'_>) -> Vec3 {

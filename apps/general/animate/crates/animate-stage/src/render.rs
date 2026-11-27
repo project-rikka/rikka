@@ -2,12 +2,12 @@ use std::collections::VecDeque;
 use std::sync::Arc;
 use std::time::Instant;
 
-use animate_cast::FigureId;
+use animate_cast::{FigureId, PropId};
 use animate_fluid::Wetness;
 use animate_wind::WindMotion;
 use rikka_model_gpu::{GpuModel, Prepared, UploadOptions};
 use rikka_physics::{Bake, FigureKey, Playback, ProgressCallback, SceneFrame, SceneSource};
-use rikka_renderer::Renderer;
+use rikka_renderer::{Renderer, Uploads};
 use rikka_renderer_3d::{Camera, DEFAULT_LIGHT_CHANNELS, Frame, Outline};
 use rikka_types::PixelSize;
 use rikka_viewport::SceneCtx;
@@ -15,10 +15,11 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::actor::Actor;
 use crate::capture::PendingCapture;
-use crate::dressing::{Dressing, Moment, Player};
+use crate::dressing::{Dressees, Dressing, Moment, Player};
 use crate::pacer::Pacer;
-use crate::physics::{Simulation, StepInput};
+use crate::physics::{Simulation, StepInput, Wanted};
 use crate::pour::{CastMember, LiquidScene, step_of};
+use crate::props::PropActor;
 use crate::scene::Scene;
 use crate::{Drafts, EmitterMarks, Input, Outputs, Published, StageError};
 
@@ -59,6 +60,10 @@ pub struct Render {
     pub(super) notify: Option<ProgressCallback>,
     pub(super) outputs: Outputs,
     pub(super) unloadable: FxHashSet<FigureId>,
+    pub(super) props: Vec<PropActor>,
+    pub(super) prop_gpus: FxHashMap<PropId, GpuModel>,
+    pub(super) prop_prepared: FxHashMap<PropId, Prepared>,
+    pub(super) unloadable_props: FxHashSet<PropId>,
 }
 
 impl Render {
@@ -82,6 +87,10 @@ impl Render {
             notify: None,
             outputs: Outputs::default(),
             unloadable: FxHashSet::default(),
+            props: Vec::new(),
+            prop_gpus: FxHashMap::default(),
+            prop_prepared: FxHashMap::default(),
+            unloadable_props: FxHashSet::default(),
         }
     }
 
@@ -114,6 +123,7 @@ impl Render {
 
     pub(super) fn sync(&mut self, input: &mut Input) {
         self.prepared.extend(input.prepared.drain(..));
+        self.prop_prepared.extend(input.prop_prepared.drain(..));
         self.captures
             .extend(input.captures.drain(..).map(PendingCapture::new));
         let scene = &input.scene;
@@ -122,6 +132,7 @@ impl Render {
         }
         self.seen.revision = input.revision;
         self.dirty = true;
+        self.sync_props(scene);
         let cast = self.actors.len();
         self.actors
             .retain(|actor| scene.members.iter().any(|member| member.id == actor.id));
@@ -218,9 +229,11 @@ impl Render {
                 self.prepared.insert(member.id, prepared);
             }
         }
+        self.prepare_props(scene);
     }
 
     pub(super) fn upload(&mut self, renderer: &mut Renderer, scene: &Scene) {
+        self.upload_props(renderer, scene);
         for member in &scene.members {
             if self.gpus.contains_key(&member.id) || self.unloadable.contains(&member.id) {
                 continue;
@@ -257,6 +270,7 @@ impl Render {
             width,
             height,
         } = ctx;
+        let uploads = renderer.uploads();
         self.sync(&mut input);
         let input = input;
         self.upload(renderer, &input.scene);
@@ -280,15 +294,22 @@ impl Render {
             self.snapshot_cloth();
         }
         let drew = frame.is_some();
-        (frame, self.published(&input, now, drew))
+        (frame, self.published(&input, now, drew, uploads))
     }
 
-    fn published(&mut self, input: &Input, now: Instant, drew: bool) -> Published {
+    fn published(
+        &mut self,
+        input: &Input,
+        now: Instant,
+        drew: bool,
+        uploads: Uploads,
+    ) -> Published {
         if let Some(error) = self.liquid.take_error() {
             self.errors.push(StageError::Liquid(error));
         }
         let graspable = self.simulation.is_clothed() && !self.cloth_from_liquid();
         let built = !self.dirty;
+        let prop_bounds = self.prop_bounds();
         let outputs = &mut self.outputs;
         if built {
             outputs.revision = input.revision;
@@ -305,6 +326,7 @@ impl Render {
             .filter(|actor| actor.visible)
             .map(|actor| (actor.id, actor.instance.bounds()))
             .collect();
+        outputs.prop_bounds = prop_bounds;
         Published {
             outputs: Outputs {
                 revision: outputs.revision,
@@ -320,10 +342,13 @@ impl Render {
                 size: outputs.size,
                 due: outputs.due,
                 bounds: outputs.bounds.clone(),
+                prop_bounds: outputs.prop_bounds.clone(),
+                prop_frame: outputs.prop_frame,
                 progress: outputs.progress.clone(),
             },
             errors: std::mem::take(&mut self.errors),
             drew,
+            uploads,
         }
     }
 
@@ -350,7 +375,8 @@ impl Render {
         if moved {
             self.simulation.wake();
         }
-        if moved || self.simulation.is_restless() {
+        let estimated = self.actors.iter().any(Actor::is_estimated);
+        if moved || estimated || self.simulation.is_restless() {
             self.step_physics(renderer, scene, time, running, now);
             self.posed_at = Some(time);
             self.dirty = true;
@@ -376,6 +402,7 @@ impl Render {
             self.paint_surface_at(scene, camera.view_projection(), camera.position());
         let view_projection = camera.view_projection();
         let mut frame = self.compose(renderer, scene, camera, time);
+        self.outputs.prop_frame = self.project_prop(scene, view_projection);
         let marks = self.dressing.marks();
         self.outputs.emitters = (!marks.is_empty()).then(|| {
             Arc::new(EmitterMarks {
@@ -401,7 +428,7 @@ impl Render {
         self.posed_at = None;
     }
 
-    fn request_cloth_assets(&mut self, scene: &Scene) {
+    pub(crate) fn request_cloth_assets(&mut self, scene: &Scene) {
         let mut cloth_assets_dropped = false;
         for at in 0..self.actors.len() {
             let id = self.actors[at].id;
@@ -418,13 +445,14 @@ impl Render {
             let Some(member) = scene.members.iter().find(|member| member.id == id) else {
                 continue;
             };
-            if let Err(error) = self.simulation.want(
-                id,
-                &member.model,
-                &member.anatomy,
-                &figure_cloth.cloth_settings,
-                figure_cloth.revision,
-            ) {
+            if let Err(error) = self.simulation.want(Wanted {
+                figure: id,
+                model: &member.model,
+                anatomy: &member.anatomy,
+                cloth_settings: &figure_cloth.cloth_settings,
+                analysis: figure_cloth.current_analysis(),
+                revision: figure_cloth.revision,
+            }) {
                 self.fail(StageError::Cloth(error));
             }
         }
@@ -489,6 +517,8 @@ impl Render {
             ..Outline::default()
         });
         let scene_frame = self.pour(renderer, time);
+        self.place_props(scene, time);
+        let dressed_props = self.dressed_props();
         let wets = matches!(scene.liquids.settings.wetness, Wetness::On { .. });
         let players: Vec<Player<'_>> = self
             .actors
@@ -509,7 +539,7 @@ impl Render {
                 })
             })
             .collect();
-        let staged = self.dressing.stage(
+        let staged = self.dressing.stage_with(
             renderer,
             &mut frame,
             &scene.look,
@@ -519,7 +549,14 @@ impl Render {
                 players: &players,
             },
             &mut self.gpus,
+            Dressees {
+                props: &dressed_props,
+                gpus: &mut self.prop_gpus,
+            },
         );
+        for (motion_bake, estimated) in self.actors.iter().filter_map(Actor::baking) {
+            self.dressing.await_bake(motion_bake, estimated);
+        }
         let mut failure = None;
         for player in &players {
             let Some(gpu) = self.gpus.get(&player.id) else {
@@ -559,6 +596,9 @@ impl Render {
                 Some(wetness) => drawing.wet(wetness).draw_into(&mut frame),
                 None => drawing.draw_into(&mut frame),
             }
+        }
+        if let Some(error) = self.draw_props(renderer, &mut frame, scene) {
+            failure = Some(error);
         }
         if let Some(reason) = self.dressing.take_failure() {
             failure = Some(StageError::Look(reason));

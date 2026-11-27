@@ -124,6 +124,20 @@ fn key_entry(look: &Animate, key: &Key) -> Json {
             "value": key.value,
             "curve": curve_of(key.curve),
         }),
+        Key::Prop(key) => json!({
+            "lane": key.setting.id(),
+            "frame": key.frame,
+            "value": key.value,
+            "curve": curve_of(key.curve),
+        }),
+        Key::Anchor(key) => json!({
+            "lane": "anchor",
+            "frame": key.frame,
+            "attachedTo": key.anchor.as_ref().map(|anchor| json!({
+                "figure": anchor.figure,
+                "bone": anchor.bone,
+            })),
+        }),
         Key::Bone(frame) => json!({ "lane": frame.bone, "frame": frame.frame }),
         Key::Morph(frame) => json!({ "lane": frame.morph, "frame": frame.frame }),
     }

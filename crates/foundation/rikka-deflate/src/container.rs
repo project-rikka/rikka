@@ -1,4 +1,4 @@
-use crate::checksum::{adler32, crc32};
+use crate::checksum::{Adler32, adler32, crc32};
 use crate::deflate::{Deflater, Level};
 use crate::error::{Error, Result};
 use crate::inflate::Inflater;
@@ -32,13 +32,17 @@ impl Inflater {
             return Err(Error::UnsupportedHeader);
         }
         let body = &data[2..];
-        let start = out.len();
-        let consumed = self.inflate(body, out, limit)?;
+        let mut adler = Adler32::new();
+        let mut checked = 0;
+        let consumed = self.inflate_reporting(body, out, limit, &mut |produced: &[u8]| {
+            adler.update(&produced[checked..]);
+            checked = produced.len();
+        })?;
         let trailer = body
             .get(consumed..)
             .and_then(|rest| rest.first_chunk::<ZLIB_TRAILER>())
             .ok_or(Error::Truncated)?;
-        if u32::from_be_bytes(*trailer) != adler32(&out[start..]) {
+        if u32::from_be_bytes(*trailer) != adler.finish() {
             return Err(Error::Checksum);
         }
         Ok(())

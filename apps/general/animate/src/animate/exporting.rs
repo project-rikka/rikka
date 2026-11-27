@@ -86,7 +86,6 @@ impl Animate {
         self.folder = path.parent().map(PathBuf::from);
         self.output.settle(&export);
         let request = Request {
-            stage: animate_stage::replica(&self.stage, &self.render),
             export,
             sound: self.transport.sound(),
             path,
@@ -96,8 +95,25 @@ impl Animate {
             let _ = sender.send(move |animate: &mut Animate| animate.on_export_report(report));
         });
         match Job::start(request, reporter) {
-            Ok(job) => self.job = Some(job),
+            Ok(job) => {
+                self.job = Some(job);
+                self.stage_export();
+            }
             Err(error) => self.notice = Some(Label::from(animate_ui::error_chain(&error))),
+        }
+    }
+
+    pub(super) fn stage_export(&mut self) {
+        let surveying = self
+            .cast
+            .figures()
+            .iter()
+            .any(|figure| figure.cloth.is_analyzing());
+        let Some(job) = self.job.as_mut().filter(|job| job.awaits_stage()) else {
+            return;
+        };
+        if !surveying {
+            job.stage(animate_stage::replica(&self.stage, &self.render));
         }
     }
 

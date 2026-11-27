@@ -4,6 +4,7 @@ use animate_body::{Body, HumanBone, Worlds};
 use rikka_model_core::glam::Vec3;
 use rikka_physics_tailor::Garment;
 
+use crate::PARALLEL;
 use crate::physique::{Flesh, Obstacle, SAMPLE, SHELLED, SLICE, strongest};
 use crate::region::{Cover, Region};
 use crate::shell::Shell;
@@ -26,12 +27,18 @@ pub(crate) fn obstacles(
     scale: f32,
 ) -> Vec<Obstacle> {
     let mut drapes: BTreeMap<HumanBone, Vec<Drape>> = BTreeMap::new();
-    for garment in garments {
-        drape(body, garment, folded, scale, &mut drapes);
+    for draped in PARALLEL.map(garments, |garment| drape(body, garment, folded, scale)) {
+        for (bone, mut more) in draped {
+            drapes.entry(bone).or_default().append(&mut more);
+        }
     }
-    drapes
+    let drapes: Vec<(HumanBone, Vec<Drape>)> = drapes.into_iter().collect();
+    PARALLEL
+        .map(&drapes, |(bone, drapes)| {
+            covering(body, rest, *bone, drapes, flesh, scale)
+        })
         .into_iter()
-        .filter_map(|(bone, drapes)| covering(body, rest, bone, &drapes, flesh, scale))
+        .flatten()
         .collect()
 }
 
@@ -40,8 +47,8 @@ fn drape(
     garment: &Garment,
     folded: &[Option<HumanBone>],
     scale: f32,
-    drapes: &mut BTreeMap<HumanBone, Vec<Drape>>,
-) {
+) -> BTreeMap<HumanBone, Vec<Drape>> {
+    let mut drapes: BTreeMap<HumanBone, Vec<Drape>> = BTreeMap::new();
     let anchors: Vec<Option<HumanBone>> = garment
         .vertices
         .iter()
@@ -63,6 +70,7 @@ fn drape(
             });
         }
     }
+    drapes
 }
 
 fn anchor(body: &Body, bone: HumanBone) -> Option<HumanBone> {

@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use glam::Vec3;
+use rustc_hash::FxHashMap;
 
 use crate::geometry::Shell;
 
@@ -20,7 +19,7 @@ pub(crate) fn outward(body: &Shell, point: Vec3, pins: &[Vec3]) -> Vec3 {
 }
 
 pub(crate) fn orient(positions: &[Vec3], triangles: &mut [[u32; 3]], body: &Shell, pins: &[Vec3]) {
-    let mut sides: HashMap<(u32, u32), Vec<u32>> = HashMap::new();
+    let mut sides: FxHashMap<(u32, u32), Vec<u32>> = FxHashMap::default();
     for (index, triangle) in triangles.iter().enumerate() {
         for side in 0..3 {
             let (a, b) = (triangle[side], triangle[(side + 1) % 3]);

@@ -141,6 +141,21 @@ impl<'a> Source<'a> {
 
     fn floats(&self, into: &mut [f32]) {
         let components = self.layout.shape.components();
+        if self.layout.component == Component::F32 {
+            let size = components * size_of::<f32>();
+            for (element, values) in into
+                .chunks_exact_mut(components)
+                .take(self.layout.count)
+                .enumerate()
+            {
+                let start = self.layout.offset + element * self.stride;
+                let bytes = self.bytes[start..start + size].as_chunks::<4>().0;
+                for (value, raw) in values.iter_mut().zip(bytes) {
+                    *value = f32::from_le_bytes(*raw);
+                }
+            }
+            return;
+        }
         for element in 0..self.layout.count {
             for slot in 0..components {
                 into[element * components + slot] = self

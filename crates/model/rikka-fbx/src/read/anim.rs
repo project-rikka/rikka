@@ -15,12 +15,15 @@ use rikka_model_core::Transform;
 use rikka_model_core::bake::{self, Subdivision, TransformParts, TransformSamples};
 use rikka_model_core::{Animation, Channel, Interpolation, Track, Weights};
 
+use crate::PARALLEL;
+
 const TRANSLATION: &str = "Lcl Translation";
 const ROTATION: &str = "Lcl Rotation";
 const SCALING: &str = "Lcl Scaling";
 const DEFORM: &str = "DeformPercent";
 
 const REFINEMENT: Subdivision = Subdivision::Halves { rounds: 4 };
+const TAKES_PER_CHECKPOINT: usize = 16;
 
 #[derive(Clone, Copy)]
 pub(crate) struct BlendShapeSlot {
@@ -40,9 +43,10 @@ pub(crate) fn read(
 ) -> Result<()> {
     let mut takes = modern(graph, ktime);
     takes.extend(legacy(records, ktime));
-    for take in takes {
+    for batch in takes.chunks(TAKES_PER_CHECKPOINT) {
         ctx.checkpoint()?;
-        if let Some(animation) = bake(&take, scene, shaped, ctx)? {
+        let baked = PARALLEL.map(batch, |take| bake(take, scene, shaped));
+        for animation in baked.into_iter().flatten() {
             builder.add_animation(animation);
         }
     }
@@ -262,13 +266,7 @@ fn slot(component: &str) -> usize {
     }
 }
 
-fn bake(
-    take: &Take,
-    scene: &Scene,
-    shaped: &FxHashMap<i64, BlendShapeSlot>,
-    ctx: &mut ImportCtx<'_>,
-) -> Result<Option<Animation>> {
-    let mut animation = Animation::new(take.name.clone());
+fn bake(take: &Take, scene: &Scene, shaped: &FxHashMap<i64, BlendShapeSlot>) -> Option<Animation> {
     let mut moved: Vec<i64> = Vec::new();
     let mut seen: FxHashSet<i64> = FxHashSet::default();
     let mut weighted: FxHashMap<NodeId, Vec<i64>> = FxHashMap::default();
@@ -296,20 +294,24 @@ fn bake(
         }
     }
 
-    for target in moved {
-        ctx.checkpoint()?;
-        place(take, scene, target, &mut animation);
-    }
-    for (node, channels) in weighted {
-        ctx.checkpoint()?;
-        blend(take, shaped, node, &channels, &mut animation);
-    }
-    Ok((!animation.channels.is_empty()).then_some(animation))
+    let mut animation = Animation::new(take.name.clone());
+    animation.channels.extend(
+        PARALLEL
+            .map(&moved, |target| place(take, scene, *target))
+            .into_iter()
+            .flatten(),
+    );
+    animation.channels.extend(
+        weighted
+            .iter()
+            .filter_map(|(node, channels)| blend(take, shaped, *node, channels)),
+    );
+    (!animation.channels.is_empty()).then_some(animation)
 }
 
-fn place(take: &Take, scene: &Scene, target: i64, animation: &mut Animation) {
+fn place(take: &Take, scene: &Scene, target: i64) -> Vec<Channel> {
     let Some(&node) = scene.nodes.get(&target) else {
-        return;
+        return Vec::new();
     };
     let pipeline = scene.pipelines.get(&target).copied().unwrap_or_default();
     let rest = scene.statics.get(&target).copied().unwrap_or_default();
@@ -327,7 +329,7 @@ fn place(take: &Take, scene: &Scene, target: i64, animation: &mut Animation) {
         .filter(|(_, _, parts)| parts.iter().any(Option::is_some))
         .collect();
     if driving.is_empty() {
-        return;
+        return Vec::new();
     }
 
     let sample = |time: f64| -> Transform {
@@ -354,7 +356,7 @@ fn place(take: &Take, scene: &Scene, target: i64, animation: &mut Animation) {
         .flat_map(|(_, _, parts)| parts.iter().flatten().flat_map(|driven| driven.times()))
         .collect();
     let Some(start) = span(&mut times, take) else {
-        return;
+        return Vec::new();
     };
     let baked = bake::adaptive(times, REFINEMENT, sample);
     let mut samples = TransformSamples::with_capacity(baked.len());
@@ -362,14 +364,14 @@ fn place(take: &Take, scene: &Scene, target: i64, animation: &mut Animation) {
         samples.push((time - start) as f32, place);
     }
     let driven = |slot: usize| driving.iter().any(|(_, _, parts)| parts[slot].is_some());
-    animation.channels.extend(samples.channels(
+    samples.channels(
         node,
         TransformParts {
             translation: driven(0),
             rotation: driven(1),
             scale: driven(2),
         },
-    ));
+    )
 }
 
 fn blend(
@@ -377,15 +379,11 @@ fn blend(
     shaped: &FxHashMap<i64, BlendShapeSlot>,
     node: NodeId,
     channels: &[i64],
-    animation: &mut Animation,
-) {
-    let Some(count) = channels
+) -> Option<Channel> {
+    let count = channels
         .first()
         .and_then(|target| shaped.get(target))
-        .map(|shape_slot| shape_slot.count)
-    else {
-        return;
-    };
+        .map(|shape_slot| shape_slot.count)?;
 
     let sample = |target: i64, time: f64| -> f32 {
         let mut weight = 0.0;
@@ -416,9 +414,7 @@ fn blend(
                 .flat_map(Driven::times)
         })
         .collect();
-    let Some(start) = span(&mut times, take) else {
-        return;
-    };
+    let start = span(&mut times, take)?;
 
     let mut values = vec![0.0; times.len() * count];
     for (frame, &time) in times.iter().enumerate() {
@@ -432,7 +428,7 @@ fn blend(
             values[frame * count + shape_slot.slot] = sample(target, time);
         }
     }
-    animation.channels.push(Channel {
+    Some(Channel {
         target: node,
         track: Track::Weights(Weights {
             times: times.iter().map(|&time| (time - start) as f32).collect(),
@@ -440,7 +436,7 @@ fn blend(
             count,
             interpolation: Interpolation::Linear,
         }),
-    });
+    })
 }
 
 fn span(times: &mut Vec<f64>, take: &Take) -> Option<f64> {

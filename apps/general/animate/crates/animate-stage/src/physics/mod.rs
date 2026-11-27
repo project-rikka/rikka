@@ -7,16 +7,16 @@ use std::time::Instant;
 
 use animate_cast::FigureId;
 use rikka_gpu::Compute;
+use rikka_model::NodeId;
 use rikka_model::glam::Vec3;
-use rikka_model::humanoid::Anatomy;
 use rikka_model::mmd::FRAMES_PER_SECOND;
-use rikka_model::{Model, NodeId};
 use rikka_physics::{ClothBuilder, LiveCloth, LiveInputs, Pace, Step};
-use rikka_physics_tailor::{Budget, ClothAsset, ClothSettings, Quality, Wind};
+use rikka_physics_tailor::{Budget, ClothAsset, Quality, Wind};
 use rikka_renderer_3d::{Drape, Frame};
 
 use super::actor::Actor;
 use super::holding::{self, ClothSnapshot, FigureParticles, Performer};
+pub(crate) use cloth_assets::Wanted;
 use cloth_assets::{ClothAssets, Fit};
 pub(crate) use cloth_error::ClothError;
 use stillness::Stillness;
@@ -164,20 +164,16 @@ impl Simulation {
                     && !self.stillness.is_settled())
     }
 
-    pub(super) fn want(
-        &mut self,
-        figure: FigureId,
-        model: &Arc<Model>,
-        anatomy: &Arc<Anatomy>,
-        cloth_settings: &Arc<ClothSettings>,
-        revision: u64,
-    ) -> Result<(), ClothError> {
+    pub(super) fn want(&mut self, wanted: Wanted<'_>) -> Result<(), ClothError> {
         if !self.enabled {
             return Ok(());
         }
         let budget = self.budget();
-        self.assets
-            .want(figure, model, anatomy, cloth_settings, revision, budget)
+        self.assets.want(wanted, budget)
+    }
+
+    pub(super) fn wait_for_cloth_assets(&mut self) {
+        self.assets.wait();
     }
 
     pub(super) fn has_cloth_asset(&self, figure: FigureId) -> bool {

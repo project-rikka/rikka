@@ -10,6 +10,8 @@ pub enum Error {
     Fluid(#[from] animate_fluid::Error),
     #[error(transparent)]
     Wind(#[from] animate_wind::Error),
+    #[error(transparent)]
+    Prop(#[from] animate_prop::Error),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

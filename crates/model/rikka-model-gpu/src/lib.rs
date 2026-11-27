@@ -11,6 +11,8 @@ mod restyle;
 mod styles;
 mod textures;
 
+const PARALLEL: rikka_parallel::Parallel = rikka_parallel::Parallel::new("rikka-model-gpu");
+
 pub use describe::{MaterialDescs, describe_material};
 pub use draw::ModelDrawing;
 pub use error::{Error, Result};

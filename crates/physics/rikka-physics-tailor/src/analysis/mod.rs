@@ -9,12 +9,15 @@ mod inner;
 mod parts;
 mod suggest;
 
+use std::sync::{Arc, OnceLock};
+
 use rikka_humanoid::Anatomy;
 use rikka_model_core::{Model, NodeId};
 
 pub(crate) use features::{Head, MeshFeatures};
 
-use crate::asset::{PieceKey, PieceKind};
+use crate::asset::{Body, PieceKey, PieceKind};
+use crate::body;
 use crate::cloth_settings::{ClothSettings, Role};
 use crate::error::Result;
 use crate::figure::Figure;
@@ -57,6 +60,23 @@ pub struct ClothAnalysis {
     roles: Vec<Role>,
     spreads: Vec<f32>,
     pieces: Vec<AnalyzedPiece>,
+    head: Option<Head>,
+    skin: SkinCache,
+}
+
+#[derive(Clone, Default)]
+struct SkinCache(Arc<OnceLock<Body>>);
+
+impl PartialEq for SkinCache {
+    fn eq(&self, _: &SkinCache) -> bool {
+        true
+    }
+}
+
+impl std::fmt::Debug for SkinCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("SkinCache")
+    }
 }
 
 impl ClothAnalysis {
@@ -141,6 +161,8 @@ impl ClothAnalysis {
             roles,
             spreads: spreads(figure, cloth_settings),
             pieces,
+            head: features.head,
+            skin: SkinCache::default(),
         }
     }
 
@@ -171,6 +193,16 @@ impl ClothAnalysis {
 
     pub(crate) fn spreads(&self) -> &[f32] {
         &self.spreads
+    }
+
+    pub(crate) fn head(&self) -> Option<Head> {
+        self.head
+    }
+
+    pub(crate) fn skin_body(&self, figure: &Figure<'_>) -> &Body {
+        self.skin
+            .0
+            .get_or_init(|| body::skin_body(figure, &self.roles))
     }
 
     fn index(&self, vertex: VertexKey) -> Option<u32> {

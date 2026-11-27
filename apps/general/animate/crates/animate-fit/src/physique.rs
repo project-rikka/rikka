@@ -6,6 +6,7 @@ use rikka_model_core::glam::Vec3;
 use rikka_model_core::{Model, NodeId};
 use rikka_physics_tailor::Wearer;
 
+use crate::PARALLEL;
 use crate::garment;
 use crate::region::{Cover, Region};
 use crate::scene::Scene;
@@ -185,9 +186,8 @@ fn obstacles(body: &Body, rest: &Worlds, flesh: &[Flesh], scale: f32) -> Vec<Obs
     for flesh in flesh.iter().filter(|flesh| SHELLED.contains(&flesh.bone)) {
         points.entry(flesh.bone).or_default().push(flesh.point);
     }
-    SHELLED
-        .into_iter()
-        .filter_map(|bone| {
+    PARALLEL
+        .map(SHELLED, |bone| {
             let joint = rest.get(bone)?;
             let axis = body.direction(bone);
             let (low, high) = segment(body, bone, scale);
@@ -208,6 +208,8 @@ fn obstacles(body: &Body, rest: &Worlds, flesh: &[Flesh], scale: f32) -> Vec<Obs
                 radius,
             })
         })
+        .into_iter()
+        .flatten()
         .collect()
 }
 

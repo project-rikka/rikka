@@ -38,6 +38,19 @@ speed = "Speed (m/s)"
 turbulence = "Turbulence"
 gust = "Gusts (Hz)"
 
+[animate.prop]
+anchor = "Attached to"
+
+[animate.prop.setting]
+x = "Position X (m)"
+y = "Position Y (m)"
+z = "Position Z (m)"
+pitch = "Rotation X (°)"
+yaw = "Rotation Y (°)"
+roll = "Rotation Z (°)"
+scale = "Scale"
+visible = "Visible"
+
 [animate.liquid.setting]
 rate = "Flow (L/s)"
 volume = "Amount (L)"

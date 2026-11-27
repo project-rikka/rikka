@@ -123,6 +123,11 @@ impl Body {
     }
 
     #[must_use]
+    pub fn fk_below(&self, base: &Worlds, pose: &HumanPose, moved: &[HumanBone]) -> Worlds {
+        self.skeleton.fk_below(base, pose, moved)
+    }
+
+    #[must_use]
     pub fn driven_nodes(&self) -> &[NodeId] {
         self.binding.driven_nodes()
     }

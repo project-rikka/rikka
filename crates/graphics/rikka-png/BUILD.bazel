@@ -10,6 +10,7 @@ rikka_library(
     ],
     deps = [
         "//crates/foundation/rikka-deflate",
+        "//crates/foundation/rikka-simd",
         "@crates//:bytemuck",
         "@crates//:thiserror",
     ],

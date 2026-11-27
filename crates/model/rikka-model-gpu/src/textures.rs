@@ -1,10 +1,10 @@
 use rikka_gpu::{Pixels, TextureFormat};
 use rikka_image::Image as Raster;
 use rikka_model_core::{ImageId, Model};
-use rikka_parallel::Parallel;
-use rikka_renderer::{Renderer, TextureId as GpuTexture};
+use rikka_renderer::{Reclaimer, Renderer, TextureId as GpuTexture, Uploads};
 use rustc_hash::FxHashMap;
 
+use crate::PARALLEL;
 use crate::options::UploadOptions;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -66,9 +66,16 @@ impl Picture {
     }
 }
 
+#[derive(Debug)]
+enum Made {
+    Pixels(Pixels),
+    Texture(GpuTexture),
+}
+
 #[derive(Debug, Default)]
 pub(crate) struct Pictures {
-    pixels: Vec<(Picture, Pixels)>,
+    made: Vec<(Picture, Made)>,
+    reclaimer: Option<Reclaimer>,
 }
 
 impl Pictures {
@@ -77,16 +84,36 @@ impl Pictures {
         for image in wanted.iter().flat_map(|picture| picture.images()).flatten() {
             *uses.entry(image).or_default() += 1;
         }
+        let alone: FxHashMap<ImageId, Encoding> = wanted
+            .iter()
+            .filter_map(|picture| match *picture {
+                Picture::Plain { image, encoding } if uses[&image] == 1 => Some((image, encoding)),
+                _ => None,
+            })
+            .collect();
         let mut images: Vec<ImageId> = uses.keys().copied().collect();
         images.sort_unstable();
-        let mut decoded = decode_all(model, &images, options);
+        let mut ready: FxHashMap<ImageId, Pixels> = FxHashMap::default();
+        let mut decoded: FxHashMap<ImageId, Raster> = FxHashMap::default();
+        for (image, made) in decode_all(model, &images, &alone, options) {
+            match made {
+                Decoded::Ready(pixels) => {
+                    ready.insert(image, pixels);
+                }
+                Decoded::Shared(raster) => {
+                    decoded.insert(image, raster);
+                }
+            }
+        }
 
         let mut pixels = Vec::with_capacity(wanted.len());
         for &picture in wanted {
             let made = match picture {
-                Picture::Plain { image, encoding } => decoded
-                    .get(&image)
-                    .map(|raster| pixels_of(raster, encoding)),
+                Picture::Plain { image, encoding } => ready.remove(&image).or_else(|| {
+                    decoded
+                        .get(&image)
+                        .map(|raster| pixels_of(raster, encoding))
+                }),
                 Picture::Channel { image, channel } => decoded
                     .get(&image)
                     .map(|raster| channel_of(raster, channel)),
@@ -98,7 +125,7 @@ impl Pictures {
                     metallic_roughness.and_then(|image| decoded.get(&image)),
                 ),
             };
-            pixels.extend(made.map(|made| (picture, made)));
+            pixels.extend(made.map(|made| (picture, Made::Pixels(made))));
             for image in picture.images().into_iter().flatten() {
                 let left = uses.entry(image).or_default();
                 *left = left.saturating_sub(1);
@@ -107,8 +134,47 @@ impl Pictures {
                 }
             }
         }
-        Self { pixels }
+        Self {
+            made: pixels,
+            reclaimer: None,
+        }
     }
+
+    pub(crate) fn create(&mut self, uploads: &Uploads) {
+        if self.reclaimer.is_none() {
+            self.reclaimer = Some(uploads.reclaimer());
+        }
+        let made = std::mem::take(&mut self.made);
+        let created = PARALLEL.map(made, |(picture, made)| match made {
+            Made::Pixels(pixels) => match uploads.create(pixels) {
+                Ok(texture) => Some((picture, Made::Texture(texture))),
+                Err(error) => {
+                    tracing::warn!(%error, "failed to create model texture");
+                    None
+                }
+            },
+            made @ Made::Texture(_) => Some((picture, made)),
+        });
+        self.made = created.into_iter().flatten().collect();
+    }
+}
+
+impl Drop for Pictures {
+    fn drop(&mut self) {
+        let Some(reclaimer) = &self.reclaimer else {
+            return;
+        };
+        for (_, made) in self.made.drain(..) {
+            if let Made::Texture(texture) = made {
+                reclaimer.texture(texture);
+            }
+        }
+    }
+}
+
+enum Decoded {
+    Shared(Raster),
+    Ready(Pixels),
 }
 
 #[derive(Debug, Default)]
@@ -118,15 +184,14 @@ pub(crate) struct Textures {
 }
 
 impl Textures {
-    pub(crate) fn upload(renderer: &mut Renderer, pictures: Pictures) -> Self {
+    pub(crate) fn upload(renderer: &mut Renderer, mut pictures: Pictures) -> Self {
+        pictures.create(&renderer.uploads());
+        renderer.reclaim();
         let mut textures = Self::default();
-        for (picture, pixels) in pictures.pixels {
-            match renderer.textures().create(pixels) {
-                Ok(texture) => {
-                    textures.uploaded.push(texture);
-                    textures.bound.insert(picture, texture);
-                }
-                Err(error) => tracing::warn!(%error, "failed to upload model texture"),
+        for (picture, made) in std::mem::take(&mut pictures.made) {
+            if let Made::Texture(texture) = made {
+                textures.uploaded.push(texture);
+                textures.bound.insert(picture, texture);
             }
         }
         textures
@@ -145,11 +210,17 @@ impl Textures {
 fn decode_all(
     model: &Model,
     images: &[ImageId],
+    alone: &FxHashMap<ImageId, Encoding>,
     options: &UploadOptions,
-) -> FxHashMap<ImageId, Raster> {
-    Parallel::new("rikka-model-decode")
+) -> Vec<(ImageId, Decoded)> {
+    PARALLEL
         .map(images, |&image| {
-            Some((image, decode(model, image, options)?))
+            let raster = decode(model, image, options)?;
+            let made = match alone.get(&image) {
+                Some(encoding) => Decoded::Ready(pixels_from(raster, *encoding)),
+                None => Decoded::Shared(raster),
+            };
+            Some((image, made))
         })
         .into_iter()
         .flatten()
@@ -188,6 +259,11 @@ fn pixels_of(raster: &Raster, encoding: Encoding) -> Pixels {
         encoding.format(),
         raster.rgba8().into_owned(),
     )
+}
+
+fn pixels_from(raster: Raster, encoding: Encoding) -> Pixels {
+    let (width, height) = raster.dimensions();
+    Pixels::new(width, height, encoding.format(), raster.into_rgba8())
 }
 
 fn channel_of(raster: &Raster, channel: usize) -> Pixels {

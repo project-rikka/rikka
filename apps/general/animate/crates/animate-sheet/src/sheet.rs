@@ -17,6 +17,8 @@ pub enum Lane {
     Look(Target),
     Fluid(EmitterSetting),
     Wind(animate_wind::WindSetting),
+    Prop(animate_prop::PropSetting),
+    Anchor,
 }
 
 impl Lane {
@@ -29,6 +31,8 @@ impl Lane {
             Self::Look(target) => target.parameter(),
             Self::Fluid(setting) => setting.id(),
             Self::Wind(setting) => setting.id(),
+            Self::Prop(setting) => setting.id(),
+            Self::Anchor => "anchor",
         }
     }
 }
@@ -49,12 +53,13 @@ pub enum GroupKind {
     },
     Fluid(EmitterSection),
     Wind,
+    Prop,
 }
 
 impl GroupKind {
     #[must_use]
     pub fn stays_open(&self) -> bool {
-        matches!(self, Self::Parts | Self::Fluid(_) | Self::Wind)
+        matches!(self, Self::Parts | Self::Fluid(_) | Self::Wind | Self::Prop)
     }
 }
 

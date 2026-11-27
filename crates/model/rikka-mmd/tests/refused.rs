@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rikka_mmd::VmdImporter;
+use rikka_mmd::{Vmd, VmdImporter};
 use rikka_model_core::{Error, Import, ImportOptions, Limit, Limits, Model, Registry, Result};
 
 const BENT: [u8; 4] = [10, 100, 100, 10];
@@ -45,7 +45,7 @@ fn read(bytes: Vec<u8>, limits: Limits) -> Result<Model> {
     .run()
 }
 
-fn over_keyframes(result: Result<Model>) -> bool {
+fn over_keyframes<T>(result: Result<T>) -> bool {
     matches!(
         result,
         Err(Error::LimitsExceeded {
@@ -61,6 +61,10 @@ fn motion_longer_than_the_keyframe_limit_is_rejected() {
         bone_key("a", 0, STRAIGHT),
         bone_key("a", 4_000_000_000, BENT),
     ]);
+    assert!(over_keyframes(Vmd::read(
+        &distant,
+        &ImportOptions::default()
+    )));
     assert!(over_keyframes(read(distant, Limits::default())));
 }
 

@@ -53,6 +53,14 @@ impl Follow {
         Self::with_way(way, point, marker, press)
     }
 
+    pub(crate) fn across(point: Vec3, normal: Vec3, marker: Point, press: Point) -> Self {
+        let way = Way::Plane {
+            origin: point,
+            normal,
+        };
+        Self::with_way(way, point, marker, press)
+    }
+
     pub(crate) fn pushed(lens: &Lens, point: Vec3, marker: Point, press: Point) -> Self {
         let way = Way::Push {
             ahead: level(lens, point),

@@ -3,8 +3,9 @@ mod materials;
 mod passes;
 pub(crate) mod wake;
 
-use animate_cast::FigureId;
+use animate_cast::{FigureId, PropId};
 use animate_look::{Evaluated, GraphRef, Linked, Look, Name, Plans, Resolver, shared_library};
+use animate_motion::MotionBake;
 use animate_shader::{Listener, SharedCompiler, SharedShaders};
 use rikka_gpu::TextureId;
 use rikka_model::glam::Vec3;
@@ -55,6 +56,11 @@ pub(super) struct Staged {
     pub(super) figures: FxHashMap<FigureId, DrawnFigure>,
 }
 
+pub(super) struct Dressees<'a, 'p> {
+    pub(super) props: &'a [(PropId, Name)],
+    pub(super) gpus: &'p mut FxHashMap<PropId, GpuModel>,
+}
+
 pub struct Dressing {
     shaders: SharedShaders,
     passes: Passes,
@@ -62,6 +68,7 @@ pub struct Dressing {
     floors: Floors,
     plans: Plans,
     dressed: FxHashMap<FigureId, Dressed>,
+    dressed_props: FxHashMap<PropId, Dressed>,
     marks: Vec<EmitterMark>,
     wake: Wake,
     listener: Option<Listener>,
@@ -87,6 +94,7 @@ impl Dressing {
             floors: Floors::default(),
             plans: Plans::default(),
             dressed: FxHashMap::default(),
+            dressed_props: FxHashMap::default(),
             marks: Vec::new(),
             wake: Wake::default(),
             listener: None,
@@ -114,8 +122,21 @@ impl Dressing {
         self.dressed.remove(&figure);
     }
 
+    pub(super) fn forget_prop(&mut self, prop: PropId) {
+        self.dressed_props.remove(&prop);
+    }
+
     pub(super) fn is_settled(&self) -> bool {
         !self.wake.is_waiting()
+    }
+
+    pub(super) fn await_bake(&self, motion_bake: &MotionBake, estimated: bool) {
+        if estimated {
+            self.wake.wait();
+        }
+        if let Some(listener) = &self.listener {
+            motion_bake.watch(listener);
+        }
     }
 
     pub(super) fn marks(&self) -> &[EmitterMark] {
@@ -133,6 +154,23 @@ impl Dressing {
         look: &Look,
         moment: Moment<'_, '_>,
         gpus: &mut FxHashMap<FigureId, GpuModel>,
+    ) -> Staged {
+        let mut none = FxHashMap::default();
+        let dressees = Dressees {
+            props: &[],
+            gpus: &mut none,
+        };
+        self.stage_with(renderer, frame, look, moment, gpus, dressees)
+    }
+
+    pub(super) fn stage_with(
+        &mut self,
+        renderer: &mut Renderer,
+        frame: &mut Frame,
+        look: &Look,
+        moment: Moment<'_, '_>,
+        gpus: &mut FxHashMap<FigureId, GpuModel>,
+        dressees: Dressees<'_, '_>,
     ) -> Staged {
         let Moment {
             camera,
@@ -254,6 +292,13 @@ impl Dressing {
             };
             let dressed = self.dressed.entry(player.id).or_default();
             dressed.dress(renderer, gpu, player.look_name, &evaluated, &mut sources);
+        }
+        for (id, look_name) in dressees.props {
+            let Some(gpu) = dressees.gpus.get_mut(id) else {
+                continue;
+            };
+            let dressed = self.dressed_props.entry(*id).or_default();
+            dressed.dress(renderer, gpu, *look_name, &evaluated, &mut sources);
         }
         self.passes.sweep(renderer);
         Staged { figures }

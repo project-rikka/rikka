@@ -6,9 +6,12 @@ use rikka_model_core::{Bounds, INFLUENCES, Model, NodeId, Skin, Vertices};
 
 pub(crate) use skeleton::Skeleton;
 
+use crate::PARALLEL;
 use crate::error::{Error, Result};
 use crate::geometry::{PointGrid, Union, area, is_proper};
 use crate::key::VertexKey;
+
+const WELD_GRAIN: usize = 4096;
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Part {
@@ -290,14 +293,24 @@ impl<'m> Figure<'m> {
             (0..members.len()).map(|at| (at as u32, position(at))),
             radius * 2.0,
         );
-        let mut union = Union::new(members.len());
-        for at in 0..members.len() {
-            for other in grid.near(position(at), radius) {
-                if other as usize > at && position(other as usize).distance(position(at)) <= radius
-                {
-                    union.join(at as u32, other);
+        let welded = PARALLEL
+            .grain(WELD_GRAIN)
+            .concat_chunks(members.len(), |range| {
+                let mut welded = Vec::new();
+                for at in range {
+                    for other in grid.near(position(at), radius) {
+                        if other as usize > at
+                            && position(other as usize).distance(position(at)) <= radius
+                        {
+                            welded.push((at as u32, other));
+                        }
+                    }
                 }
-            }
+                welded
+            });
+        let mut union = Union::new(members.len());
+        for (at, other) in welded {
+            union.join(at, other);
         }
         union.labels()
     }

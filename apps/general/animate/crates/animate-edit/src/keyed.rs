@@ -3,6 +3,7 @@ use std::sync::Arc;
 use animate_fluid::Emitter;
 use animate_look::Look;
 use animate_motion::{CameraMotion, PartKey, Take};
+use animate_prop::PropMotion;
 use animate_track::Tracks;
 use animate_wind::WindMotion;
 use rustc_hash::FxHashSet;
@@ -66,6 +67,29 @@ keyed_tracks! {
     Look;
     Emitter;
     WindMotion;
+}
+
+impl Keyed for PropMotion {
+    fn gather_keys(&self, ids: &FxHashSet<KeyId>) -> Vec<Key> {
+        let mut keys = Vec::new();
+        gather(self.tracks(), ids, &mut keys);
+        gather(self.anchors(), ids, &mut keys);
+        keys
+    }
+
+    fn remove_keys(&mut self, ids: &FxHashSet<KeyId>) {
+        remove(self.tracks_mut(), ids);
+        remove(self.anchors_mut(), ids);
+    }
+
+    fn insert_keys(&mut self, keys: &[Key]) {
+        for key in laid(keys) {
+            self.tracks_mut().insert(key);
+        }
+        for key in laid(keys) {
+            self.anchors_mut().insert(key);
+        }
+    }
 }
 
 impl Keyed for Take {

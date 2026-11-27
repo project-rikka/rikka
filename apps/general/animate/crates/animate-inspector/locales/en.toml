@@ -132,6 +132,10 @@ bounce = "Bounce"
 title = "Wind"
 front = "Front"
 
+[animate.placement]
+world = "Nothing (world)"
+bone = "Bone"
+
 [animate.liquid]
 emitter = "Emitter"
 name = "Name"

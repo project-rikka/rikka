@@ -5,6 +5,7 @@ use rikka_widgets::row;
 
 use crate::animate::{Animate, DockTab};
 use crate::command::Command;
+use crate::wording;
 
 const GLYPH: f32 = 18.0;
 const PICKER_WIDTH: f32 = 200.0;
@@ -17,6 +18,7 @@ pub(crate) fn bar(animate: &Animate) -> impl View {
     let transport = animate.transport();
     let removable = match animate.subject() {
         Some(Subject::Figure(_) | Subject::Emitter(_)) => true,
+        Some(Subject::Stage | Subject::Accessory(_)) => true,
         Some(Subject::Camera) => animate.has_camera(),
         Some(Subject::Look) => true,
         Some(Subject::Wind) => !animate.cast().wind().motion.is_empty(),
@@ -27,6 +29,10 @@ pub(crate) fn bar(animate: &Animate) -> impl View {
             .cast()
             .figure(id)
             .is_some_and(|figure| figure.has_motion()),
+        Some(subject @ (Subject::Stage | Subject::Accessory(_))) => animate
+            .cast()
+            .prop(subject)
+            .is_some_and(|track| !track.prop.is_still()),
         _ => false,
     };
     let (play, playing) = match transport.is_playing() {
@@ -44,6 +50,13 @@ pub(crate) fn bar(animate: &Animate) -> impl View {
         .padding(Inset::xy(8.0, 4.0))
         .group(
             tool_group([
+                Command::Library
+                    .tool(
+                        MaterialSymbol::PHOTO_LIBRARY,
+                        tr!("animate.command.library"),
+                        animate,
+                    )
+                    .into(),
                 subject_picker(animate),
                 Command::Add
                     .tool(MaterialSymbol::ADD, tr!("animate.tip.add"), animate)
@@ -231,6 +244,11 @@ fn subject_picker(animate: &Animate) -> ToolItem {
             Subject::Camera => tr!("animate.subject.camera"),
             Subject::Look => tr!("animate.subject.look"),
             Subject::Wind => tr!("animate.subject.wind"),
+            Subject::Stage | Subject::Accessory(_) => {
+                cast.prop(*subject).map_or_else(Label::default, |track| {
+                    wording::prop_subject(track.prop.kind, &track.prop.name)
+                })
+            }
         })
         .collect();
     let choose = |animate: &mut Animate, chosen: usize| animate.choose_subject(chosen);

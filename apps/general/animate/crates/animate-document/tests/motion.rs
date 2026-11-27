@@ -1,7 +1,8 @@
-use animate_document::{Error, Motion};
+use animate_document::{Error, Motion, PropRecord};
 use animate_fluid::{Emitter, EmitterId, EmitterKey, Preset, Shape};
 use animate_look::{GraphRef, Look, SocketKey, shared_library};
 use animate_motion::{MorphKey, Take};
+use animate_prop::{Anchor, PropKey, PropMotion, PropSetting};
 use animate_wind::{WindKey, WindMotion};
 use rikka_mmd::{VmdCameraFrame, VmdCameraInterpolation, VmdCurve};
 use rikka_model_core::glam::Vec3;
@@ -99,12 +100,36 @@ fn every_kind_round_trips() {
         .into_iter()
         .collect(),
     ));
+    let mut stage = PropRecord::default();
+    stage.motion.levels.z = -2.0;
+    stage.motion.tracks_mut().insert(PropKey {
+        setting: PropSetting::Yaw,
+        frame: 15,
+        value: 90.0,
+        curve: BENT,
+    });
+    let accessory = PropRecord {
+        motion: {
+            let mut motion = PropMotion::default();
+            motion.anchor = Some(Anchor {
+                figure: "Miku".into(),
+                bone: "Head".into(),
+            });
+            motion
+        },
+        take: match figure() {
+            Motion::Figure(take) => *take,
+            _ => unreachable!(),
+        },
+    };
     let kinds = [
         ("figure", figure()),
         ("camera", camera),
         ("look", Motion::Look(Box::new(look))),
         ("wind", Motion::Wind(Box::new(wind))),
         ("fluid", Motion::Fluid(Box::new(emitter))),
+        ("stage", Motion::Stage(Box::new(stage))),
+        ("accessory", Motion::Accessory(Box::new(accessory))),
     ];
     for (kind, motion) in kinds {
         let text = json(&motion);
@@ -161,5 +186,10 @@ fn reports_errors_of_each_kind() {
             frame: 9,
             ..
         }))
+    ));
+    let stage = json(&Motion::Stage(Box::default()));
+    assert!(matches!(
+        read(with(&stage, "\"scale\": 1.0", "\"scale\": 0.0")),
+        Err(Error::Prop(animate_prop::Error::OutOfRange(_)))
     ));
 }

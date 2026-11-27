@@ -10,6 +10,8 @@ use crate::animate::{Animate, LookPart, Starter};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Command {
     Add,
+    AddStage,
+    AddAccessory,
     AddLiquid,
     DuplicateLiquid,
     Close,
@@ -45,6 +47,7 @@ pub(crate) enum Command {
     Register,
     ResetPose,
     Inspector,
+    Library,
     Assistant,
     SwitchMode,
     Pin,
@@ -60,7 +63,7 @@ const SHIFT_CONTROL: Modifiers = Modifiers {
     ..Modifiers::NONE
 };
 
-const BINDINGS: [(Modifiers, Key, Command); 33] = [
+const BINDINGS: [(Modifiers, Key, Command); 34] = [
     (Modifiers::CONTROL, Key::Char('o'), Command::Add),
     (Modifiers::NONE, Key::Space, Command::PlayPause),
     (Modifiers::NONE, Key::ArrowLeft, Command::StepBack),
@@ -89,6 +92,7 @@ const BINDINGS: [(Modifiers, Key, Command); 33] = [
     (Modifiers::NONE, Key::Delete, Command::DeleteKeys),
     (Modifiers::NONE, Key::Enter, Command::Register),
     (Modifiers::CONTROL, Key::Char('i'), Command::Inspector),
+    (Modifiers::CONTROL, Key::Char('l'), Command::Library),
     (Modifiers::CONTROL, Key::Char('k'), Command::Assistant),
     (Modifiers::CONTROL, Key::Char('e'), Command::SwitchMode),
     (Modifiers::NONE, Key::Char('p'), Command::Pin),
@@ -139,6 +143,8 @@ impl Command {
     pub(crate) fn run(self, animate: &mut Animate) {
         match self {
             Self::Add => animate.add(),
+            Self::AddStage => animate.choose_stage(),
+            Self::AddAccessory => animate.choose_accessories(),
             Self::AddLiquid => animate.add_liquid(),
             Self::DuplicateLiquid => animate.duplicate_liquid(),
             Self::Close => request_window(WindowRequest::Close),
@@ -174,6 +180,7 @@ impl Command {
             Self::Register => animate.register(),
             Self::ResetPose => animate.reset_pose(),
             Self::Inspector => animate.toggle_inspector(),
+            Self::Library => animate.toggle_library(),
             Self::Assistant => animate.open_assistant(),
             Self::SwitchMode => animate.switch_mode(),
             Self::Pin => animate.pin_chosen(),
@@ -186,7 +193,9 @@ impl Command {
 
     pub(crate) fn enabled(self, animate: &Animate) -> bool {
         match self {
-            Self::FrameEveryone => !animate.cast().figures().is_empty(),
+            Self::FrameEveryone => {
+                !animate.cast().figures().is_empty() || animate.cast().props().next().is_some()
+            }
             Self::ResetPhysics => {
                 animate.is_physics_enabled() && !animate.cast().figures().is_empty()
             }
@@ -208,6 +217,8 @@ impl Command {
             Self::DuplicateLiquid => animate.can_duplicate_liquid(),
             Self::RecomputeLiquids => animate.can_recompute_liquids(),
             Self::Add
+            | Self::AddStage
+            | Self::AddAccessory
             | Self::AddLiquid
             | Self::Close
             | Self::Repeat
@@ -224,6 +235,7 @@ impl Command {
             | Self::LeapForward
             | Self::GoToStart
             | Self::Inspector
+            | Self::Library
             | Self::Assistant
             | Self::SwitchMode
             | Self::NodeDock

@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use flate2::read::ZlibDecoder;
 
+use crate::PARALLEL;
 use crate::document::{Node, Value};
 use rikka_model_core::{ByteReader, ImportCtx};
 use rikka_model_core::{Error, Result};
@@ -24,18 +25,73 @@ pub(crate) fn parse(bytes: &[u8], ctx: &mut ImportCtx<'_>) -> Result<(u32, Vec<N
         cursor,
         length: bytes.len(),
         wide: version >= WIDE_VERSION,
+        values: 0,
+        compressed: Vec::new(),
     };
-    let nodes = reader.children(bytes.len(), 0, ctx)?;
+    let parsed = reader.children(bytes.len(), 0, ctx);
+    let compressed = reader.compressed;
+    let mut nodes = match parsed {
+        Ok(nodes) => nodes,
+        Err(error) => {
+            for array in &compressed {
+                array.decode()?;
+            }
+            return Err(error);
+        }
+    };
+    let decoded = PARALLEL.map(&compressed, Compressed::decode);
+    let mut arrays = Vec::with_capacity(decoded.len());
+    for array in decoded {
+        arrays.push(array?);
+    }
+    let mut slots = compressed
+        .iter()
+        .map(|array| array.slot)
+        .zip(arrays)
+        .peekable();
+    let mut seen = 0;
+    restore(&mut nodes, &mut seen, &mut slots);
     Ok((version, nodes))
+}
+
+fn restore(
+    nodes: &mut [Node],
+    seen: &mut usize,
+    slots: &mut std::iter::Peekable<impl Iterator<Item = (usize, Value)>>,
+) {
+    for node in nodes {
+        for value in &mut node.values {
+            if let Some((_, decoded)) = slots.next_if(|(slot, _)| *slot == *seen) {
+                *value = decoded;
+            }
+            *seen += 1;
+        }
+        restore(&mut node.children, seen, slots);
+    }
+}
+
+struct Compressed<'a> {
+    slot: usize,
+    kind: u8,
+    encoded: &'a [u8],
+    decoded: usize,
+}
+
+impl Compressed<'_> {
+    fn decode(&self) -> Result<Value> {
+        Ok(typed(self.kind, &inflate(self.encoded, self.decoded)?))
+    }
 }
 
 struct Reader<'a> {
     cursor: ByteReader<'a>,
     length: usize,
     wide: bool,
+    values: usize,
+    compressed: Vec<Compressed<'a>>,
 }
 
-impl Reader<'_> {
+impl<'a> Reader<'a> {
     fn children(&mut self, end: usize, depth: usize, ctx: &mut ImportCtx<'_>) -> Result<Vec<Node>> {
         if depth > MAX_DEPTH {
             return Err(Error::Damaged(format!(
@@ -82,6 +138,7 @@ impl Reader<'_> {
         let mut values = Vec::with_capacity(usize::try_from(value_count).unwrap_or(0).min(16));
         for _ in 0..value_count {
             values.push(self.value(ctx)?);
+            self.values += 1;
         }
         self.cursor
             .seek(values_end.clamp(self.cursor.position(), end))?;
@@ -138,30 +195,26 @@ impl Reader<'_> {
             .ok_or_else(|| Error::Damaged("array length exceeds data".to_owned()))?;
         ctx.charge(decoded as u64)?;
 
-        let encoded = self.cursor.take(encoded_length)?;
-        let data = match encoding {
+        let encoded: &'a [u8] = self.cursor.take(encoded_length)?;
+        match encoding {
             0 => match encoded.len() >= decoded {
-                true => std::borrow::Cow::Borrowed(&encoded[..decoded]),
-                false => {
-                    return Err(Error::Damaged(format!(
-                        "array of {count} values has {} bytes",
-                        encoded.len()
-                    )));
-                }
+                true => Ok(typed(kind, &encoded[..decoded])),
+                false => Err(Error::Damaged(format!(
+                    "array of {count} values has {} bytes",
+                    encoded.len()
+                ))),
             },
-            1 => std::borrow::Cow::Owned(inflate(encoded, decoded)?),
-            other => {
-                return Err(Error::Damaged(format!("unknown array encoding {other}")));
+            1 => {
+                self.compressed.push(Compressed {
+                    slot: self.values,
+                    kind,
+                    encoded,
+                    decoded,
+                });
+                Ok(Value::Bools(Vec::new()))
             }
-        };
-
-        Ok(match kind {
-            b'b' | b'c' => Value::Bools(data.iter().map(|&byte| byte != 0).collect()),
-            b'i' => Value::I32s(chunks(&data).map(i32::from_le_bytes).collect()),
-            b'f' => Value::F32s(chunks(&data).map(f32::from_le_bytes).collect()),
-            b'l' => Value::I64s(chunks(&data).map(i64::from_le_bytes).collect()),
-            _ => Value::F64s(chunks(&data).map(f64::from_le_bytes).collect()),
-        })
+            other => Err(Error::Damaged(format!("unknown array encoding {other}"))),
+        }
     }
 
     fn sentinel(&self) -> usize {
@@ -169,6 +222,16 @@ impl Reader<'_> {
             true => 25,
             false => 13,
         }
+    }
+}
+
+fn typed(kind: u8, data: &[u8]) -> Value {
+    match kind {
+        b'b' | b'c' => Value::Bools(data.iter().map(|&byte| byte != 0).collect()),
+        b'i' => Value::I32s(chunks(data).map(i32::from_le_bytes).collect()),
+        b'f' => Value::F32s(chunks(data).map(f32::from_le_bytes).collect()),
+        b'l' => Value::I64s(chunks(data).map(i64::from_le_bytes).collect()),
+        _ => Value::F64s(chunks(data).map(f64::from_le_bytes).collect()),
     }
 }
 

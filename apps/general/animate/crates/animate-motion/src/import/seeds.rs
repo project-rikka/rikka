@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 use animate_body::{Body, HumanBone, muscles};
 use rikka_mmd::Pmx;
@@ -13,8 +13,9 @@ pub(super) struct Seeds {
 impl Seeds {
     pub(super) fn new(model: &Model, body: &Body, keyed: &[(NodeId, u32)]) -> Self {
         let root = moved_by(model, body, &[HumanBone::Hips]);
-        let mut frames = HashMap::new();
-        for part in Part::ALL {
+        let mut moved_parts = vec![0_u16; model.nodes.len()];
+        let mut seeded = Vec::new();
+        for (bit, part) in Part::ALL.into_iter().enumerate() {
             let bones = bones_of(part);
             if bones.is_empty() {
                 continue;
@@ -23,13 +24,29 @@ impl Seeds {
             if reached_through(model, &mut moving) {
                 moving.extend(root.iter().copied());
             }
-            let keyed: BTreeSet<u32> = keyed
-                .iter()
-                .filter(|(node, _)| moving.contains(node))
-                .map(|(_, frame)| *frame)
-                .collect();
-            frames.insert(part, keyed.into_iter().collect());
+            for node in moving {
+                moved_parts[node.index()] |= 1 << bit;
+            }
+            seeded.push((bit, part));
         }
+        let mut keyed_frames: [Vec<u32>; Part::ALL.len()] = Default::default();
+        for (node, frame) in keyed {
+            let parts = moved_parts.get(node.index()).copied().unwrap_or(0);
+            for (bit, frames) in keyed_frames.iter_mut().enumerate() {
+                if parts & (1 << bit) != 0 {
+                    frames.push(*frame);
+                }
+            }
+        }
+        let frames = seeded
+            .into_iter()
+            .map(|(bit, part)| {
+                let mut frames = std::mem::take(&mut keyed_frames[bit]);
+                frames.sort_unstable();
+                frames.dedup();
+                (part, frames)
+            })
+            .collect();
         Self { frames }
     }
 

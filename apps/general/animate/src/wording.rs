@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use animate_fluid::EmitterId;
+use animate_prop::PropKind;
 use animate_stage::StageError;
 use rikka_format::{format_bytes, group_digits};
 use rikka_i18n::tr;
@@ -17,12 +18,14 @@ pub(crate) fn rejection(file: &str, rejection: &Rejection) -> Label {
         Rejection::Unreadable(error) => unreadable(file, error),
         Rejection::Unsupported => tr!("animate.refused.unsupported", file = file),
         Rejection::NoMotion => tr!("animate.refused.no_motion", file = file),
+        Rejection::NoModel => tr!("animate.refused.no_model", file = file),
         Rejection::NeedsFigure => tr!("animate.refused.needs_figure", file = file),
         Rejection::NeedsCamera => tr!("animate.refused.needs_camera", file = file),
+        Rejection::NeedsStage => tr!("animate.refused.needs_stage", file = file),
+        Rejection::NeedsAccessory => tr!("animate.refused.needs_accessory", file = file),
         Rejection::NoSkeleton => tr!("animate.refused.no_skeleton", file = file),
         Rejection::BodyMismatch => tr!("animate.refused.body_mismatch", file = file),
         Rejection::Unmatched => tr!("animate.refused.unmatched", file = file),
-        Rejection::BodyFit(reason) => body_fit(file, reason),
     }
 }
 
@@ -110,6 +113,13 @@ pub(crate) fn physics(on: bool) -> Label {
 
 pub(crate) fn liquid_name(id: EmitterId) -> String {
     tr!("animate.liquid.named", number = id.0 + 1).to_string()
+}
+
+pub(crate) fn prop_subject(kind: PropKind, name: &str) -> Label {
+    match kind {
+        PropKind::Stage => tr!("animate.subject.stage", name = name),
+        PropKind::Accessory => tr!("animate.subject.accessory", name = name),
+    }
 }
 
 pub(crate) fn copy_name(name: &str) -> String {

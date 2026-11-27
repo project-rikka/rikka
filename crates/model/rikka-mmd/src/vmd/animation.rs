@@ -2,6 +2,7 @@ use rikka_model_core::glam::{Quat, Vec3};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use rikka_model_core::CoordinateSystem;
+use rikka_model_core::ImportCtx;
 use rikka_model_core::Model;
 use rikka_model_core::ModelBuilder;
 use rikka_model_core::Result;
@@ -13,6 +14,7 @@ use rikka_model_core::{Light, LightKind};
 use rikka_model_core::{Node, NodeId};
 
 use super::super::MMD_UNIT_SCALE;
+use super::PARALLEL;
 use super::bones::pose;
 use super::camera::VmdCamera;
 use super::document::{FRAMES_PER_SECOND, Vmd, VmdBoneFrame, VmdMorphFrame};
@@ -23,8 +25,9 @@ const CAMERA_NEAR: f32 = 0.05;
 
 const CUT: f32 = 1e-4;
 const FRAMES: Subdivision = Subdivision::Grid { step: 1.0 };
+const TRACKS_PER_WORKER: usize = 4;
 
-pub(crate) fn model_of(motion: Vmd) -> Result<Model> {
+pub(crate) fn model_of(motion: Vmd, ctx: &mut ImportCtx<'_>) -> Result<Model> {
     let mut builder = ModelBuilder::new()
         .coordinates(CoordinateSystem::LEFT_HANDED_Y_UP)
         .unit_scale(MMD_UNIT_SCALE)
@@ -34,12 +37,16 @@ pub(crate) fn model_of(motion: Vmd) -> Result<Model> {
         true => "motion".to_owned(),
         false => motion.model.clone(),
     });
-    for (bone, frames) in motion.bones_by_name() {
-        let node = builder.add_node(Node::new(bone));
-        animation
-            .channels
-            .extend(bone_channels(&frames, node, Vec3::ZERO));
-    }
+    let bones = motion.bones_by_name();
+    let sampled = sampled_keyframes(&motion, &bones);
+    ctx.charge_keyframes(usize::try_from(sampled).unwrap_or(usize::MAX))?;
+    let tracks: Vec<(NodeId, Vec<&VmdBoneFrame>)> = bones
+        .into_iter()
+        .map(|(bone, frames)| (builder.add_node(Node::new(bone)), frames))
+        .collect();
+    animation
+        .channels
+        .extend(baked_tracks(&tracks, |_| Vec3::ZERO));
     for (morph, frames) in motion.morphs_by_name() {
         let node = builder.add_node(Node::new(morph).morph_weights(vec![0.0]));
         animation.channels.push(Channel {
@@ -106,15 +113,14 @@ impl Vmd {
             .map(|(index, node)| (node.name.as_str(), NodeId(index as u32)))
             .collect();
 
-        for (bone, frames) in self.bones_by_name() {
-            let Some(node) = nodes.get(bone).copied() else {
-                continue;
-            };
-            let rest = model.node(node).transform.translation;
-            animation
-                .channels
-                .extend(bone_channels(&frames, node, rest));
-        }
+        let tracks: Vec<(NodeId, Vec<&VmdBoneFrame>)> = self
+            .bones_by_name()
+            .into_iter()
+            .filter_map(|(bone, frames)| Some((nodes.get(bone).copied()?, frames)))
+            .collect();
+        animation.channels.extend(baked_tracks(&tracks, |node| {
+            model.node(node).transform.translation
+        }));
 
         let morphs: FxHashMap<&str, Vec<&VmdMorphFrame>> =
             self.morphs_by_name().into_iter().collect();
@@ -190,6 +196,20 @@ fn weight_at(frames: &[&super::document::VmdMorphFrame], frame: u32) -> f32 {
     }
 }
 
+fn baked_tracks(
+    tracks: &[(NodeId, Vec<&VmdBoneFrame>)],
+    rest: impl Fn(NodeId) -> Vec3 + Sync,
+) -> Vec<Channel> {
+    PARALLEL
+        .grain(TRACKS_PER_WORKER)
+        .map(tracks, |(node, frames)| {
+            bone_channels(frames, *node, rest(*node))
+        })
+        .into_iter()
+        .flatten()
+        .collect()
+}
+
 fn bone_channels(frames: &[&VmdBoneFrame], node: NodeId, rest: Vec3) -> Vec<Channel> {
     if frames.is_empty() {
         return Vec::new();
@@ -217,9 +237,8 @@ fn bent_frames(from: &VmdBoneFrame, to: &VmdBoneFrame) -> u32 {
     }
 }
 
-pub(super) fn sampled_keyframes(motion: &Vmd) -> u64 {
-    let bones: u64 = motion
-        .bones_by_name()
+fn sampled_keyframes(motion: &Vmd, bones: &[(&str, Vec<&VmdBoneFrame>)]) -> u64 {
+    let bones: u64 = bones
         .iter()
         .map(|(_, frames)| {
             let between: u64 = frames

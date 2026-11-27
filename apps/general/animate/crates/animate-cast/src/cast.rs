@@ -9,20 +9,27 @@ use animate_look::Look;
 use animate_motion::{CameraMotion, GazeMode, Part, PartValues, Take};
 use animate_sheet::{Listing, Sheet};
 use animate_wind::WindMotion;
+use rikka_model::Model;
 use rikka_model::humanoid::Anatomy;
 use rikka_model::mmd::Pmx;
-use rikka_model::{Model, Shading};
 use rikka_model_gpu::{HeadRest, Prepared, UploadOptions};
 use rikka_physics_tailor::ClothSettings;
+use rikka_renderer::Uploads;
 
 use crate::cloth::Cloth;
 use crate::mode::Mode;
-use crate::physique::{BodyFitError, fit_physique};
 use crate::playback::{Performer, TakePlayback};
+use crate::prop::{Prop, PropId, PropTrack};
 use crate::skeleton::Skeleton;
 
 fn everything(_: &str) -> bool {
     true
+}
+
+fn joined<T>(handle: std::thread::ScopedJoinHandle<'_, T>) -> T {
+    handle
+        .join()
+        .unwrap_or_else(|panic| std::panic::resume_unwind(panic))
 }
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
@@ -47,6 +54,8 @@ impl FigureId {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Subject {
     Figure(FigureId),
+    Stage,
+    Accessory(PropId),
     Emitter(EmitterId),
     Camera,
     Look,
@@ -75,7 +84,6 @@ pub struct LoadedFigure {
     pub figure: Figure,
     pub prepared: Prepared,
     pub mapping_error: Option<MappingError>,
-    pub body_fit_error: Option<BodyFitError>,
 }
 
 impl Figure {
@@ -84,49 +92,45 @@ impl Figure {
         model: Model,
         path: Option<PathBuf>,
         cloth_settings: ClothSettings,
+        uploads: Option<&Uploads>,
     ) -> LoadedFigure {
-        let anatomy = Arc::new(Anatomy::recognize(&model));
-        let pmx = model.extensions.contains::<Pmx>();
-        let (body, mapping_error) = match Body::from_anatomy(&model, &anatomy) {
-            Ok(body) => (Some(Arc::new(body)), None),
-            Err(error) if pmx || !anatomy.humanoid().is_empty() => (None, Some(error)),
-            Err(_) => (None, None),
-        };
-        let skeleton = Arc::new(Skeleton::new(&model, &anatomy, body.as_deref()));
-        let take = Arc::new(Take::default());
-        let cloth = Cloth::new(&model, &anatomy, path, cloth_settings);
-        let (physique, body_fit_error) = match fit_physique(
-            body.as_deref(),
-            &model,
-            &anatomy,
-            cloth.analysis().map(Arc::as_ref),
-        ) {
-            Ok(physique) => (physique, None),
-            Err(error) => (None, Some(error)),
-        };
-        let head = HeadRest::new(&model, &anatomy);
         let model = Arc::new(model);
-        let figure = Self {
-            id: FigureId::fresh(),
-            name,
-            faces: Arc::new(Faces::from_model(&model)),
-            head,
-            model: Arc::clone(&model),
-            anatomy,
-            skeleton,
-            body,
-            physique,
-            take,
-            playback: None,
-            sheet: Arc::default(),
-            cloth,
-        };
-        LoadedFigure {
-            figure,
-            prepared: Prepared::new(model, &UploadOptions::default()),
-            mapping_error,
-            body_fit_error,
-        }
+        std::thread::scope(|scope| {
+            let prepared = scope.spawn(|| {
+                Prepared::with_uploads(Arc::clone(&model), &UploadOptions::default(), uploads)
+            });
+            let faces = scope.spawn(|| Faces::from_model(&model));
+            let cloth = scope.spawn(|| Cloth::new(&model, path, cloth_settings));
+            let anatomy = Arc::new(Anatomy::recognize(&model));
+            let pmx = model.extensions.contains::<Pmx>();
+            let (body, mapping_error) = match Body::from_anatomy(&model, &anatomy) {
+                Ok(body) => (Some(Arc::new(body)), None),
+                Err(error) if pmx || !anatomy.humanoid().is_empty() => (None, Some(error)),
+                Err(_) => (None, None),
+            };
+            let skeleton = Arc::new(Skeleton::new(&model, &anatomy, body.as_deref()));
+            let head = HeadRest::new(&model, &anatomy);
+            let figure = Self {
+                id: FigureId::fresh(),
+                name,
+                faces: Arc::new(joined(faces)),
+                head,
+                model: Arc::clone(&model),
+                anatomy,
+                skeleton,
+                body,
+                physique: None,
+                take: Arc::new(Take::default()),
+                playback: None,
+                sheet: Arc::default(),
+                cloth: joined(cloth),
+            };
+            LoadedFigure {
+                figure,
+                prepared: joined(prepared),
+                mapping_error,
+            }
+        })
     }
 
     pub fn performer(&self) -> Performer<'_> {
@@ -185,10 +189,7 @@ impl Figure {
 
 impl Figure {
     pub fn material_class(&self, material: u32) -> Option<&'static str> {
-        match self.model.materials.get(material as usize)?.shading {
-            Shading::Toon(toon) => Some(rikka_model_gpu::class_preset(toon.surface).preset()),
-            Shading::Pbr(_) => None,
-        }
+        crate::material::material_class(&self.model, material)
     }
 
     pub fn has_motion(&self) -> bool {
@@ -265,6 +266,8 @@ pub struct Cast {
     camera: Option<CameraTrack>,
     look: LookTrack,
     wind: WindTrack,
+    stage: Option<PropTrack>,
+    accessories: Vec<PropTrack>,
 }
 
 impl Cast {
@@ -323,6 +326,69 @@ impl Cast {
         Some(neighbour.or(figure).unwrap_or(Subject::Camera))
     }
 
+    pub fn stage(&self) -> Option<&PropTrack> {
+        self.stage.as_ref()
+    }
+
+    pub fn set_stage(&mut self, prop: Option<Arc<Prop>>) {
+        self.stage = match (self.stage.take(), prop) {
+            (_, None) => None,
+            (Some(track), Some(prop)) if track.prop.id == prop.id => Some(track.revised(prop)),
+            (_, Some(prop)) => Some(PropTrack::new(prop)),
+        };
+    }
+
+    pub fn accessories(&self) -> &[PropTrack] {
+        &self.accessories
+    }
+
+    pub fn accessory(&self, id: PropId) -> Option<&PropTrack> {
+        self.accessories.iter().find(|track| track.prop.id == id)
+    }
+
+    pub fn place_accessory(&mut self, prop: Arc<Prop>) {
+        match self
+            .accessories
+            .iter_mut()
+            .find(|track| track.prop.id == prop.id)
+        {
+            Some(track) => *track = track.revised(prop),
+            None => self.accessories.push(PropTrack::new(prop)),
+        }
+    }
+
+    pub fn drop_accessory(&mut self, id: PropId) -> Option<Subject> {
+        let at = self
+            .accessories
+            .iter()
+            .position(|track| track.prop.id == id)?;
+        self.accessories.remove(at);
+        let neighbour = self
+            .accessories
+            .get(at)
+            .or_else(|| self.accessories.last())
+            .map(|track| Subject::Accessory(track.prop.id));
+        Some(neighbour.unwrap_or_else(|| self.fallback()))
+    }
+
+    pub fn prop(&self, subject: Subject) -> Option<&PropTrack> {
+        match subject {
+            Subject::Stage => self.stage.as_ref(),
+            Subject::Accessory(id) => self.accessory(id),
+            _ => None,
+        }
+    }
+
+    pub fn props(&self) -> impl Iterator<Item = &PropTrack> {
+        self.stage.iter().chain(&self.accessories)
+    }
+
+    pub fn fallback(&self) -> Subject {
+        let figure = self.figures.last().map(|figure| Subject::Figure(figure.id));
+        let stage = self.stage.as_ref().map(|_| Subject::Stage);
+        figure.or(stage).unwrap_or(Subject::Camera)
+    }
+
     pub fn camera(&self) -> Option<&CameraTrack> {
         self.camera.as_ref()
     }
@@ -334,8 +400,12 @@ impl Cast {
     pub fn dismiss(&mut self, id: FigureId) -> Option<Subject> {
         let at = self.figures.iter().position(|figure| figure.id == id)?;
         self.figures.remove(at);
-        let neighbour = self.figures.get(at).or_else(|| self.figures.last());
-        Some(neighbour.map_or(Subject::Camera, |figure| Subject::Figure(figure.id)))
+        let neighbour = self
+            .figures
+            .get(at)
+            .or_else(|| self.figures.last())
+            .map(|figure| Subject::Figure(figure.id));
+        Some(neighbour.unwrap_or_else(|| self.fallback()))
     }
 
     pub fn resheet(&mut self, mode: Mode) {
@@ -352,6 +422,12 @@ impl Cast {
         self.figures
             .iter()
             .map(|figure| Subject::Figure(figure.id))
+            .chain(self.stage.iter().map(|_| Subject::Stage))
+            .chain(
+                self.accessories
+                    .iter()
+                    .map(|track| Subject::Accessory(track.prop.id)),
+            )
             .chain(
                 self.emitters
                     .iter()
@@ -377,6 +453,9 @@ impl Cast {
             ),
             Subject::Look => Arc::clone(&self.look.sheet),
             Subject::Wind => Arc::clone(&self.wind.sheet),
+            Subject::Stage | Subject::Accessory(_) => self
+                .prop(subject)
+                .map_or_else(Arc::default, |track| Arc::clone(&track.sheet)),
         }
     }
 
@@ -402,6 +481,7 @@ impl Cast {
             .map(Figure::last_key)
             .chain(self.camera.iter().map(|camera| camera.motion.last_frame()))
             .chain(self.emitters.iter().map(|track| track.motion.last_frame()))
+            .chain(self.props().map(|track| track.prop.last_key()))
             .chain([self.look.motion.last_frame(), self.wind.motion.last_frame()])
             .max()
             .unwrap_or(0)

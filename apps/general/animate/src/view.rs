@@ -9,7 +9,7 @@ use rikka_app::prelude::*;
 use rikka_ui::{Accept, DragAction, DragOffer};
 use rikka_widgets::{column, row};
 
-use crate::animate::{Animate, DockTab, studio, workshop};
+use crate::animate::{Animate, DockTab, shelving, studio, workshop};
 use crate::command::Command;
 use crate::{bar, dialogs};
 
@@ -29,6 +29,13 @@ pub(crate) fn view(animate: &Animate) -> impl View {
     })
     .fill();
     let body = row! {
+        if animate.is_library_open() {
+            animate_library_browser::library(animate_library_browser::Desk::new(
+                animate,
+                animate_library_browser::Reach::new(shelving),
+            ));
+            rule_upright();
+        }
         container(workspace).grow(1.0).fill_height();
         if animate.is_inspector_open() {
             rule_upright();
@@ -51,7 +58,11 @@ pub(crate) fn view(animate: &Animate) -> impl View {
     let mut layers = vec![
         drop_zone(whole)
             .accepts(|offer: &DragOffer| offer.offers(URI_LIST).then(|| Accept::copy(URI_LIST)))
-            .on_drop(|offer: DragOffer, _: DragAction| Animate::dropped(offer))
+            .on_drop(|animate: &mut Animate, offer: DragOffer, _: DragAction| {
+                if !(offer.is_ours() && animate.dropped_entry(&offer)) {
+                    Animate::dropped(offer);
+                }
+            })
             .fill()
             .build()
             .keyed(dialogs::STAGE),
@@ -88,6 +99,7 @@ fn stage(animate: &Animate) -> impl View {
                     animate.apply_cloth_settings(figure, cloth_settings)
                 }
                 Gesture::Place(node, by) => animate.place(node, by),
+                Gesture::Arrange { role, settings } => animate.arrange(role, &settings),
             },
         )
         .framed(animate.output().resolution())

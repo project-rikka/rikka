@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
-use animate_cast::{Mode, Subject};
+use animate_cast::{Mode, Prop, Subject};
 use animate_motion::Part;
+use animate_prop::PropSetting;
 use rikka_model::mmd::FRAMES_PER_SECOND;
 use rikka_tool::Reply;
 use serde_json::{Value as Json, json};
@@ -22,6 +23,11 @@ impl Animate {
             Some(Subject::Look) => Json::from("look"),
             Some(Subject::Emitter(_)) => Json::from("liquid"),
             Some(Subject::Wind) => Json::from("wind"),
+            Some(Subject::Stage) => Json::from("stage"),
+            Some(subject @ Subject::Accessory(_)) => self
+                .cast
+                .prop(subject)
+                .map_or(Json::Null, |track| Json::from(track.prop.name.as_str())),
             None => Json::Null,
         };
         let figures: Vec<Json> = handles
@@ -87,6 +93,13 @@ impl Animate {
                 "seconds": transport.sound_length().map(round),
             })),
             "figures": figures,
+            "stage": self.cast.stage().map(|track| self.describe_prop(&track.prop)),
+            "accessories": self
+                .cast
+                .accessories()
+                .iter()
+                .map(|track| self.describe_prop(&track.prop))
+                .collect::<Vec<Json>>(),
             "camera": {
                 "keys": camera_keys,
                 "view": {
@@ -100,5 +113,42 @@ impl Animate {
             },
             "look": self.look_summary(),
         }))
+    }
+
+    fn describe_prop(&self, prop: &Prop) -> Json {
+        let frame = self.transport.frame() as f32;
+        let levels = prop.motion.levels_at(frame);
+        let keyed: BTreeMap<&str, Vec<u32>> = PropSetting::ALL
+            .iter()
+            .filter(|setting| !prop.motion.tracks().keys(setting).is_empty())
+            .map(|setting| {
+                let frames = prop.motion.tracks().keys(setting).iter();
+                (setting.id(), frames.map(|key| key.frame).collect())
+            })
+            .collect();
+        let mut described = json!({
+            "name": prop.name,
+            "position": rounded(levels.position()),
+            "rotation": [round(levels.pitch), round(levels.yaw), round(levels.roll)],
+            "scale": round(levels.scale),
+            "visible": levels.visible,
+            "keyed": keyed,
+            "boneKeys": prop.take.bones.all_keys().count(),
+            "morphKeys": prop.take.morphs.all_keys().count(),
+        });
+        if prop.kind.attaches() {
+            described["attachedTo"] = prop.motion.anchor_at(frame).map_or(
+                Json::Null,
+                |anchor| json!({ "figure": anchor.figure, "bone": anchor.bone }),
+            );
+            described["attachmentKeys"] = prop
+                .motion
+                .anchors()
+                .keys(&())
+                .iter()
+                .map(|key| key.frame)
+                .collect();
+        }
+        described
     }
 }

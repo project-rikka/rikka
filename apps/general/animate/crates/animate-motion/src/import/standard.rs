@@ -6,9 +6,12 @@ use rikka_mmd::standard_skeleton;
 
 use super::Performer;
 
-pub(super) static STANDARD: LazyLock<Performer> = LazyLock::new(|| {
+pub(crate) static STANDARD: LazyLock<Performer> = LazyLock::new(|| {
     let model = Arc::new(standard_skeleton());
     let body = Body::from_anatomy(&model, &Anatomy::recognize(&model))
         .expect("the standard MMD skeleton maps to a whole humanoid");
-    Performer { model, body }
+    Performer {
+        model,
+        body: Arc::new(body),
+    }
 });

@@ -41,6 +41,9 @@ fn menus(animate: &Animate) -> MenuBar {
         .menu(
             tr!("animate.menu.file"),
             [
+                entry(Command::AddStage, tr!("animate.command.add_stage")),
+                entry(Command::AddAccessory, tr!("animate.command.add_accessory")),
+                menu_separator(),
                 entry(Command::Save, tr!("animate.command.save")),
                 entry(Command::SaveCloth, tr!("animate.command.save_cloth")),
                 entry(Command::ExportVideo, tr!("animate.command.export_video")),
@@ -82,6 +85,8 @@ fn menus(animate: &Animate) -> MenuBar {
                 menu_separator(),
                 entry(Command::OutputSize, tr!("animate.command.output_size")),
                 menu_separator(),
+                entry(Command::Library, tr!("animate.command.library"))
+                    .selected(animate.is_library_open()),
                 entry(Command::Inspector, tr!("animate.command.inspector"))
                     .selected(animate.is_inspector_open()),
                 entry(Command::Assistant, tr!("animate.command.assistant")),

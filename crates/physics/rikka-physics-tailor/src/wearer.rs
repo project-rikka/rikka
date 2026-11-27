@@ -4,7 +4,6 @@ use rikka_model_core::{Model, NodeId};
 
 use crate::analysis::{AnalyzedPiece, ClothAnalysis};
 use crate::asset::{Body, PieceKey, PieceKind};
-use crate::body::skin;
 use crate::cloth_settings::Role;
 use crate::constraints::pin_loose_parts;
 use crate::error::Result;
@@ -67,7 +66,7 @@ impl Wearer {
             }
         }
         Ok(Wearer {
-            body: skin(&figure, analysis.roles()).body,
+            body: analysis.skin_body(&figure).clone(),
             garments: pieces
                 .into_iter()
                 .zip(triangles)

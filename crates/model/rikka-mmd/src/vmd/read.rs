@@ -1,6 +1,6 @@
-use rikka_model_core::glam::Quat;
+use rikka_model_core::glam::{Quat, Vec3};
+use rustc_hash::FxHashMap;
 
-use rikka_model_core::ImportCtx;
 use rikka_model_core::{Error, Result};
 
 use super::super::text::decode_name;
@@ -11,11 +11,48 @@ use super::document::{
 };
 use rikka_model_core::ByteReader;
 
+const BONE_RECORD: usize = 111;
+const MORPH_RECORD: usize = 23;
+const BONES_PER_CHECKPOINT: usize = 4096;
+const MORPHS_PER_CHECKPOINT: usize = 8192;
+
+#[derive(Default)]
+struct Names {
+    decoded: FxHashMap<[u8; FRAME_NAME], String>,
+}
+
+impl Names {
+    fn decode(&mut self, bytes: &[u8; FRAME_NAME]) -> String {
+        self.decoded
+            .entry(*bytes)
+            .or_insert_with(|| decode_name(bytes))
+            .clone()
+    }
+}
+
+fn word(bytes: &[u8], at: usize) -> [u8; 4] {
+    [bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]]
+}
+
+fn float(bytes: &[u8], at: usize) -> f32 {
+    f32::from_le_bytes(word(bytes, at))
+}
+
+fn vector(bytes: &[u8], at: usize) -> Vec3 {
+    Vec3::new(float(bytes, at), float(bytes, at + 4), float(bytes, at + 8))
+}
+
+fn name_of(record: &[u8]) -> &[u8; FRAME_NAME] {
+    record[..FRAME_NAME]
+        .try_into()
+        .expect("a record starts with its name")
+}
+
 pub(crate) fn sniffs(head: &[u8]) -> bool {
     head.starts_with(SIGNATURE) || head.starts_with(LEGACY_SIGNATURE)
 }
 
-pub(crate) fn read(bytes: &[u8], ctx: &mut ImportCtx<'_>) -> Result<Vmd> {
+pub(crate) fn read(bytes: &[u8], checkpoint: &dyn Fn() -> Result<()>) -> Result<Vmd> {
     let mut reader = ByteReader::new(bytes);
     let header = reader.take(HEADER)?;
     let legacy = if header.starts_with(SIGNATURE) {
@@ -34,8 +71,9 @@ pub(crate) fn read(bytes: &[u8], ctx: &mut ImportCtx<'_>) -> Result<Vmd> {
         ..Vmd::default()
     };
 
-    read_bones(&mut reader, &mut motion, ctx)?;
-    read_morphs(&mut reader, &mut motion, ctx)?;
+    let mut names = Names::default();
+    read_bones(&mut reader, &mut motion, &mut names, checkpoint)?;
+    read_morphs(&mut reader, &mut motion, &mut names, checkpoint)?;
     if reader.is_empty() {
         return Ok(motion);
     }
@@ -58,24 +96,30 @@ pub(crate) fn read(bytes: &[u8], ctx: &mut ImportCtx<'_>) -> Result<Vmd> {
 fn read_bones(
     reader: &mut ByteReader<'_>,
     motion: &mut Vmd,
-    ctx: &mut ImportCtx<'_>,
+    names: &mut Names,
+    checkpoint: &dyn Fn() -> Result<()>,
 ) -> Result<()> {
-    let count = reader.count(111, "bone keyframes")?;
+    let count = reader.count(BONE_RECORD, "bone keyframes")?;
+    let records = reader
+        .take(count * BONE_RECORD)?
+        .as_chunks::<BONE_RECORD>()
+        .0;
     motion.bones.reserve(count);
-    for index in 0..count {
-        if index % 4096 == 0 {
-            ctx.checkpoint()?;
+    for (index, record) in records.iter().enumerate() {
+        if index % BONES_PER_CHECKPOINT == 0 {
+            checkpoint()?;
         }
-        let bone = decode_name(reader.take(FRAME_NAME)?);
-        let frame = reader.u32()?;
-        let translation = reader.vec3()?;
-        let rotation = Quat::from_vec4(reader.vec4()?);
-        let interpolation_bytes = reader.take(64)?;
-        let (interpolation, physics_off) = interpolation_of(interpolation_bytes);
+        let rotation = Quat::from_xyzw(
+            float(record, 31),
+            float(record, 35),
+            float(record, 39),
+            float(record, 43),
+        );
+        let (interpolation, physics_off) = interpolation_of(&record[47..]);
         motion.bones.push(VmdBoneFrame {
-            bone,
-            frame,
-            translation,
+            bone: names.decode(name_of(record)),
+            frame: u32::from_le_bytes(word(record, 15)),
+            translation: vector(record, 19),
             rotation: match rotation.length_squared() > 1e-12 {
                 true => rotation.normalize(),
                 false => Quat::IDENTITY,
@@ -103,20 +147,23 @@ fn interpolation_of(bytes: &[u8]) -> (VmdInterpolation, bool) {
 fn read_morphs(
     reader: &mut ByteReader<'_>,
     motion: &mut Vmd,
-    ctx: &mut ImportCtx<'_>,
+    names: &mut Names,
+    checkpoint: &dyn Fn() -> Result<()>,
 ) -> Result<()> {
-    let count = reader.count(23, "morph keyframes")?;
+    let count = reader.count(MORPH_RECORD, "morph keyframes")?;
+    let records = reader
+        .take(count * MORPH_RECORD)?
+        .as_chunks::<MORPH_RECORD>()
+        .0;
     motion.morphs.reserve(count);
-    for index in 0..count {
-        if index % 8192 == 0 {
-            ctx.checkpoint()?;
+    for (index, record) in records.iter().enumerate() {
+        if index % MORPHS_PER_CHECKPOINT == 0 {
+            checkpoint()?;
         }
-        let morph = decode_name(reader.take(FRAME_NAME)?);
-        let frame = reader.u32()?;
-        let weight = reader.f32()?;
+        let weight = float(record, 19);
         motion.morphs.push(VmdMorphFrame {
-            morph,
-            frame,
+            morph: names.decode(name_of(record)),
+            frame: u32::from_le_bytes(word(record, 15)),
             weight: match weight.is_finite() {
                 true => weight,
                 false => 0.0,

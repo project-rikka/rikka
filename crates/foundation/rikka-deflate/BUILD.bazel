@@ -9,6 +9,7 @@ rikka_library(
         "//xtask:__subpackages__",
     ],
     deps = [
+        "//crates/foundation/rikka-simd",
         "@crates//:thiserror",
     ],
 )

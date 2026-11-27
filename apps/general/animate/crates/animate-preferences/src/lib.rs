@@ -1,4 +1,5 @@
 mod cloth;
+mod library;
 mod liquid;
 mod morphs;
 mod output;
@@ -27,7 +28,9 @@ impl Preferences {
     #[must_use]
     pub fn schema() -> Schema {
         let schema = Schema::new(DOMAIN).summary("Animate");
-        morphs::keys(cloth::keys(liquid::keys(output::keys(schema))))
+        library::keys(morphs::keys(cloth::keys(liquid::keys(output::keys(
+            schema,
+        )))))
     }
 
     fn new(preferences: rikka_settings::seam::Preferences) -> Self {

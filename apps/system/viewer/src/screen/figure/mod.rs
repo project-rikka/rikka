@@ -165,8 +165,9 @@ impl Figure {
             Motion::Loaded(motion) => Purpose::Figure(Some(Arc::clone(motion))),
         };
         let cancel = self.cancel.clone();
+        let scene = Arc::clone(&self.scene);
         spawn_blocking(
-            move || load::read(path, purpose, cancel),
+            move || load::read(path, purpose, &scene, cancel),
             |screen: &mut Screen, load| {
                 if let Some(figure) = screen.figure() {
                     figure.loaded(load);

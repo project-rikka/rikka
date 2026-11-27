@@ -5,6 +5,7 @@ mod fluid;
 mod gesture;
 mod handles;
 mod overlay;
+mod prop;
 mod screen;
 mod strokes;
 mod wind;

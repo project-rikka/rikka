@@ -27,6 +27,7 @@ impl Animate {
             Subject::Look => tr!("animate.subject.look").to_string(),
             Subject::Emitter(id) => self.cast.emitter(id)?.name.clone(),
             Subject::Wind => tr!("animate.subject.wind").to_string(),
+            Subject::Stage | Subject::Accessory(_) => self.cast.prop(subject)?.prop.name.clone(),
         };
         Some((name, motion.document()))
     }

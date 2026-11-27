@@ -1,4 +1,4 @@
-load("//bazel/rust:defs.bzl", "rikka_library")
+load("//bazel/rust:defs.bzl", "rikka_library", "rikka_test")
 load("//bazel/settings:defs.bzl", "rikka_settings_catalog")
 
 rikka_library(
@@ -10,9 +10,20 @@ rikka_library(
         "//apps/general/animate/crates/animate-cast",
         "//apps/general/animate/crates/animate-export",
         "//apps/general/animate/crates/animate-fluid",
+        "//apps/general/animate/crates/animate-library",
         "//crates/model/rikka-model",
         "//crates/physics/rikka-physics-tailor",
         "//crates/session/rikka-settings",
+        "@crates//:serde",
+        "@crates//:tracing",
+    ],
+)
+
+rikka_test(
+    name = "main",
+    deps = [
+        ":animate-preferences",
+        "//apps/general/animate/crates/animate-library",
     ],
 )
 

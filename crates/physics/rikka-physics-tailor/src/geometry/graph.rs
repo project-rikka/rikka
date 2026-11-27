@@ -41,27 +41,44 @@ impl PartialOrd for Visit {
 
 impl Graph {
     pub(crate) fn new(nodes: usize, edges: impl IntoIterator<Item = (u32, u32, f32)>) -> Graph {
-        let mut both: Vec<(u32, u32, f32)> = Vec::new();
-        for (a, b, length) in edges {
-            if a == b || a as usize >= nodes || b as usize >= nodes {
-                continue;
-            }
-            both.push((a, b, length));
-            both.push((b, a, length));
-        }
-        both.sort_by(|x, y| x.0.cmp(&y.0).then(x.1.cmp(&y.1)).then(x.2.total_cmp(&y.2)));
-        both.dedup_by(|later, earlier| later.0 == earlier.0 && later.1 == earlier.1);
-        let mut starts = vec![0u32; nodes + 1];
-        for (a, _, _) in &both {
-            starts[*a as usize + 1] += 1;
+        let edges: Vec<(u32, u32, f32)> = edges
+            .into_iter()
+            .filter(|(a, b, _)| a != b && (*a as usize) < nodes && (*b as usize) < nodes)
+            .collect();
+        let mut slots = vec![0usize; nodes + 1];
+        for (a, b, _) in &edges {
+            slots[*a as usize + 1] += 1;
+            slots[*b as usize + 1] += 1;
         }
         for index in 0..nodes {
-            starts[index + 1] += starts[index];
+            slots[index + 1] += slots[index];
+        }
+        let mut next = slots.clone();
+        let mut entries = vec![(0u32, 0.0f32); edges.len() * 2];
+        for (a, b, length) in edges {
+            entries[next[a as usize]] = (b, length);
+            next[a as usize] += 1;
+            entries[next[b as usize]] = (a, length);
+            next[b as usize] += 1;
+        }
+        let mut starts = vec![0u32; nodes + 1];
+        let mut targets = Vec::with_capacity(entries.len());
+        let mut lengths = Vec::with_capacity(entries.len());
+        for node in 0..nodes {
+            let around = &mut entries[slots[node]..slots[node + 1]];
+            around.sort_unstable_by(|x, y| x.0.cmp(&y.0).then(x.1.total_cmp(&y.1)));
+            for (at, (target, length)) in around.iter().enumerate() {
+                if at == 0 || around[at - 1].0 != *target {
+                    targets.push(*target);
+                    lengths.push(*length);
+                }
+            }
+            starts[node + 1] = targets.len() as u32;
         }
         Graph {
             starts,
-            targets: both.iter().map(|edge| edge.1).collect(),
-            lengths: both.iter().map(|edge| edge.2).collect(),
+            targets,
+            lengths,
         }
     }
 

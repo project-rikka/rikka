@@ -1,4 +1,5 @@
 mod actor;
+mod booth;
 mod capture;
 mod cloth;
 mod dressing;
@@ -13,6 +14,7 @@ mod pacer;
 mod pending;
 mod physics;
 mod pour;
+mod props;
 mod recorder;
 mod render;
 mod scene;
@@ -24,7 +26,7 @@ use std::time::Instant;
 
 use animate_body::MorphWeights;
 use animate_cast::{
-    Figure, FigureId, LiquidCache, SharedClock, Shot, TakePlayback, frame_of, with_clock,
+    Figure, FigureId, LiquidCache, PropId, SharedClock, Shot, TakePlayback, frame_of, with_clock,
 };
 use animate_look::Look;
 use animate_motion::CameraMotion;
@@ -32,13 +34,15 @@ use rikka_model::{Bounds, MaterialId};
 use rikka_model_gpu::Prepared;
 use rikka_physics::Progress;
 use rikka_physics_tailor::Quality;
+use rikka_renderer::Uploads;
 use rikka_sync::Mutex;
 use rikka_types::PixelSize;
 use rikka_ui::Watchers;
 use rikka_viewport::SceneCtx;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 pub use actor::Projection;
+pub use booth::{Sitting, Studio, rest, still_viewport};
 pub use capture::{Capture, CaptureResult, CaptureView, Picture};
 pub use cloth::PaintSurface;
 pub use dressing::{Dressing, is_color_lookup};
@@ -51,6 +55,7 @@ pub use marks::{EmitterMark, EmitterMarks};
 pub use pending::{Local, Nudge, Pending, PendingPose, Posture, Space, nudged};
 use pour::CastMember;
 pub use pour::{bake, frame_at_step};
+pub use props::PropFrame;
 pub use recorder::Recorder;
 pub use render::Render;
 pub use rikka_physics::ProgressCallback as Notify;
@@ -77,6 +82,8 @@ struct Outputs {
     size: PixelSize,
     due: Option<Instant>,
     bounds: FxHashMap<FigureId, Bounds>,
+    prop_bounds: Vec<Bounds>,
+    prop_frame: Option<PropFrame>,
     progress: Option<Progress>,
 }
 
@@ -87,6 +94,7 @@ pub(crate) struct Input {
     running: bool,
     length: f32,
     prepared: Vec<(FigureId, Prepared)>,
+    prop_prepared: Vec<(PropId, Prepared)>,
     captures: Vec<Capture>,
     resourced: Option<Option<u32>>,
     wants_snapshot: bool,
@@ -96,6 +104,7 @@ pub(crate) struct Published {
     outputs: Outputs,
     errors: Vec<StageError>,
     drew: bool,
+    uploads: Uploads,
 }
 
 pub struct Stage {
@@ -104,6 +113,8 @@ pub struct Stage {
     revision: u64,
     seated_at: Option<f32>,
     prepared: FxHashMap<FigureId, Prepared>,
+    prop_prepared: FxHashMap<PropId, Prepared>,
+    supplied: FxHashSet<PropId>,
     captures: Vec<Capture>,
     resourced: Option<Option<u32>>,
     roused: bool,
@@ -111,6 +122,7 @@ pub struct Stage {
     outputs: Outputs,
     error: Option<StageError>,
     watchers: Watchers,
+    uploads: Option<Uploads>,
 }
 
 impl Stage {
@@ -121,6 +133,8 @@ impl Stage {
             revision: 1,
             seated_at: None,
             prepared: FxHashMap::default(),
+            prop_prepared: FxHashMap::default(),
+            supplied: FxHashSet::default(),
             captures: Vec::new(),
             resourced: Some(Some(0)),
             roused: false,
@@ -128,6 +142,7 @@ impl Stage {
             outputs: Outputs::default(),
             error: None,
             watchers: Watchers::new(),
+            uploads: None,
         }
     }
 
@@ -387,6 +402,7 @@ impl Stage {
             .outputs
             .bounds
             .values()
+            .chain(&self.outputs.prop_bounds)
             .copied()
             .reduce(|one, two| Bounds {
                 min: one.min.min(two.min),
@@ -488,10 +504,15 @@ impl Stage {
             running,
             length: with_clock(&self.clock, |clock| clock.length()),
             prepared: self.prepared.drain().collect(),
+            prop_prepared: self.prop_prepared.drain().collect(),
             captures: std::mem::take(&mut self.captures),
             resourced: self.resourced.take(),
             wants_snapshot: std::mem::take(&mut self.wants_snapshot),
         }
+    }
+
+    pub fn uploads(&self) -> Option<Uploads> {
+        self.uploads.clone()
     }
 
     fn publish(&mut self, published: Published) {
@@ -499,11 +520,13 @@ impl Stage {
             outputs,
             errors,
             drew,
+            uploads,
         } = published;
         let changed = self.outputs.revision != outputs.revision
             || self.outputs.restless != outputs.restless
             || !errors.is_empty();
         self.outputs = outputs;
+        self.uploads.get_or_insert(uploads);
         if let Some(error) = errors.into_iter().last() {
             self.error = Some(error);
         }
@@ -520,6 +543,7 @@ impl Stage {
             running: false,
             length: with_clock(&self.clock, |clock| clock.length()),
             prepared: Vec::new(),
+            prop_prepared: Vec::new(),
             captures: Vec::new(),
             resourced: Some(Some(0)),
             wants_snapshot: false,

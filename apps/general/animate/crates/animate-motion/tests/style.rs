@@ -9,7 +9,7 @@ use rikka_model_core::Pose;
 use rikka_model_core::glam::{Quat, Vec3};
 use rikka_physics_tailor::{ClothAnalysis, ClothSettings, Wearer};
 
-use crate::evaluate::{dancing, eye, keyed, motion, rest, same};
+use crate::evaluate::{baked, dancing, eye, keyed, motion, poses, rest, same};
 use crate::support::{BODY, MODEL};
 
 static PHYSIQUE: LazyLock<Arc<Physique>> = LazyLock::new(|| {
@@ -46,15 +46,11 @@ fn plain(mut motion: HumanMotion) -> HumanMotion {
 }
 
 fn hand_travel(motion_bake: &MotionBake) -> f32 {
-    (1..motion_bake.frames())
-        .map(|frame| {
-            let hand = |at: u32| {
-                BODY.fk(motion_bake.pose_at(at))
-                    .position(HumanBone::LeftHand)
-            };
-            hand(frame).distance(hand(frame - 1))
-        })
-        .sum()
+    let hands: Vec<Vec3> = poses(motion_bake)
+        .iter()
+        .map(|pose| BODY.fk(pose).position(HumanBone::LeftHand))
+        .collect();
+    hands.windows(2).map(|pair| pair[1].distance(pair[0])).sum()
 }
 
 #[test]
@@ -84,7 +80,7 @@ fn bust_jiggle_decays_after_stop() {
         let mut motion = motion([turn(0, 0.0), turn(6, 1.2), turn(60, 1.2)]);
         motion.settings.secondary = 0.0;
         motion.settings.jiggle = jiggle;
-        let motion_bake = MotionBake::new(Arc::clone(&BODY), None, &motion, eye);
+        let motion_bake = baked(MotionBake::new(Arc::clone(&BODY), None, &motion, eye));
         move |frame: u32| {
             let mut pose = Pose::rest(&MODEL);
             motion_bake.write(frame as f32 / 30.0, &mut pose);
@@ -132,10 +128,12 @@ fn styled_rebake_matches_full_bake() {
         let (before, after) = (styled(0.0), styled(0.6));
         let physique = Some(Arc::clone(&PHYSIQUE));
         let motion_bake = MotionBake::new(Arc::clone(&BODY), physique.clone(), &before, eye);
+        let unedited = poses(&motion_bake);
         let dirty = after.dirty_since(&before).expect("the edit is seen");
-        let rebaked = motion_bake.rebaked(&after, dirty, eye);
-        let whole = MotionBake::new(Arc::clone(&BODY), physique, &after, eye);
+        let rebaked = baked(motion_bake.rebaked(&after, dirty, eye));
+        let whole = baked(MotionBake::new(Arc::clone(&BODY), physique, &after, eye));
         same(&rebaked, &whole);
+        assert_ne!(poses(&rebaked), unedited, "the rebake shows the edit");
         for frame in 0..whole.frames() {
             let lobes = |motion_bake: &MotionBake| {
                 let mut pose = Pose::rest(&MODEL);
@@ -155,13 +153,35 @@ fn styled_rebake_matches_full_bake() {
 }
 
 #[test]
+fn background_bake_matches_one_pass_rebake() {
+    let motion = reaching(0.3);
+    let motion_bake = MotionBake::new(Arc::clone(&BODY), Some(Arc::clone(&PHYSIQUE)), &motion, eye);
+    let background = poses(&motion_bake);
+    assert!(background.len() > 320, "the bake spans several pieces");
+    let rebaked = baked(motion_bake.rebaked(&motion, 250..262, eye));
+    assert_eq!(poses(&rebaked), background);
+    for frame in 0..motion_bake.frames() {
+        let written = |motion_bake: &MotionBake| {
+            let mut pose = Pose::rest(&MODEL);
+            motion_bake.write(frame as f32 / 30.0, &mut pose);
+            pose
+        };
+        assert_eq!(written(&rebaked), written(&motion_bake), "frame {frame}");
+    }
+}
+
+#[test]
 fn fitting_removes_hand_from_chest() {
     let sunk = |fitting: bool, gap: f32| {
         let mut motion = plain(reaching(0.0));
         motion.settings.fitting = fitting;
-        let motion_bake =
-            MotionBake::new(Arc::clone(&BODY), Some(Arc::clone(&PHYSIQUE)), &motion, eye);
-        let worlds = BODY.fk(motion_bake.pose_at(40));
+        let motion_bake = baked(MotionBake::new(
+            Arc::clone(&BODY),
+            Some(Arc::clone(&PHYSIQUE)),
+            &motion,
+            eye,
+        ));
+        let worlds = BODY.fk(&motion_bake.pose_at(40));
         BODY.bulk().holds(
             &worlds,
             worlds.position(HumanBone::LeftHand),

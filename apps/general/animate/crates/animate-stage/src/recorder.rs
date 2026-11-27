@@ -30,6 +30,9 @@ impl Recorder {
             mut input,
             mut render,
         } = replica;
+        for member in &input.scene.members {
+            member.wait_for_bake();
+        }
         let (rouse, roused) = mpsc::channel();
         render.notify_with(Arc::new(move || {
             let _ = rouse.send(());
@@ -37,6 +40,7 @@ impl Recorder {
         render.sync(&mut input);
         render.prepare(&input.scene);
         render.upload(&mut renderer, &input.scene);
+        render.settle_cloth_assets(&input.scene);
         if let Some(error) = render.errors.pop() {
             return Err(error);
         }

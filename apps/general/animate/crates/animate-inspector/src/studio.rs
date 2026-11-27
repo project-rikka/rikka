@@ -7,6 +7,7 @@ use animate_transport::Transport;
 use animate_wind::{WindMotion, WindSetting};
 
 use crate::controls::Controls;
+use crate::prop_editing::PropEditing;
 use crate::traits::{
     CardFocus, ClothEditing, CurveEditing, EmitterNaming, EmitterShaping, HoldEditing,
     LiquidSettings, MorphEditing, PoseEditing, PourTiming,
@@ -59,6 +60,7 @@ pub trait Studio:
     + MorphEditing
     + PoseEditing
     + PourTiming
+    + PropEditing
 {
 }
 
@@ -75,6 +77,7 @@ impl<T> Studio for T where
         + MorphEditing
         + PoseEditing
         + PourTiming
+        + PropEditing
 {
 }
 

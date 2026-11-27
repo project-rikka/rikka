@@ -136,6 +136,8 @@ fn load_pictures(
     builder: &mut ModelBuilder,
     ctx: &mut ImportCtx<'_>,
 ) -> Result<Vec<Option<TextureId>>> {
+    let paths: Vec<&str> = pmx.textures.iter().map(String::as_str).collect();
+    ctx.prefetch_resources(&paths)?;
     let mut pictures = Vec::with_capacity(pmx.textures.len());
     for path in &pmx.textures {
         pictures.push(

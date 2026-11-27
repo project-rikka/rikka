@@ -4,7 +4,7 @@ use rikka_model_core::{Model, NodeId};
 
 use crate::analysis::{AnalyzedPiece, ClothAnalysis, MeshFeatures};
 use crate::asset::{ClothAsset, Piece, PieceKind};
-use crate::body::{colliders, skin};
+use crate::body::{colliders, skin_of};
 use crate::budget::Budget;
 use crate::cloth_settings::{ClothSettings, Role};
 use crate::constraints::{ConstraintContext, build_constraints};
@@ -27,18 +27,37 @@ impl ClothAsset {
         cloth_settings: &ClothSettings,
         budget: Budget,
     ) -> Result<ClothAsset> {
-        let budget = budget.sanitized();
         let figure = Figure::new(model, anatomy)?;
         let mut features = MeshFeatures::new(&figure);
         let analysis = ClothAnalysis::from_features(&mut features, cloth_settings);
-        let head = features.head;
+        Ok(ClothAsset::assemble(model, &figure, &analysis, budget))
+    }
+
+    pub fn from_analysis(
+        model: &Model,
+        anatomy: &Anatomy,
+        analysis: &ClothAnalysis,
+        budget: Budget,
+    ) -> Result<ClothAsset> {
+        let figure = Figure::new(model, anatomy)?;
+        Ok(ClothAsset::assemble(model, &figure, analysis, budget))
+    }
+
+    fn assemble(
+        model: &Model,
+        figure: &Figure<'_>,
+        analysis: &ClothAnalysis,
+        budget: Budget,
+    ) -> ClothAsset {
+        let budget = budget.sanitized();
+        let head = analysis.head();
         let mut roles = analysis.roles().to_vec();
         for piece in analysis.pieces().iter().filter(|piece| !piece.enabled) {
             for vertex in &piece.vertices {
                 roles[*vertex as usize] = Role::Skinned;
             }
         }
-        let skin = skin(&figure, &roles);
+        let skin = skin_of(analysis.skin_body(figure).clone());
         let spreads = analysis.spreads();
         let enabled: Vec<&AnalyzedPiece> = analysis
             .pieces()
@@ -48,7 +67,7 @@ impl ClothAsset {
         let mut sheets: Vec<Option<Sheet>> = enabled
             .iter()
             .map(|piece| match piece.kind {
-                PieceKind::Sheet => Sheet::new(&figure, &piece.vertices, &roles),
+                PieceKind::Sheet => Sheet::new(figure, &piece.vertices, &roles),
                 PieceKind::Strands => None,
             })
             .collect();
@@ -69,7 +88,7 @@ impl ClothAsset {
                     }
                     PieceKind::Strands => {
                         ribbons[at] = strands(
-                            &figure,
+                            figure,
                             head,
                             &piece.vertices,
                             &roles,
@@ -97,14 +116,14 @@ impl ClothAsset {
         }
         for (at, piece) in enabled.iter().enumerate() {
             if piece.kind == PieceKind::Strands && ribbons[at].is_none() {
-                sheets[at] = Sheet::new(&figure, &piece.vertices, &roles);
+                sheets[at] = Sheet::new(figure, &piece.vertices, &roles);
                 if let Some(sheet) = &mut sheets[at] {
                     sheet.reduce(spacings[at], &skin.shell);
                 }
             }
         }
         let context = ConstraintContext {
-            figure: &figure,
+            figure,
             body: &skin.shell,
             body_normals: &skin.normals,
             body_triangles: &skin.body.triangles,
@@ -115,7 +134,7 @@ impl ClothAsset {
         for ((piece, sheet), ribbon) in enabled.iter().zip(sheets).zip(ribbons) {
             let proxy = match ribbon {
                 Some(ribbon) => Some(ribbon),
-                None => sheet.and_then(|sheet| sheet.proxy(&figure, spreads)),
+                None => sheet.and_then(|sheet| sheet.proxy(figure, spreads)),
             };
             let Some(proxy) = proxy else {
                 continue;
@@ -149,12 +168,12 @@ impl ClothAsset {
             .map(|particle| (particle.rest, particle.radius))
             .collect();
         let mut body = skin.body;
-        body.colliders = colliders(&figure, &roles, &samples);
-        Ok(ClothAsset {
+        body.colliders = colliders(figure, &roles, &samples);
+        ClothAsset {
             rest_worlds: figure.rest_worlds.clone(),
             pieces,
             body,
-        })
+        }
     }
 
     #[must_use]

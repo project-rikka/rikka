@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 
+use animate_cast::PropRole;
 use animate_fluid::{EmitterId, EmitterSetting, EmitterValue};
+use animate_prop::PropSetting;
 use animate_wind::WindSetting;
 
 use crate::wind::Blowing;
@@ -103,11 +105,14 @@ impl<O: Copy + PartialEq, S: Copy + Ord, V: Copy> Unkeyed<O, S, V> {
 pub struct Drafts {
     pub pour: Unkeyed<EmitterId, EmitterSetting, EmitterValue>,
     pub wind: Unkeyed<Blowing, WindSetting, f32>,
+    pub props: Unkeyed<PropRole, PropSetting, f32>,
 }
 
 impl Drafts {
     pub fn is_stale(&self, running: bool, frame: u32) -> bool {
-        self.pour.is_stale(running, frame) || self.wind.is_stale(running, frame)
+        self.pour.is_stale(running, frame)
+            || self.wind.is_stale(running, frame)
+            || self.props.is_stale(running, frame)
     }
 
     pub fn discard_stale(&mut self, running: bool, frame: u32) {
@@ -116,6 +121,9 @@ impl Drafts {
         }
         if self.wind.is_stale(running, frame) {
             self.wind.discard();
+        }
+        if self.props.is_stale(running, frame) {
+            self.props.discard();
         }
     }
 }

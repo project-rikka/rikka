@@ -6,9 +6,9 @@ use rikka_mmd::{
 };
 use rikka_model_core::glam::Vec3;
 use rikka_model_core::{
-    Animation, Channel, CoordinateSystem, Curve, Export, ExportOptions, Import, Instance,
-    MatcapBlend, Material, MemoryResolver, MemorySink, Mesh, Model, ModelBuilder, Node, Registry,
-    Shading, Sink, Submesh, Track, Transform, Vertices,
+    Animation, Channel, CoordinateSystem, Curve, Export, ExportOptions, Import, ImportOptions,
+    Instance, MatcapBlend, Material, MemoryResolver, MemorySink, Mesh, Model, ModelBuilder, Node,
+    Registry, Shading, Sink, Submesh, Track, Transform, Vertices,
 };
 
 const MIKU: &[u8] = include_bytes!("../assets/mmd/miku.pmx");
@@ -298,6 +298,20 @@ fn motion_reads_keyframes() {
     assert!(!motion.morphs.is_empty(), "a motion makes morphs");
     assert!(motion.duration() > 1.0, "{}", motion.duration());
     assert!(!model.animations.is_empty(), "a motion is an animation");
+}
+
+#[test]
+fn direct_read_matches_import() {
+    let model = motion();
+    let imported = model.extensions.get::<Vmd>().expect("the motion");
+    let read = Vmd::read(MOTION, &ImportOptions::default()).expect("the motion reads");
+    assert_eq!(read.model, imported.model);
+    assert_eq!(read.bones, imported.bones);
+    assert_eq!(read.morphs, imported.morphs);
+    assert_eq!(read.cameras, imported.cameras);
+    assert_eq!(read.lights, imported.lights);
+    assert_eq!(read.shadows, imported.shadows);
+    assert_eq!(read.properties, imported.properties);
 }
 
 #[test]

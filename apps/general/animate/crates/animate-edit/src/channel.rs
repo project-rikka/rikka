@@ -1,6 +1,7 @@
 use animate_fluid::EmitterKey;
 use animate_look::LookKey;
 use animate_motion::{MorphKey, PartKey};
+use animate_prop::{AnchorKey, PropKey};
 use animate_wind::WindKey;
 use rikka_mmd::{VmdBoneFrame, VmdCameraFrame, VmdCameraInterpolation, VmdCurve, VmdInterpolation};
 
@@ -34,8 +35,10 @@ impl Channel {
         match kind {
             KeyKind::Bone => &Self::OF_BONES,
             KeyKind::Camera => &Self::OF_CAMERAS,
-            KeyKind::Part => &[],
-            KeyKind::Morph | KeyKind::Look | KeyKind::Fluid | KeyKind::Wind => &Self::OF_VALUES,
+            KeyKind::Part | KeyKind::Anchor => &[],
+            KeyKind::Morph | KeyKind::Look | KeyKind::Fluid | KeyKind::Wind | KeyKind::Prop => {
+                &Self::OF_VALUES
+            }
         }
     }
 
@@ -126,13 +129,19 @@ impl Curved for VmdCameraFrame {
     }
 }
 
-impl Curved for PartKey {
-    fn curve(&self, _: Channel) -> Option<VmdCurve> {
-        None
-    }
+macro_rules! uneased {
+    ($($key:ty),+) => {
+        $(impl Curved for $key {
+            fn curve(&self, _: Channel) -> Option<VmdCurve> {
+                None
+            }
 
-    fn bend(&mut self, _: Channel, _: VmdCurve) {}
+            fn bend(&mut self, _: Channel, _: VmdCurve) {}
+        })+
+    };
 }
+
+uneased!(PartKey, AnchorKey);
 
 macro_rules! eased {
     ($($key:ty),+) => {
@@ -150,4 +159,4 @@ macro_rules! eased {
     };
 }
 
-eased!(MorphKey, LookKey, EmitterKey, WindKey);
+eased!(MorphKey, LookKey, EmitterKey, WindKey, PropKey);

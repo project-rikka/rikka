@@ -2,20 +2,24 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use animate_body::{Body, Faces};
-use animate_cast::{BodyFitError, Eye, Figure, FigureId, LoadedFigure, Performer, TakePlayback};
-use animate_document::Motion;
+use animate_cast::{
+    Eye, Figure, FigureId, LoadedFigure, LoadedProp, Performer, Prop, PropRole, TakePlayback,
+};
+use animate_document::{Motion, PropRecord};
 use animate_fit::Physique;
 use animate_fluid::{Emitter, EmitterId};
+use animate_library::Format;
 use animate_look::{Look, shared_library};
 use animate_motion::{CameraMotion, Clip, Incoming, Merge, Take, Target};
+use animate_prop::PropKind;
 use animate_transport::Soundtrack;
 use animate_wind::WindMotion;
-use rikka_media_format::Kind;
 use rikka_model::mmd::{Pmx, Vmd};
 use rikka_model::vrm::Vrm;
-use rikka_model::{Import, Model, registry};
+use rikka_model::{Import, ImportOptions, Model, registry};
 use rikka_model_gpu::Prepared;
 use rikka_physics_tailor::ClothSettings;
+use rikka_renderer::Uploads;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum FileKind {
@@ -28,16 +32,15 @@ enum FileKind {
 }
 
 fn classify(path: &Path) -> FileKind {
-    let extension = path
-        .extension()
-        .map(|extension| extension.to_string_lossy().to_ascii_lowercase());
-    match extension.as_deref() {
-        Some("pmx" | "vrm") => FileKind::Figure,
-        Some("fbx" | "gltf" | "glb" | "vrma") => FileKind::Scene,
-        Some("vmd") => FileKind::Motion,
-        Some(extension) if extension == Motion::EXTENSION => FileKind::RikkaMotion,
-        _ if rikka_media_format::kind(path) == Some(Kind::Sound) => FileKind::Sound,
-        _ => FileKind::Unknown,
+    match Format::from_path(path) {
+        Some(Format::Pmx | Format::Vrm) => FileKind::Figure,
+        Some(
+            Format::Fbx | Format::Gltf | Format::Glb | Format::Vrma | Format::Blend | Format::Stl,
+        ) => FileKind::Scene,
+        Some(Format::Vmd) => FileKind::Motion,
+        Some(Format::Motion) => FileKind::RikkaMotion,
+        Some(Format::Sound(_)) => FileKind::Sound,
+        None => FileKind::Unknown,
     }
 }
 
@@ -73,9 +76,65 @@ impl FigureTarget {
 }
 
 #[derive(Debug)]
+pub(crate) struct PropTarget {
+    pub(crate) role: PropRole,
+    pub(crate) model: Arc<Model>,
+    pub(crate) faces: Arc<Faces>,
+    pub(crate) take: Arc<Take>,
+}
+
+impl PropTarget {
+    pub(crate) fn from_prop(prop: &Prop) -> Self {
+        Self {
+            role: prop.role(),
+            model: Arc::clone(&prop.model),
+            faces: Arc::clone(&prop.faces),
+            take: Arc::clone(&prop.take),
+        }
+    }
+
+    fn target(&self) -> Target<'_> {
+        Target {
+            model: &self.model,
+            body: None,
+            faces: &self.faces,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub(crate) enum LoadTarget {
     Camera,
     Figure(FigureTarget),
+    Prop(PropTarget),
+}
+
+impl LoadTarget {
+    fn motion_target(&self) -> Option<Target<'_>> {
+        match self {
+            Self::Camera => None,
+            Self::Figure(figure) => Some(figure.target()),
+            Self::Prop(prop) => Some(prop.target()),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) enum Placement {
+    #[default]
+    Figure,
+    Stage,
+    Accessory,
+}
+
+impl Placement {
+    fn kind(self) -> Option<PropKind> {
+        match self {
+            Self::Figure => None,
+            Self::Stage => Some(PropKind::Stage),
+            Self::Accessory => Some(PropKind::Accessory),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -95,9 +154,11 @@ pub(crate) struct Settled {
 pub(crate) struct LoadRequest {
     pub(crate) paths: Vec<PathBuf>,
     pub(crate) settled: Option<Settled>,
+    pub(crate) placement: Placement,
     pub(crate) target: LoadTarget,
     pub(crate) camera: Option<Arc<CameraMotion>>,
     pub(crate) emitter: Option<EmitterId>,
+    pub(crate) uploads: Option<Uploads>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -158,12 +219,14 @@ pub(crate) enum Rejection {
     Unreadable(ReadError),
     Unsupported,
     NoMotion,
+    NoModel,
     NeedsFigure,
     NeedsCamera,
+    NeedsStage,
+    NeedsAccessory,
     NoSkeleton,
     BodyMismatch,
     Unmatched,
-    BodyFit(BodyFitError),
 }
 
 #[derive(Debug)]
@@ -172,12 +235,22 @@ pub(crate) enum Arrival {
         figure: Figure,
         prepared: Prepared,
     },
+    Prop {
+        prop: Prop,
+        prepared: Prepared,
+    },
     Motion {
         figure: FigureId,
         onto: Arc<Take>,
         incoming: Box<Incoming<Take>>,
         take: Arc<Take>,
         playback: Arc<TakePlayback>,
+    },
+    PropMotion {
+        role: PropRole,
+        onto: Arc<Take>,
+        incoming: Box<Incoming<Take>>,
+        take: Arc<Take>,
     },
     Camera {
         onto: Option<Arc<CameraMotion>>,
@@ -191,6 +264,11 @@ pub(crate) enum Arrival {
         replacing: Option<EmitterId>,
     },
     Wind(Arc<WindMotion>),
+    Placed {
+        file: String,
+        kind: PropKind,
+        record: Box<PropRecord>,
+    },
     Choose(Box<Choice>),
     Rejected {
         file: String,
@@ -200,11 +278,13 @@ pub(crate) enum Arrival {
 
 struct Loader {
     arrivals: Vec<Arrival>,
+    placement: Placement,
     target: LoadTarget,
     emitter: Option<EmitterId>,
     posed: Option<Incoming<Take>>,
     filmed: Option<Incoming<CameraMotion>>,
     sound: Option<PathBuf>,
+    uploads: Option<Uploads>,
 }
 
 pub(crate) fn load(order: LoadRequest) -> Vec<Arrival> {
@@ -217,11 +297,13 @@ pub(crate) fn load(order: LoadRequest) -> Vec<Arrival> {
 
     let mut loader = Loader {
         arrivals: Vec::new(),
+        placement: order.placement,
         target: order.target,
         emitter: order.emitter,
         posed: None,
         filmed: None,
         sound: None,
+        uploads: order.uploads,
     };
     if let Some(settled) = order.settled {
         loader.settle(settled);
@@ -251,25 +333,29 @@ impl Loader {
     }
 
     fn arrive(&mut self, sort: FileKind, path: PathBuf) {
-        match sort {
-            FileKind::Figure => match read_model(&path) {
+        match (sort, self.placement.kind()) {
+            (FileKind::Figure | FileKind::Scene, Some(kind)) => match read_model(&path) {
+                Ok(model) => self.prop(&path, model, kind),
+                Err(error) => self.reject(&path, Rejection::Unreadable(error)),
+            },
+            (FileKind::Figure, None) => match read_model(&path) {
                 Ok(model) => self.figure(&path, model, None),
                 Err(error) => self.reject(&path, Rejection::Unreadable(error)),
             },
-            FileKind::Scene => match read_model(&path) {
+            (FileKind::Scene, None) => match read_model(&path) {
                 Ok(model) => self.scene(path, model),
                 Err(error) => self.reject(&path, Rejection::Unreadable(error)),
             },
-            FileKind::Motion => match read_motion(&path) {
+            (FileKind::Motion, _) => match read_motion(&path) {
                 Ok(motion) => self.vmd(&path, motion),
                 Err(rejection) => self.reject(&path, rejection),
             },
-            FileKind::RikkaMotion => match read_rikka_motion(&path) {
+            (FileKind::RikkaMotion, _) => match read_rikka_motion(&path) {
                 Ok(motion) => self.rikka_motion(&path, motion),
                 Err(rejection) => self.reject(&path, rejection),
             },
-            FileKind::Sound => self.sound = Some(path),
-            FileKind::Unknown => self.reject(&path, Rejection::Unsupported),
+            (FileKind::Sound, _) => self.sound = Some(path),
+            (FileKind::Unknown, _) => self.reject(&path, Rejection::Unsupported),
         }
     }
 
@@ -284,14 +370,36 @@ impl Loader {
         }
     }
 
+    fn prop(&mut self, path: &Path, model: Model, kind: PropKind) {
+        if model.meshes.is_empty() {
+            return self.reject(path, Rejection::NoModel);
+        }
+        let name = model_name(&model, path);
+        let LoadedProp { prop, prepared } = Prop::load(
+            kind,
+            name,
+            model,
+            Some(path.to_path_buf()),
+            self.uploads.as_ref(),
+        );
+        self.target = LoadTarget::Prop(PropTarget::from_prop(&prop));
+        self.posed = None;
+        self.arrivals.push(Arrival::Prop { prop, prepared });
+    }
+
     fn figure(&mut self, path: &Path, model: Model, clip: Option<usize>) {
-        let name = figure_name(&model, path);
+        let name = model_name(&model, path);
         let (cloth_settings, sidecar_error) = match ClothSettings::load_for_model(path) {
             Ok(cloth_settings) => (cloth_settings, None),
             Err(error) => (ClothSettings::new(), Some(ReadError::from(error))),
         };
-        let loaded: LoadedFigure =
-            Figure::load(name, model, Some(path.to_path_buf()), cloth_settings);
+        let loaded: LoadedFigure = Figure::load(
+            name,
+            model,
+            Some(path.to_path_buf()),
+            cloth_settings,
+            self.uploads.as_ref(),
+        );
         self.target = LoadTarget::Figure(FigureTarget::from_figure(&loaded.figure));
         self.posed = None;
         self.arrivals.push(Arrival::Figure {
@@ -300,9 +408,6 @@ impl Loader {
         });
         if loaded.mapping_error.is_some() {
             self.reject(path, Rejection::NoSkeleton);
-        }
-        if let Some(error) = loaded.body_fit_error {
-            self.reject(path, Rejection::BodyFit(error));
         }
         if let Some(error) = sidecar_error {
             self.reject(
@@ -317,17 +422,17 @@ impl Loader {
     }
 
     fn clip(&mut self, path: &Path, model: Arc<Model>, index: usize) {
-        let LoadTarget::Figure(target) = &self.target else {
-            return self.reject(path, Rejection::NeedsFigure);
+        let clip = match &self.target {
+            LoadTarget::Camera => return self.reject(path, Rejection::NeedsFigure),
+            LoadTarget::Figure(target) if Arc::ptr_eq(&model, &target.model) => {
+                Clip::with_body(model, index, target.body.clone())
+            }
+            LoadTarget::Figure(_) | LoadTarget::Prop(_) => Clip::new(model, index),
         };
-        let clip = match Arc::ptr_eq(&model, &target.model) {
-            true => Clip::with_body(model, index, target.body.clone()),
-            false => Clip::new(model, index),
-        };
-        let Some(clip) = clip else {
+        let (Some(clip), Some(target)) = (clip, self.target.motion_target()) else {
             return self.reject(path, Rejection::NoMotion);
         };
-        let arriving = Take::from_clip(target.target(), &clip);
+        let arriving = Take::from_clip(target, &clip);
         match arriving.is_still() {
             true => self.reject(path, Rejection::Unmatched),
             false => gather(&mut self.posed, Incoming::merging(arriving)),
@@ -338,17 +443,17 @@ impl Loader {
         let (body, lens) = split(motion);
         let moves_figure = !is_empty(&body);
         let moves_camera = !lens.is_empty();
-        match (&self.target, moves_figure, moves_camera) {
-            (LoadTarget::Camera, _, true) => gather(&mut self.filmed, Incoming::merging(lens)),
-            (LoadTarget::Figure(target), true, _) => {
-                let arriving = Take::from_vmd(target.target(), body);
+        match (self.target.motion_target(), moves_figure, moves_camera) {
+            (None, _, true) => gather(&mut self.filmed, Incoming::merging(lens)),
+            (Some(target), true, _) => {
+                let arriving = Take::from_vmd(target, body);
                 match arriving.is_still() {
                     true => self.reject(path, Rejection::Unmatched),
                     false => gather(&mut self.posed, Incoming::merging(arriving)),
                 }
             }
-            (LoadTarget::Camera, true, false) => self.reject(path, Rejection::NeedsFigure),
-            (LoadTarget::Figure(_), false, true) => self.reject(path, Rejection::NeedsCamera),
+            (None, true, false) => self.reject(path, Rejection::NeedsFigure),
+            (Some(_), false, true) => self.reject(path, Rejection::NeedsCamera),
             (_, false, false) => self.reject(path, Rejection::NoMotion),
         }
     }
@@ -359,12 +464,19 @@ impl Loader {
                 LoadTarget::Figure(target) if target.body.is_none() && take.human.is_some() => {
                     self.reject(path, Rejection::BodyMismatch);
                 }
-                LoadTarget::Figure(_) => gather(&mut self.posed, Incoming::replacing(*take)),
+                LoadTarget::Prop(_) if take.human.is_some() => {
+                    self.reject(path, Rejection::BodyMismatch);
+                }
+                LoadTarget::Figure(_) | LoadTarget::Prop(_) => {
+                    gather(&mut self.posed, Incoming::replacing(*take));
+                }
                 LoadTarget::Camera => self.reject(path, Rejection::NeedsFigure),
             },
             Motion::Camera(lens) => match self.target {
                 LoadTarget::Camera => gather(&mut self.filmed, Incoming::replacing(*lens)),
-                LoadTarget::Figure(_) => self.reject(path, Rejection::NeedsCamera),
+                LoadTarget::Figure(_) | LoadTarget::Prop(_) => {
+                    self.reject(path, Rejection::NeedsCamera);
+                }
             },
             Motion::Look(look) => match settle_look(*look, path) {
                 Ok(look) => self.arrivals.push(Arrival::Look(Arc::new(look))),
@@ -375,6 +487,16 @@ impl Loader {
                 replacing: self.emitter.take(),
             }),
             Motion::Wind(wind) => self.arrivals.push(Arrival::Wind(Arc::new(*wind))),
+            Motion::Stage(record) => self.arrivals.push(Arrival::Placed {
+                file: file_name(path),
+                kind: PropKind::Stage,
+                record,
+            }),
+            Motion::Accessory(record) => self.arrivals.push(Arrival::Placed {
+                file: file_name(path),
+                kind: PropKind::Accessory,
+                record,
+            }),
         }
     }
 
@@ -390,29 +512,43 @@ impl Loader {
                 .or(camera.as_ref())
                 .cloned(),
         );
-        if let Some(incoming) = self.posed.take()
-            && let LoadTarget::Figure(FigureTarget {
-                id,
-                model,
-                body,
-                faces,
-                physique,
-                take: onto,
-            }) = self.target
-        {
-            let performer = Performer {
-                body: body.as_ref(),
-                physique: physique.as_ref(),
-                faces: &faces,
-            };
-            let take = Arc::new(incoming.onto(&onto));
-            self.arrivals.push(Arrival::Motion {
-                figure: id,
-                playback: Arc::new(TakePlayback::bind(&model, &take, performer, &eye)),
-                onto,
-                incoming: Box::new(incoming),
-                take,
-            });
+        if let Some(incoming) = self.posed.take() {
+            match self.target {
+                LoadTarget::Figure(FigureTarget {
+                    id,
+                    model,
+                    body,
+                    faces,
+                    physique,
+                    take: onto,
+                }) => {
+                    let performer = Performer {
+                        body: body.as_ref(),
+                        physique: physique.as_ref(),
+                        faces: &faces,
+                    };
+                    let take = Arc::new(incoming.onto(&onto));
+                    self.arrivals.push(Arrival::Motion {
+                        figure: id,
+                        playback: Arc::new(TakePlayback::bind(&model, &take, performer, &eye)),
+                        onto,
+                        incoming: Box::new(incoming),
+                        take,
+                    });
+                }
+                LoadTarget::Prop(PropTarget {
+                    role, take: onto, ..
+                }) => {
+                    let take = Arc::new(incoming.onto(&onto));
+                    self.arrivals.push(Arrival::PropMotion {
+                        role,
+                        onto,
+                        incoming: Box::new(incoming),
+                        take,
+                    });
+                }
+                LoadTarget::Camera => {}
+            }
         }
         if let Some((incoming, motion)) = filmed {
             self.arrivals.push(Arrival::Camera {
@@ -452,7 +588,7 @@ fn read_model(path: &Path) -> Result<Model, ReadError> {
     Ok(Import::open(path, registry()).run()?)
 }
 
-fn figure_name(model: &Model, path: &Path) -> String {
+fn model_name(model: &Model, path: &Path) -> String {
     let declared = model
         .extensions
         .get::<Pmx>()
@@ -474,13 +610,9 @@ fn figure_name(model: &Model, path: &Path) -> String {
 }
 
 fn read_motion(path: &Path) -> Result<Vmd, Rejection> {
-    let mut model = Import::open(path, registry())
-        .run()
-        .map_err(|error| Rejection::Unreadable(error.into()))?;
-    model
-        .extensions
-        .remove::<Vmd>()
-        .ok_or(Rejection::Unsupported)
+    let bytes = std::fs::read(path).map_err(|error| Rejection::Unreadable(error.into()))?;
+    Vmd::read(&bytes, &ImportOptions::default())
+        .map_err(|error| Rejection::Unreadable(error.into()))
 }
 
 fn read_rikka_motion(path: &Path) -> Result<Motion, Rejection> {

@@ -4,10 +4,11 @@ mod liquid;
 mod morphs;
 mod physics;
 mod presets;
+mod prop;
 mod style;
 mod wind;
 
-use animate_cast::Subject;
+use animate_cast::{PropRole, Subject};
 use rikka_app::prelude::*;
 use rikka_model::mmd::VmdCurve;
 use rikka_widgets::{column, row};
@@ -60,6 +61,20 @@ fn scrolled(body: Element) -> Element {
 }
 
 fn motion(desk: Desk<'_>) -> Element {
+    if let Some(placement) = desk
+        .subject()
+        .and_then(PropRole::of)
+        .and_then(|role| prop::prop(desk, role))
+    {
+        return column! {
+            placement;
+            rule();
+            detail(desk);
+        }
+        .gap(Space::SNUG)
+        .fill_width()
+        .any();
+    }
     if desk.subject() == Some(Subject::Wind) {
         return column! {
             wind::wind(desk);

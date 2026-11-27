@@ -8,6 +8,7 @@ use rikka_file_format::JsonFormat;
 use serde::{Deserialize, Serialize};
 
 use crate::error::Result;
+use crate::prop::{PropBody, PropRecord};
 
 const FORMAT: JsonFormat = JsonFormat::new("rikka-motion");
 
@@ -18,6 +19,8 @@ pub enum Motion {
     Look(Box<Look>),
     Fluid(Box<Emitter>),
     Wind(Box<WindMotion>),
+    Stage(Box<PropRecord>),
+    Accessory(Box<PropRecord>),
 }
 
 impl Motion {
@@ -41,6 +44,8 @@ enum Body {
     Look(LookFile),
     Fluid(EmitterFile),
     Wind(WindFile),
+    Stage(PropBody),
+    Accessory(PropBody),
 }
 
 impl Body {
@@ -51,6 +56,8 @@ impl Body {
             Motion::Look(look) => Self::Look(LookFile::from_look(look)),
             Motion::Fluid(emitter) => Self::Fluid(EmitterFile::from_emitter(emitter)),
             Motion::Wind(wind) => Self::Wind(WindFile::from_motion(wind)),
+            Motion::Stage(record) => Self::Stage(PropBody::from_record(record)),
+            Motion::Accessory(record) => Self::Accessory(PropBody::from_record(record)),
         }
     }
 
@@ -61,6 +68,8 @@ impl Body {
             Self::Look(file) => Motion::Look(Box::new(file.look(shared_library())?)),
             Self::Fluid(file) => Motion::Fluid(Box::new(file.emitter(EmitterId(0))?)),
             Self::Wind(file) => Motion::Wind(Box::new(file.motion()?)),
+            Self::Stage(body) => Motion::Stage(Box::new(body.record()?)),
+            Self::Accessory(body) => Motion::Accessory(Box::new(body.record()?)),
         })
     }
 }

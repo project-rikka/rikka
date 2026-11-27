@@ -25,6 +25,8 @@ mod underlay;
 mod wearer;
 mod wind;
 
+const PARALLEL: rikka_parallel::Parallel = rikka_parallel::Parallel::new("rikka-tailor");
+
 pub use analysis::{AnalyzedPiece, ClothAnalysis};
 pub use asset::{
     Anchor, Bend, BindTarget, Body, BodyCollider, BodyShape, BodyVertex, ClothAsset, Edge,

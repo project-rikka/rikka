@@ -13,8 +13,18 @@ use crate::scene::Scene;
 pub struct FigureCloth {
     pub cloth_settings: Arc<ClothSettings>,
     pub analysis: Option<Arc<ClothAnalysis>>,
+    analyzed: Option<Arc<ClothSettings>>,
     pub mirror: Arc<Mirror>,
     pub revision: u64,
+}
+
+impl FigureCloth {
+    pub(crate) fn current_analysis(&self) -> Option<&Arc<ClothAnalysis>> {
+        self.analyzed
+            .as_ref()
+            .filter(|analyzed| Arc::ptr_eq(analyzed, &self.cloth_settings))
+            .and(self.analysis.as_ref())
+    }
 }
 
 #[derive(Debug)]
@@ -44,15 +54,18 @@ impl Stage {
             None => 1,
         };
         let scene = self.change();
-        let analysis = scene
+        let (analysis, analyzed) = scene
             .figure_cloth
             .remove(&figure)
-            .and_then(|figure_cloth| figure_cloth.analysis);
+            .map_or((None, None), |figure_cloth| {
+                (figure_cloth.analysis, figure_cloth.analyzed)
+            });
         scene.figure_cloth.insert(
             figure,
             FigureCloth {
                 cloth_settings,
                 analysis,
+                analyzed,
                 mirror,
                 revision,
             },
@@ -65,6 +78,9 @@ impl Stage {
             return;
         }
         if let Some(figure_cloth) = self.change().figure_cloth.get_mut(&figure) {
+            figure_cloth.analyzed = analysis
+                .as_ref()
+                .map(|_| Arc::clone(&figure_cloth.cloth_settings));
             figure_cloth.analysis = analysis;
         }
         self.watchers.repaint();
@@ -83,6 +99,11 @@ impl Stage {
 }
 
 impl Render {
+    pub(crate) fn settle_cloth_assets(&mut self, scene: &Scene) {
+        self.request_cloth_assets(scene);
+        self.simulation.wait_for_cloth_assets();
+    }
+
     pub(crate) fn paint_surface_at(
         &self,
         scene: &Scene,
