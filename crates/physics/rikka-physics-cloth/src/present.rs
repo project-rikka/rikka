@@ -92,30 +92,6 @@ impl Cloth {
                 .uint(count)
                 .run(batch);
         }
-        for (id, _) in &draped {
-            let figure = &self.figures[id];
-            if !figure.topology.layers.iter().any(|&layer| layer > 0) {
-                continue;
-            }
-            let sections = figure.sections;
-            let binds = figure.topology.binds.len() as u32;
-            Pass::direct(&self.kernels.lift, binds, WIDTH)
-                .read(&figure.state)
-                .read(&figure.normals)
-                .read_at(&figure.statics, sections.triangles)
-                .read_at(&figure.statics, sections.binds)
-                .read_at(&figure.scratch, figure.scratch_layout.nearest)
-                .read_at(&figure.statics, sections.rest)
-                .read_at(&figure.statics, sections.reliefs)
-                .read_at(&figure.statics, sections.incident_starts)
-                .read_at(&figure.statics, sections.incident)
-                .write(&figure.normals)
-                .uint(binds)
-                .float(up.x)
-                .float(up.y)
-                .float(up.z)
-                .run(batch);
-        }
         for (id, buffers) in &draped {
             let figure = &self.figures[id];
             if upload_colliders && !figure.colliders.is_empty() && !figure.shown.is_empty() {

@@ -107,7 +107,6 @@ pub(crate) fn build_constraints(
         }
     }
     let relief = RELIEF * spacing;
-    let mut render_offset = vec![0.0f32; proxy.len()];
     let drawn = Relief::measure(context.figure, &proxy, &triangles, relief);
     for bound in &binds {
         let corners = match &bound.bind.target {
@@ -122,8 +121,6 @@ pub(crate) fn build_constraints(
         for corner in corners {
             let slot = &mut radius[corner as usize];
             *slot = slot.max(bound.thickness.min(reach_limit[corner as usize]));
-            let covered = &mut render_offset[corner as usize];
-            *covered = covered.max(bound.lift.min(relief));
         }
     }
     piece.particles = (0..proxy.len())
@@ -139,7 +136,6 @@ pub(crate) fn build_constraints(
                 parent: parents[index],
                 radius: radius[index],
                 clearance: clearance(context.body, rest),
-                render_offset: render_offset[index],
                 relief_height: drawn.relief_height[index],
                 relief_depth: drawn.relief_depth[index],
                 spread: proxy.spread[index],

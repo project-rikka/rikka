@@ -26,7 +26,7 @@ pub use error::{Error, Result};
 pub use follow::{Follow, Pace, Step};
 pub use layout::{FigureKey, Layout};
 pub use live::LiveCloth;
-pub use live_inputs::LiveInputs;
+pub use live_inputs::{LiveInputs, LivePose};
 pub use mix::Mix;
 pub use playback::Playback;
 pub use rikka_physics_cloth::{ClothBuilder, Drape};

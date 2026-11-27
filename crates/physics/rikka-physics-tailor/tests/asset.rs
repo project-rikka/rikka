@@ -141,11 +141,6 @@ fn cloth_asset_values_finite_and_in_range() {
             assert!(piece.tethers.iter().all(|tether| tether.length.is_finite()));
             for bind in &piece.bindings {
                 assert!((0.0..=1.0).contains(&bind.blend));
-                if let Some(under) = bind.underlay {
-                    let inner = &asset.pieces[under.piece as usize];
-                    assert!(inner.kind == PieceKind::Sheet && inner.layer < piece.layer);
-                    assert!((under.triangle as usize) < inner.triangles.len());
-                }
                 match &bind.target {
                     BindTarget::Triangles(influences) => {
                         for influence in influences {

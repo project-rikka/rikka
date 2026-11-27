@@ -175,27 +175,6 @@ Placed on_strand(Draping draping, Bind bind) {
         leader.ids.xyw);
 }
 
-float3 raised(Bind bind) {
-    float3 lift = float3(0.0);
-    for (uint k = 0u; k < 3u; ++k) {
-        uint4 place = bind.target[3u * k];
-        float weight = asfloat(place.w);
-        if (weight == 0.0) {
-            continue;
-        }
-        uint4 corners = pc.triangles[place.x];
-        float u = asfloat(place.y);
-        float v = asfloat(place.z);
-        float w = 1.0 - u - v;
-        float4 na = pc.normals[corners.x];
-        float4 nb = pc.normals[corners.y];
-        float4 nc = pc.normals[corners.z];
-        float height = na.w * w + nb.w * u + nc.w * v;
-        lift += weight * height * unit_or(na.xyz * w + nb.xyz * u + nc.xyz * v, float3(0.0));
-    }
-    return lift;
-}
-
 [shader("compute")]
 [numthreads(128, 1, 1)]
 void main(uint3 thread : SV_DispatchThreadID) {
@@ -208,9 +187,6 @@ void main(uint3 thread : SV_DispatchThreadID) {
     bool strand = (bind.header.x & STRAND) != 0u;
     Placed placed = strand ? on_strand(draping, bind) : draping.on_triangles(bind);
     Planes<PUSH_PLANES> planes = Planes<PUSH_PLANES>();
-    if (!strand) {
-        placed.position += raised(bind);
-    }
     float required = asfloat(bind.header.w);
     if (required >= MIN_DRAPE_GAP) {
         uint seen[PUSH_PLANES] = {};

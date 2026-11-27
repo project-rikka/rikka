@@ -148,9 +148,6 @@ pub enum PieceError {
 
     #[error("bind {0} has no weight or no node")]
     BindWeight(usize),
-
-    #[error("bind {0} lies over no inner sheet triangle")]
-    BindUnderlay(usize),
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

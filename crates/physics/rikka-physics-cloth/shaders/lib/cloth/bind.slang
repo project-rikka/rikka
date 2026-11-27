@@ -1,7 +1,6 @@
 import cloth.common;
 
 static const uint STRAND = 0x80000000u;
-static const uint DRAWN_REST = 9u;
 
 struct Bind : INonWritable {
     uint4 header;

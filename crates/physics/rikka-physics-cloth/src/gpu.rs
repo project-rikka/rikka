@@ -13,7 +13,6 @@ rikka_physics_gpu::kernels! {
         skin_body => SKIN_BODY_COMP,
         targets => TARGETS_COMP,
         normals => NORMALS_COMP,
-        lift => LIFT_COMP,
         drape => DRAPE_COMP,
         obstacles => OBSTACLES_COMP,
         probe => PROBE_COMP,

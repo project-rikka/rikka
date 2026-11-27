@@ -11,10 +11,16 @@ use crate::cloth_figures::ClothFigures;
 use crate::draping;
 use crate::error::Result;
 use crate::follow::{Follow, Pace, Step};
-use crate::live_inputs::LiveInputs;
+use crate::live_inputs::LivePose;
 
-const MAX_STEPS_PER_FOLLOW: u32 = READBACK_LAG;
+const MAX_STEPS_PER_FOLLOW: usize = READBACK_LAG as usize;
 const STEP_EPSILON: f64 = 1.0e-3;
+
+#[derive(Clone, Copy, Debug, Default)]
+struct Due {
+    clock: f64,
+    posed: f32,
+}
 
 pub struct LiveCloth {
     compute: Compute,
@@ -22,6 +28,7 @@ pub struct LiveCloth {
     figures: ClothFigures,
     follow: Follow,
     followed: Option<f32>,
+    posed: Option<f32>,
     accumulator: f64,
     clock: f64,
 }
@@ -34,6 +41,7 @@ impl LiveCloth {
             figures: ClothFigures::default(),
             follow: Follow::default(),
             followed: None,
+            posed: None,
             accumulator: 0.0,
             clock: 0.0,
         })
@@ -74,35 +82,53 @@ impl LiveCloth {
 
     pub fn restart(&mut self) {
         self.followed = None;
+        self.posed = None;
     }
 
-    pub fn follow(&mut self, time: f32, pace: Pace, inputs: &LiveInputs<'_>) -> Result<Step> {
+    pub fn follow(&mut self, time: f32, pace: Pace, pose: &mut impl LivePose) -> Result<Step> {
         let step = self.follow.step(self.followed, time, pace);
         self.followed = None;
-        let mut times = [0.0; MAX_STEPS_PER_FOLLOW as usize];
+        let mut dues = [Due::default(); MAX_STEPS_PER_FOLLOW];
         let due = match step {
             Step::Seek => {
                 self.cloth.reset()?;
                 self.accumulator = 0.0;
                 self.clock = f64::from(time);
-                times[0] = self.clock;
+                dues[0] = Due {
+                    clock: self.clock,
+                    posed: time,
+                };
                 1
             }
             Step::Advance(delta) => {
                 let interval = self.interval();
-                let due = self.accumulate(delta) as usize;
-                for slot in &mut times[..due] {
+                let due = self.accumulate(delta);
+                for (at, slot) in dues[..due].iter_mut().enumerate() {
                     self.clock += interval;
-                    *slot = self.clock;
+                    let behind = self.accumulator + (due - 1 - at) as f64 * interval;
+                    let posed = match pace {
+                        Pace::Playing => time - behind.max(0.0) as f32,
+                        Pace::Stopped { .. } => time,
+                    };
+                    *slot = Due {
+                        clock: self.clock,
+                        posed,
+                    };
                 }
                 due
             }
         };
         if due > 0 {
-            self.run(inputs, &times[..due])?;
+            self.run(pose, &dues[..due])?;
+            self.posed = Some(dues[due - 1].posed);
         }
         self.followed = Some(time);
         Ok(step)
+    }
+
+    #[must_use]
+    pub fn posed(&self) -> Option<f32> {
+        self.posed
     }
 
     #[must_use]
@@ -145,22 +171,23 @@ impl LiveCloth {
             .collect())
     }
 
-    fn run(&mut self, live: &LiveInputs<'_>, times: &[f64]) -> Result<()> {
-        let inputs = self.figures.inputs(
-            live.wind,
-            |figure| {
-                live.figures
-                    .iter()
-                    .rev()
-                    .find(|(key, _)| *key == figure)
-                    .map(|(_, instance)| *instance)
-            },
-            &live.grabs,
-        );
+    fn run(&mut self, pose: &mut impl LivePose, dues: &[Due]) -> Result<()> {
         let mut batch = self.compute.batch();
-        let mut recorded: [Option<Recorded>; MAX_STEPS_PER_FOLLOW as usize] = Default::default();
-        for (&time, slot) in times.iter().zip(&mut recorded) {
-            *slot = Some(self.cloth.advance_into(&mut batch, time, &inputs)?);
+        let mut recorded: [Option<Recorded>; MAX_STEPS_PER_FOLLOW] = Default::default();
+        for (due, slot) in dues.iter().zip(&mut recorded) {
+            let live = pose.pose(due.posed);
+            let inputs = self.figures.inputs(
+                live.wind,
+                |figure| {
+                    live.figures
+                        .iter()
+                        .rev()
+                        .find(|(key, _)| *key == figure)
+                        .map(|(_, instance)| *instance)
+                },
+                &live.grabs,
+            );
+            *slot = Some(self.cloth.advance_into(&mut batch, due.clock, &inputs)?);
         }
         let ready = batch.submit()?;
         for step in recorded.into_iter().flatten() {
@@ -173,17 +200,17 @@ impl LiveCloth {
         f64::from(self.cloth.rate()).recip()
     }
 
-    fn accumulate(&mut self, delta: f32) -> u32 {
+    fn accumulate(&mut self, delta: f32) -> usize {
         let interval = self.interval();
         self.accumulator += f64::from(delta.max(0.0));
         let due = (self.accumulator / interval + STEP_EPSILON)
             .floor()
             .max(0.0);
-        let steps = due.min(f64::from(MAX_STEPS_PER_FOLLOW)) as u32;
-        self.accumulator = if due > f64::from(MAX_STEPS_PER_FOLLOW) {
+        let steps = due.min(MAX_STEPS_PER_FOLLOW as f64) as usize;
+        self.accumulator = if due > MAX_STEPS_PER_FOLLOW as f64 {
             0.0
         } else {
-            self.accumulator - f64::from(steps) * interval
+            self.accumulator - steps as f64 * interval
         };
         steps
     }

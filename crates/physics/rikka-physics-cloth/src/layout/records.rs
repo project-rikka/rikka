@@ -6,7 +6,9 @@ pub(crate) const SURFACE: f32 = 1.0;
 pub(crate) const CONTACT_WORDS: u64 = 24;
 pub(crate) const GEOMETRY_VECS: u64 = 5 * 8;
 pub(crate) const WRAP_WORDS: u64 = 4;
-pub(crate) const NEAREST_WORDS: u64 = 9;
+pub(crate) const NEAREST_WORDS: u64 = 5;
+pub(crate) const RELIEF_STEP: f32 = 5.0e-5;
+pub(crate) const RELIEF_LEVELS: u32 = 4096;
 pub(crate) const STRAND: u32 = 1 << 31;
 
 #[repr(C)]
@@ -59,14 +61,6 @@ pub(crate) struct InfluenceRecord {
     pub(crate) place: [f32; 3],
     pub(crate) offset: [f32; 4],
     pub(crate) directions: [f32; 4],
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Pod, Zeroable)]
-pub(crate) struct TrianglesRecord {
-    pub(crate) influences: [InfluenceRecord; 3],
-    pub(crate) rest: [f32; 3],
-    pub(crate) underlay: u32,
 }
 
 #[repr(C)]

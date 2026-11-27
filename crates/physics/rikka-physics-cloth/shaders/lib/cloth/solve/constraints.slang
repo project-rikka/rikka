@@ -229,22 +229,6 @@ void wrap_slots(uint t, float alpha) {
     slot(dests.z, dc * asfloat(job.traits[corners.z].d.z));
 }
 
-float two_way(bool own, bool own_outer, uint4 corners) {
-    if (!own) {
-        return 1.0;
-    }
-    if (mine(corners.x)) {
-        return 0.5;
-    }
-    if (own_outer) {
-        bool anchored = job.traits[corners.x].a.x == 0.0
-            || job.traits[corners.y].a.x == 0.0
-            || job.traits[corners.z].a.x == 0.0;
-        return anchored ? 1.0 : 0.5;
-    }
-    return 1.0;
-}
-
 void self_contact(uint i, float alpha) {
     uint base = i * CONTACT_WORDS;
     float3 push = float3(0.0);
@@ -256,37 +240,28 @@ void self_contact(uint i, float alpha) {
         float3 x = position(i);
         float thick = trait.b.z;
         float closest_gap = FOREVER;
-        uint2 layer_tris = job.pieces[trait.d.x].layer_triangles.xy;
+        uint inner = job.pieces[trait.d.x].layer_triangles.x;
         for (uint k = 0u; k < CLOTH_CANDIDATES; ++k) {
             uint entry = job.contacts[base + CLOTH_WORD + k];
             if (entry == NONE) {
                 break;
             }
             bool own = obstacle_figure(entry) == job.shapes_figure.z;
-            uint idx = obstacle_index(entry);
-            bool own_inner = own && idx < layer_tris.x;
-            bool own_outer = own && idx >= layer_tris.y;
+            if (inner_sheet(entry, inner)) {
+                continue;
+            }
             float3 a;
             float3 b;
             float3 c;
             uint4 corners;
-            if (own_outer) {
-                corners = job.triangles[idx];
-                own_layer_triangle(corners, true, alpha, a, b, c);
-            } else {
-                cloth_triangle(entry, alpha, a, b, c, corners);
-            }
+            cloth_triangle(entry, alpha, a, b, c, corners);
             Gap g = gap_to(x, a, b, c, entry);
-            float share = two_way(own, own_outer, corners);
-            float cover = own_outer ? 0.0 : drawn_cover(entry, corners, g, a, b, c);
+            float share = own && mine(corners.x) ? 0.5 : 1.0;
+            float cover = drawn_cover(entry, corners, g, a, b, c);
             float apart = g.valid ? g.gap - cover : FOREVER;
-            bool layered = own_inner || own_outer;
-            float needed = layered ? snug_thickness(i, corners, thick) : thick;
+            float needed = own && obstacle_index(entry) < inner ? snug_thickness(i, corners, thick) : thick;
             if (apart < needed) {
                 float amount = (needed - apart) * share;
-                if (layered) {
-                    amount = min(amount, max(PUSH_SPEED * job.step.x, LAYER_STEP));
-                }
                 push += g.normal * amount;
                 pushes += amount;
                 strongest = max(strongest, amount);

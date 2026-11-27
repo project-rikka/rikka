@@ -20,8 +20,7 @@ static const uint FLAG_WORD = 21u;
 static const uint NEAREST_WORD = 22u;
 static const uint RESIDUAL_WORD = 23u;
 static const uint BODY_NEAREST = 4u;
-static const uint LAYER_NEAREST = 4u;
-static const uint COLLIDER_NEAREST = BODY_NEAREST + LAYER_NEAREST;
+static const uint COLLIDER_NEAREST = BODY_NEAREST;
 static const uint NEAREST_WORDS = COLLIDER_NEAREST + 1u;
 static const uint GEOMETRY_VECS = 5u;
 static const uint TANGLED = 1u;
@@ -41,6 +40,37 @@ static const float FOREVER = 1.0e30;
 static const float LATERAL_REACH = 0.004;
 static const float SNUG_LAYERS = 2.0;
 static const float MAX_SWEEP_STEP = 0.04;
+static const float RELIEF_STEP = 5.0e-5;
+static const uint RELIEF_LEVELS = 4096u;
+
+float relief_above(float4 rest) {
+    return float(uint(rest.w) / RELIEF_LEVELS) * RELIEF_STEP;
+}
+
+float relief_below(float4 rest) {
+    return float(uint(rest.w) % RELIEF_LEVELS) * RELIEF_STEP;
+}
+
+float relief_on(float4 rest, bool above) {
+    return above ? relief_above(rest) : relief_below(rest);
+}
+
+float2 corner_relief(ReadVec4s rest, uint4 corners) {
+    float4 ra = rest[corners.x];
+    float4 rb = rest[corners.y];
+    float4 rc = rest[corners.z];
+    return float2(
+        max(max(relief_above(ra), relief_above(rb)), relief_above(rc)),
+        max(max(relief_below(ra), relief_below(rb)), relief_below(rc)));
+}
+
+float remembered_side(uint entry, float plane) {
+    if ((entry & REMEMBERED) != 0u) {
+        return (entry & ABOVE) != 0u ? 1.0 : -1.0;
+    }
+    return plane >= 0.0 ? 1.0 : -1.0;
+}
+
 struct Figure : INonWritable {
     ReadVec4s positions;
     ReadVec4s epoch_start;
@@ -124,7 +154,7 @@ Gap gap_to(float3 x, float3 a, float3 b, float3 c, uint entry) {
     Closest closest = closest_on_triangle(x, a, b, c);
     float d = dot(x - a, n);
     bool remembered = (entry & REMEMBERED) != 0u;
-    float side = remembered ? ((entry & ABOVE) != 0u ? 1.0 : -1.0) : (d >= 0.0 ? 1.0 : -1.0);
+    float side = remembered_side(entry, d);
     result.weights = closest.weights;
     result.valid = true;
     float3 away = x - closest.point;
@@ -158,7 +188,7 @@ Snug snug_layer(ReadVec4s rest, uint4 corners, float3 at, float thick) {
     float3 normal = face_normal(ra.xyz, rb.xyz, rc.xyz);
     bool valid = any(normal != float3(0.0));
     bool above = dot(at - ra.xyz, normal) >= 0.0;
-    float cover = above ? dot(closest.weights, float3(ra.w, rb.w, rc.w)) : 0.0;
+    float cover = above ? dot(closest.weights, float3(relief_above(ra), relief_above(rb), relief_above(rc))) : 0.0;
     float clearance = apart - cover;
     return Snug(clearance < SNUG_LAYERS * thick, above, valid, clearance, apart);
 }

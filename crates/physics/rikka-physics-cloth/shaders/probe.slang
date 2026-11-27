@@ -110,8 +110,6 @@ static const float MAX_PROBE_TRAVEL = 0.06;
 static const float INNER_MARGIN = 0.018;
 static const float INNER_KEY_BONUS = 0.012;
 static const float INNER_REST_RANGE = 0.06;
-static const float OUTER_REST_RANGE = 0.08;
-static const float OUTER_CONTAIN_DEPTH = 0.45;
 static Job job;
 static uint own;
 static uint asking;
@@ -291,78 +289,50 @@ struct Query {
     uint2 layer_triangles;
 };
 
-float3 swept_end(uint particle, float3 start_pos, bool own_inner) {
-    if (!own_inner && job.traits[particle].a.x == 0.0) {
-        return asfloat(job.targets_to[particle].xyz);
-    }
+float3 swept_end(uint particle, float3 start_pos) {
     return start_pos + clamp_length(job.epoch_motion[particle].xyz * job.step.w, MAX_SWEEP_STEP);
 }
 
-float layer_cloth_eval(float3 x, float3 x_end, uint4 corners, bool own_inner, out float key) {
+float layer_cloth_eval(float3 x, float3 x_end, uint4 corners, out float key) {
     float3 a0 = job.epoch_start[corners.x].xyz;
     float3 b0 = job.epoch_start[corners.y].xyz;
     float3 c0 = job.epoch_start[corners.z].xyz;
-    float3 a1 = swept_end(corners.x, a0, own_inner);
-    float3 b1 = swept_end(corners.y, b0, own_inner);
-    float3 c1 = swept_end(corners.z, c0, own_inner);
+    float3 a1 = swept_end(corners.x, a0);
+    float3 b1 = swept_end(corners.y, b0);
+    float3 c1 = swept_end(corners.z, c0);
     float d = min(distance(x, closest_on_triangle(x, a0, b0, c0).point),
         distance(x_end, closest_on_triangle(x_end, a1, b1, c1).point));
     float3 xm = 0.5 * (x + x_end);
     d = min(d, distance(xm, closest_on_triangle(xm, 0.5 * (a0 + a1), 0.5 * (b0 + b1), 0.5 * (c0 + c1)).point));
-    float cover = 0.0;
-    if (own_inner) {
-        ReadVec4s rest = job.rest;
-        cover = max(max(rest[corners.x].w, rest[corners.y].w), rest[corners.z].w);
-    }
+    ReadVec4s rest = job.rest;
+    float2 relief = corner_relief(rest, corners);
+    float cover = max(relief.x, relief.y);
     key = d - INNER_KEY_BONUS;
     return d - cover;
 }
 
-bool outer_upper(uint4 corners) {
-    return asfloat(job.traits[corners.x].d.w) < OUTER_CONTAIN_DEPTH
-        || asfloat(job.traits[corners.y].d.w) < OUTER_CONTAIN_DEPTH
-        || asfloat(job.traits[corners.z].d.w) < OUTER_CONTAIN_DEPTH;
-}
-
-bool rest_under_outer(float3 at, uint4 corners) {
-    Snug snug = snug_layer(job.rest, corners, at, 0.0);
-    return snug.valid && !snug.above && snug.rest_distance < OUTER_REST_RANGE;
-}
-
-bool outer_holds(float3 rest_at, uint4 corners) {
-    return outer_upper(corners) && rest_under_outer(rest_at, corners);
-}
-
-void offer_layer(float3 x, float3 x_end, uint4 corners, bool own_inner, uint id, float reach) {
+void offer_layer(float3 x, float3 x_end, uint4 corners, uint id, float reach) {
     float key;
-    float d = layer_cloth_eval(x, x_end, corners, own_inner, key);
+    float d = layer_cloth_eval(x, x_end, corners, key);
     if (d <= reach && earlier(key, id, cloth_keys[CLOTH_CANDIDATES - 1u], cloth_ids[CLOTH_CANDIDATES - 1u])) {
         keep_cloth(key, id);
     }
 }
 
-void hold_previous_layer(float3 x, float3 x_end, float3 rest_at, uint entry, uint2 layer_triangles, float reach) {
+void hold_previous_layer(float3 x, float3 x_end, uint entry, uint inner, float reach) {
     if (entry == NONE) {
         return;
     }
     uint id = entry & OBSTACLE_MASK;
     uint index = obstacle_index(id);
-    if (!obstacle_is_cloth(id) || obstacle_figure(id) != own) {
-        return;
-    }
-    bool own_inner = index < layer_triangles.x;
-    bool own_outer = index >= layer_triangles.y;
-    if (!own_inner && !own_outer) {
+    if (!obstacle_is_cloth(id) || obstacle_figure(id) != own || index >= inner) {
         return;
     }
     uint4 corners = job.triangles[index];
     if (job.pieces[corners.w].contact.x < 0.5) {
         return;
     }
-    if (own_outer && !outer_holds(rest_at, corners)) {
-        return;
-    }
-    offer_layer(x, x_end, corners, own_inner, id, reach);
+    offer_layer(x, x_end, corners, id, reach);
 }
 
 void consider(Query q, uint id) {
@@ -382,22 +352,16 @@ void consider(Query q, uint id) {
     bool own_inner = figure == own && index < q.layer_triangles.x;
     bool own_outer = figure == own && index >= q.layer_triangles.y;
     bool own_beside = figure == own && !own_inner && !own_outer;
-    if (own_beside && !q.self_colliding) {
+    if (own_outer || (own_beside && !q.self_colliding)) {
         return;
     }
     uint4 corners = job.figures[figure].triangles[index];
     if (own_beside && job.pieces[corners.w].contact.w < 0.5) {
         return;
     }
-    if (own_inner || own_outer) {
-        bool sheet_pair = q.is_sheet && job.pieces[corners.w].contact.x > 0.5;
-        if (own_outer && (!sheet_pair || !outer_holds(q.rest, corners))) {
-            return;
-        }
-        if (sheet_pair) {
-            offer_layer(q.x, q.x_end, corners, own_inner, id, q.inner_reach);
-            return;
-        }
+    if (own_inner && q.is_sheet && job.pieces[corners.w].contact.x > 0.5) {
+        offer_layer(q.x, q.x_end, corners, id, q.inner_reach);
+        return;
     }
     float3 a;
     float3 b;
@@ -406,7 +370,8 @@ void consider(Query q, uint id) {
     float d = distance(q.x, closest_on_triangle(q.x, a, b, c).point);
     if (!own_beside) {
         ReadVec4s rest = job.figures[figure].rest;
-        d -= max(max(rest[corners.x].w, rest[corners.y].w), rest[corners.z].w);
+        float2 relief = corner_relief(rest, corners);
+        d -= max(relief.x, relief.y);
     }
     if (d > q.cloth_reach || !earlier(d, id, cloth_keys[CLOTH_CANDIDATES - 1u], cloth_ids[CLOTH_CANDIDATES - 1u])) {
         return;
@@ -426,9 +391,8 @@ void consider(Query q, uint id) {
     keep_cloth(d, id);
 }
 
-bool own_layer(Query q, uint id) {
-    uint index = obstacle_index(id);
-    return obstacle_figure(id) == own && (index < q.layer_triangles.x || index >= q.layer_triangles.y);
+bool own_inner_layer(Query q, uint id) {
+    return obstacle_figure(id) == own && obstacle_index(id) < q.layer_triangles.x;
 }
 
 void walk(Query q, uint lane) {
@@ -458,7 +422,7 @@ void walk(Query q, uint lane) {
                             }
                         } else if (apart <= cloth_walk) {
                             uint item = job.items[e];
-                            if (apart <= q.cloth_reach || own_layer(q, item)) {
+                            if (apart <= q.cloth_reach || own_inner_layer(q, item)) {
                                 consider(q, item);
                             }
                         }
@@ -478,23 +442,13 @@ uint layered_side(uint i, uint cloth, uint4 corners, Piece piece, float thick) {
     if (obstacle_figure(cloth) != own) {
         return NONE;
     }
-    uint index = obstacle_index(cloth);
-    bool own_inner = index < piece.layer_triangles.x;
-    bool own_outer = index >= piece.layer_triangles.y;
-    if (!own_inner && !own_outer) {
+    if (obstacle_index(cloth) >= piece.layer_triangles.x) {
         return NONE;
     }
     Snug snug = snug_layer(job.rest, corners, job.rest[i].xyz, thick);
-    if (snug.in_range) {
+    bool sheets = piece.contact.x > 0.5 && job.pieces[corners.w].contact.x > 0.5;
+    if (snug.in_range || (snug.valid && sheets && snug.rest_distance < INNER_REST_RANGE)) {
         return REMEMBERED | (snug.above ? ABOVE : 0u);
-    }
-    if (snug.valid && piece.contact.x > 0.5 && job.pieces[corners.w].contact.x > 0.5) {
-        if (own_inner && snug.rest_distance < INNER_REST_RANGE) {
-            return REMEMBERED | (snug.above ? ABOVE : 0u);
-        }
-        if (own_outer && snug.rest_distance < OUTER_REST_RANGE && !snug.above) {
-            return REMEMBERED;
-        }
     }
     return NONE;
 }
@@ -622,13 +576,15 @@ void main(uint3 local : SV_GroupThreadID, uint3 group : SV_GroupID) {
         float3 x_mid = 0.5 * (x + x_end);
         float travel = min(step_len + TRAVEL_MARGIN, MAX_PROBE_TRAVEL);
         bool is_sheet = piece.contact.x > 0.5;
-        bool layered_sheet = is_sheet && (piece.layer_triangles.x > 0u || piece.layer_triangles.y < job.range.w);
+        bool layered_sheet = is_sheet && piece.layer_triangles.x > 0u;
         float body_reach = h < 0.0 ? -1.0 : h + BAND + travel;
         float cloth_reach = thick + 0.5 * BAND + travel;
-        float inner_reach = max(cloth_reach, thick + BAND + INNER_MARGIN + travel);
-        walk(Query(x, x_end, job.rest[i].xyz, i, body_reach, cloth_reach, inner_reach, thick, is_sheet, layered_sheet, piece.contact.w > 0.5, trait.d.y, piece.layer_triangles.xy), lane);
+        float4 own_rest = job.rest[i];
+        float relief = max(relief_above(own_rest), relief_below(own_rest));
+        float inner_reach = max(cloth_reach, thick + BAND + INNER_MARGIN + travel + relief);
+        walk(Query(x, x_end, own_rest.xyz, i, body_reach, cloth_reach, inner_reach, thick, is_sheet, layered_sheet, piece.contact.w > 0.5, trait.d.y, piece.layer_triangles.xy), lane);
         if (layered_sheet && lane < CLOTH_CANDIDATES) {
-            hold_previous_layer(x, x_end, job.rest[i].xyz, previous_at(slot, BODY_CANDIDATES + lane), piece.layer_triangles.xy, inner_reach + HELD_REACH);
+            hold_previous_layer(x, x_end, previous_at(slot, BODY_CANDIDATES + lane), piece.layer_triangles.x, inner_reach + HELD_REACH);
         }
         if (h >= 0.0) {
             if (body_lane) {
@@ -736,7 +692,7 @@ void main(uint3 local : SV_GroupThreadID, uint3 group : SV_GroupID) {
             plane = pack_direction(closest.face ? side * n : away / max(apart, 1.0e-9));
             uint idx = obstacle_index(cloth);
             bool layered_pair = obstacle_figure(cloth) == own
-                && (idx < piece.layer_triangles.x || idx >= piece.layer_triangles.y)
+                && idx < piece.layer_triangles.x
                 && piece.contact.x > 0.5
                 && job.pieces[corners.w].contact.x > 0.5;
             if (obstacle_figure(cloth) == own && !layered_pair) {
@@ -818,17 +774,6 @@ void main(uint3 local : SV_GroupThreadID, uint3 group : SV_GroupID) {
     job.contacts[base + NEAREST_WORD] = asuint(body_keys[0]);
     for (uint k = nearest_count; k < BODY_NEAREST; ++k) {
         job.nearest[NEAREST_WORDS * i + k] = NONE;
-    }
-    uint layered_count = 0u;
-    for (uint k = 0u; k < CLOTH_CANDIDATES; ++k) {
-        uint entry = job.contacts[base + CLOTH_WORD + k];
-        if (entry != NONE && obstacle_figure(entry) == own && obstacle_index(entry) < piece.layer_triangles.x) {
-            job.nearest[NEAREST_WORDS * i + BODY_NEAREST + layered_count] = entry;
-            layered_count += 1u;
-        }
-    }
-    for (uint k = layered_count; k < LAYER_NEAREST; ++k) {
-        job.nearest[NEAREST_WORDS * i + BODY_NEAREST + k] = NONE;
     }
     job.nearest[NEAREST_WORDS * i + COLLIDER_NEAREST] = chosen[0] | (chosen[1] << 16u);
     if (worst_from > 0.0 && job.flags.y != 0u) {

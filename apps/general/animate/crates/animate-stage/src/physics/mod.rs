@@ -1,5 +1,6 @@
 mod cloth_assets;
 mod cloth_error;
+mod posing;
 mod stillness;
 
 use std::sync::Arc;
@@ -10,15 +11,16 @@ use rikka_gpu::Compute;
 use rikka_model::NodeId;
 use rikka_model::glam::Vec3;
 use rikka_model::mmd::FRAMES_PER_SECOND;
-use rikka_physics::{ClothBuilder, LiveCloth, LiveInputs, Pace, Step};
+use rikka_physics::{ClothBuilder, LiveCloth, Pace, Step};
 use rikka_physics_tailor::{Budget, ClothAsset, Quality, Wind};
 use rikka_renderer_3d::{Drape, Frame};
 
 use super::actor::Actor;
-use super::holding::{self, ClothSnapshot, FigureParticles, Performer};
+use super::holding::{ClothSnapshot, FigureParticles, Performer};
 pub(crate) use cloth_assets::Wanted;
 use cloth_assets::{ClothAssets, Fit};
 pub(crate) use cloth_error::ClothError;
+use posing::{Posing, animate_actors, performers};
 use stillness::Stillness;
 
 const GRAVITY: f32 = 7.84;
@@ -241,11 +243,7 @@ impl Simulation {
             }
             self.stillness.wake();
         }
-        for actor in actors.iter_mut() {
-            if actor.animate(time) {
-                actor.instance.refresh();
-            }
-        }
+        animate_actors(actors, time);
         let idle = self.stillness.elapsed(now);
         if !self.enabled {
             return output;
@@ -271,10 +269,6 @@ impl Simulation {
             self.broken = true;
             return output;
         }
-        let grabs: Vec<_> = holding::active_grabs(time, &self.performers(actors))
-            .into_iter()
-            .map(|active_grabs| (actors[active_grabs.owner].id.slot(), active_grabs.grab))
-            .collect();
         let Some(live) = self.live.as_mut().filter(|live| !live.is_empty()) else {
             return output;
         };
@@ -282,15 +276,19 @@ impl Simulation {
             true => Pace::Playing,
             false => Pace::Stopped { idle },
         };
-        let inputs = LiveInputs::new()
-            .wind(wind)
-            .figures(
-                actors
-                    .iter()
-                    .map(|actor| (actor.id.slot(), &actor.instance)),
-            )
-            .grabs(grabs);
-        match live.follow(time, pace, &inputs) {
+        let mut posing = Posing {
+            actors,
+            assets: &self.assets,
+            wind,
+            posed: time,
+        };
+        let followed = live.follow(time, pace, &mut posing);
+        let shown = match followed {
+            Ok(_) => live.posed().unwrap_or(time),
+            Err(_) => time,
+        };
+        posing.animate_to(shown);
+        match followed {
             Ok(Step::Advance(_)) if !running => self.stillness.watch(live.motion(), idle),
             Ok(_) => self.stillness.wake(),
             Err(failure) => {
@@ -304,21 +302,7 @@ impl Simulation {
     }
 
     pub(super) fn performers<'a>(&'a self, actors: &'a [Actor]) -> Vec<Performer<'a>> {
-        actors
-            .iter()
-            .map(|actor| Performer {
-                key: actor.id.number(),
-                name: &actor.name,
-                instance: &actor.instance,
-                pinches: actor.pinches,
-                holds: actor.holds(),
-                cloth_asset: self
-                    .assets
-                    .current(actor.id)
-                    .filter(|_| self.enabled)
-                    .map(|asset| &asset.cloth_asset),
-            })
-            .collect()
+        performers(actors, &self.assets, self.enabled)
     }
 
     pub(super) fn cloth_snapshot(

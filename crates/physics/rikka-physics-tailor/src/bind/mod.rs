@@ -42,7 +42,6 @@ struct BindCandidate {
 pub(crate) struct Bound {
     pub(crate) bind: VertexBinding,
     pub(crate) thickness: f32,
-    pub(crate) lift: f32,
 }
 
 pub(crate) fn bind(figure: &Figure<'_>, proxy: &Proxy, binding: &Binding<'_>) -> Vec<Bound> {
@@ -87,10 +86,8 @@ pub(crate) fn bind(figure: &Figure<'_>, proxy: &Proxy, binding: &Binding<'_>) ->
                         .map_or(binding.far, |signed| signed.distance)
                         .min(SKIN_GAP + (candidate.lift - floor) * layering),
                     target: candidate.hold,
-                    underlay: None,
                 },
                 thickness: candidate.thickness,
-                lift: candidate.lift,
             }
         })
         .collect()

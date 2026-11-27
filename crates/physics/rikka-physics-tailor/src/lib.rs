@@ -21,7 +21,6 @@ mod sheet;
 mod strands;
 mod style;
 mod tuning;
-mod underlay;
 mod wearer;
 mod wind;
 
@@ -31,7 +30,7 @@ pub use analysis::{AnalyzedPiece, ClothAnalysis};
 pub use asset::{
     Anchor, Bend, BindTarget, Body, BodyCollider, BodyShape, BodyVertex, ClothAsset, Edge,
     EdgeKind, Influence, MAX_INFLUENCES, MAX_STRAND_NODES, Particle, Piece, PieceKey, PieceKind,
-    StrandBinding, StrandNode, StrandWeight, Tether, Underlay, VertexBinding,
+    StrandBinding, StrandNode, StrandWeight, Tether, VertexBinding,
 };
 pub use budget::{Budget, Quality};
 pub use cloth_settings::{ClothSettings, Paint, PieceSettings, Role};

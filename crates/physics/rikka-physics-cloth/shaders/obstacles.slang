@@ -94,12 +94,14 @@ void main(uint3 thread : SV_DispatchThreadID) {
     float3 c1 = c0 + clamp_length(f.epoch_motion[corners.z].xyz * pc.epoch_span, MAX_SWEEP_STEP);
     float3 low = min(min(min(a0, b0), c0), min(min(a1, b1), c1));
     float3 high = max(max(max(a0, b0), c0), max(max(a1, b1), c1));
-    float cover = max(max(f.rest[corners.x].w, f.rest[corners.y].w), f.rest[corners.z].w);
-    if (cover > 0.0) {
-        float3 lift0 = face_normal(a0, b0, c0) * cover;
-        float3 lift1 = face_normal(a1, b1, c1) * cover;
-        low += min(min(lift0, lift1), float3(0.0));
-        high += max(max(lift0, lift1), float3(0.0));
+    float2 relief = corner_relief(f.rest, corners);
+    float above = relief.x;
+    float below = relief.y;
+    if (above > 0.0 || below > 0.0) {
+        float3 n0 = face_normal(a0, b0, c0);
+        float3 n1 = face_normal(a1, b1, c1);
+        low += min(min(min(n0 * above, n1 * above), min(-n0 * below, -n1 * below)), float3(0.0));
+        high += max(max(max(n0 * above, n1 * above), max(-n0 * below, -n1 * below)), float3(0.0));
     }
     insert(id | CLOTH | t, low, high);
 }

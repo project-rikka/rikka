@@ -2,10 +2,30 @@ use std::sync::Arc;
 
 use glam::{Mat4, Vec3};
 use rikka_model_core::Instance;
-use rikka_physics::{LiveCloth, LiveInputs, Pace, Step};
+use rikka_physics::{LiveCloth, LiveInputs, LivePose, Pace, Step};
 use rikka_physics_cloth::{Cloth, Inputs};
 
 const FRAME: f32 = 1.0 / 60.0;
+
+struct Recording<'a> {
+    instance: &'a Instance,
+    asked: Vec<f32>,
+}
+
+impl LivePose for Recording<'_> {
+    fn pose(&mut self, time: f32) -> LiveInputs<'_> {
+        self.asked.push(time);
+        LiveInputs::new().figure(0, self.instance)
+    }
+}
+
+fn close(asked: &[f32], wanted: &[f32]) -> bool {
+    asked.len() == wanted.len()
+        && asked
+            .iter()
+            .zip(wanted)
+            .all(|(asked, wanted)| (asked - wanted).abs() < 1.0e-5)
+}
 
 #[test]
 fn live_cloth_seeks_and_steps_at_fixed_rate() {
@@ -16,24 +36,41 @@ fn live_cloth_seeks_and_steps_at_fixed_rate() {
     live.add_figure(0, Arc::clone(&curtain.asset))
         .expect("curtain has cloth");
     assert!(live.has_figure(0) && !live.has_figure(1));
-    let follow = |live: &mut LiveCloth, time: f32, pace: Pace| {
-        live.follow(time, pace, &LiveInputs::new().figure(0, &instance))
-            .expect("a followed frame")
+    let mut pose = Recording {
+        instance: &instance,
+        asked: Vec::new(),
+    };
+    let mut follow = |live: &mut LiveCloth, time: f32, pace: Pace| {
+        let step = live
+            .follow(time, pace, &mut pose)
+            .expect("a followed frame");
+        (step, std::mem::take(&mut pose.asked))
     };
 
-    assert_eq!(follow(&mut live, 2.0, Pace::Playing), Step::Seek);
+    assert_eq!(follow(&mut live, 2.0, Pace::Playing).0, Step::Seek);
     assert_eq!(live.steps(), 1, "a seek warms up in one step");
 
-    let step = follow(&mut live, 2.0 + 2.5 * FRAME, Pace::Playing);
+    let (step, asked) = follow(&mut live, 2.0 + 2.5 * FRAME, Pace::Playing);
     assert!(matches!(step, Step::Advance(_)));
     assert_eq!(live.steps(), 3, "two and a half frames make two steps");
-    follow(&mut live, 2.0 + 3.0 * FRAME, Pace::Playing);
+    assert!(
+        close(&asked, &[2.0 + FRAME, 2.0 + 2.0 * FRAME]),
+        "each step is posed at its own time, not at the frame's: {asked:?}"
+    );
+    let (_, asked) = follow(&mut live, 2.0 + 3.0 * FRAME, Pace::Playing);
     assert_eq!(live.steps(), 4, "the half step left over is owed");
+    assert!(close(&asked, &[2.0 + 3.0 * FRAME]), "{asked:?}");
+    assert!(
+        live.posed()
+            .is_some_and(|posed| close(&[posed], &[2.0 + 3.0 * FRAME]))
+    );
 
     let idle = Pace::Stopped { idle: FRAME };
-    assert_eq!(
-        follow(&mut live, 2.0 + 3.0 * FRAME, idle),
-        Step::Advance(FRAME)
+    let (step, asked) = follow(&mut live, 2.0 + 3.0 * FRAME, idle);
+    assert_eq!(step, Step::Advance(FRAME));
+    assert!(
+        close(&asked, &[2.0 + 3.0 * FRAME]),
+        "a stopped clock settles at the shown time: {asked:?}"
     );
     assert_eq!(live.steps(), 5, "a stopped clock keeps settling");
 
@@ -42,11 +79,11 @@ fn live_cloth_seeks_and_steps_at_fixed_rate() {
     follow(&mut live, 2.9 + FRAME, Pace::Playing);
     assert_eq!(live.steps(), 10, "the dropped time is not owed");
 
-    assert_eq!(follow(&mut live, 0.5, Pace::Playing), Step::Seek);
+    assert_eq!(follow(&mut live, 0.5, Pace::Playing).0, Step::Seek);
     assert_eq!(live.steps(), 1, "going back starts over");
 
     live.restart();
-    assert_eq!(follow(&mut live, 0.5 + FRAME, Pace::Playing), Step::Seek);
+    assert_eq!(follow(&mut live, 0.5 + FRAME, Pace::Playing).0, Step::Seek);
     assert!(live.motion().is_finite());
 
     live.add_figure(0, Arc::clone(&curtain.asset))

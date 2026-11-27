@@ -89,7 +89,7 @@ float3 limited(Trait trait, uint i, float3 x, float alpha, float h, float slack,
     return x;
 }
 
-float3 truncated(uint i, float3 x, float alpha) {
+float3 truncated(uint i, float3 x, uint inner) {
     uint base = i * CONTACT_WORDS;
     if ((job.contacts[base + FLAG_WORD] & TANGLED) != 0u) {
         return x;
@@ -99,6 +99,9 @@ float3 truncated(uint i, float3 x, float alpha) {
         uint entry = job.contacts[base + CLOTH_WORD + k];
         if (entry == NONE) {
             break;
+        }
+        if (inner_sheet(entry, inner)) {
+            continue;
         }
         float gap = asfloat(job.contacts[base + GAP_WORD + k]);
         if (!(gap > 0.0)) {
@@ -112,6 +115,154 @@ float3 truncated(uint i, float3 x, float alpha) {
         }
     }
     return x;
+}
+
+struct LayerContact {
+    float3 x;
+    float3 settled;
+    float3 corrected;
+    uint partner;
+};
+
+struct Combined {
+    float3 moved;
+    float3 settled;
+};
+
+Combined combined<let N : int>(float3 normals[N], float depths[N], float settled[N]) {
+    Combined result = Combined(float3(0.0), float3(0.0));
+    for (uint k = 0u; k < N; ++k) {
+        if (!(depths[k] > 0.0)) {
+            continue;
+        }
+        float overlap = 1.0;
+        for (uint j = 0u; j < N; ++j) {
+            if (j != k && depths[j] > 0.0) {
+                overlap += abs(dot(normals[k], normals[j])) * min(depths[j] / OVERLAP_DEPTH, 1.0);
+            }
+        }
+        result.moved += normals[k] * (depths[k] / overlap);
+        result.settled += normals[k] * (settled[k] / overlap);
+    }
+    return result;
+}
+
+float layer_gap(uint4 corners, float4 own, float side, float facing, float thick, bool sheet) {
+    float4 ra = job.rest[corners.x];
+    float4 rb = job.rest[corners.y];
+    float4 rc = job.rest[corners.z];
+    Closest closest = closest_on_triangle(own.xyz, ra.xyz, rb.xyz, rc.xyz);
+    bool above = side > 0.0;
+    float cover = sheet ? dot(closest.weights, float3(relief_on(ra, above), relief_on(rb, above), relief_on(rc, above))) : 0.0;
+    float underside = lerp(relief_above(own), relief_below(own), smoothstep(-FACING_BLEND, FACING_BLEND, facing));
+    float wanted = thick + cover + underside;
+    float3 n = face_normal(ra.xyz, rb.xyz, rc.xyz);
+    if (all(n == float3(0.0))) {
+        return wanted;
+    }
+    float rest_gap = closest.face ? dot(own.xyz - closest.point, side * n) : distance(own.xyz, closest.point);
+    return min(wanted, rest_gap);
+}
+
+float3 smooth_normal(uint4 corners, float3 weights, float3 face) {
+    float3 lagged = weights.x * job.normals[corners.x].xyz
+        + weights.y * job.normals[corners.y].xyz
+        + weights.z * job.normals[corners.z].xyz;
+    float3 then = face_normal(job.epoch_start[corners.x].xyz, job.epoch_start[corners.y].xyz, job.epoch_start[corners.z].xyz);
+    float length_squared = dot(lagged, lagged);
+    if (!(length_squared > 1.0e-12) || all(then == float3(0.0))) {
+        return face;
+    }
+    float3 n = quat_rotate(quat_between(then, face), lagged * rsqrt(length_squared));
+    return dot(n, face) > 0.0 ? n : face;
+}
+
+LayerContact layer_contact(uint i, float3 x, float3 start, float3 corrected, float alpha, float before, float h, float thick, Piece piece) {
+    LayerContact contact = LayerContact(x, float3(0.0), float3(0.0), NONE);
+    uint inner = piece.layer_triangles.x;
+    if (inner == 0u) {
+        return contact;
+    }
+    float4 own = job.rest[i];
+    float3 own_normal = job.normals[i].xyz;
+    bool sheet = piece.contact.x > 0.5;
+    float nearest = 0.5 * BAND;
+    uint base = i * CONTACT_WORDS;
+    uint figure = job.shapes_figure.z;
+    float3 normals[CLOTH_CANDIDATES];
+    float allowed[CLOTH_CANDIDATES];
+    float settled[CLOTH_CANDIDATES];
+    float3 travel = float3(0.0);
+    float total = 0.0;
+    for (uint k = 0u; k < CLOTH_CANDIDATES; ++k) {
+        allowed[k] = 0.0;
+    }
+    for (uint k = 0u; k < CLOTH_CANDIDATES; ++k) {
+        uint entry = job.contacts[base + CLOTH_WORD + k];
+        if (entry == NONE) {
+            break;
+        }
+        if (!inner_sheet(entry, inner)) {
+            continue;
+        }
+        uint4 corners = job.triangles[obstacle_index(entry)];
+        float3 a = cloth_point(figure, corners.x, alpha);
+        float3 b = cloth_point(figure, corners.y, alpha);
+        float3 c = cloth_point(figure, corners.z, alpha);
+        float3 face = face_normal(a, b, c);
+        if (all(face == float3(0.0))) {
+            continue;
+        }
+        Closest closest = closest_on_triangle(x, a, b, c);
+        float3 away = x - closest.point;
+        float rim = 1.0 - smoothstep(0.0, thick, length(away - face * dot(away, face)));
+        if (!(rim > 0.0)) {
+            continue;
+        }
+        float side = remembered_side(entry, dot(x - a, face));
+        float3 n = side * smooth_normal(corners, closest.weights, face);
+        float d = dot(away, n);
+        float required = layer_gap(corners, own, side, dot(own_normal, n), thick, sheet);
+        if (d - required < nearest) {
+            nearest = d - required;
+            contact.partner = k;
+        }
+        float depth = (required - d) * rim;
+        if (!(depth > 0.0)) {
+            continue;
+        }
+        float3 then_point = closest.weights.x * cloth_point(figure, corners.x, before)
+            + closest.weights.y * cloth_point(figure, corners.y, before)
+            + closest.weights.z * cloth_point(figure, corners.z, before);
+        float existing = max((required - dot(start - then_point, n)) * rim, 0.0);
+        float push = depth - max(existing - PUSH_SPEED * h, 0.0);
+        if (push > 0.0) {
+            normals[k] = n;
+            allowed[k] = push;
+            settled[k] = min(existing, push);
+            travel += (closest.point - then_point) * push;
+            total += push;
+        }
+    }
+    if (total > 0.0) {
+        Combined pushed = combined(normals, allowed, settled);
+        float strongest = length(pushed.moved);
+        if (strongest > 1.0e-12) {
+            float3 normal = pushed.moved / strongest;
+            x += pushed.moved;
+            contact.corrected = undoing(corrected, normal, strongest);
+            contact.settled = pushed.settled;
+            float3 slid = (x - start) - travel / total;
+            float3 tangential = slid - normal * dot(slid, normal);
+            float slide = length(tangential);
+            float friction = piece.contact.y;
+            if (slide > 0.0 && friction > 0.0) {
+                x -= tangential * min(friction * strongest / slide, 1.0);
+            }
+        }
+    }
+    contact.x = x;
+    return contact;
 }
 
 struct BodyContact {
@@ -201,9 +352,6 @@ BodyContact body_contact(Trait trait, uint i, float3 x, float3 start, float3 cor
         float push_depths[BODY_CANDIDATES];
         float settled_depths[BODY_CANDIDATES];
         float pushes = 0.0;
-        uint pushing = 0u;
-        float3 lone = float3(0.0);
-        float3 lone_settled = float3(0.0);
         float closest = FOREVER;
         float3 travel = float3(0.0);
         float3 contact_normal = float3(0.0);
@@ -286,9 +434,6 @@ BodyContact body_contact(Trait trait, uint i, float3 x, float3 start, float3 cor
             push_depths[k] = allowed;
             settled_depths[k] = min(existing, allowed);
             pushes += allowed;
-            pushing += 1u;
-            lone = g.normal * allowed;
-            lone_settled = g.normal * settled_depths[k];
             if (depth > deepest) {
                 deepest = depth;
                 contact_normal = g.normal;
@@ -298,21 +443,9 @@ BodyContact body_contact(Trait trait, uint i, float3 x, float3 start, float3 cor
             }
         }
         if (pushes > 0.0) {
-            float3 moved = pushing == 1u ? lone : float3(0.0);
-            float3 settled = pushing == 1u ? lone_settled : float3(0.0);
-            for (uint k = 0u; k < BODY_CANDIDATES && pushing > 1u; ++k) {
-                if (!(push_depths[k] > 0.0)) {
-                    continue;
-                }
-                float overlap = 1.0;
-                for (uint j = 0u; j < BODY_CANDIDATES; ++j) {
-                    if (j != k && push_depths[j] > 0.0) {
-                        overlap += abs(dot(push_normals[k], push_normals[j])) * min(push_depths[j] / OVERLAP_DEPTH, 1.0);
-                    }
-                }
-                moved += push_normals[k] * (push_depths[k] / overlap);
-                settled += push_normals[k] * (settled_depths[k] / overlap);
-            }
+            Combined pushed = combined(push_normals, push_depths, settled_depths);
+            float3 moved = pushed.moved;
+            float3 settled = pushed.settled;
             x += moved;
             contact.normal = contact_normal;
             contact.corrected = undoing(corrected, contact_normal, dot(moved, contact_normal));
@@ -406,30 +539,23 @@ void settle(float alpha, float before, float h) {
         float3 barrier;
         x = limited(trait, i, x, alpha, h, 1.0 - clamp(touch, 0.0, 1.0), clamp(piece.grab.x, 0.0, 1.0), barrier);
         float3 free = x;
-        x = truncated(i, x, alpha);
+        x = truncated(i, x, piece.layer_triangles.x);
         float3 trunc_push = x - free;
         float3 start = job.starts[i].xyz + wrapped;
         float3 corrected = free - self_push.xyz - pred.xyz;
         float3 self_undoing = undoing(corrected, self_normal, self_length);
-        BodyContact contact = body_contact(trait, i, x, start, corrected + self_undoing, alpha, before, h, piece.contact.y);
-        uint partner = asuint(self_push.w);
-        bool inner_hit = false;
-        if (self_length > 1.0e-9 && partner != NONE && piece.contact.x > 0.5 && piece.layer_triangles.x > 0u) {
-            uint entry = job.contacts[i * CONTACT_WORDS + CLOTH_WORD + partner];
-            inner_hit = obstacle_figure(entry) == job.shapes_figure.z && obstacle_index(entry) < piece.layer_triangles.x;
-        }
-        float touch_now = inner_hit ? max(contact.touch, 0.5) : contact.touch;
+        LayerContact layer = layer_contact(i, x, start, corrected + self_undoing, alpha, before, h, trait.b.z, piece);
+        BodyContact contact = body_contact(trait, i, layer.x, start, corrected + self_undoing + layer.corrected, alpha, before, h, piece.contact.y);
+        float touch_now = layer.partner != NONE ? max(contact.touch, 0.5) : contact.touch;
         job.preds[i] = float4(pred.xyz, lerp(touch_now, touch, exp(-h / TOUCH_FADE)));
         float3 barrier_settled = barrier * BARRIER_SETTLE;
-        job.selfs[i] = float4(self_push.xyz - self_undoing + barrier_settled + contact.x - free - contact.corrected, self_push.w);
+        uint partner = asuint(self_push.w) != NONE ? asuint(self_push.w) : layer.partner;
+        job.selfs[i] = float4(self_push.xyz - self_undoing - layer.corrected + barrier_settled + contact.x - free - contact.corrected, asfloat(partner));
         place(i, contact.x);
         float wrap = length(wrapped);
-        float wrap_touch = wrap > 0.0 ? 1.0 : 0.0;
         bool wrapping = !contact.pushed && wrap > 0.0;
-        float touching = contact.pushed ? 1.0 : (wrap_touch > 0.0 ? wrap_touch : (inner_hit ? 1.0 : 0.0));
-        float3 press_dir = contact.pushed ? contact.normal : (wrapping ? wrapped / wrap : self_normal);
-        float pressed = touching > 0.0 ? pressed_code(press_dir, touching) : 0.0;
-        job.starts[i] = float4(start + contact.settled + barrier_settled + (self_only + trunc_push) * SELF_SETTLE, pressed);
+        float pressed = contact.pushed ? pressed_code(contact.normal, 1.0) : (wrapping ? pressed_code(wrapped / wrap, 1.0) : 0.0);
+        job.starts[i] = float4(start + contact.settled + layer.settled + barrier_settled + (self_only + trunc_push) * SELF_SETTLE, pressed);
     }
 }
 
@@ -508,72 +634,13 @@ void post_project(float alpha, bool with_mesh) {
                 }
             }
         }
-        bool body_moved = length(moved) > 1.0e-9;
-        float4 start_rec = job.starts[i];
-        Piece piece = job.pieces[trait.d.x];
-        if (piece.contact.x > 0.5) {
-            float thick = trait.b.z;
-            bool body_free = !body_moved && start_rec.w == 0.0;
-            float3 push = float3(0.0);
-            float pushes = 0.0;
-            float deepest = 0.0;
-            bool mark_pressed = false;
-            for (uint k = 0u; k < CLOTH_CANDIDATES; ++k) {
-                uint entry = job.contacts[base + CLOTH_WORD + k];
-                if (entry == NONE) {
-                    break;
-                }
-                if (obstacle_figure(entry) != job.shapes_figure.z) {
-                    continue;
-                }
-                uint idx = obstacle_index(entry);
-                bool own_inner = idx < piece.layer_triangles.x && (entry & REMEMBERED) != 0u;
-                bool own_outer = idx >= piece.layer_triangles.y && (entry & (REMEMBERED | ABOVE)) == REMEMBERED && body_free;
-                if (!own_inner && !own_outer) {
-                    continue;
-                }
-                uint4 corners = job.triangles[idx];
-                if (job.pieces[corners.w].contact.x < 0.5) {
-                    continue;
-                }
-                float3 a;
-                float3 b;
-                float3 c;
-                own_layer_triangle(corners, own_outer, alpha, a, b, c);
-                Gap g = gap_to(x, a, b, c, entry);
-                if (!g.valid) {
-                    continue;
-                }
-                float layer_t = max(snug_thickness(i, corners, thick), 0.0);
-                float target_gap = own_inner ? min(0.5 * thick, layer_t) : layer_t;
-                if (g.gap < target_gap) {
-                    float depth = target_gap - g.gap;
-                    if (depth > POST_MESH_MIN && depth < POST_MESH_MAX) {
-                        push += g.normal * depth;
-                        pushes += depth;
-                        deepest = max(deepest, depth);
-                        mark_pressed = mark_pressed || own_inner;
-                    }
-                }
-            }
-            if (pushes > 0.0) {
-                float amount = min(deepest, POST_LAYER_STEP);
-                float3 delta = push * (amount / pushes);
-                x += delta;
-                moved += delta;
-                float delta_len = length(delta);
-                if (mark_pressed && delta_len > 1.0e-9) {
-                    start_rec.w = pressed_code(delta / delta_len, 1.0);
-                    job.starts[i] = start_rec;
-                }
-            }
-        }
         float moved_len = length(moved);
         if (moved_len > 1.0e-9) {
             float3 dir = moved / moved_len;
             place(i, x);
             halt(i, dir);
-            if (body_moved && start_rec.w == 0.0) {
+            float4 start_rec = job.starts[i];
+            if (start_rec.w == 0.0) {
                 start_rec.w = pressed_code(dir, 1.0);
                 job.starts[i] = start_rec;
             }

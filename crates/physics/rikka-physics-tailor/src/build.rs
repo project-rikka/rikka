@@ -14,7 +14,6 @@ use crate::layers::layer;
 use crate::proxy::Proxy;
 use crate::sheet::Sheet;
 use crate::strands::{BandWidths, strands};
-use crate::underlay::underlay;
 
 const GROWTH: f32 = 1.2;
 const ROUNDS: usize = 16;
@@ -160,7 +159,6 @@ impl ClothAsset {
             }
         }
         layer(&mut pieces, &overrides);
-        underlay(&mut pieces);
         let samples: Vec<(Vec3, f32)> = pieces
             .iter()
             .flat_map(|piece| piece.particles.iter())

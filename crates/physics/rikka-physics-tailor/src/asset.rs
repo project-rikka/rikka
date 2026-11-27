@@ -55,7 +55,6 @@ pub struct Particle {
     pub parent: Option<u32>,
     pub radius: f32,
     pub clearance: f32,
-    pub render_offset: f32,
     pub relief_height: f32,
     pub relief_depth: f32,
     pub spread: f32,
@@ -116,13 +115,6 @@ pub struct VertexBinding {
     pub blend: f32,
     pub gap: f32,
     pub target: BindTarget,
-    pub underlay: Option<Underlay>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Underlay {
-    pub piece: u32,
-    pub triangle: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

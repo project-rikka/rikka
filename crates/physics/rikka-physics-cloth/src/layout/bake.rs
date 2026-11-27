@@ -7,8 +7,9 @@ use rikka_physics_tailor::{
 };
 
 use crate::layout::records::{
-    AnchorRecord, BindRecord, EdgeRecord, HingeRecord, InfluenceRecord, NONE, STRAND, SURFACE,
-    StrandNodeRecord, StrandRecord, TetherRecord, TraitRecord, TrianglesRecord, Writer, octahedral,
+    AnchorRecord, BindRecord, EdgeRecord, HingeRecord, InfluenceRecord, NONE, RELIEF_LEVELS,
+    RELIEF_STEP, STRAND, SURFACE, StrandNodeRecord, StrandRecord, TetherRecord, TraitRecord,
+    Writer, octahedral,
 };
 use crate::layout::topology::{Topology, ancestor_chain};
 
@@ -36,7 +37,6 @@ const TETHER_SLACK: f32 = 1.0e-3;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct Sections {
     pub(crate) rest: u64,
-    pub(crate) reliefs: u64,
     pub(crate) anchors: u64,
     pub(crate) traits: u64,
     pub(crate) edges: u64,
@@ -70,22 +70,13 @@ pub(crate) fn bake(
         .order
         .iter()
         .map(|&(piece, particle)| {
-            let described = &asset.pieces[piece].particles[particle];
-            described
-                .rest
-                .extend(described.render_offset.max(0.0))
-                .to_array()
-        })
-        .collect();
-    let reliefs: Vec<[f32; 2]> = topology
-        .order
-        .iter()
-        .map(|&(piece, particle)| {
-            let described = &asset.pieces[piece].particles[particle];
-            [
-                described.relief_height.max(0.0),
-                described.relief_depth.max(0.0),
-            ]
+            let piece = &asset.pieces[piece];
+            let described = &piece.particles[particle];
+            let relief = match piece.kind {
+                PieceKind::Sheet => packed_relief(described.relief_height, described.relief_depth),
+                PieceKind::Strands => 0.0,
+            };
+            described.rest.extend(relief).to_array()
         })
         .collect();
     let body = &asset.body;
@@ -96,7 +87,6 @@ pub(crate) fn bake(
         .collect();
     let sections = Sections {
         rest: writer.section(&rest),
-        reliefs: writer.section(&reliefs),
         anchors: writer.section(&anchors(topology, asset)),
         traits: writer.section(&traits(topology, asset, styles)),
         edges: writer.section(&edges(topology, asset, styles)),
@@ -132,6 +122,12 @@ pub(crate) fn bake(
         ),
     };
     (writer.finish(), sections)
+}
+
+fn packed_relief(above: f32, below: f32) -> f32 {
+    let level =
+        |relief: f32| ((relief.max(0.0) / RELIEF_STEP).round() as u32).min(RELIEF_LEVELS - 1);
+    (level(above) * RELIEF_LEVELS + level(below)) as f32
 }
 
 fn compliance_curve(stiffness: f32, hardest: f32, decades: f32) -> f32 {
@@ -459,7 +455,7 @@ fn binds(topology: &Topology, asset: &ClothAsset) -> Vec<BindRecord> {
             let (kind, target) = match bind.target {
                 BindTarget::Triangles(influences) => (
                     0,
-                    on_triangles(topology, piece, &influences, &resting[piece], index),
+                    on_triangles(topology, piece, &influences, &resting[piece]),
                 ),
                 BindTarget::Strand(strand) => {
                     (STRAND, on_strand(strand_node_bases[piece], &strand))
@@ -481,7 +477,6 @@ fn binds(topology: &Topology, asset: &ClothAsset) -> Vec<BindRecord> {
 struct Resting<'a> {
     positions: Vec<Vec3>,
     normals: Vec<Vec3>,
-    drawn: Vec<Vec3>,
     piece: &'a Piece,
 }
 
@@ -490,11 +485,6 @@ impl<'a> Resting<'a> {
         let positions = piece.rest_positions();
         Resting {
             normals: particle_normals(&positions, &piece.triangles),
-            drawn: piece
-                .drape(&positions)
-                .into_iter()
-                .map(|draped| draped.position)
-                .collect(),
             positions,
             piece,
         }
@@ -517,11 +507,10 @@ fn on_triangles(
     piece: usize,
     influences: &[Influence],
     resting: &Resting<'_>,
-    bind: usize,
 ) -> [[u32; 4]; 10] {
     let total: f32 = influences.iter().map(|influence| influence.weight).sum();
-    let mut record = TrianglesRecord::default();
-    for (slot, influence) in record.influences.iter_mut().zip(influences) {
+    let mut records = [InfluenceRecord::default(); 3];
+    for (slot, influence) in records.iter_mut().zip(influences) {
         if influence.weight == 0.0 {
             continue;
         }
@@ -534,13 +523,10 @@ fn on_triangles(
             directions: [nx, ny, tx, ty],
         };
     }
-    record.rest = resting.drawn[bind].to_array();
-    record.underlay = resting.piece.bindings[bind]
-        .underlay
-        .map_or(NONE, |underlay| {
-            topology.triangle_base[underlay.piece as usize] + underlay.triangle
-        });
-    bytemuck::cast(record)
+    let mut target = [[0u32; 4]; 10];
+    let words: &[[u32; 4]] = bytemuck::cast_slice(&records);
+    target[..words.len()].copy_from_slice(words);
+    target
 }
 
 fn on_strand(base: u32, strand: &StrandBinding) -> [[u32; 4]; 10] {

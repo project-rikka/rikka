@@ -2,8 +2,7 @@ use std::collections::BTreeSet;
 
 use rikka_model_core::NodeId;
 use rikka_physics_tailor::{
-    Anchor, BindTarget, ClothAsset, Curve, Influence, Piece, PieceKind, StrandBinding, Style,
-    Underlay,
+    Anchor, BindTarget, ClothAsset, Curve, Influence, Piece, StrandBinding, Style,
 };
 
 use crate::error::{ClothAssetError, Error, PieceError, Result};
@@ -161,21 +160,8 @@ fn piece(
         if total <= 0.0 || total.is_nan() || !node(bind.node) || !bind.blend.is_finite() {
             return Err(PieceError::BindWeight(at));
         }
-        if let Some(under) = bind.underlay
-            && !lies_over(asset, piece, under)
-        {
-            return Err(PieceError::BindUnderlay(at));
-        }
     }
     acyclic(piece)
-}
-
-fn lies_over(asset: &ClothAsset, piece: &Piece, under: Underlay) -> bool {
-    asset.pieces.get(under.piece as usize).is_some_and(|inner| {
-        inner.kind == PieceKind::Sheet
-            && inner.layer < piece.layer
-            && (under.triangle as usize) < inner.triangles.len()
-    })
 }
 
 fn triangle_weight(piece: &Piece, influences: &[Influence]) -> Option<f32> {

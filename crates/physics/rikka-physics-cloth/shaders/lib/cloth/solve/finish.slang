@@ -42,9 +42,7 @@ void finish(float h) {
                             + (tc - job.epoch_start[corners.z].xyz)) * (epoch_rate / 3.0);
                         float3 n = face_normal(ta, tb, tc);
                         if (any(n != float3(0.0))) {
-                            float side = (entry & REMEMBERED) != 0u
-                                ? ((entry & ABOVE) != 0u ? 1.0 : -1.0)
-                                : (dot(x - ta, n) >= 0.0 ? 1.0 : -1.0);
+                            float side = remembered_side(entry, dot(x - ta, n));
                             float3 outward = side * n;
                             float inward = dot(v - other, outward);
                             if (inward < 0.0) {

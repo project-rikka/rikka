@@ -75,13 +75,6 @@ float3 cloth_point(uint figure, uint particle, float alpha) {
     return start[particle].xyz + motion[particle].xyz * (alpha * job.step.w);
 }
 
-float3 outer_point(uint particle, float alpha) {
-    if (job.traits[particle].a.x == 0.0) {
-        return target(particle, alpha);
-    }
-    return job.epoch_start[particle].xyz + (target(particle, alpha) - target(particle, 0.0));
-}
-
 void cloth_triangle(uint id, float alpha, out float3 a, out float3 b, out float3 c, out uint4 corners) {
     uint figure = obstacle_figure(id);
     corners = figure == job.shapes_figure.z
@@ -92,22 +85,16 @@ void cloth_triangle(uint id, float alpha, out float3 a, out float3 b, out float3
     c = cloth_point(figure, corners.z, alpha);
 }
 
-void own_layer_triangle(uint4 corners, bool own_outer, float alpha, out float3 a, out float3 b, out float3 c) {
-    if (own_outer) {
-        a = outer_point(corners.x, alpha);
-        b = outer_point(corners.y, alpha);
-        c = outer_point(corners.z, alpha);
-    } else {
-        uint figure = job.shapes_figure.z;
-        a = cloth_point(figure, corners.x, alpha);
-        b = cloth_point(figure, corners.y, alpha);
-        c = cloth_point(figure, corners.z, alpha);
-    }
-}
-
 float snug_thickness(uint i, uint4 corners, float thick) {
     Snug snug = snug_layer(job.rest, corners, job.rest[i].xyz, thick);
     return snug.in_range ? min(thick, snug.apart) : thick;
+}
+
+bool inner_sheet(uint entry, uint inner) {
+    uint idx = obstacle_index(entry);
+    return obstacle_figure(entry) == job.shapes_figure.z
+        && idx < inner
+        && job.pieces[job.triangles[idx].w].contact.x > 0.5;
 }
 
 float drawn_cover(uint id, uint4 corners, Gap g, float3 a, float3 b, float3 c) {
@@ -117,5 +104,5 @@ float drawn_cover(uint id, uint4 corners, Gap g, float3 a, float3 b, float3 c) {
         return 0.0;
     }
     ReadVec4s rest = own ? job.rest : job.figures[figure].rest;
-    return dot(g.weights, float3(rest[corners.x].w, rest[corners.y].w, rest[corners.z].w));
+    return dot(g.weights, float3(relief_above(rest[corners.x]), relief_above(rest[corners.y]), relief_above(rest[corners.z])));
 }

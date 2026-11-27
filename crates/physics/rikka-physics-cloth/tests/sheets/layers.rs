@@ -4,7 +4,7 @@ use crate::support::Sheet;
 use glam::{Vec3, Vec4};
 use rikka_model_core::{Mesh, Model, ModelBuilder, Node};
 use rikka_physics_cloth::Cloth;
-use rikka_physics_tailor::{BindTarget, ClothAsset, Piece, PieceKind, Underlay};
+use rikka_physics_tailor::{BindTarget, ClothAsset, Piece, PieceKind};
 
 const COLUMNS: u32 = 9;
 const ROWS: u32 = 9;
@@ -43,21 +43,12 @@ fn layered() -> Layered {
     let mut inner = layer(&sheet, 0.0, RELIEF, 0);
     for particle in &mut inner.particles {
         particle.pinned = true;
-        particle.render_offset = RELIEF;
         particle.relief_height = RELIEF;
     }
     let mut outer = layer(&sheet, APART, -RELIEF, drawn as u32);
     outer.layer = 1;
     for particle in &mut outer.particles {
         particle.relief_depth = RELIEF;
-    }
-    for bind in &mut outer.bindings {
-        if let BindTarget::Triangles(influences) = bind.target {
-            bind.underlay = Some(Underlay {
-                piece: 0,
-                triangle: influences[0].triangle,
-            });
-        }
     }
     let rest = sheet.rest();
     let mut mesh = Mesh::new("layers");
@@ -98,7 +89,7 @@ fn layered() -> Layered {
 }
 
 #[test]
-fn outer_layer_stays_over_inner_relief() {
+fn outer_layer_rests_on_inner_relief() {
     let layered = layered();
     let mut cloth = crate::support::cloth(Cloth::builder());
     let figure = cloth
@@ -115,9 +106,10 @@ fn outer_layer_stays_over_inner_relief() {
         .skip(COLUMNS as usize)
         .map(|particle| APART - particle.y)
         .fold(0.0f32, f32::max);
+    let free_fall = APART - 2.0 * RELIEF;
     assert!(
-        sunk > 0.5 * RELIEF,
-        "the outer sheet sank only {sunk} m toward the inner one"
+        sunk > 0.5 * free_fall,
+        "the outer sheet sank only {sunk} m of its {free_fall} m onto the inner one"
     );
     let drape = cloth
         .drapes(figure)

@@ -1,6 +1,10 @@
 use rikka_model_core::Instance;
 use rikka_physics_tailor::{Grab, Wind};
 
+pub trait LivePose {
+    fn pose(&mut self, time: f32) -> LiveInputs<'_>;
+}
+
 #[must_use]
 #[derive(Clone, Debug)]
 pub struct LiveInputs<'a> {

@@ -49,7 +49,6 @@ fn boxed() -> (Arc<rikka_model_core::Model>, Arc<ClothAsset>) {
         parent: None,
         radius: 0.005,
         clearance: 1.0,
-        render_offset: 0.0,
         relief_height: 0.0,
         relief_depth: 0.0,
         spread: 1.0,

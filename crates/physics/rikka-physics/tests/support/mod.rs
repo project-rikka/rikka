@@ -114,7 +114,6 @@ pub(crate) fn curtain(columns: u32, rows: u32, spacing: f32, top: f32) -> Curtai
                 parent: (row > 0).then(|| at(row - 1, column)),
                 radius: 0.005,
                 clearance: 0.0,
-                render_offset: 0.0,
                 relief_height: 0.0,
                 relief_depth: 0.0,
                 spread: 1.0,
@@ -240,7 +239,6 @@ fn bind(vertex: u32, rest: &[Vec3], normals: &[Vec3], triangles: &[[u32; 3]]) ->
         blend: 1.0,
         gap: 0.0,
         target: BindTarget::Triangles(influences),
-        underlay: None,
     }
 }
 
